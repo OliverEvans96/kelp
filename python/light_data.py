@@ -2,7 +2,7 @@
 # Oliver Evans
 # Clarkson University REU 2016
 # Created: Wed 01 Jun 2016 10:11:00 AM EDT
-# Last Edited: Thu 02 Jun 2016 11:12:25 AM EDT
+# Last Edited: Thu 02 Jun 2016 03:15:47 PM EDT
 
 from numpy import *
 from matplotlib.pyplot import *
@@ -10,6 +10,8 @@ import matplotlib as mpl
 import seaborn as sns
 import pandas as pd
 from datetime import datetime
+import pickle
+from keyboard import keyboard
 from scipy import io
 import os
 
@@ -18,8 +20,7 @@ def date_parser(date_str,time_str):
     return datetime.strptime("{} {}".format(date_str,time_str),"%m.%d.%y %I:%M:%S%p")
 
 # Convert array of Python datetime object to Matlab datenum format
-# Matlab starts from "0/0/0"
-# Python starts from year 1
+# Matlab starts from the date "0/0/0"
 # 86400 seconds per day
 def datenum(date_list):
     datenum_list = zeros_like(date_list,dtype=float)
@@ -33,8 +34,16 @@ def datenum(date_list):
 # Directory where data files are located
 data_dir = "../data/Data HOBO/txt/"
 
+# Depths at which light was measured
+depths_list = range(1,9)
+depth_labels = ["{}m".format(depth) for depth in depths_list]
+n_depths = len(depths_list)
+
 # List of two dictionaries of data arrays: One for each string
 str_data = [{},{}];
+
+# Dictionary in which to save variables for Matlab
+matlab_dict = {}
 
 # Directory names for each string
 str_names = ["Streng_1","Streng_2"]
@@ -53,13 +62,10 @@ for file_list in str_files:
     file_list.sort()
 
 # Set up plot canvas
-ion()
 fig = figure(1,figsize=[16,6])
 logfig = figure(2,figsize=[16,6])
 # Arrange plots on a grid of the following size
 plot_grid = [1,n_strings]
-# Interactively display plots
-
 
 #Set font
 font = {'family':'serif','size':10}
@@ -126,18 +132,33 @@ for str_num,file_list in enumerate(str_files):
         ylabel('Intensity (log)')
 
         # Convert Python datetime to Matlab datenum
-        df['date_time'] = datenum(df['date_time'])
+        matlab_df = df.copy()
+        matlab_df['date_time'] = datenum(df['date_time'])
 
-        # Save DataFrame to dictionary as NumPy array
-        key_name = str_names[str_num] + "_" + depth
-        str_data[str_num][key_name] = array(df)
+        # Save DataFrame to dictionary as NumPy array for Matlab and Python
+        matlab_name = str_names[str_num] + "_" + depth
+        matlab_dict[matlab_name] = array(matlab_df)
+        str_data[str_num][depth] = array(df)
 
-# Combine dictionaries from both strings
-overall_dict = {**str_data[0],**str_data[1]}
+# Number of timesteps for each array
+n_steps_list = [str_data[0]['1m'].shape[0],str_data[1]['1m'].shape[0]]
 
-# Save .mat files
-mat_filename = '../data/Data HOBO/mat/light_attenuation_data.mat'
-io.savemat(mat_filename,overall_dict)
+# For each string, convert dictionary of 2d arrays to a 3d array
+str_array = []
+for str_num,n_steps in enumerate(n_steps_list):
+    arr = zeros([n_steps,n_depths,3],dtype=object)
+    for depth_num,depth in enumerate(depths_list):
+        arr[:,depth_num,:] = str_data[str_num][depth_labels[depth_num]]
+    str_array.append(arr)
+
+# Save .mat file (Matlab)
+mat_filename = '../data/Data HOBO/light_attenuation_data.mat'
+io.savemat(mat_filename,matlab_dict)
+
+# Save .pickle file (Python)
+pickle_filename = '../data/Data HOBO/light_attenuation_data.pickle'
+with open(pickle_filename,'wb') as pickle_file:
+    pickle.dump(str_array,pickle_file)
 
 # Final plot formatting
 tight_layout()
@@ -151,4 +172,5 @@ figure(2)
 savefig('../plots/light_data_log.eps')
 savefig('../plots/light_data_log.png')
 
+print("light_data.py done!")
 
