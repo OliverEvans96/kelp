@@ -1,0 +1,16 @@
+Control_Stats:
+k:
+mean=0.14
+std=0.18
+
+$I_0$:
+mean=2.8e+04
+std=2.5e+04
+
+residuals:
+mean=4.5e+09
+std=7.7e+09
+
+Intensity:
+mean=7e+03
+std=1.5e+04

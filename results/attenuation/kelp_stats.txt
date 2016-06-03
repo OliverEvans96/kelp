@@ -1,0 +1,17 @@
+Kelp_Stats:
+k:
+mean=0.11
+std=0.23
+
+$I_0$:
+mean=1.3e+04
+std=2.2e+04
+
+residuals:
+mean=4.9e+09
+std=1e+10
+
+Intensity:
+mean=5e+03
+std=1.5e+04
+

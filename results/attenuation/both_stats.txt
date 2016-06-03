@@ -1,0 +1,17 @@
+Control_Stats:  Kelp_Stats:
+k:              k:
+mean=0.14       mean=0.11
+std=0.18        std=0.23
+
+$I_0$:          $I_0$:
+mean=2.8e+04    mean=1.3e+04
+std=2.5e+04     std=2.2e+04
+
+residuals:      residuals:
+mean=4.5e+09    mean=4.9e+09
+std=7.7e+09     std=1e+10
+
+Intensity:      Intensity:
+mean=7e+03      mean=5e+03
+std=1.5e+04     std=1.5e+04
+
