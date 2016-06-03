@@ -2,7 +2,7 @@
 # Oliver Evans
 # Clarkson University REU 2016
 # Created: Thu 02 Jun 2016 11:54:11 AM EDT
-# Last Edited: Fri 03 Jun 2016 01:43:30 PM EDT
+# Last Edited: Fri 03 Jun 2016 12:18:22 PM EDT
 
 # Use data from light_data.py to calculate attenuation in water with and without kelp
 # For each time step, use least squares to perform exponential regression to model
@@ -26,51 +26,38 @@ from keyboard import keyboard
 # y = ax + b
 # return [a,b]
 def least_squares_fit(x,y):
-    # Number of points
     N = len(x)
-
-    # Remove non-numerical values
-    good_vals = logical_and(isfinite(x),isfinite(y))
-    x = x[good_vals]
-    y = y[good_vals]
-
-    # Set up and solve system
     A = array([[sum(x**2),sum(x)],[sum(x),N]])
     b = array([sum(x*y),sum(y)])
-
     # Note that linalg.lstsq is matrix equation solver from NumPy 
     return linalg.lstsq(A,b)[0]
 
 # Load data from light_data.py
-with open('../data/Data HOBO/light_attenuation_data_datasets.pickle','rb') as pickle_file:
-    dataset_array = pickle.load(pickle_file)
+with open('../data/Data HOBO/light_attenuation_data_strings.pickle','rb') as pickle_file:
+    str_array = pickle.load(pickle_file)
 
 # Depth keys
 depth_range = arange(1,9)
 depth_list = ['{}m'.format(zz) for zz in depth_range]
 n_depths = len(depth_range)
 
-# Number of datasets
-n_datasets = len(dataset_array)
-
-# Names of datasets
-dataset_labels = ['Control','1 Kelp','2 Kelp']
-dataset_filenames = ['control','1_kelp','2_kelp']
+# Names of strings
+str_names = ['Streng_1','Streng_2']
+# Streng_1 has no kelp
+# Streng_2 has kelp
+str_labels = ['Control','Kelp']
 
 # Only use data collected before 18:00
-for arr in dataset_array:
+for arr in str_array:
     end_time = datetime(2016,5,18,18,0)
     arr = arr[(arr[:,0,0]<end_time),:,:]
 
-# Number of timesteps for each dataset
-n_steps_list = [dataset.shape[0] for dataset in dataset_array]
-
-# Number of parameters
-n_params = 3
+# Number of timesteps
+n_steps = str_array[0].shape[0]
 
 # Initialize array to save calculated parameter values for each string
-parameters = [zeros([n_steps,3]) for n_steps in n_steps_list]
-good_parameters = [zeros([n_steps,3]) for n_steps in n_steps_list]
+parameters = [zeros([n_steps,3]),zeros([n_steps,3])]
+good_parameters = [zeros([n_steps,3]),zeros([n_steps,3])]
 
 # Quantities whose distributions to plot
 n_quantities = 4
@@ -78,30 +65,22 @@ n_quantities = 4
 # Axes limits for each quantity
 dist_limits = [[-.75,.75],[0,150000],[0,1e10],[0,50000]]
 
-# Axes limits for calculated parameters for each dataset
-param_limits = [[[0.1,0.4],[0,50000]],
-                [[0.0,0.7],[0,50000]],
-                [[-1.,1.0],[0,10]]]
-
-# Number of bins to use in joint plot marginals
-n_param_bins = 10
-
-# Bins to use for each parameter for each dataset
-param_bins = [[arange(*param_limits[ii][jj],n_param_bins) 
-    for jj in range(2)] for ii in range(n_datasets)]
-
 # Color maps to use
-colors = ['b','g','r']
-cmaps=["Blues","Greens","Reds"]
+colors = ['b','g']
+cmaps=["Blues","Greens"]
 
 #Set font
 font = {'family':'serif','size':10}
 mpl.rc('font',**font)
 
 # Loop through strings
-for dataset_num,data in enumerate(dataset_array):
+for str_num,data in enumerate(str_array):
     # Loop through timesteps
-    for step_num in range(n_steps_list[dataset_num]):
+    for step_num in range(n_steps):
+        
+        # Initialize matrix system of equations
+        A = zeros([2,2])
+        b = zeros(2)
 
         # Light intensity
         II = data[step_num,:,1].astype(float)
@@ -117,16 +96,16 @@ for dataset_num,data in enumerate(dataset_array):
         res = sum((II + kk*zz - log(I0))**2)
 
         # Save values
-        parameters[dataset_num][step_num,:] = [kk,I0,res]
+        parameters[str_num][step_num,:] = [kk,I0,res]
     
     # Remove timesteps where fit fails (>=1 parameter == inf)
-    inf_rows = where(logical_or(isinf(parameters[dataset_num]),isnan(parameters[dataset_num])))[0]
-    good_parameters[dataset_num] = delete(parameters[dataset_num],inf_rows,axis=0)
+    inf_rows = where(logical_or(isinf(parameters[str_num]),isnan(parameters[str_num])))[0]
+    good_parameters[str_num] = delete(parameters[str_num],inf_rows,axis=0)
 
     # Extract calculated variables
-    kk = good_parameters[dataset_num][:,0]
-    I0 = good_parameters[dataset_num][:,1]
-    res = good_parameters[dataset_num][:,2]
+    kk = good_parameters[str_num][:,0]
+    I0 = good_parameters[str_num][:,1]
+    res = good_parameters[str_num][:,2]
 
     # Intensity for all timesteps and all depths
     II_all = data[:,:,1].flatten()
@@ -136,7 +115,7 @@ for dataset_num,data in enumerate(dataset_array):
     fig_titles=['k','$I_0$','residuals','Intensity']
 
     # Report statistical data
-    print("{} Stats:".format(dataset_labels[dataset_num]))
+    print("{} Stats:".format(str_labels[str_num]))
     for ii,qq in enumerate(plot_quantities):
         print("{}:".format(fig_titles[ii]))
         print("mean={:.2g}".format(mean(qq)))
@@ -145,7 +124,7 @@ for dataset_num,data in enumerate(dataset_array):
 
     # Plot k & I0 results
     figure(1,figsize=[8,6])
-    plot(kk,I0,'o',label=dataset_labels[dataset_num],alpha=0.6)
+    plot(kk,I0,'o',label=str_labels[str_num],alpha=0.6)
 
     # Time plot of parameters
     figure(2,figsize=[16,16])
@@ -154,8 +133,8 @@ for dataset_num,data in enumerate(dataset_array):
     for fig_num in range(n_quantities-1):
         # Time plots
         subplot(3,2,fig_num*2+1)
-        plot(time,parameters[dataset_num][:,fig_num],color=colors[dataset_num],alpha=0.8,
-            label=dataset_labels[dataset_num])
+        plot(time,parameters[str_num][:,0],color=colors[str_num],alpha=0.8,
+            label=str_labels[str_num])
         title('Time plot: {}'.format(fig_titles[fig_num]))
         xlabel('time')
         ylabel(fig_titles[fig_num])
@@ -164,15 +143,14 @@ for dataset_num,data in enumerate(dataset_array):
         # Distribution plots
         subplot(3,2,fig_num*2+2)
         qq = plot_quantities[fig_num]
-        #partial_data = qq[logical_and(dist_limits[fig_num][0]<qq,qq<dist_limits[fig_num][1])]
-        partial_data = qq
+        partial_data = qq[logical_and(dist_limits[fig_num][0]<qq,qq<dist_limits[fig_num][1])]
         sns.distplot(partial_data,
-            label=dataset_labels[dataset_num],
+            label=str_labels[str_num],
             kde_kws={"shade": False})
         title('Dist plot: {}'.format(fig_titles[fig_num]))
         xlabel('value')
         ylabel('occurrence')
-        #gca().set_xlim(*dist_limits[fig_num])
+        gca().set_xlim(*dist_limits[fig_num])
         legend()
 
     tight_layout()
@@ -181,26 +159,16 @@ for dataset_num,data in enumerate(dataset_array):
 
     # Jointplots
     jplot = sns.JointGrid(kk,I0,space=0)
-    jplot = jplot.plot_joint(sns.kdeplot,cmap=cmaps[dataset_num],fill=True)
-    gca().set_xlim(param_limits[dataset_num][0])
-    gca().set_ylim(param_limits[dataset_num][1])
+    jplot = jplot.plot_joint(sns.kdeplot,cmap=cmaps[str_num],fill=True)
     xlabel('k')
     ylabel('$I_0$')
-    title(dataset_labels[dataset_num])
-    #jplot = jplot.plot_marginals(sns.kdeplot,color=colors[dataset_num])
-    sns.distplot(kk,color=colors[dataset_num],
-            ax=jplot.ax_marg_y,
-            bins=param_bins[dataset_num][0],
-            vertical=True)
-    sns.distplot(I0,color=colors[dataset_num],
-            ax=jplot.ax_marg_x,
-            bins=param_bins[dataset_num][1])
-    #jplot.ax_marg_x.set_xlim(*param_limits[dataset_num][0])
-    #jplot.ax_marg_y.set_ylim(*param_limits[dataset_num][1])
-
+    title(str_labels[str_num])
+    jplot = jplot.plot_marginals(sns.kdeplot,color=colors[str_num])
+    gca().set_xlim(-0.75,0.75)
+    gca().set_ylim(0,50000)
     tight_layout()
-    savefig('../plots/attenuation/joint_{}.png'.format(dataset_filenames[dataset_num]))
-    savefig('../plots/attenuation/joint_{}.eps'.format(dataset_filenames[dataset_num]))
+    savefig('../plots/attenuation/joint_{}.png'.format(str_labels[str_num]))
+    savefig('../plots/attenuation/joint_{}.eps'.format(str_labels[str_num]))
 
 # Title, etc. for k-I0 plot
 figure(1,figsize=[8,6])
