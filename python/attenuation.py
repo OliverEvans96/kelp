@@ -2,7 +2,7 @@
 # Oliver Evans
 # Clarkson University REU 2016
 # Created: Thu 02 Jun 2016 11:54:11 AM EDT
-# Last Edited: Thu 02 Jun 2016 08:55:33 PM EDT
+# Last Edited: Fri 03 Jun 2016 12:02:05 PM EDT
 
 # Use data from light_data.py to calculate attenuation in water with and without kelp
 # For each time step, use least squares to perform exponential regression to model
@@ -33,7 +33,7 @@ def least_squares_fit(x,y):
     return linalg.lstsq(A,b)[0]
 
 # Load data from light_data.py
-with open('../data/Data HOBO/light_attenuation_data.pickle','rb') as pickle_file:
+with open('../data/Data HOBO/light_attenuation_data_strings.pickle','rb') as pickle_file:
     str_array = pickle.load(pickle_file)
 
 # Depth keys
@@ -83,7 +83,7 @@ for str_num,data in enumerate(str_array):
         b = zeros(2)
 
         # Light intensity
-        II = data[step_num,:,2].astype(float)
+        II = data[step_num,:,1].astype(float)
         # Depth (starts at 1m, increments by 1m)
         zz = depth_range + 1
 
@@ -108,7 +108,7 @@ for str_num,data in enumerate(str_array):
     res = good_parameters[str_num][:,2]
 
     # Intensity for all timesteps and all depths
-    II_all = data[:,:,2].flatten()
+    II_all = data[:,:,1].flatten()
 
     # Which quantities to plot
     plot_quantities = [kk,I0,res,II_all]
@@ -121,9 +121,6 @@ for str_num,data in enumerate(str_array):
         print("mean={:.2g}".format(mean(qq)))
         print("std={:.2g}".format(std(qq)))
         print()
-
-    # Normalized timestep indices
-    ind = data[:,0,1]/data[-1,0,1]
 
     # Plot k & I0 results
     figure(1,figsize=[8,6])
@@ -186,3 +183,4 @@ savefig('../plots/attenuation/k_I0.eps')
 # Show plots
 show(block=False)
 
+print("attenuation.py done!")
