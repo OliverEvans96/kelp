@@ -2,7 +2,7 @@
 # Oliver Evans
 # Clarkson University REU 2016
 # Created: Thu 02 Jun 2016 11:54:11 AM EDT
-# Last Edited: Fri 03 Jun 2016 01:43:30 PM EDT
+# Last Edited: Sun 12 Jun 2016 09:42:48 PM CEST
 
 # Use data from light_data.py to calculate attenuation in water with and without kelp
 # For each time step, use least squares to perform exponential regression to model
@@ -83,12 +83,12 @@ param_limits = [[[0.1,0.4],[0,50000]],
                 [[0.0,0.7],[0,50000]],
                 [[-1.,1.0],[0,10]]]
 
-# Number of bins to use in joint plot marginals
-n_param_bins = 10
-
-# Bins to use for each parameter for each dataset
-param_bins = [[arange(*param_limits[ii][jj],n_param_bins) 
-    for jj in range(2)] for ii in range(n_datasets)]
+## Number of bins to use in joint plot marginals
+#n_param_bins = 10
+#
+## Bins to use for each parameter for each dataset
+#param_bins = [[arange(*param_limits[ii][jj],n_param_bins) 
+#    for jj in range(2)] for ii in range(n_datasets)]
 
 # Color maps to use
 colors = ['b','g','r']
@@ -133,7 +133,8 @@ for dataset_num,data in enumerate(dataset_array):
 
     # Which quantities to plot
     plot_quantities = [kk,I0,res,II_all]
-    fig_titles=['k','$I_0$','residuals','Intensity']
+    fig_titles=['k','$I_0$','Residuals','Intensity']
+    fig_filenames=['k','I','residuals','intensity']
 
     # Report statistical data
     print("{} Stats:".format(dataset_labels[dataset_num]))
@@ -148,21 +149,22 @@ for dataset_num,data in enumerate(dataset_array):
     plot(kk,I0,'o',label=dataset_labels[dataset_num],alpha=0.6)
 
     # Time plot of parameters
-    figure(2,figsize=[16,16])
     time=data[:,0,0]
     # Plot distributions 
     for fig_num in range(n_quantities-1):
         # Time plots
-        subplot(3,2,fig_num*2+1)
+        figure(fig_num*2+2,figsize=[8,6])
         plot(time,parameters[dataset_num][:,fig_num],color=colors[dataset_num],alpha=0.8,
             label=dataset_labels[dataset_num])
         title('Time plot: {}'.format(fig_titles[fig_num]))
         xlabel('time')
         ylabel(fig_titles[fig_num])
         legend()
+        savefig('../plots/attenuation/time_{}.png'.format(fig_filenames[fig_num]))
+        savefig('../plots/attenuation/time_{}.eps'.format(fig_filenames[fig_num]))
 
         # Distribution plots
-        subplot(3,2,fig_num*2+2)
+        figure(fig_num*2+3,figsize=[8,6])
         qq = plot_quantities[fig_num]
         #partial_data = qq[logical_and(dist_limits[fig_num][0]<qq,qq<dist_limits[fig_num][1])]
         partial_data = qq
@@ -174,29 +176,17 @@ for dataset_num,data in enumerate(dataset_array):
         ylabel('occurrence')
         #gca().set_xlim(*dist_limits[fig_num])
         legend()
-
-    tight_layout()
-    savefig('../plots/attenuation/parameters.png')
-    savefig('../plots/attenuation/parameters.eps')
+        savefig('../plots/attenuation/dist_{}.png'.format(fig_filenames[fig_num]))
+        savefig('../plots/attenuation/dist_{}.eps'.format(fig_filenames[fig_num]))
 
     # Jointplots
-    jplot = sns.JointGrid(kk,I0,space=0)
-    jplot = jplot.plot_joint(sns.kdeplot,cmap=cmaps[dataset_num],fill=True)
-    gca().set_xlim(param_limits[dataset_num][0])
-    gca().set_ylim(param_limits[dataset_num][1])
-    xlabel('k')
-    ylabel('$I_0$')
+    (sns.jointplot(kk,I0,space=0,kind='kde',stat_func=None,
+        color=colors[dataset_num],
+        joint_kws={
+            'title':dataset_labels[dataset_num],
+            'shade':False})
+        .set_axis_labels('k','$I_0$'))
     title(dataset_labels[dataset_num])
-    #jplot = jplot.plot_marginals(sns.kdeplot,color=colors[dataset_num])
-    sns.distplot(kk,color=colors[dataset_num],
-            ax=jplot.ax_marg_y,
-            bins=param_bins[dataset_num][0],
-            vertical=True)
-    sns.distplot(I0,color=colors[dataset_num],
-            ax=jplot.ax_marg_x,
-            bins=param_bins[dataset_num][1])
-    #jplot.ax_marg_x.set_xlim(*param_limits[dataset_num][0])
-    #jplot.ax_marg_y.set_ylim(*param_limits[dataset_num][1])
 
     tight_layout()
     savefig('../plots/attenuation/joint_{}.png'.format(dataset_filenames[dataset_num]))
