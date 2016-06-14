@@ -2,7 +2,7 @@
 # Oliver Evans
 # Clarkson University REU 2016
 # Created: Thu 02 Jun 2016 11:54:11 AM EDT
-# Last Edited: Mon 13 Jun 2016 03:13:33 AM CEST
+# Last Edited: Tue 14 Jun 2016 11:27:10 AM CEST
 
 # Use data from light_data.py to calculate attenuation in water with and without kelp
 # For each time step, use least squares to perform exponential regression to model
@@ -44,6 +44,10 @@ def least_squares_fit(x,y):
 # Load data from light_data.py
 with open('../data/Data HOBO/light_attenuation_data_datasets.pickle','rb') as pickle_file:
     dataset_array = pickle.load(pickle_file)
+
+#Set font
+font = {'family':'serif','size':10}
+mpl.rc('font',**font)
 
 # Depth keys
 depth_range = arange(1,9)
@@ -90,19 +94,14 @@ param_limits = [[[0.1,0.4],[0,50000]],
 #param_bins = [[arange(*param_limits[ii][jj],n_param_bins) 
 #    for jj in range(2)] for ii in range(n_datasets)]
 
-# Color maps to use
-colors = ['b','g','r']
-cmaps=["Blues","Greens","Reds"]
+# Colors to use for datasets
+dataset_colors = ['b','g','r']
 
-#Set font
-font = {'family':'serif','size':10}
-mpl.rc('font',**font)
-
-# Loop through strings
+# Loop through datasets
 for dataset_num,data in enumerate(dataset_array):
+
     # Loop through timesteps
     for step_num in range(n_steps_list[dataset_num]):
-
         # Light intensity
         II = data[step_num,:,1].astype(float)
         # Depth (starts at 1m, increments by 1m)
@@ -154,7 +153,7 @@ for dataset_num,data in enumerate(dataset_array):
     for fig_num in range(n_quantities-1):
         # Time plots
         figure(fig_num*2+2,figsize=[7,3])
-        plot(time,parameters[dataset_num][:,fig_num],color=colors[dataset_num],alpha=0.8,
+        plot(time,parameters[dataset_num][:,fig_num],color=dataset_colors[dataset_num],alpha=0.8,
             label=dataset_labels[dataset_num])
         title('Time plot: {}'.format(fig_titles[fig_num]))
         xlabel('time')
@@ -181,7 +180,7 @@ for dataset_num,data in enumerate(dataset_array):
 
     # Jointplots
     (sns.jointplot(kk,I0,space=0,kind='kde',stat_func=None,
-        color=colors[dataset_num],
+        color=dataset_colors[dataset_num],
         joint_kws={
             'title':dataset_labels[dataset_num],
             'shade':False})
@@ -191,6 +190,10 @@ for dataset_num,data in enumerate(dataset_array):
     tight_layout()
     savefig('../plots/attenuation/joint_{}.png'.format(dataset_filenames[dataset_num]))
     savefig('../plots/attenuation/joint_{}.eps'.format(dataset_filenames[dataset_num]))
+
+# Save calculated parameter data from fitting
+with open('../results/attenuation/fit_parameters.pickle','wb') as out_file:
+    pickle.dump(parameters,out_file)
 
 # Title, etc. for k-I0 plot
 figure(1,figsize=[8,6])
