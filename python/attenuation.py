@@ -2,7 +2,7 @@
 # Oliver Evans
 # Clarkson University REU 2016
 # Created: Thu 02 Jun 2016 11:54:11 AM EDT
-# Last Edited: Sun 12 Jun 2016 09:42:48 PM CEST
+# Last Edited: Mon 13 Jun 2016 03:13:33 AM CEST
 
 # Use data from light_data.py to calculate attenuation in water with and without kelp
 # For each time step, use least squares to perform exponential regression to model
@@ -134,7 +134,7 @@ for dataset_num,data in enumerate(dataset_array):
     # Which quantities to plot
     plot_quantities = [kk,I0,res,II_all]
     fig_titles=['k','$I_0$','Residuals','Intensity']
-    fig_filenames=['k','I','residuals','intensity']
+    fig_filenames=['k','I0','residuals','intensity']
 
     # Report statistical data
     print("{} Stats:".format(dataset_labels[dataset_num]))
@@ -153,7 +153,7 @@ for dataset_num,data in enumerate(dataset_array):
     # Plot distributions 
     for fig_num in range(n_quantities-1):
         # Time plots
-        figure(fig_num*2+2,figsize=[8,6])
+        figure(fig_num*2+2,figsize=[7,3])
         plot(time,parameters[dataset_num][:,fig_num],color=colors[dataset_num],alpha=0.8,
             label=dataset_labels[dataset_num])
         title('Time plot: {}'.format(fig_titles[fig_num]))
@@ -164,17 +164,17 @@ for dataset_num,data in enumerate(dataset_array):
         savefig('../plots/attenuation/time_{}.eps'.format(fig_filenames[fig_num]))
 
         # Distribution plots
-        figure(fig_num*2+3,figsize=[8,6])
+        figure(fig_num*2+3,figsize=[7,3])
         qq = plot_quantities[fig_num]
-        #partial_data = qq[logical_and(dist_limits[fig_num][0]<qq,qq<dist_limits[fig_num][1])]
-        partial_data = qq
+        partial_data = qq[logical_and(dist_limits[fig_num][0]<qq,qq<dist_limits[fig_num][1])]
+        #partial_data = qq
         sns.distplot(partial_data,
             label=dataset_labels[dataset_num],
             kde_kws={"shade": False})
         title('Dist plot: {}'.format(fig_titles[fig_num]))
         xlabel('value')
         ylabel('occurrence')
-        #gca().set_xlim(*dist_limits[fig_num])
+        gca().set_xlim(*dist_limits[fig_num])
         legend()
         savefig('../plots/attenuation/dist_{}.png'.format(fig_filenames[fig_num]))
         savefig('../plots/attenuation/dist_{}.eps'.format(fig_filenames[fig_num]))
