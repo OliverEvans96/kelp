@@ -1,3 +1,6 @@
 # Combine timestamps into one word (e.g. 08:48:10 PM -> 08:48:10PM) for all txt files in directory
 find . -name *.txt -exec sed -i 's# \([AP]M\)#\1#' {} \;
 
+# Create attenuation movie from %04d.png in img directory
+ffmpeg -r 15 -f image2 -s 1920x1080 -i img/%04d.png -vcodec libx264 -crf 1 -b:a 800k -pix_fmt yuv420p attenuation.mp4 -y
+
