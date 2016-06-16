@@ -2,7 +2,7 @@
 # Oliver Evans
 # Clarkson University REU 2016
 # Created: Thu 02 Jun 2016 11:54:11 AM EDT
-# Last Edited: Thu 16 Jun 2016 10:48:45 AM CEST
+# Last Edited: Thu 16 Jun 2016 01:41:32 PM CEST
 
 # Use data from light_data.py to calculate attenuation in water with and without kelp
 # For each time step, use least squares to perform exponential regression to model
@@ -20,6 +20,8 @@ import pandas as pd
 import pickle
 from datetime import datetime
 from keyboard import keyboard
+from sys import argv
+from os import system
 
 # Linear least squares
 # N data points
@@ -41,6 +43,21 @@ def least_squares_fit(x,y):
     # Note that linalg.lstsq is matrix equation solver from NumPy 
     return linalg.lstsq(A,b)[0]
 
+# Name of this run of attenuation.py
+# Useful for trying different parameters 
+# and saving cases separately
+try:
+    run_name = argv[1]
+except IndexError:
+    run_name = 'default'
+
+run_dir = run_name + '/'
+
+# Make sure run_dir exists
+system('mkdir -p ../results/attenuation/{}plots'.format(run_dir))
+
+print("Run name: '{}'".format(run_name))
+
 # Load data from light_data.py
 with open('../data/Data HOBO/light_attenuation_data_datasets.pickle','rb') as pickle_file:
     dataset_array = pickle.load(pickle_file)
@@ -56,6 +73,10 @@ n_depths = len(depth_range)
 
 # Number of datasets
 n_datasets = len(dataset_array)
+
+# Depth values to exclude for each dataset
+# e.g. 0 => exclude 1m, 6 => exclude 7m
+exclude_depths=((),(),())
 
 # Names of datasets
 dataset_labels = ['Control','1 Kelp','2 Kelp']
@@ -105,7 +126,11 @@ for dataset_num,data in enumerate(dataset_array):
         # Light intensity
         II = data[step_num,:,1].astype(float)
         # Depth (starts at 1m, increments by 1m)
-        zz = depth_range + 1
+        zz = depth_range
+
+        # Remove excluded depths
+        II = delete(II,exclude_depths[dataset_num])
+        zz = delete(zz,exclude_depths[dataset_num])
 
         # Solve for exponential fit using least squares
         # I = I_0 * exp(-kz)
@@ -132,13 +157,13 @@ for dataset_num,data in enumerate(dataset_array):
         parameters[dataset_num][step_num,:] = [kk,I0,r_squared]
 
     # Remove timesteps where fit fails (>=1 parameter == inf)
-    non_numeric_rows = where(logical_or(isinf(parameters[dataset_num]),isnan(parameters[dataset_num])))[0]
-    good_parameters[dataset_num] = delete(parameters[dataset_num],non_numeric_rows,axis=0)
+    #non_numeric_rows = where(logical_or(isinf(parameters[dataset_num]),isnan(parameters[dataset_num])))[0]
+    #good_parameters[dataset_num] = delete(parameters[dataset_num],non_numeric_rows,axis=0)
 
     # Extract calculated variables
-    kk = good_parameters[dataset_num][:,0]
-    I0 = good_parameters[dataset_num][:,1]
-    r_squared = good_parameters[dataset_num][:,2]
+    kk = parameters[dataset_num][:,0]
+    I0 = parameters[dataset_num][:,1]
+    r_squared = parameters[dataset_num][:,2]
 
     # Intensity for all timesteps and all depths
     II_all = data[:,:,1].flatten()
@@ -172,8 +197,8 @@ for dataset_num,data in enumerate(dataset_array):
         xlabel('time')
         ylabel(fig_titles[fig_num])
         legend()
-        savefig('../plots/attenuation/time_{}.png'.format(fig_filenames[fig_num]))
-        savefig('../plots/attenuation/time_{}.eps'.format(fig_filenames[fig_num]))
+        savefig('../results/attenuation/{}plots/time_{}.png'.format(run_dir,fig_filenames[fig_num]))
+        savefig('../results/attenuation/{}plots/time_{}.eps'.format(run_dir,fig_filenames[fig_num]))
 
         # Distribution plots
         figure(fig_num*2+3,figsize=[7,3])
@@ -187,8 +212,8 @@ for dataset_num,data in enumerate(dataset_array):
         ylabel('occurrence')
         gca().set_xlim(*dist_limits[fig_num])
         legend()
-        savefig('../plots/attenuation/dist_{}.png'.format(fig_filenames[fig_num]))
-        savefig('../plots/attenuation/dist_{}.eps'.format(fig_filenames[fig_num]))
+        savefig('../results/attenuation/{}plots/dist_{}.png'.format(run_dir,fig_filenames[fig_num]))
+        savefig('../results/attenuation/{}plots/dist_{}.eps'.format(run_dir,fig_filenames[fig_num]))
 
     # Jointplots
     (sns.jointplot(kk,I0,space=0,kind='kde',stat_func=None,
@@ -200,11 +225,11 @@ for dataset_num,data in enumerate(dataset_array):
     title(dataset_labels[dataset_num])
 
     tight_layout()
-    savefig('../plots/attenuation/joint_{}.png'.format(dataset_filenames[dataset_num]))
-    savefig('../plots/attenuation/joint_{}.eps'.format(dataset_filenames[dataset_num]))
+    savefig('../results/attenuation/{}plots/joint_{}.png'.format(run_dir,dataset_filenames[dataset_num]))
+    savefig('../results/attenuation/{}plots/joint_{}.eps'.format(run_dir,dataset_filenames[dataset_num]))
 
 # Save calculated parameter data from fitting
-with open('../results/attenuation/fit_parameters.pickle','wb') as out_file:
+with open('../results/attenuation/{}fit_parameters.pickle'.format(run_dir),'wb') as out_file:
     pickle.dump(parameters,out_file)
 
 # Title, etc. for k-I0 plot
@@ -214,8 +239,8 @@ xlabel("k")
 ylabel("$I_0$")
 legend()
 tight_layout()
-savefig('../plots/attenuation/k_I0.png')
-savefig('../plots/attenuation/k_I0.eps')
+savefig('../results/attenuation/{}plots/k_I0.png'.format(run_dir))
+savefig('../results/attenuation/{}plots/k_I0.eps'.format(run_dir))
 
 # Show plots
 show(block=False)

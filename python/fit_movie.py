@@ -2,7 +2,7 @@
 # Oliver Evans
 # Clarkson University REU 2016
 # Created: Tue 14 Jun 2016 09:42:56 AM CEST
-# Last Edited: Thu 16 Jun 2016 11:07:46 AM CEST
+# Last Edited: Thu 16 Jun 2016 01:37:31 PM CEST
 
 # Create one figure with three subplots on a 1x3 grid, one for each
 # dataset, plotting intensity as a function of depth for a particular
@@ -18,6 +18,8 @@ from datetime import datetime,timedelta
 from keyboard import keyboard
 import pickle
 import time
+from os import system
+from sys import argv
 
 # Convert float to nice scientific notation string for latex parsing
 def sci_not(xx,digits=2):
@@ -25,6 +27,19 @@ def sci_not(xx,digits=2):
     base = fmt_str.format(xx).split('e')[0]
     expnt = str(int(floor(log10(xx))))
     return r'{}\cdot 10^{}'.format(base,expnt)
+
+# Name of this run of fit_movie.py
+# Useful for trying different parameters 
+# and saving cases separately
+try:
+        run_name = argv[1]
+except IndexError:
+        run_name = 'default'
+
+        run_dir = run_name + '/'
+
+# Make sure run_dir exists
+system('mkdir -p ../results/attenuation/{}movies/img'.format(run_dir))
 
 # Colors to use
 dataset_colors = ['b','g','r']
@@ -45,7 +60,7 @@ with open('../data/Data HOBO/light_attenuation_data_datasets.pickle','rb') as da
     dataset_array = pickle.load(data_file)
 
 # Load fit parameters from attenuation.py
-with open('../results/attenuation/fit_parameters.pickle','rb') as parameter_file:
+with open('../results/attenuation/{}fit_parameters.pickle'.format(run_dir),'rb') as parameter_file:
     parameters = pickle.load(parameter_file)
 
 # Number of datasets
@@ -60,7 +75,7 @@ depth_labels = ['{}m'.format(x) for x in range(1,9)]
 n_depths = len(depth_labels)
 
 # Continuous plotting variable for depth
-zz = linspace(0,8,801)
+zz = linspace(0,9,801)
 
 # Discrete depth variable
 zd = arange(1,n_depths+1)
@@ -316,4 +331,4 @@ for step_num,step_dt in enumerate(dt_array):
     # Save images
     draw()
 
-    savefig('../results/attenuation/movies/img/{:04d}.png'.format(step_num))
+    savefig('../results/attenuation/{}movies/img/{:04d}.png'.format(run_dir,step_num))
