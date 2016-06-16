@@ -2,14 +2,14 @@
 # Oliver Evans
 # Clarkson University REU 2016
 # Created: Thu 02 Jun 2016 11:54:11 AM EDT
-# Last Edited: Tue 14 Jun 2016 11:27:10 AM CEST
+# Last Edited: Thu 16 Jun 2016 09:33:17 AM CEST
 
 # Use data from light_data.py to calculate attenuation in water with and without kelp
 # For each time step, use least squares to perform exponential regression to model
 # intensity as a function of depth. The two parameters from the fit are k (kk),
 # the exponential decay factor and I0, surface intensity. For each time step, plot
 # a point in k-I0 space to show the results of the fit. Color the point with the 
-# timestep. Also, plot the distributions of k and I0. Also, plot the residuals 
+# timestep. Also, plot the distributions of k and I0. Also, plot the r_squareds 
 # as a function of time
 
 from numpy import *
@@ -112,11 +112,22 @@ for dataset_num,data in enumerate(dataset_array):
         kk = -X[0]
         I0 = exp(X[1])
 
-        # Calculate residual (sum of squared distances between data & model)
-        res = sum((II + kk*zz - log(I0))**2)
+        # Model values
+        yy = log(I0) - kk*zz
+        
+        # Sum of squares error
+        SSE = sum((II - yy)**2)
+        # Sum of squares total
+        SST = sum((II - mean(II))**2)
+
+        # Coefficient of determination
+        # "Proportion of observed y variation that can be 
+        # explained by the simple linear regression model"
+        # - Devore: Prob & Stats for Engineering..., p. 485
+        r_squared = 1 - SSE/SST
 
         # Save values
-        parameters[dataset_num][step_num,:] = [kk,I0,res]
+        parameters[dataset_num][step_num,:] = [kk,I0,r_squared]
     
     # Remove timesteps where fit fails (>=1 parameter == inf)
     inf_rows = where(logical_or(isinf(parameters[dataset_num]),isnan(parameters[dataset_num])))[0]
@@ -125,15 +136,15 @@ for dataset_num,data in enumerate(dataset_array):
     # Extract calculated variables
     kk = good_parameters[dataset_num][:,0]
     I0 = good_parameters[dataset_num][:,1]
-    res = good_parameters[dataset_num][:,2]
+    r_squared = good_parameters[dataset_num][:,2]
 
     # Intensity for all timesteps and all depths
     II_all = data[:,:,1].flatten()
 
     # Which quantities to plot
-    plot_quantities = [kk,I0,res,II_all]
-    fig_titles=['k','$I_0$','Residuals','Intensity']
-    fig_filenames=['k','I0','residuals','intensity']
+    plot_quantities = [kk,I0,r_squared,II_all]
+    fig_titles=['k','$I_0$','$R^2$','Intensity']
+    fig_filenames=['k','I0','r_squared','intensity']
 
     # Report statistical data
     print("{} Stats:".format(dataset_labels[dataset_num]))
