@@ -2,7 +2,7 @@
 # Oliver Evans
 # Clarkson University REU 2016
 # Created: Thu 02 Jun 2016 11:54:11 AM EDT
-# Last Edited: Thu 16 Jun 2016 01:41:32 PM CEST
+# Last Edited: Thu 16 Jun 2016 02:34:53 PM CEST
 
 # Use data from light_data.py to calculate attenuation in water with and without kelp
 # For each time step, use least squares to perform exponential regression to model
@@ -76,7 +76,7 @@ n_datasets = len(dataset_array)
 
 # Depth values to exclude for each dataset
 # e.g. 0 => exclude 1m, 6 => exclude 7m
-exclude_depths=((),(),())
+exclude_depths=[[],[],[6]]
 
 # Names of datasets
 dataset_labels = ['Control','1 Kelp','2 Kelp']
@@ -101,7 +101,7 @@ good_parameters = [zeros([n_steps,3]) for n_steps in n_steps_list]
 n_quantities = 4
 
 # Axes limits for each quantity
-dist_limits = [[-.75,.75],[0,150000],[0,1],[0,50000]]
+dist_limits = [[0,1.0],[0,150000],[0,1],[0,50000]]
 
 # Axes limits for calculated parameters for each dataset
 param_limits = [[[0.1,0.4],[0,50000]],
@@ -229,8 +229,13 @@ for dataset_num,data in enumerate(dataset_array):
     savefig('../results/attenuation/{}plots/joint_{}.eps'.format(run_dir,dataset_filenames[dataset_num]))
 
 # Save calculated parameter data from fitting
-with open('../results/attenuation/{}fit_parameters.pickle'.format(run_dir),'wb') as out_file:
-    pickle.dump(parameters,out_file)
+with open('../results/attenuation/{}fit_parameters.pickle'.format(run_dir),'wb') as param_file:
+    pickle.dump(parameters,param_file)
+
+# Save other information about this run
+run_info = {'exclude_depths':exclude_depths}
+with open('../results/attenuation/{}run_info.pickle'.format(run_dir),'wb') as info_file:
+    pickle.dump(run_info,info_file)
 
 # Title, etc. for k-I0 plot
 figure(1,figsize=[8,6])

@@ -2,7 +2,7 @@
 # Oliver Evans
 # Clarkson University REU 2016
 # Created: Tue 14 Jun 2016 09:42:56 AM CEST
-# Last Edited: Thu 16 Jun 2016 01:37:31 PM CEST
+# Last Edited: Thu 16 Jun 2016 02:26:42 PM CEST
 
 # Create one figure with three subplots on a 1x3 grid, one for each
 # dataset, plotting intensity as a function of depth for a particular
@@ -32,11 +32,11 @@ def sci_not(xx,digits=2):
 # Useful for trying different parameters 
 # and saving cases separately
 try:
-        run_name = argv[1]
+    run_name = argv[1]
 except IndexError:
-        run_name = 'default'
+    run_name = 'default'
 
-        run_dir = run_name + '/'
+run_dir = run_name + '/'
 
 # Make sure run_dir exists
 system('mkdir -p ../results/attenuation/{}movies/img'.format(run_dir))
@@ -60,8 +60,12 @@ with open('../data/Data HOBO/light_attenuation_data_datasets.pickle','rb') as da
     dataset_array = pickle.load(data_file)
 
 # Load fit parameters from attenuation.py
-with open('../results/attenuation/{}fit_parameters.pickle'.format(run_dir),'rb') as parameter_file:
-    parameters = pickle.load(parameter_file)
+with open('../results/attenuation/{}fit_parameters.pickle'.format(run_dir),'rb') as param_file:
+    parameters = pickle.load(param_file)
+
+# Load fit parameters from attenuation.py
+with open('../results/attenuation/{}run_info.pickle'.format(run_dir),'rb') as info_file:
+    run_info = pickle.load(info_file)
 
 # Number of datasets
 n_datasets = len(dataset_array)
@@ -74,11 +78,20 @@ dataset_filenames = ['control','1_kelp','2_kelp']
 depth_labels = ['{}m'.format(x) for x in range(1,9)]
 n_depths = len(depth_labels)
 
+# Excluded depths
+exclude_depths = run_info['exclude_depths']
+
 # Continuous plotting variable for depth
 zz = linspace(0,9,801)
 
 # Discrete depth variable
 zd = arange(1,n_depths+1)
+
+# Same, but with excluded depths for some datasets
+zd_ex = []
+
+# Which depths to use for each dataset
+depths_to_use = array([[True for depth in range(n_depths)] for ii in range(n_datasets)])
 
 # Generate step numbers relative to first measurement taken
 offsets = []
@@ -169,12 +182,20 @@ for dataset_num,dataset in enumerate(dataset_array):
         fontsize='12',
         ha='left',va='bottom'))
 
+    # Exclude certain depths
+    zd_ex.append(delete(zd,exclude_depths[dataset_num]))
+
+    # Which depths to use for this dataset
+    depths_to_use[dataset_num,exclude_depths[dataset_num]] = False
+
     # Create plots
-    data_lines.append(semilogx(zeros_like(zd),-zd,'o',
+    data_lines.append(semilogx(
+        zeros_like(zd_ex[dataset_num]),-zd_ex[dataset_num],'o',
         label='data',color=dataset_colors[dataset_num])[0])
     fit_lines.append(semilogx(zeros_like(zz),-zz,'--',
         label='model',color=dataset_colors[dataset_num])[0])
     
+    # Create legend
     legend(bbox_to_anchor=(1,1),loc='lower right',borderpad=0)
 
     ## Overview plots ##
@@ -243,6 +264,19 @@ last_flag = [False,False,False]
 # Loop through timesteps (of control dataset)
 for step_num,step_dt in enumerate(dt_array):
 
+    #step_num+=700
+
+    # Don't keep running after all datasets have ended
+    if(step_num>=total_n_steps):
+        break
+
+    # Print step number
+    print("Timestep {:04d}".format(step_num))
+    #print("active_flag: {}".format(active_flag))
+    #print("first_flag: {}".format(first_flag))
+    #print("last_flag: {}".format(last_flag))
+    #print()
+
     # Update figure title
     fig_title.set_text('Light Intensity Data - '
         + str(step_dt).split()[1])
@@ -292,7 +326,7 @@ for step_num,step_dt in enumerate(dt_array):
             r_squared = parameters[dataset_num][rsn,2]
 
             # Update data (I(z))
-            data_lines[dataset_num].set_xdata(dataset[rsn,:,1])
+            data_lines[dataset_num].set_xdata(dataset[rsn,depths_to_use[dataset_num],1])
 
             # Update exponential model
             fit_lines[dataset_num].set_xdata(I0*exp(-kk*zz))
@@ -321,14 +355,8 @@ for step_num,step_dt in enumerate(dt_array):
                     time_markers[dataset_num][depth_num].set_visible(False)
                 param_text[dataset_num].set_visible(False)
 
-    # Print step number
-    print("Timestep {:04d}".format(step_num))
-    #print("active_flag: {}".format(active_flag))
-    #print("first_flag: {}".format(first_flag))
-    #print("last_flag: {}".format(last_flag))
-    #print()
-
     # Save images
     draw()
 
     savefig('../results/attenuation/{}movies/img/{:04d}.png'.format(run_dir,step_num))
+
