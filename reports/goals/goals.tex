@@ -15,6 +15,12 @@
 	top=\mgin
 }
 
+% Set path to import figures from
+\graphicspath{ {../../plots/}{../../plots/attenuation/} }
+
+% Place converted graphics in current directory
+\usepackage[outdir=./]{epstopdf}
+
 % Display style for bmatrix
 \AtBeginEnvironment{bmatrix}{\everymath{\displaystyle}} % from etoolbox
 
@@ -106,7 +112,7 @@ where $z_n$ are the depths at which light is collected (i.e. 1m - 8m), $I_n$ are
 
 \subsection{Statistical Analysis}
 \label{stats}
-For each dataset, the previously described regression can be performed for each time step. This gives as many values of the fit parameters for the dataset as there are time steps. The mean ($\mu$) and standard deviation ($\sigma$) are given for both parameters for each dataset. Statistical description is also given of the residuals and of the raw intensity measurements (at all depths). \\
+For each dataset, the previously described regression can be performed for each time step. This gives as many values of the fit parameters for the dataset as there are time steps. The mean ($\mu$) and standard deviation ($\sigma$) are given for both parameters for each dataset. Statistical description is also given of the $R^2$ values and of the raw intensity measurements (at all depths). \\
 
 \begin{figure}[H]
 	\centering
@@ -157,39 +163,39 @@ Light intensity is plotted over time for each of the 3 datasets. Each sensor is 
 
 \begin{figure}[H]
 	\centering
-	\includegraphics[width=\textwidth]{plots/light_data.eps}
+	\includegraphics[width=\textwidth]{light_data.eps}
 	\caption{Raw data: regular scale}
 \end{figure}
 
 \begin{figure}[H]
 	\centering
-	\includegraphics[width=\textwidth]{plots/light_data_log.eps}
+	\includegraphics[width=\textwidth]{light_data_log.eps}
 	\caption{Raw data: log scale}
 \end{figure}
 
 \pagebreak
 \subsubsection{Parameters over time}
-The fitted parameters are plotted over time. Residuals are also plotted.
+The fitted parameters are plotted over time. $R^2$ values are also plotted.
 
 \begin{figure}[H]
 	\centering
-	\includegraphics[width=\plotwidth]{plots/time_k.eps}
+	\includegraphics[width=\plotwidth]{time_k.eps}
 	\caption{$k$ over time}
 	\label{time_k}
 \end{figure}
 
 \begin{figure}[H]
 	\centering
-	\includegraphics[width=\plotwidth]{plots/time_I0.eps}
+	\includegraphics[width=\plotwidth]{time_I0.eps}
 	\caption{$I_0$ over time}
 	\label{time_I0}
 \end{figure}
 
 \begin{figure}[H]
 	\centering
-	\includegraphics[width=\plotwidth]{plots/time_residuals.eps}
-	\caption{Residuals over time}
-	\label{time_residuals}
+	\includegraphics[width=\plotwidth]{time_r_squared.eps}
+	\caption{$R^2$ over time}
+	\label{time_r_squared}
 \end{figure}
 
 \subsubsection{Attenuation Coefficient Distribution}
@@ -197,7 +203,7 @@ The distributions of $k$ is shown using both bar plots and kernel density estima
 
 \begin{figure}[H]
 	\centering
-	\includegraphics[width=\plotwidth]{plots/dist_k.eps}
+	\includegraphics[width=\plotwidth]{dist_k.eps}
 	\caption{Distribution of fitted values for attenuation coefficient}
 \end{figure}
 
@@ -207,27 +213,27 @@ The distributions of $k$ and $I_0$ are plotted together. In the first following 
 
 \begin{figure}[H]
 	\centering
-	\includegraphics[width=\textwidth]{plots/k_I0.eps}
+	\includegraphics[width=\textwidth]{k_I0.eps}
 	\caption{Joint distribution of $k$ and $I_0$ for all datasets}
 \end{figure}
 
 \begin{figure}[H]
 	\centering
-	\includegraphics[width=\textwidth]{plots/joint_control.eps}
+	\includegraphics[width=\textwidth]{joint_control.eps}
 	\caption{Joint distribution of $k$ and $I_0$ for \textbf{Control}}
 	\label{joint_control}
 \end{figure}
 
 \begin{figure}[H]
 	\centering
-	\includegraphics[width=\textwidth]{plots/joint_1_kelp.eps}
+	\includegraphics[width=\textwidth]{joint_1_kelp.eps}
 	\caption{Joint distribution of $k$ and $I_0$ for \textbf{1 Kelp}}
 	\label{joint_1_kelp}
 \end{figure}
 
 \begin{figure}[H]
 	\centering
-	\includegraphics[width=\textwidth]{plots/joint_2_kelp.eps}
+	\includegraphics[width=\textwidth]{joint_2_kelp.eps}
 	\caption{Joint distribution of $k$ and $I_0$ for \textbf{2 Kelp}}
 	\label{joint_2_kelp}
 \end{figure}

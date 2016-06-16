@@ -2,7 +2,7 @@
 # Oliver Evans
 # Clarkson University REU 2016
 # Created: Tue 14 Jun 2016 09:42:56 AM CEST
-# Last Edited: Wed 15 Jun 2016 03:56:46 PM CEST
+# Last Edited: Thu 16 Jun 2016 11:07:46 AM CEST
 
 # Create one figure with three subplots on a 1x3 grid, one for each
 # dataset, plotting intensity as a function of depth for a particular
@@ -109,7 +109,7 @@ fig_title = figtext(0.5,0.95,'',
     fontsize='16')
 
 # Axis limits for intensity plots
-log_limits = (1e1,1e6)
+log_limits = (1e0,1e6)
 
 # Arrays for data & fit Line2D objects
 data_lines = []
@@ -121,7 +121,9 @@ time_markers = []
 # Parameter text
 param_text = []
 
+# Loop through datasets
 for dataset_num,dataset in enumerate(dataset_array):
+
     ## One timestep ##
     subplot(2,3,dataset_num+1)
 
@@ -130,7 +132,7 @@ for dataset_num,dataset in enumerate(dataset_array):
     last_dataset_ts = dataset[-1,0,0]
 
     # Axis Title
-    title(dataset_labels[dataset_num],fontweight='bold')
+    title(dataset_labels[dataset_num],fontweight='bold',y=1.1)
 
     # X-axis label
     xlabel('Light Intensity (Lux)')
@@ -219,10 +221,12 @@ first_flag = [False,False,False]
 # Whether this is the last timestep a dataset is active
 last_flag = [False,False,False]
 
+###############
+## Plot Loop ##
+###############
+
 # Loop through timesteps (of control dataset)
 for step_num,step_dt in enumerate(dt_array):
-
-    step_num += 1256
 
     # Update figure title
     fig_title.set_text('Light Intensity Data - '
@@ -269,6 +273,9 @@ for step_num,step_dt in enumerate(dt_array):
             kk = parameters[dataset_num][rsn,0]
             I0 = parameters[dataset_num][rsn,1]
 
+            # Extract coefficient of determination
+            r_squared = parameters[dataset_num][rsn,2]
+
             # Update data (I(z))
             data_lines[dataset_num].set_xdata(dataset[rsn,:,1])
 
@@ -285,8 +292,9 @@ for step_num,step_dt in enumerate(dt_array):
                 time_markers[dataset_num][depth_num].set_ydata(dataset[rsn,depth_num,1])
 
             # Display parameters
-            param_text[dataset_num].set_text(('$k={:.2f}$'+'\n'+r'$I_0={}$')
-                .format(kk,sci_not(I0)))
+            param_text[dataset_num].set_text(('$k={:.2f}$'
+                + '\n' + r'$I_0={}$   $R^2={:.2f}$')
+                .format(kk,sci_not(I0),r_squared))
 
         else:
             # Deactivate
@@ -300,12 +308,12 @@ for step_num,step_dt in enumerate(dt_array):
 
     # Print step number
     print("Timestep {:04d}".format(step_num))
-    print("active_flag: {}".format(active_flag))
-    print("first_flag: {}".format(first_flag))
-    print("last_flag: {}".format(last_flag))
-    print()
+    #print("active_flag: {}".format(active_flag))
+    #print("first_flag: {}".format(first_flag))
+    #print("last_flag: {}".format(last_flag))
+    #print()
 
     # Save images
     draw()
-    savefig('../results/attenuation/movies/img/{:04d}.png'.format(step_num))
 
+    savefig('../results/attenuation/movies/img/{:04d}.png'.format(step_num))

@@ -2,7 +2,7 @@
 # Oliver Evans
 # Clarkson University REU 2016
 # Created: Thu 02 Jun 2016 11:54:11 AM EDT
-# Last Edited: Thu 16 Jun 2016 09:33:17 AM CEST
+# Last Edited: Thu 16 Jun 2016 10:48:45 AM CEST
 
 # Use data from light_data.py to calculate attenuation in water with and without kelp
 # For each time step, use least squares to perform exponential regression to model
@@ -80,7 +80,7 @@ good_parameters = [zeros([n_steps,3]) for n_steps in n_steps_list]
 n_quantities = 4
 
 # Axes limits for each quantity
-dist_limits = [[-.75,.75],[0,150000],[0,1e10],[0,50000]]
+dist_limits = [[-.75,.75],[0,150000],[0,1],[0,50000]]
 
 # Axes limits for calculated parameters for each dataset
 param_limits = [[[0.1,0.4],[0,50000]],
@@ -108,17 +108,19 @@ for dataset_num,data in enumerate(dataset_array):
         zz = depth_range + 1
 
         # Solve for exponential fit using least squares
+        # I = I_0 * exp(-kz)
+        # => ln(I) = ln(I_0) - kz
         X = least_squares_fit(zz,log(II))
         kk = -X[0]
         I0 = exp(X[1])
 
-        # Model values
+        # Model values for ln(I)
         yy = log(I0) - kk*zz
         
         # Sum of squares error
-        SSE = sum((II - yy)**2)
+        SSE = sum((log(II) - yy)**2)
         # Sum of squares total
-        SST = sum((II - mean(II))**2)
+        SST = sum((log(II) - mean(log(II)))**2)
 
         # Coefficient of determination
         # "Proportion of observed y variation that can be 
@@ -128,10 +130,10 @@ for dataset_num,data in enumerate(dataset_array):
 
         # Save values
         parameters[dataset_num][step_num,:] = [kk,I0,r_squared]
-    
+
     # Remove timesteps where fit fails (>=1 parameter == inf)
-    inf_rows = where(logical_or(isinf(parameters[dataset_num]),isnan(parameters[dataset_num])))[0]
-    good_parameters[dataset_num] = delete(parameters[dataset_num],inf_rows,axis=0)
+    non_numeric_rows = where(logical_or(isinf(parameters[dataset_num]),isnan(parameters[dataset_num])))[0]
+    good_parameters[dataset_num] = delete(parameters[dataset_num],non_numeric_rows,axis=0)
 
     # Extract calculated variables
     kk = good_parameters[dataset_num][:,0]
@@ -177,7 +179,6 @@ for dataset_num,data in enumerate(dataset_array):
         figure(fig_num*2+3,figsize=[7,3])
         qq = plot_quantities[fig_num]
         partial_data = qq[logical_and(dist_limits[fig_num][0]<qq,qq<dist_limits[fig_num][1])]
-        #partial_data = qq
         sns.distplot(partial_data,
             label=dataset_labels[dataset_num],
             kde_kws={"shade": False})

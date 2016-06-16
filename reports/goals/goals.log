@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.1415926-2.5-1.40.14 (TeX Live 2013/Debian) (format=pdflatex 2016.1.22)  13 JUN 2016 13:01
+This is pdfTeX, Version 3.1415926-2.5-1.40.14 (TeX Live 2013/Debian) (format=pdflatex 2016.1.22)  16 JUN 2016 12:35
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -186,48 +186,10 @@ Package: ifxetex 2010/09/12 v0.6 Provides ifxetex conditional
 \Gm@layouthoffset=\dimen133
 \Gm@layoutvoffset=\dimen134
 \Gm@dimlist=\toks22
-) (./goals.aux)
-\openout1 = `goals.aux'.
-
-LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 24.
-LaTeX Font Info:    ... okay on input line 24.
-LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 24.
-LaTeX Font Info:    ... okay on input line 24.
-LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 24.
-LaTeX Font Info:    ... okay on input line 24.
-LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 24.
-LaTeX Font Info:    ... okay on input line 24.
-LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 24.
-LaTeX Font Info:    ... okay on input line 24.
-LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 24.
-LaTeX Font Info:    ... okay on input line 24.
-
-(/usr/share/texlive/texmf-dist/tex/context/base/supp-pdf.mkii
-[Loading MPS to PDF converter (version 2006.09.02).]
-\scratchcounter=\count110
-\scratchdimen=\dimen135
-\scratchbox=\box30
-\nofMPsegments=\count111
-\nofMParguments=\count112
-\everyMPshowfont=\toks23
-\MPscratchCnt=\count113
-\MPscratchDim=\dimen136
-\MPnumerator=\count114
-\makeMPintoPDFobject=\count115
-\everyMPtoPDFconversion=\toks24
-) (/usr/share/texlive/texmf-dist/tex/generic/oberdiek/pdftexcmds.sty
-Package: pdftexcmds 2011/11/29 v0.20 Utility functions of pdfTeX for LuaTeX (HO
 )
+(/usr/share/texlive/texmf-dist/tex/latex/oberdiek/epstopdf.sty
+Package: epstopdf 2010/02/09 v2.5 Conversion with epstopdf on the fly (HO)
 
-(/usr/share/texlive/texmf-dist/tex/generic/oberdiek/ifluatex.sty
-Package: ifluatex 2010/03/01 v1.3 Provides the ifluatex switch (HO)
-Package ifluatex Info: LuaTeX not detected.
-)
-Package pdftexcmds Info: LuaTeX not detected.
-Package pdftexcmds Info: \pdf@primitive is available.
-Package pdftexcmds Info: \pdf@ifprimitive is available.
-Package pdftexcmds Info: \pdfdraftmode found.
-)
 (/usr/share/texlive/texmf-dist/tex/latex/oberdiek/epstopdf-base.sty
 Package: epstopdf-base 2010/02/09 v2.5 Base part for package epstopdf
 
@@ -245,11 +207,24 @@ Package: kvsetkeys 2012/04/25 v1.16 Key value parser (HO)
 
 (/usr/share/texlive/texmf-dist/tex/generic/oberdiek/etexcmds.sty
 Package: etexcmds 2011/02/16 v1.5 Avoid name clashes with e-TeX commands (HO)
+
+(/usr/share/texlive/texmf-dist/tex/generic/oberdiek/ifluatex.sty
+Package: ifluatex 2010/03/01 v1.3 Provides the ifluatex switch (HO)
+Package ifluatex Info: LuaTeX not detected.
+)
 Package etexcmds Info: Could not find \expanded.
 (etexcmds)             That can mean that you are not using pdfTeX 1.50 or
 (etexcmds)             that some package has redefined \expanded.
 (etexcmds)             In the latter case, load this package earlier.
 )))
+(/usr/share/texlive/texmf-dist/tex/generic/oberdiek/pdftexcmds.sty
+Package: pdftexcmds 2011/11/29 v0.20 Utility functions of pdfTeX for LuaTeX (HO
+)
+Package pdftexcmds Info: LuaTeX not detected.
+Package pdftexcmds Info: \pdf@primitive is available.
+Package pdftexcmds Info: \pdf@ifprimitive is available.
+Package pdftexcmds Info: \pdfdraftmode found.
+)
 Package grfext Info: Graphics extension search list:
 (grfext)             [.png,.pdf,.jpg,.mps,.jpeg,.jbig2,.jb2,.PNG,.PDF,.JPG,.JPE
 G,.JBIG2,.JB2,.eps]
@@ -258,7 +233,36 @@ G,.JBIG2,.JB2,.eps]
 (/usr/share/texlive/texmf-dist/tex/latex/latexconfig/epstopdf-sys.cfg
 File: epstopdf-sys.cfg 2010/07/13 v1.3 Configuration of (r)epstopdf for TeX Liv
 e
-))
+)))
+(./goals.aux)
+\openout1 = `goals.aux'.
+
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 30.
+LaTeX Font Info:    ... okay on input line 30.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 30.
+LaTeX Font Info:    ... okay on input line 30.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 30.
+LaTeX Font Info:    ... okay on input line 30.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 30.
+LaTeX Font Info:    ... okay on input line 30.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 30.
+LaTeX Font Info:    ... okay on input line 30.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 30.
+LaTeX Font Info:    ... okay on input line 30.
+ (/usr/share/texlive/texmf-dist/tex/context/base/supp-pdf.mkii
+[Loading MPS to PDF converter (version 2006.09.02).]
+\scratchcounter=\count110
+\scratchdimen=\dimen135
+\scratchbox=\box30
+\nofMPsegments=\count111
+\nofMParguments=\count112
+\everyMPshowfont=\toks23
+\MPscratchCnt=\count113
+\MPscratchDim=\dimen136
+\MPnumerator=\count114
+\makeMPintoPDFobject=\count115
+\everyMPtoPDFconversion=\toks24
+)
 *geometry* driver: auto-detecting
 *geometry* detected driver: pdftex
 *geometry* verbose mode - [ preamble ] result:
@@ -294,245 +298,239 @@ e
 * (1in=72.27pt=25.4mm, 1cm=28.453pt)
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 26--32
+Underfull \hbox (badness 10000) in paragraph at lines 32--38
 
  []
 
-LaTeX Font Info:    Try loading font information for OMS+cmr on input line 47.
+LaTeX Font Info:    Try loading font information for OMS+cmr on input line 53.
 (/usr/share/texlive/texmf-dist/tex/latex/base/omscmr.fd
 File: omscmr.fd 1999/05/25 v2.5h Standard LaTeX font definitions
 )
 LaTeX Font Info:    Font shape `OMS/cmr/m/n' in size <10> not available
-(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 47.
-LaTeX Font Info:    Try loading font information for U+msa on input line 56.
+(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 53.
+LaTeX Font Info:    Try loading font information for U+msa on input line 62.
 
 (/usr/share/texlive/texmf-dist/tex/latex/amsfonts/umsa.fd
 File: umsa.fd 2013/01/14 v3.01 AMS symbols A
 )
-LaTeX Font Info:    Try loading font information for U+msb on input line 56.
+LaTeX Font Info:    Try loading font information for U+msb on input line 62.
 
 (/usr/share/texlive/texmf-dist/tex/latex/amsfonts/umsb.fd
 File: umsb.fd 2013/01/14 v3.01 AMS symbols B
 ) [1
 
 {/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}]
-Underfull \hbox (badness 10000) in paragraph at lines 109--110
+Underfull \hbox (badness 10000) in paragraph at lines 115--116
 
  []
 
 [2]
-Package epstopdf Info: Source file: <plots/light_data.eps>
-(epstopdf)                    date: 2016-06-13 03:15:19
-(epstopdf)                    size: 250782 bytes
-(epstopdf)             Output file: <plots/light_data-eps-converted-to.pdf>
-(epstopdf)                    date: 2016-06-13 03:15:22
-(epstopdf)                    size: 57234 bytes
-(epstopdf)             Command: <repstopdf --outfile=plots/light_data-eps-conve
-rted-to.pdf plots/light_data.eps>
-(epstopdf)             \includegraphics on input line 160.
-Package epstopdf Info: Output file is already uptodate.
- <plots/light_data-eps-converted-to.pdf, id=18, 1156.32pt x 433.62pt>
-File: plots/light_data-eps-converted-to.pdf Graphic file (type pdf)
-
-<use plots/light_data-eps-converted-to.pdf>
-Package pdftex.def Info: plots/light_data-eps-converted-to.pdf used on input li
-ne 160.
-(pdftex.def)             Requested size: 542.02501pt x 203.25887pt.
-Package epstopdf Info: Source file: <plots/light_data_log.eps>
-(epstopdf)                    date: 2016-06-13 03:15:19
-(epstopdf)                    size: 344394 bytes
-(epstopdf)             Output file: <plots/light_data_log-eps-converted-to.pdf>
-
-(epstopdf)                    date: 2016-06-13 03:15:23
-(epstopdf)                    size: 70473 bytes
-(epstopdf)             Command: <repstopdf --outfile=plots/light_data_log-eps-c
-onverted-to.pdf plots/light_data_log.eps>
+Package epstopdf Info: Source file: <../../plots/light_data.eps>
+(epstopdf)                    date: 2016-06-16 10:47:51
+(epstopdf)                    size: 250932 bytes
+(epstopdf)             Output file: <./light_data-eps-converted-to.pdf>
+(epstopdf)                    date: 2016-06-16 12:33:07
+(epstopdf)                    size: 57250 bytes
+(epstopdf)             Command: <repstopdf --outfile=./light_data-eps-converted
+-to.pdf ../../plots/light_data.eps>
 (epstopdf)             \includegraphics on input line 166.
 Package epstopdf Info: Output file is already uptodate.
+ <./light_data-eps-converted-to.pdf, id=18, 1156.32pt x 433.62pt>
+File: ./light_data-eps-converted-to.pdf Graphic file (type pdf)
 
-<plots/light_data_log-eps-converted-to.pdf, id=19, 1156.32pt x 433.62pt>
-File: plots/light_data_log-eps-converted-to.pdf Graphic file (type pdf)
-
-<use plots/light_data_log-eps-converted-to.pdf>
-Package pdftex.def Info: plots/light_data_log-eps-converted-to.pdf used on inpu
-t line 166.
+<use ./light_data-eps-converted-to.pdf>
+Package pdftex.def Info: ./light_data-eps-converted-to.pdf used on input line 1
+66.
 (pdftex.def)             Requested size: 542.02501pt x 203.25887pt.
- [3 <./plots/light_data-eps-converted-to.pdf> <./plots/light_data_log-eps-conve
-rted-to.pdf>]
-Package epstopdf Info: Source file: <plots/time_k.eps>
-(epstopdf)                    date: 2016-06-13 03:15:19
-(epstopdf)                    size: 68407 bytes
-(epstopdf)             Output file: <plots/time_k-eps-converted-to.pdf>
-(epstopdf)                    date: 2016-06-13 03:15:23
-(epstopdf)                    size: 27328 bytes
-(epstopdf)             Command: <repstopdf --outfile=plots/time_k-eps-converted
--to.pdf plots/time_k.eps>
-(epstopdf)             \includegraphics on input line 176.
+Package epstopdf Info: Source file: <../../plots/light_data_log.eps>
+(epstopdf)                    date: 2016-06-16 10:47:53
+(epstopdf)                    size: 352005 bytes
+(epstopdf)             Output file: <./light_data_log-eps-converted-to.pdf>
+(epstopdf)                    date: 2016-06-16 12:33:07
+(epstopdf)                    size: 70959 bytes
+(epstopdf)             Command: <repstopdf --outfile=./light_data_log-eps-conve
+rted-to.pdf ../../plots/light_data_log.eps>
+(epstopdf)             \includegraphics on input line 172.
 Package epstopdf Info: Output file is already uptodate.
 
-<plots/time_k-eps-converted-to.pdf, id=86, 505.89pt x 216.81pt>
-File: plots/time_k-eps-converted-to.pdf Graphic file (type pdf)
+<./light_data_log-eps-converted-to.pdf, id=19, 1156.32pt x 433.62pt>
+File: ./light_data_log-eps-converted-to.pdf Graphic file (type pdf)
 
-<use plots/time_k-eps-converted-to.pdf>
-Package pdftex.def Info: plots/time_k-eps-converted-to.pdf used on input line 1
-76.
+<use ./light_data_log-eps-converted-to.pdf>
+Package pdftex.def Info: ./light_data_log-eps-converted-to.pdf used on input li
+ne 172.
+(pdftex.def)             Requested size: 542.02501pt x 203.25887pt.
+ [3 <./light_data-eps-converted-to.pdf> <./light_data_log-eps-converted-to.pdf>
+]
+Package epstopdf Info: Source file: <../../plots/attenuation/time_k.eps>
+(epstopdf)                    date: 2016-06-16 10:51:22
+(epstopdf)                    size: 66271 bytes
+(epstopdf)             Output file: <./time_k-eps-converted-to.pdf>
+(epstopdf)                    date: 2016-06-16 12:33:08
+(epstopdf)                    size: 27962 bytes
+(epstopdf)             Command: <repstopdf --outfile=./time_k-eps-converted-to.
+pdf ../../plots/attenuation/time_k.eps>
+(epstopdf)             \includegraphics on input line 182.
+Package epstopdf Info: Output file is already uptodate.
+
+<./time_k-eps-converted-to.pdf, id=86, 505.89pt x 216.81pt>
+File: ./time_k-eps-converted-to.pdf Graphic file (type pdf)
+
+<use ./time_k-eps-converted-to.pdf>
+Package pdftex.def Info: ./time_k-eps-converted-to.pdf used on input line 182.
 (pdftex.def)             Requested size: 505.89pt x 216.81276pt.
-Package epstopdf Info: Source file: <plots/time_I0.eps>
-(epstopdf)                    date: 2016-06-13 03:15:19
-(epstopdf)                    size: 59419 bytes
-(epstopdf)             Output file: <plots/time_I0-eps-converted-to.pdf>
-(epstopdf)                    date: 2016-06-13 03:15:24
-(epstopdf)                    size: 25513 bytes
-(epstopdf)             Command: <repstopdf --outfile=plots/time_I0-eps-converte
-d-to.pdf plots/time_I0.eps>
-(epstopdf)             \includegraphics on input line 183.
+Package epstopdf Info: Source file: <../../plots/attenuation/time_I0.eps>
+(epstopdf)                    date: 2016-06-16 10:51:24
+(epstopdf)                    size: 47966 bytes
+(epstopdf)             Output file: <./time_I0-eps-converted-to.pdf>
+(epstopdf)                    date: 2016-06-16 12:33:08
+(epstopdf)                    size: 20802 bytes
+(epstopdf)             Command: <repstopdf --outfile=./time_I0-eps-converted-to
+.pdf ../../plots/attenuation/time_I0.eps>
+(epstopdf)             \includegraphics on input line 189.
 Package epstopdf Info: Output file is already uptodate.
 
-<plots/time_I0-eps-converted-to.pdf, id=87, 505.89pt x 216.81pt>
-File: plots/time_I0-eps-converted-to.pdf Graphic file (type pdf)
+<./time_I0-eps-converted-to.pdf, id=87, 505.89pt x 216.81pt>
+File: ./time_I0-eps-converted-to.pdf Graphic file (type pdf)
 
-<use plots/time_I0-eps-converted-to.pdf>
-Package pdftex.def Info: plots/time_I0-eps-converted-to.pdf used on input line 
-183.
+<use ./time_I0-eps-converted-to.pdf>
+Package pdftex.def Info: ./time_I0-eps-converted-to.pdf used on input line 189.
+
 (pdftex.def)             Requested size: 505.89pt x 216.81276pt.
-Package epstopdf Info: Source file: <plots/time_residuals.eps>
-(epstopdf)                    date: 2016-06-13 03:15:19
-(epstopdf)                    size: 47633 bytes
-(epstopdf)             Output file: <plots/time_residuals-eps-converted-to.pdf>
-
-(epstopdf)                    date: 2016-06-13 03:15:24
-(epstopdf)                    size: 23392 bytes
-(epstopdf)             Command: <repstopdf --outfile=plots/time_residuals-eps-c
-onverted-to.pdf plots/time_residuals.eps>
-(epstopdf)             \includegraphics on input line 190.
+Package epstopdf Info: Source file: <../../plots/attenuation/time_r_squared.eps
+>
+(epstopdf)                    date: 2016-06-16 10:51:25
+(epstopdf)                    size: 70427 bytes
+(epstopdf)             Output file: <./time_r_squared-eps-converted-to.pdf>
+(epstopdf)                    date: 2016-06-16 12:34:24
+(epstopdf)                    size: 30018 bytes
+(epstopdf)             Command: <repstopdf --outfile=./time_r_squared-eps-conve
+rted-to.pdf ../../plots/attenuation/time_r_squared.eps>
+(epstopdf)             \includegraphics on input line 196.
 Package epstopdf Info: Output file is already uptodate.
 
-<plots/time_residuals-eps-converted-to.pdf, id=88, 505.89pt x 216.81pt>
-File: plots/time_residuals-eps-converted-to.pdf Graphic file (type pdf)
+<./time_r_squared-eps-converted-to.pdf, id=88, 505.89pt x 216.81pt>
+File: ./time_r_squared-eps-converted-to.pdf Graphic file (type pdf)
 
-<use plots/time_residuals-eps-converted-to.pdf>
-Package pdftex.def Info: plots/time_residuals-eps-converted-to.pdf used on inpu
-t line 190.
+<use ./time_r_squared-eps-converted-to.pdf>
+Package pdftex.def Info: ./time_r_squared-eps-converted-to.pdf used on input li
+ne 196.
 (pdftex.def)             Requested size: 505.89pt x 216.81276pt.
- [4 <./plots/time_k-eps-converted-to.pdf> <./plots/time_I0-eps-converted-to.pdf
->]
-Package epstopdf Info: Source file: <plots/dist_k.eps>
-(epstopdf)                    date: 2016-06-13 03:15:19
-(epstopdf)                    size: 45027 bytes
-(epstopdf)             Output file: <plots/dist_k-eps-converted-to.pdf>
-(epstopdf)                    date: 2016-06-13 03:15:24
-(epstopdf)                    size: 18956 bytes
-(epstopdf)             Command: <repstopdf --outfile=plots/dist_k-eps-converted
--to.pdf plots/dist_k.eps>
-(epstopdf)             \includegraphics on input line 200.
+ [4 <./time_k-eps-converted-to.pdf> <./time_I0-eps-converted-to.pdf>]
+Package epstopdf Info: Source file: <../../plots/attenuation/dist_k.eps>
+(epstopdf)                    date: 2016-06-16 10:51:23
+(epstopdf)                    size: 45510 bytes
+(epstopdf)             Output file: <./dist_k-eps-converted-to.pdf>
+(epstopdf)                    date: 2016-06-16 12:33:09
+(epstopdf)                    size: 18922 bytes
+(epstopdf)             Command: <repstopdf --outfile=./dist_k-eps-converted-to.
+pdf ../../plots/attenuation/dist_k.eps>
+(epstopdf)             \includegraphics on input line 206.
 Package epstopdf Info: Output file is already uptodate.
 
-<plots/dist_k-eps-converted-to.pdf, id=153, 505.89pt x 216.81pt>
-File: plots/dist_k-eps-converted-to.pdf Graphic file (type pdf)
+<./dist_k-eps-converted-to.pdf, id=153, 505.89pt x 216.81pt>
+File: ./dist_k-eps-converted-to.pdf Graphic file (type pdf)
 
-<use plots/dist_k-eps-converted-to.pdf>
-Package pdftex.def Info: plots/dist_k-eps-converted-to.pdf used on input line 2
-00.
+<use ./dist_k-eps-converted-to.pdf>
+Package pdftex.def Info: ./dist_k-eps-converted-to.pdf used on input line 206.
 (pdftex.def)             Requested size: 505.89pt x 216.81276pt.
-Package epstopdf Info: Source file: <plots/k_I0.eps>
-(epstopdf)                    date: 2016-06-13 03:15:19
-(epstopdf)                    size: 67053 bytes
-(epstopdf)             Output file: <plots/k_I0-eps-converted-to.pdf>
-(epstopdf)                    date: 2016-06-13 12:54:08
-(epstopdf)                    size: 250687 bytes
-(epstopdf)             Command: <repstopdf --outfile=plots/k_I0-eps-converted-t
-o.pdf plots/k_I0.eps>
-(epstopdf)             \includegraphics on input line 210.
-Package epstopdf Info: Output file is already uptodate.
-
-<plots/k_I0-eps-converted-to.pdf, id=154, 578.16pt x 433.62pt>
-File: plots/k_I0-eps-converted-to.pdf Graphic file (type pdf)
-
-<use plots/k_I0-eps-converted-to.pdf>
-Package pdftex.def Info: plots/k_I0-eps-converted-to.pdf used on input line 210
-.
-(pdftex.def)             Requested size: 542.02501pt x 406.5376pt.
- [5 <./plots/time_residuals-eps-converted-to.pdf> <./plots/dist_k-eps-converted
--to.pdf>]
-Package epstopdf Info: Source file: <plots/joint_control.eps>
-(epstopdf)                    date: 2016-06-13 03:15:19
-(epstopdf)                    size: 51620 bytes
-(epstopdf)             Output file: <plots/joint_control-eps-converted-to.pdf>
-(epstopdf)                    date: 2016-06-13 03:15:26
-(epstopdf)                    size: 18280 bytes
-(epstopdf)             Command: <repstopdf --outfile=plots/joint_control-eps-co
-nverted-to.pdf plots/joint_control.eps>
+Package epstopdf Info: Source file: <../../plots/attenuation/k_I0.eps>
+(epstopdf)                    date: 2016-06-16 10:51:28
+(epstopdf)                    size: 68936 bytes
+(epstopdf)             Output file: <./k_I0-eps-converted-to.pdf>
+(epstopdf)                    date: 2016-06-16 12:33:09
+(epstopdf)                    size: 247913 bytes
+(epstopdf)             Command: <repstopdf --outfile=./k_I0-eps-converted-to.pd
+f ../../plots/attenuation/k_I0.eps>
 (epstopdf)             \includegraphics on input line 216.
 Package epstopdf Info: Output file is already uptodate.
 
-<plots/joint_control-eps-converted-to.pdf, id=222, 433.62pt x 433.62pt>
-File: plots/joint_control-eps-converted-to.pdf Graphic file (type pdf)
+<./k_I0-eps-converted-to.pdf, id=154, 578.16pt x 433.62pt>
+File: ./k_I0-eps-converted-to.pdf Graphic file (type pdf)
 
-<use plots/joint_control-eps-converted-to.pdf>
-Package pdftex.def Info: plots/joint_control-eps-converted-to.pdf used on input
- line 216.
-(pdftex.def)             Requested size: 542.02501pt x 542.08983pt.
- [6 <./plots/k_I0-eps-converted-to.pdf>]
-Package epstopdf Info: Source file: <plots/joint_1_kelp.eps>
-(epstopdf)                    date: 2016-06-13 03:15:19
-(epstopdf)                    size: 48761 bytes
-(epstopdf)             Output file: <plots/joint_1_kelp-eps-converted-to.pdf>
-(epstopdf)                    date: 2016-06-13 03:15:26
-(epstopdf)                    size: 15777 bytes
-(epstopdf)             Command: <repstopdf --outfile=plots/joint_1_kelp-eps-con
-verted-to.pdf plots/joint_1_kelp.eps>
-(epstopdf)             \includegraphics on input line 223.
-Package epstopdf Info: Output file is already uptodate.
- <plots/joint_1_kelp-eps-converted-to.pdf, id=260, 433.62pt x 433.62pt>
-File: plots/joint_1_kelp-eps-converted-to.pdf Graphic file (type pdf)
+<use ./k_I0-eps-converted-to.pdf>
+Package pdftex.def Info: ./k_I0-eps-converted-to.pdf used on input line 216.
+(pdftex.def)             Requested size: 542.02501pt x 406.5376pt.
+ [5 <./time_r_squared-eps-converted-to.pdf> <./dist_k-eps-converted-to.pdf>]
+Package epstopdf Info: Source file: <../../plots/attenuation/joint_control.eps>
 
-<use plots/joint_1_kelp-eps-converted-to.pdf>
-Package pdftex.def Info: plots/joint_1_kelp-eps-converted-to.pdf used on input 
-line 223.
-(pdftex.def)             Requested size: 542.02501pt x 542.08983pt.
- [7 <./plots/joint_control-eps-converted-to.pdf>]
-Package epstopdf Info: Source file: <plots/joint_2_kelp.eps>
-(epstopdf)                    date: 2016-06-13 03:15:19
-(epstopdf)                    size: 55290 bytes
-(epstopdf)             Output file: <plots/joint_2_kelp-eps-converted-to.pdf>
-(epstopdf)                    date: 2016-06-13 03:15:26
-(epstopdf)                    size: 19643 bytes
-(epstopdf)             Command: <repstopdf --outfile=plots/joint_2_kelp-eps-con
-verted-to.pdf plots/joint_2_kelp.eps>
-(epstopdf)             \includegraphics on input line 230.
+(epstopdf)                    date: 2016-06-16 10:51:17
+(epstopdf)                    size: 51620 bytes
+(epstopdf)             Output file: <./joint_control-eps-converted-to.pdf>
+(epstopdf)                    date: 2016-06-16 12:33:10
+(epstopdf)                    size: 18280 bytes
+(epstopdf)             Command: <repstopdf --outfile=./joint_control-eps-conver
+ted-to.pdf ../../plots/attenuation/joint_control.eps>
+(epstopdf)             \includegraphics on input line 222.
 Package epstopdf Info: Output file is already uptodate.
 
-<plots/joint_2_kelp-eps-converted-to.pdf, id=292, 433.62pt x 433.62pt>
-File: plots/joint_2_kelp-eps-converted-to.pdf Graphic file (type pdf)
+<./joint_control-eps-converted-to.pdf, id=223, 433.62pt x 433.62pt>
+File: ./joint_control-eps-converted-to.pdf Graphic file (type pdf)
 
-<use plots/joint_2_kelp-eps-converted-to.pdf>
-Package pdftex.def Info: plots/joint_2_kelp-eps-converted-to.pdf used on input 
-line 230.
+<use ./joint_control-eps-converted-to.pdf>
+Package pdftex.def Info: ./joint_control-eps-converted-to.pdf used on input lin
+e 222.
 (pdftex.def)             Requested size: 542.02501pt x 542.08983pt.
- [8 <./plots/joint_1_kelp-eps-converted-to.pdf>] [9 <./plots/joint_2_kelp-eps-c
-onverted-to.pdf>] [10]
-(./goals.aux) ) 
+ [6 <./k_I0-eps-converted-to.pdf>]
+Package epstopdf Info: Source file: <../../plots/attenuation/joint_1_kelp.eps>
+(epstopdf)                    date: 2016-06-16 10:51:22
+(epstopdf)                    size: 45802 bytes
+(epstopdf)             Output file: <./joint_1_kelp-eps-converted-to.pdf>
+(epstopdf)                    date: 2016-06-16 12:33:10
+(epstopdf)                    size: 15469 bytes
+(epstopdf)             Command: <repstopdf --outfile=./joint_1_kelp-eps-convert
+ed-to.pdf ../../plots/attenuation/joint_1_kelp.eps>
+(epstopdf)             \includegraphics on input line 229.
+Package epstopdf Info: Output file is already uptodate.
+
+<./joint_1_kelp-eps-converted-to.pdf, id=261, 433.62pt x 433.62pt>
+File: ./joint_1_kelp-eps-converted-to.pdf Graphic file (type pdf)
+
+<use ./joint_1_kelp-eps-converted-to.pdf>
+Package pdftex.def Info: ./joint_1_kelp-eps-converted-to.pdf used on input line
+ 229.
+(pdftex.def)             Requested size: 542.02501pt x 542.08983pt.
+ [7 <./joint_control-eps-converted-to.pdf>]
+Package epstopdf Info: Source file: <../../plots/attenuation/joint_2_kelp.eps>
+(epstopdf)                    date: 2016-06-16 10:51:27
+(epstopdf)                    size: 56845 bytes
+(epstopdf)             Output file: <./joint_2_kelp-eps-converted-to.pdf>
+(epstopdf)                    date: 2016-06-16 12:33:10
+(epstopdf)                    size: 19771 bytes
+(epstopdf)             Command: <repstopdf --outfile=./joint_2_kelp-eps-convert
+ed-to.pdf ../../plots/attenuation/joint_2_kelp.eps>
+(epstopdf)             \includegraphics on input line 236.
+Package epstopdf Info: Output file is already uptodate.
+ <./joint_2_kelp-eps-converted-to.pdf, id=293, 433.62pt x 433.62pt>
+File: ./joint_2_kelp-eps-converted-to.pdf Graphic file (type pdf)
+
+<use ./joint_2_kelp-eps-converted-to.pdf>
+Package pdftex.def Info: ./joint_2_kelp-eps-converted-to.pdf used on input line
+ 236.
+(pdftex.def)             Requested size: 542.02501pt x 542.08983pt.
+ [8 <./joint_1_kelp-eps-converted-to.pdf>] [9 <./joint_2_kelp-eps-converted-to.
+pdf>] [10] (./goals.aux) ) 
 Here is how much of TeX's memory you used:
- 3390 strings out of 493304
- 45861 string characters out of 6139871
- 119431 words of memory out of 5000000
- 6791 multiletter control sequences out of 15000+600000
+ 3398 strings out of 493304
+ 45928 string characters out of 6139871
+ 119501 words of memory out of 5000000
+ 6796 multiletter control sequences out of 15000+600000
  6857 words of font info for 27 fonts, out of 8000000 for 9000
  957 hyphenation exceptions out of 8191
- 38i,8n,26p,1188b,221s stack positions out of 5000i,500n,10000p,200000b,80000s
-</usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cm
-bx10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx12.p
-fb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb></u
-sr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/sha
-re/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi7.pfb></usr/share/texl
-ive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/share/texlive/tex
-mf-dist/fonts/type1/public/amsfonts/cm/cmr7.pfb></usr/share/texlive/texmf-dist/
-fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/share/texlive/texmf-dist/fonts/
-type1/public/amsfonts/cm/cmsy7.pfb>
-Output written on goals.pdf (10 pages, 606930 bytes).
+ 42i,8n,26p,1188b,226s stack positions out of 5000i,500n,10000p,200000b,80000s
+</usr/share/texlive/texmf-dist/fonts/type1/public/ams
+fonts/cm/cmbx10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/
+cm/cmbx12.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cme
+x10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pf
+b></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi7.pfb></usr
+/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/share/
+texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr7.pfb></usr/share/texlive/
+texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/share/texlive/texmf-
+dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb>
+Output written on goals.pdf (10 pages, 606574 bytes).
 PDF statistics:
- 386 PDF objects out of 1000 (max. 8388607)
- 111 compressed objects within 2 object streams
+ 387 PDF objects out of 1000 (max. 8388607)
+ 115 compressed objects within 2 object streams
  0 named destinations out of 1000 (max. 500000)
  51 words of extra memory for PDF output out of 10000 (max. 10000000)
 
