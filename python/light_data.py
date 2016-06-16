@@ -2,7 +2,18 @@
 # Oliver Evans
 # Clarkson University REU 2016
 # Created: Wed 01 Jun 2016 10:11:00 AM EDT
-# Last Edited: Fri 03 Jun 2016 12:14:44 PM EDT
+# Last Edited: Thu 16 Jun 2016 10:46:58 AM CEST
+
+# Parse data from HOBO loggers
+
+## IMPORTANT NOTE ##
+# The data contains some zero values in the 1-kelp and 2-kelp datasets,
+# presumably because the light intensity fell below the minimum intensity 
+# threshold of the HOBO loggers used 
+# (http://www.onsetcomp.com/products/data-loggers/ua-002-08)
+# In the 1-kelp and 2-kelp, the lowest non-zero value is 10.8.
+# Shane recommended using ~10% of the lowest value, so I will replace
+# all zero-values with a value of 1.
 
 ##############
 ## Imports  ## 
@@ -182,8 +193,8 @@ for str_num,file_list in enumerate(str_files):
             thousands=',',
             dtype={'index':int,'date':str,'time':str,'intensity':float,'eof':str})
 
-        # During date parsing, date and time columns were deleted
-        # and date_time was inserted as the first column
+        # During date parsing, date and time columns are deleted
+        # and date_time is inserted as the first column
 
         # Strip second column (index)
         # Strip last column (Only entry in this column is the word 
@@ -215,6 +226,9 @@ for str_num,file_list in enumerate(str_files):
         for str_dataset_num,df_datasets in enumerate(str_dataset_list):
             # Current total dataset number
             total_dataset_num = running_dataset_count + str_dataset_num
+
+            # Convert zero-values to ones. See important note at top of this file
+            df_datasets.loc[df_datasets.iloc[:,1]==0,[False,True]] = 1
 
             # Convert Python datetime to Matlab datenum
             matlab_df_datasets = df_datasets.copy()
