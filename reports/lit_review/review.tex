@@ -1,0 +1,78 @@
+\documentclass{article}
+
+\usepackage{graphicx}
+\usepackage{amsmath,amssymb}
+\usepackage{etoolbox}
+\usepackage{booktabs}
+\usepackage{float}
+\usepackage{geometry}
+\usepackage{url}
+\usepackage[
+	round,
+	authoryear,
+]{natbib}
+
+\newcommand\mgin{0.5in}
+\geometry{
+	left=\mgin,
+	right=\mgin,
+	bottom=\mgin,
+	top=\mgin
+}
+
+% arara: pdflatex
+% arara: bibtex
+% arara: pdflatex
+% arara: pdflatex
+
+\begin{document}
+
+\noindent
+Oliver Evans \\
+Dr. Shane Rogers  \\
+Clarkson REU 2016 \\
+Literature Review \\
+\today \\[-0.75em]
+
+Mathematical modeling of macroalgae growth is not a new topic, although it is a reemerging one.
+Several authors in the second half of the twentieth century were interested in describing the growth and composition of the macroalgae \textit{Macrocystis pyrifera}, commonly known as ``giant kelp,'' which grows prolifically off the coast of southern California.
+The very first such mathematical model was developed by W.J. North for the Kelp Habitat Improvement Project at the California Institute of Technology in 1968 using seven variables.
+By 1974, Nick Anderson greatly expanded on North's work, and created the first comprehensive model of kelp growth which he programmed using FORTRAN \citep{anderson_mathematical_1974}.
+In his model, he accounts for solar radiation intensity as a function of time of year and time of day, and refraction on the surface of the water.
+He uses a simple model for shading, simply specifying a single parameter which determines the percentage of light which is allowed to pass through the kelp canopy floating on the surface of the water.
+He also accounts for attenuation due to turbidity using Beer's Law.
+Using this data on the availability of light, he calculates the photosynthesis rates and the growth experienced by the kelp. \\[-0.75em]
+
+Over a decade later in 1987, G.A.
+Jackson expanded on Anderson's model for \textit{Macrocystis pyrifera}, with an emphasis on including more environmental parameters and a more complete description of the growth and decay of the kelp \citep{jackson_modelling_1987}. 
+He takes into account respiration, frond decay, and most importantly for my work, sub-canopy light attenuation due to self-shading.
+He simply adds a coefficient to the exponential decay of light as a function of depth to represent shading from kelp fronds.
+He doesn't seem to consider and radial nor angular dependence on shading.
+Jackson also expands Anderson's definition of canopy shading, treating the canopy not as a single layer, but as 0, 1, or 2 discrete layers, each composed of individual fronds.
+While this is a significant improvement over Anderson's light model, it is still rather simplistic. \\[-0.75em]
+
+Both Anderson's and Jackson's model were carried out by numerically solving a system of differential equations over small time intervals.
+In 1990, M.A. Burgman and V.A. Gerard developed a stochastic population model \citep{burgman_stage-structured_1990}.
+This approach is quite different, and functions by dividing kelp plants into groups based on size and age, and generating random numbers to determine how the population distribution over these groups changes over time, based on measured rates of growth, death, decay, light availability, etc.
+That same year, Nyman et. al. tested a similar model in New Zealand, as well as a Markov chain model, and compared the results with experimental data \citep{nyman_macrocystis_1990}. \\[-0.75em]
+
+In 1996 and 1998 respectively, P. Duarte and J.G. Ferreira used the size-class approach to create a more general model of macroalgae growth, and Yoshimori et. al. created a differential equation model of \textit{Laminaria religiosa} with specific emphasis on temperature dependence of growth rate \citep{duarte_model_1996,yoshimori_mathematical_1998}.
+These were the some of the first models of kelp growth that did not specifically relate to \textit{Macrocystis pyrifera} (``giant kelp''). 
+Initially, there was a great deal of excitement about this species due to it's incredible size and growth rate, but difficulties in harvesting and negative environmental impacts have caused scientists to investigate other kelp species. \\[-0.75em]
+
+In the last five years, a team at SINTEF, a research organization associated with the Norwegian University of Technology and Science (NTNU), based in Trondheim, Norway, has become interested in the aquaculture potential of the kelp \textit{Saccharina latissima} for use as food, animal feed, nutrient remediation, biofuel production, and high-value chemical production among other uses. 
+In 2012, Ole Jacob Broch, whom I have been working with for the last few weeks, published a paper with Dag Slagstad describing the model they created of the growth and composition of \textit{S. latissima} over the course of the year \citep{broch_modelling_2012}.
+Their model works in conjunction with SINMOD, a 3D hydrodynamic ecosystem model developed at SINTEF which generates data on water temperature, water velocity, light intensity, and phytoplankton concentrations among other valuable quantities \citep{wassmann_modelling_2006}.
+This detailed information has allowed Ole Jacob to consider many factors which influence the growth and decay of kelp in greater detail than has previously been explored. \\[-0.75em]
+
+The aspect of the model that he has asked me to help develop is how light is attenuated by kelp plants and by environmental factors, and how that affects the kelp's ability to photosynthesize and grow. 
+This will allow us to estimate how deep and how densely kelp can be grown. This work is being done as a part of the MacroSea project, funded by the Norwegian Research Council, which intends to further develop the potential industrial kelp production through collaboration among industry and academia both in Norway and abroad. SINTEF and Clarkson are both involved in the project. \\[-0.75em]
+
+In my model, I intend to combine the probabilistic aspects of models such as the one developed by \cite{burgman_stage-structured_1990} with numerically solving a system of differential equations such as is done by \cite{anderson_mathematical_1974} and \cite{broch_modelling_2012}
+For example, the concept of a Lefkovitch model, which is essentially a Markov chain model which describes the change size distribution of a biological population which is broken up into discreet size classes, may prove to be very useful \citep{caswell_matrix_1983}. Combining the idea of a probabilistic model of shading based on the distribution of frond lengths and angles with differential equations describing the growth and decay of kelp fronds as a function of light availability may prove to be very powerful. I intend to analyze experimental data collected here in Norway, as well as in Maine and elsewhere in the literature to verify the model. \\[-0.75em]
+
+\bibliographystyle{customnat}
+\bibliography{growth}
+\end{document}
+
+

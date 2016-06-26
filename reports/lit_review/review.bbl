@@ -1,0 +1,61 @@
+\begin{thebibliography}{9}
+\providecommand{\natexlab}[1]{#1}
+
+\bibitem[{Anderson(1974)}]{anderson_mathematical_1974}
+Anderson, Nick.
+\newblock A mathematical model for the growth of giant kelp.
+\newblock \emph{Simulation}, 22(4):97--105, 1974.
+
+\bibitem[{Broch and Slagstad(2012)}]{broch_modelling_2012}
+Broch, Ole~Jacob and Slagstad, Dag.
+\newblock Modelling seasonal growth and composition of the kelp {Saccharina}
+  latissima.
+\newblock \emph{Journal of Applied Phycology}, 24(4):759--776, 2012.
+
+\bibitem[{Burgman and Gerard(1990)}]{burgman_stage-structured_1990}
+Burgman, M.~A. and Gerard, V.~A.
+\newblock A stage-structured, stochastic population model for the giant kelp
+  {Macrocystis} pyrifera.
+\newblock \emph{Marine Biology}, 105(1):15--23, 1990.
+
+\bibitem[{Caswell(1983)}]{caswell_matrix_1983}
+Caswell, Hal.
+\newblock \emph{Matrix {Population} {Models}: {Constrution}, analysis and
+  interpretation}.
+\newblock Sinauer Associates, Inc., Sunderland, Massachusetts, 2nd edition,
+  1983.
+
+\bibitem[{Duarte and Ferreira(1996)}]{duarte_model_1996}
+Duarte, P. and Ferreira, J.G.
+\newblock A model for the simulation of macroalgal population dynamics and
+  productivity.
+\newblock \emph{Ecological Modelling}, 98:199--214, 1996.
+
+\bibitem[{Jackson(1987)}]{jackson_modelling_1987}
+Jackson, G.~A.
+\newblock Modelling the growth and harvest yield of the giant kelp
+  {Macrocystis} pyrifera.
+\newblock \emph{Marine Biology}, 95(4):611--624, 1987.
+
+\bibitem[{Nyman et~al.(1990)Nyman, Brown, Neushul, and
+  Keogh}]{nyman_macrocystis_1990}
+Nyman, Melvin~A.; Brown, Murray~T.; Neushul, Michael; and Keogh, Jonathan~A.
+\newblock Macrocystis pyrifera in {New} {Zealand}: testing two mathematical
+  models for whole plant growth.
+\newblock \emph{Journal of Applied Phycology}, 2(3):249--257, 1990.
+
+\bibitem[{Wassmann et~al.(2006)Wassmann, Slagstad, Riser, and
+  Reigstad}]{wassmann_modelling_2006}
+Wassmann, Paul; Slagstad, Dag; Riser, Christian~Wexels; and Reigstad, Marit.
+\newblock Modelling the ecosystem dynamics of the {Barents} {Sea} including the
+  marginal ice zone.
+\newblock \emph{Journal of Marine Systems}, 59(1-2):1--24, 2006.
+
+\bibitem[{Yoshimori et~al.(1998)Yoshimori, Kono, and
+  Iizumi}]{yoshimori_mathematical_1998}
+Yoshimori, Akira; Kono, Tokihiro; and Iizumi, Hitoshi.
+\newblock Mathematical models of population dynamics of the kelp {Laminaria}
+  religiosa, with emphasis on temperature dependence.
+\newblock \emph{Fisheries Oceanography}, 7(2):136±146, 1998.
+
+\end{thebibliography}
