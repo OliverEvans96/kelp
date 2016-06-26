@@ -1,0 +1,13 @@
+		symbol @& description @& input \\
+		$L$ @& Frond length @& \\
+		$w$ @& Frond width @& \\
+		$f_a$ @& Inner frond length @& \\
+		$f_b$ @& Outer frond length @& \\
+		$\alpha$ @& Frond shape angle @& \\
+		$\theta_f$ @& Frond direction angle @& \\
+		$f_s$ @& Frond shape parameter @& \checkmark \\
+		$f_r$ @& Frond length-width ratio @& \checkmark \\
+		$v_w$ @& Water current speed @& \checkmark \\
+		$\theta_w$ @& Water current angle @& \checkmark \\
+		$\mu_L$ @& Population mean frond length @& \checkmark \\
+		$\sigma_L$ @& Population frond length std. dev. @& \checkmark \\
