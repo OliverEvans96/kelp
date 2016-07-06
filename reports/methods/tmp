@@ -1,13 +1,23 @@
-		symbol @& description @& input \\
-		$L$ @& Frond length @& \\
-		$w$ @& Frond width @& \\
-		$f_a$ @& Inner frond length @& \\
-		$f_b$ @& Outer frond length @& \\
-		$\alpha$ @& Frond shape angle @& \\
-		$\theta_f$ @& Frond direction angle @& \\
-		$f_s$ @& Frond shape parameter @& \checkmark \\
-		$f_r$ @& Frond length-width ratio @& \checkmark \\
-		$v_w$ @& Water current speed @& \checkmark \\
-		$\theta_w$ @& Water current angle @& \checkmark \\
-		$\mu_L$ @& Population mean frond length @& \checkmark \\
-		$\sigma_L$ @& Population frond length std. dev. @& \checkmark \\
+		symbol           @& description                           @& input \\ \midrule
+		$L$              @& Frond length                          @& \\
+		$w$              @& Frond width                           @& \\
+		$f_a$            @& Inner frond length                    @& \\
+		$f_b$            @& Outer frond length                    @& \\
+		$\alpha$         @& Frond shape angle                     @& \\
+		$\theta_f$       @& Frond direction angle                 @& \\
+		$f_s$            @& Frond shape parameter                 @& \checkmark \\
+		$f_r$            @& Frond length-width ratio              @& \checkmark \\
+		$v_w$            @& Water current speed                   @& \checkmark \\
+		$\theta_w$       @& Water current angle                   @& \checkmark \\
+		$\mu_L$          @& Population mean frond length          @& \checkmark \\
+		$\sigma_L$       @& Population frond length std. dev.     @& \checkmark \\
+		$x,y$            @& Cartesian coordinates                 @& \\
+		$\theta,r$       @& Polar coordinates                     @& \\
+		$\theta_p,r_p$   @& Coordinates of point of interest      @& \\
+		$P_L(L)$            @& Frond length PDF                @&\\\
+		$C_L(L)$            @& Frond length CDF                @&\\\
+		$P_{\theta_f}(\theta_f)$   @& Frond angle PDF                 @&\\\
+		$P_{2D}(\theta_f,L)$         @& 2D length-angle distribution    @&\\\
+		$S(\theta')$              @& Angular sign function           @&\\\
+		$r_f(\theta)$            @& Frond outer edge function       @&\\\ \bottomrule
+
