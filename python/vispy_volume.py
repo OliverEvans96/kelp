@@ -2,7 +2,7 @@
 #Oliver Evans
 #4-21-2016
 
-#Plot function of 2 variables in 3D using vispy
+#Plot function of 3 variables in 3D using vispy
 
 import numpy as np
 from vispy import app,scene,visuals,gloo
@@ -32,7 +32,7 @@ class TransGrays(BaseColormap):
 # xlim,ylim,zlim are axes limits (2-vector: [xmin,xmax])
 # vol_array is a 3d array of values
 class Canvas(scene.SceneCanvas):
-    def __init__(self,xlim,ylim,zlim,vol_array,color=None,*args,**kwargs):
+    def __init__(self,xlim,ylim,zlim,vol_array,clim,color=None,*args,**kwargs):
         scene.SceneCanvas.__init__(self,'3D Volume Plot',keys='interactive',bgcolor=(0.9,0.9,0.9),*args,**kwargs)
 
         #Allow addition of new attributes
@@ -42,6 +42,9 @@ class Canvas(scene.SceneCanvas):
         self._xlim=xlim
         self._ylim=ylim
         self._zlim=zlim
+
+        # Intensity bounds
+        self._clim=clim
 
         #Initialize axes positions
         self._axpos=np.empty([3,3],int)
@@ -73,13 +76,16 @@ class Canvas(scene.SceneCanvas):
         vol_flipped = np.flipud(np.swapaxes(vol_array,0,2))
 
         # Draw volumetric plot
-        self._volume=scene.visuals.Volume(vol_flipped)
+        self._volume=scene.visuals.Volume(vol_flipped,clim=self._clim)
         self._nx,self._ny,self._nz = vol_array.shape
         self._volume.transform = scene.STTransform(
                 #translate=(-self._nx/2,-self._ny/2,-self._nz/2),
-                translate=((1-self._nx)/2,(1-self._nz)/2,0),
+                translate=(self._xlim[0]+self._xr/(2*self._nx),
+                            self._ylim[0]+self._yr/(2*self._ny),
+                            self._zlim[0]+self._zr/(2*self._nz)),
+                #translate=((1-self._nx)/2,(1-self._nz)/2,0),
                 scale=(self._xr/self._nx,self._yr/self._ny,self._zr/self._nz))
-        self._volume.cmap = colormap.CubeHelixColormap()
+        self._volume.cmap = colormap.CubeHelixColormap(reverse=True)
         self._volume.method = 'mip'
         #self._volume.visible = False
 
@@ -149,7 +155,7 @@ class Canvas(scene.SceneCanvas):
                 self._ylim[1],
                 self._zlim[self._axpos[1,2]]]],
             domain=self._ylim,
-            tick_direction=(-1,0,0),
+            tick_direction=(1,0,0),
             major_tick_length=10*self._cam_dist,
             font_size=10*self._cam_dist,
             font_face='FreeSerif',
@@ -348,6 +354,6 @@ class Canvas(scene.SceneCanvas):
         with warnings.catch_warnings():
             app.run()
 
-def volume(xlim,ylim,zlim,vol_array,**kwargs):
-    c=Canvas(xlim,ylim,zlim,vol_array,**kwargs)
+def volume(xlim,ylim,zlim,vol_array,clim=None,**kwargs):
+    c=Canvas(xlim,ylim,zlim,vol_array,clim,**kwargs)
     c.run()
