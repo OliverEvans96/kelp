@@ -60,13 +60,12 @@ volume2 = scene.visuals.Volume(myVol, parent=view.scene, threshold=0.2,
                                emulate_texture=emulate_texture)
 volume1.visible = False
 nx,ny,nz = myVol.shape
-volume2.transform = scene.STTransform(translate=(0,0,0))
+volume2.transform = scene.STTransform(translate=(-nx/4,-ny/2,-nz/2))
 
 # Create three cameras (Fly, Turntable and Arcball)
 fov = 60
 cam1 = scene.cameras.FlyCamera(parent=view.scene, fov=fov, name='Fly')
-cam2 = scene.cameras.TurntableCamera(parent=view.scene, center=(nx/4,ny/2,nz/2),fov=fov,distance=2*np.sqrt(nx**2+ny**2+nz**2),
-                                     name='Turntable')
+cam2 = scene.cameras.TurntableCamera(parent=view.scene, center=(0,0,0),fov=fov,distance=2*np.sqrt(nx**2+ny**2+nz**2),name='Turntable')
 cam3 = scene.cameras.ArcballCamera(parent=view.scene, fov=fov, name='Arcball')
 view.camera = cam2  # Select turntable at first
 

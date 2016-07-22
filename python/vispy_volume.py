@@ -79,12 +79,18 @@ class Canvas(scene.SceneCanvas):
         self._volume=scene.visuals.Volume(vol_flipped,clim=self._clim)
         self._nx,self._ny,self._nz = vol_array.shape
         self._volume.transform = scene.STTransform(
-                #translate=(-self._nx/2,-self._ny/2,-self._nz/2),
+                # Off centered but in bounds
                 translate=(self._xlim[0]+self._xr/(2*self._nx),
                             self._ylim[0]+self._yr/(2*self._ny),
                             self._zlim[0]+self._zr/(2*self._nz)),
-                #translate=((1-self._nx)/2,(1-self._nz)/2,0),
                 scale=(self._xr/self._nx,self._yr/self._ny,self._zr/self._nz))
+                # Centered and out of bounds?
+                #translate=(self._xlim[0]-self._xr/(self._nx-1),
+                #            self._ylim[0]-self._yr/(self._ny-1),
+                #            self._zlim[0]-self._zr/(self._nz-1)),
+                #scale=(self._xr/(self._nx-1),
+                #            self._yr/(self._ny-1),
+                #            self._zr/(self._nz-1)))
         self._volume.cmap = colormap.CubeHelixColormap(reverse=True)
         self._volume.method = 'mip'
         #self._volume.visible = False

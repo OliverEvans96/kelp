@@ -2,12 +2,16 @@
 // Oliver Evans
 // Clarkson University REU 2016
 // Created: Wed 06 Jul 2016 01:11:25 PM EDT
-// Last Edited: Mon 11 Jul 2016 12:41:27 AM EDT
+// Last Edited: Fri 22 Jul 2016 01:36:24 PM EDT
+
+// Compile & run with:
+// g++ -fopenmp kelp_model.cpp -o kelp_model.out && time ./kelp_model.out &
 
 #include <iostream>
 #include <cmath>
 #include <iomanip>
 #include <fstream>
+#include <vector>
 #include <stdlib.h>
 
 using namespace std;
@@ -26,6 +30,9 @@ const double ALPHA = atan((1+FS)/(2*FR*FS));
 
 // Vertical growth density (fronds/meter)
 const double RHO = 10;
+
+// Index of refraction of water
+const double N_REFRACT = 3.0/4.0;
 
 
 ////////////////
@@ -60,6 +67,8 @@ inline int upperBin(double aa, double bb,int nn,double xx);
 void print3d(double*** v, int nx, int ny,int nz, const char *name);
 void write3d(double*** v, int nx, int ny,int nz, const char *name,ofstream &outFile);
 void print2d(double** v, int nx, int ny, const char *name);
+void write2d(double** v, int nx, int ny, const char *name,ofstream &outFile);
+void write2d(double** v, int nx, int ny, const char *name,int index,ofstream &outFile);
 void print1d(double* v, int nn, const char *name);
 void contourf(double* theta,double* rr,double** zz,int ntheta,int nr);
 
@@ -68,14 +77,14 @@ inline double P_theta_f(double xx,double v_w,double theta_w);
 inline double L_min_shade(double theta_p,double r_p,double theta_f);
 inline double theta_min_shade(double theta_p,double r_p,double LL);
 inline double theta_max_shade(double theta_p,double r_p,double LL);
-double E_shade_3d(double theta_p,double r_p,double z_p,double v_w,double theta_w,double phi_s,double theta_s,int nLBin,double* LBin_vals,int nzBin,double dzBin,double zBin_min,double zBin_max,double* zBin_vals,double** P_L);
+double N_shade_3d(double theta_p,double r_p,double z_p,double v_w,double theta_w,double phi_s,double theta_s,int nLBin,double* LBin_vals,int nzBin,double dzBin,double zBin_min,double zBin_max,double* zBin_vals,double** P_L);
 double P_shade_2d(double theta_p,double r_p,double v_w,double theta_w,int nLBin,double* LBin_vals,double* P_L);
 double availableLight(double theta_p,double r_p,double z_p,double v_w,double theta_w,double phi_s,double theta_s,int nLBin,double* LBin_vals,int nzBin,double dzBin,double zBin_min,double zBin_max,double* zBin_vals,double** P_L,double surfaceIntensity,double attenuationCoef,double absorptionCoef);
 inline void frondTransform(double ss,double tt,double &xx,double &yy,double theta_f,double LL);
 inline double JJ(double ss,double tt,double LL);
-double calculateLightAbsorption(double theta_f,double LL,double z_f,double theta_p,double r_p,double z_p,double v_w,double theta_w,double phi_s,double theta_s,int nLBin,double* LBin_vals,int nzBin,double dzBin,double zBin_min,double zBin_max,double* zBin_vals,double** P_L,double surfaceIntensity,double attenuationCoef,double absorptionCoef);
+double calculateLightAbsorption(double theta_f,double LL,double z_f,double v_w,double theta_w,double phi_s,double theta_s,int nLBin,double* LBin_vals,int nzBin,double dzBin,double zBin_min,double zBin_max,double* zBin_vals,double** P_L,double surfaceIntensity,double attenuationCoef,double absorptionCoef);
 inline double newLength(double lightAbsorbed,double LL,double tt);
-void recalculateLengthDistribution(double v_w,double z_f,double nLBin,double dLBin,double LBin_min,double LBin_max,double LBin_vals,double* P_L,double tt,int nLBins);
+void recalculateLengthDistribution(double tt,double v_w,double theta_w,double phi_s,double theta_s,int nLBin,double dLBin,double LBin_min,double LBin_max,double* LBin_vals,int nzBin,double dzBin,double zBin_min,double zBin_max,double* zBin_vals,double** P_L,double surfaceIntensity,double attenuationCoef,double absorptionCoef);
 
 
 //////////
@@ -86,7 +95,7 @@ int main()
 {
 	// Bin convention:
 	// Values stored in *Bin_vals are closed lower edges of bins
-	// Values stored in lengthDist[ii][jj] are the proportion of the
+	// Values stored in P_L[ii][jj] are the proportion of the
 	// population of fronds whose depth is in the interval
 	// [ zBin_vals[ii] , zBin_vals[ii] )
 	// whose length is in the interval
@@ -95,88 +104,160 @@ int main()
 
 	// n*Bin is the number of bins (not number of edges)
 
-	// Output to python
-	ofstream outFile("../python/kelp_output.py");
-	outFile << "from numpy import array" << endl;
-	outFile << "import pickle" << endl;
+	cout << "Start!" << endl;
 
-	// Partition depth (units are meters)
+	///////////////////////////
+	// SIMULATION PARAMETERS //
+	///////////////////////////
+
+	// Time
+	double tt = 0;
+	double dt = 1;
+	double t_max = 1;
+	int nTimeSteps = t_max/dt;
+
+	// Space
+	double xmin = -10;
+	double xmax = 10;
+	double dx = 0.5;
+
+	double ymin = -10;
+	double ymax = 10;
+	double dy = 0.5;
+
+	// Zenith Angle
+	double phimin = 0;
+	double phimax = PI;
+	double dphi = PI/10;
+
+	// Azimuth Angle
+	double thetamin = -PI;
+	double thetamax = PI;
+	double dtheta = PI/5;
+
+	// Depth
 	double dzBin = 0.5;
 	double zBin_min = 0;
-	double zBin_max = 10;
-	int nzBin = int(floor((zBin_max-zBin_min)/dzBin)); // Length of zBin_vals
+	double zBin_max = 5;
+
+	// Length
+	double dLBin = .5;
+	double LBin_min = -dLBin;
+	double LBin_max = 10;
+
+	// Water
+	double theta_w = 0;
+	double v_w = 5;
+
+	// Sun
+	double phi_s_orig = .48*PI;
+	double theta_s = PI/2;
+	// Refracted angle of sun
+	double phi_s = asin(N_REFRACT*sin(phi_s_orig));
+
+	// Light
+	double surfaceIntensity = 10;
+	double attenuationCoef = 0.2;
+	double absorptionCoef = 0.5;
+
+
+	/////////////////////////////
+	// PARTITION SPACE, LENGTH //
+	/////////////////////////////
+
+	// Partition depth (units are meters)
+	int nzBin = int(floor((zBin_max-zBin_min)/dzBin)+1); // Length of zBin_vals
 	double* zBin_vals = new double[nzBin];
-	for(int ii=0;ii<nzBin;ii++)
-		zBin_vals[ii] = zBin_min + dzBin*ii;
+	for(int kk=0;kk<nzBin;kk++)
+		zBin_vals[kk] = zBin_min + dzBin*kk;
 	
 	// Partition length (units are meters)
 	// First bin [-dLBin,0] is for dead fronds
-	double dLBin = 0.1;
-	double LBin_min = -dLBin;
-	double LBin_max = 5;
-	int nLBin = int(floor((LBin_max-LBin_min)/dLBin));
+	int nLBin = int(floor((LBin_max-LBin_min)/dLBin)+1);
 	double* LBin_vals = new double[nLBin];
 	for(int ii=0;ii<nLBin;ii++)
 		LBin_vals[ii] = LBin_min + dLBin*ii;
 
+	// Set up xy grid
+	int nx = int(floor((xmax-xmin)/dx)+1);
+	double* xx = new double[nx];
+	for(int ii=0;ii<nx;ii++)
+		xx[ii] = xmin + ii*dx;
+
+	int ny = int(floor((ymax-ymin)/dy)+1);
+	double* yy = new double[ny];
+	for(int jj=0;jj<ny;jj++)
+		yy[jj] = ymin + jj*dy;
+
+
+	///////////////////////////////////////////////
+	// INITIALIZE POPULATION LENGTH DISTRIBUTION //
+	///////////////////////////////////////////////
+
 	// Population distribution values
 	// Each depth is treated as a separate population
 	// Each row should sum to 1
-	double** lengthDist = new double*[nzBin];
+	double** P_L = new double*[nzBin];
 	double sum;
-	for(int ii=0;ii<nzBin;ii++)
+	for(int kk=0;kk<nzBin;kk++)
 	{
-		lengthDist[ii] = new double[nLBin];
+		P_L[kk] = new double[nLBin];
 
+		/*
 		// Initialize population to all be as small as possible
 		// (But not dead)
 		for(int jj = 0;jj<nLBin;jj++)
-			lengthDist[ii][jj] = 0;
-		lengthDist[ii][0] = 1;
+			P_L[kk][jj] = 0;
 
-		// Assign values
+		// All in smallest positive bin
+		P_L[kk][1] = 1;
+		*/
+		
+		// Normal distribution with varying mean
 		sum = 0;
+		P_L[kk][0] = 0;
 		for(int jj=1;jj<nLBin;jj++)
 		{
-			lengthDist[ii][jj] = (nzBin-ii)*exp(-pow(LBin_vals[jj]-3,2));
-			//lengthDist[ii][jj] = 1;
-			sum += lengthDist[ii][jj];
+			P_L[kk][jj] = exp(-pow(LBin_vals[jj]-5,2)/10);
+			//P_L[kk][jj] = 1;
+			sum += P_L[kk][jj];
 		}
 
 		//Normalize
 		for(int jj=0;jj<nLBin;jj++)
 		{
-			lengthDist[ii][jj] /= sum;
+			P_L[kk][jj] /= sum;
 		}
 	}
 
 	/*
 	// Only fronds in top layer
-	lengthDist[0][0] = 0;
-	lengthDist[0][nLBin-1] = 1;
-
-	// And a layer in the middle
-	lengthDist[5][0] = 0;
-	lengthDist[5][nLBin-1] = 1;
+	P_L[0][0] = 0;
+	P_L[0][nLBin-1] = 1;
 	*/
 
-	// Set up xy grid
-	double xmin = -5;
-	double xmax = 5;
-	double dx = 1;
-	int nx = int(floor((xmax-xmin)/dx));
-	double* xx = new double[nx];
-	for(int ii=0;ii<nx;ii++)
-		xx[ii] = xmin + ii*dx;
+	/*
+	// And a layer in the middle
+	P_L[5][0] = 0;
+	P_L[5][nLBin-1] = 1;
+	*/
 
-	double ymin = -5;
-	double ymax = 5;
-	double dy = 1;
-	int ny = int(floor((ymax-ymin)/dy));
-	double* yy = new double[ny];
-	for(int jj=0;jj<ny;jj++)
-		yy[jj] = ymin + jj*dx;
 
+	// Output to python
+	ofstream outFile("../python/kelp_output.py");
+	outFile << "import os" << endl;
+	outFile << "from numpy import *" << endl;
+	outFile << "import pickle" << endl;
+	outFile << "os.chdir('../python')" << endl;
+	outFile << "from vispy_volume import volume" << endl;
+	outFile << "P_L = zeros([" << nTimeSteps+1 << "," << nzBin << "," << nLBin << "])" << endl;
+	write2d(P_L,nzBin,nLBin,"P_L",0,outFile);
+
+	//////////////////////////////////
+	// VISUALIZE LIGHT AVAILABILITY //
+	//////////////////////////////////
+
+	/*
 	// Allocate 3d arrays
 	double*** xx_3d = new double**[nx];
 	double*** yy_3d = new double**[nx];
@@ -197,17 +278,11 @@ int main()
 		}
 	}
 
-	double theta_p;
-	double r_p;
-	double theta_w = PI/2;
-	double v_w = 1.0;
-	double phi_s = 0;
-	double theta_s = -PI/4;
+	double theta_p,r_p,z_p;
 
-	cout << "nzBin = " << nzBin << endl;
-	//cout << "A = " << A << endl;
 
 	// Calculate expected number of plants shading at each point in 3d grid
+	#pragma omp parallel for private(theta_p,r_p,z_p)
 	for(int ii=0;ii<nx;ii++)
 	{
 		for(int jj=0;jj<ny;jj++)
@@ -217,10 +292,15 @@ int main()
 			for(int kk=0;kk<nzBin;kk++)
 			{
 				//cout << "(" << ii << "," << jj << "," << kk << ")" << endl;
+				z_p = zBin_vals[kk];
+
+				//cout << "(" << ii << "," << jj << "," << kk << ")" << endl;
 				xx_3d[ii][jj][kk] = xx[ii];
 				yy_3d[ii][jj][kk] = yy[jj];
-				zz_3d[ii][jj][kk] = zBin_vals[kk];
-				PP_3d[ii][jj][kk] = E_shade_3d(theta_p,r_p,zBin_vals[kk],v_w,theta_w,phi_s,theta_s,nLBin,LBin_vals,nzBin,dzBin,zBin_min,zBin_max,zBin_vals,lengthDist);
+				zz_3d[ii][jj][kk] = z_p;
+				//PP_3d[ii][jj][kk] = N_shade_3d(theta_p,r_p,zBin_vals[kk],v_w,theta_w,phi_s,theta_s,nLBin,LBin_vals,nzBin,dzBin,zBin_min,zBin_max,zBin_vals,P_L);
+				// Amount of light NOT available - use reverse colormap
+				PP_3d[ii][jj][kk] = surfaceIntensity - availableLight(theta_p,r_p,z_p,v_w,theta_w,phi_s,theta_s,nLBin,LBin_vals,nzBin,dzBin,zBin_min,zBin_max,zBin_vals,P_L,surfaceIntensity,attenuationCoef,absorptionCoef);
 			}
 		}
 	}
@@ -229,18 +309,46 @@ int main()
 	r_p = 1;
 
 	// Write variables to file
+	outFile << "xlim = [" << xmin-dx/2 << "," << xmax+dx/2 << "]" << endl;
+	outFile << "ylim = [" << ymin-dy/2 << "," << ymax+dy/2 << "]" << endl;
+	outFile << "zlim = [" << -zBin_max-dzBin/2 << "," << -zBin_min+dzBin/2 << "]" << endl;
+	outFile << "clim = array([0," << surfaceIntensity << "])" << endl;
 	write3d(xx_3d,nx,ny,nzBin,"xx_3d",outFile);
 	write3d(yy_3d,nx,ny,nzBin,"yy_3d",outFile);
 	write3d(zz_3d,nx,ny,nzBin,"zz_3d",outFile);
 	write3d(PP_3d,nx,ny,nzBin,"PP_3d",outFile);
+
+	// Plot volume
+	outFile << "volume(xlim,ylim,zlim,PP_3d,clim)" << endl;
+	*/
+
+	////////////////////
+	// RUN SIMULATION //
+	////////////////////
+
+	// Loop through time
+	for(int nn = 0;nn<nTimeSteps;nn++)
+	{
+		cout << "t[" << nn << "] = " << tt << endl;
+		recalculateLengthDistribution(tt,v_w,theta_w,phi_s,theta_s,nLBin,dLBin,LBin_min,LBin_max,LBin_vals,nzBin,dzBin,zBin_min,zBin_max,zBin_vals,P_L,surfaceIntensity,attenuationCoef,absorptionCoef);
+		write2d(P_L,nzBin,nLBin,"P_L",nn+1,outFile);
+
+		// Increment time
+		tt += dt;
+	}
+
+	//////////////
+	// CLEAN UP //
+	//////////////
 
 	// Close output file
 	outFile.close();
 
 	// Run newly created python script
 	system("mkdir -p ../python/kelp_pickle");
-	system("python ../python/kelp_output.py");
+	// system("python ../python/kelp_output.py");
 
+	/*
 	// Delete arrays
 	delete [] xx;
 	delete [] yy;
@@ -262,15 +370,19 @@ int main()
 	delete [] yy_3d;
 	delete [] zz_3d;
 	delete [] PP_3d;
+	*/
 
 	for(int ii=0;ii<nzBin;ii++)
-		delete lengthDist[ii];
-	delete [] lengthDist;
+		delete P_L[ii];
+	delete [] P_L;
 	delete [] zBin_vals;
 	delete [] LBin_vals;
 
+	cout << "Finish!" << endl;
+
 	return 0;
 }
+
 
 ////////////////////
 // MATH FUNCTIONS //
@@ -638,8 +750,6 @@ void write3d(double*** v, int nx, int ny,int nz, const char *name,ofstream &outF
 	outFile << "    pickle.dump(" << name << ",pickle_file)" << endl;
 }
 
-
-
 // Print 2d array for input to python
 void print2d(double** v, int nx, int ny, const char *name)
 {
@@ -655,6 +765,40 @@ void print2d(double** v, int nx, int ny, const char *name)
 	for(int jj=0;jj<ny-1;jj++) 
 		cout << v[nx-1][jj] << ",";
 	cout << v[nx-1][ny-1] << "]])" << endl;
+}
+
+// Write 2d array for input to python
+void write2d(double** v, int nx, int ny, const char *name,ofstream& outFile)
+{
+	outFile << name << " = array([" << endl;
+	for(int ii=0;ii<nx-1;ii++) 
+	{
+		outFile << "[";
+		for(int jj=0;jj<ny-1;jj++) 
+			outFile << v[ii][jj] << ",";
+		outFile << v[ii][ny-1] << "]," << endl;
+	}
+	outFile << "[";
+	for(int jj=0;jj<ny-1;jj++) 
+		outFile << v[nx-1][jj] << ",";
+	outFile << v[nx-1][ny-1] << "]])" << endl;
+}
+
+// Write 2d array for input to python with index
+void write2d(double** v, int nx, int ny, const char *name,int index,ofstream& outFile)
+{
+	outFile << name << "[" << index << "] = array([" << endl;
+	for(int ii=0;ii<nx-1;ii++) 
+	{
+		outFile << "[";
+		for(int jj=0;jj<ny-1;jj++) 
+			outFile << v[ii][jj] << ",";
+		outFile << v[ii][ny-1] << "]," << endl;
+	}
+	outFile << "[";
+	for(int jj=0;jj<ny-1;jj++) 
+		outFile << v[nx-1][jj] << ",";
+	outFile << v[nx-1][ny-1] << "]])" << endl;
 }
 
 // Print 1d array for input to python
@@ -721,7 +865,7 @@ inline double theta_min_shade(double theta_p,double r_p,double LL)
 // Expected number of fronds shading a point in 3d space
 // considering only incident light (not diffuse)
 // Integrate P_shade_2d over z, shifting theta_p and r_p towards the sun appropriately
-double E_shade_3d(double theta_p,double r_p,double z_p,double v_w,double theta_w,double phi_s,double theta_s,int nLBin,double* LBin_vals,int nzBin,double dzBin,double zBin_min,double zBin_max,double* zBin_vals,double** P_L)
+double N_shade_3d(double theta_p,double r_p,double z_p,double v_w,double theta_w,double phi_s,double theta_s,int nLBin,double* LBin_vals,int nzBin,double dzBin,double zBin_min,double zBin_max,double* zBin_vals,double** P_L)
 {
 	// Probability of shading
 	double PP = 0;
@@ -854,8 +998,8 @@ double P_shade_2d(double theta_p,double r_p,double v_w,double theta_w,int nLBin,
 // Not considering ambient light
 double availableLight(double theta_p,double r_p,double z_p,double v_w,double theta_w,double phi_s,double theta_s,int nLBin,double* LBin_vals,int nzBin,double dzBin,double zBin_min,double zBin_max,double* zBin_vals,double** P_L,double surfaceIntensity,double attenuationCoef,double absorptionCoef)
 {
-	double nShade = E_shade_3d(theta_p,r_p,zBin_vals[kk],v_w,theta_w,phi_s,theta_s,nLBin,LBin_vals,nzBin,dzBin,zBin_min,zBin_max,zBin_vals,lengthDist);
-	double absorptionFactor = pow((1-absorbtion_coef),nShade);
+	double nShade = N_shade_3d(theta_p,r_p,z_p,v_w,theta_w,phi_s,theta_s,nLBin,LBin_vals,nzBin,dzBin,zBin_min,zBin_max,zBin_vals,P_L);
+	double absorptionFactor = pow((1-absorptionCoef),nShade);
 	double attenuationFactor = exp(-attenuationCoef*z_p);
 
 	return surfaceIntensity * absorptionFactor * attenuationFactor;
@@ -864,22 +1008,22 @@ double availableLight(double theta_p,double r_p,double z_p,double v_w,double the
 // Transform a point (ss,tt) in the unit square: [-1,1]x[-1,1] to the corresponding point (xx,yy) on a frond of length L at an angle theta_f
 inline void frondTransform(double ss,double tt,double &xx,double &yy,double theta_f,double LL)
 {
-	xx = LL*(-FR*(FS*(s - 1)*(t + 1) - (s + 1)*(2*FS + t + 1))*cos(theta_f) 
-			+ (FS + 1)*(s - t)*sin(theta_f))/(4*FR*(FS + 1)) 
-	yy = -LL*(FR*(FS*(s - 1)*(t + 1) - (s + 1)*(2*FS + t + 1))*sin(theta_f) 
-			+ (FS + 1)*(s - t)*cos(theta_f))/(4*FR*(FS + 1))
+	xx = LL*(-FR*(FS*(ss - 1)*(tt + 1) - (ss + 1)*(2*FS + tt + 1))*cos(theta_f) 
+			+ (FS + 1)*(ss - tt)*sin(theta_f))/(4*FR*(FS + 1));
+	yy = -LL*(FR*(FS*(ss - 1)*(tt + 1) - (ss + 1)*(2*FS + tt + 1))*sin(theta_f) 
+			+ (FS + 1)*(ss - tt)*cos(theta_f))/(4*FR*(FS + 1));
 }
 
 // Jacobian of frond transform
 inline double JJ(double ss,double tt,double LL)
 {
-	return L**2*(-FS**2*ss - FS**2*tt + 2*FS**2 + 4*FS + ss + tt + 2)/(16*FR*(FS + 1)**2);
+	return LL*LL*(-FS*FS*ss - FS*FS*tt + 2*FS*FS + 4*FS + ss + tt + 2)/(16*FR*(FS + 1)*(FS + 1));
 }
 
 // Calculate the light absorbed by a frond with a particular angle (theta_f) and length (LL)
 // at a particular depth (z_f)
 // Use n=2 Gaussian quadrature product rule to integrate light field over frond area by transforming frond to unit square
-double calculateLightAbsorption(double theta_f,double LL,double z_f,double theta_p,double r_p,double z_p,double v_w,double theta_w,double phi_s,double theta_s,int nLBin,double* LBin_vals,int nzBin,double dzBin,double zBin_min,double zBin_max,double* zBin_vals,double** P_L,double surfaceIntensity,double attenuationCoef,double absorptionCoef)
+double calculateLightAbsorption(double theta_f,double LL,double z_f,double v_w,double theta_w,double phi_s,double theta_s,int nLBin,double* LBin_vals,int nzBin,double dzBin,double zBin_min,double zBin_max,double* zBin_vals,double** P_L,double surfaceIntensity,double attenuationCoef,double absorptionCoef)
 {
 	// Abscissas on unit square
 	static double sa[2] = {-1/sqrt(3),1/sqrt(3)};
@@ -905,20 +1049,22 @@ double calculateLightAbsorption(double theta_f,double LL,double z_f,double theta
 			frondTransform(sa[ii],sa[jj],xfa,yfa,theta_f,LL);
 
 			// Convert to polar coordinates
-			tfa = theta_xy(xfa,xya);
+			tfa = theta_xy(xfa,yfa);
 			rfa = sqrt(xfa*xfa + yfa*yfa);
 
 			// Calculate contribution of this abscissa
-			absc_val = availableLight(theta_p,r_p,z_p,v_w,theta_w,phi_s,theta_s,gnLBin,LBin_vals,nzBin,dzBin,zBin_min,zBin_max,zBin_vals,P_L,surfaceIntensity,attenuationCoef,absorptionCoef);
+			absc_val = availableLight(tfa,rfa,z_f,v_w,theta_w,phi_s,theta_s,nLBin,LBin_vals,nzBin,dzBin,zBin_min,zBin_max,zBin_vals,P_L,surfaceIntensity,attenuationCoef,absorptionCoef);
 
 			// Multiply by weights according to quadrature product rule
 			// absc_val *= ww[ii] * ww[jj];
 
-			// Multiply by the Jacobian and add to total
+			// Multiply by the Jacobian and add to total integral
 			lightAbsorbed += absc_val * abs(JJ(sa[ii],sa[jj],LL));
 		}
 	}
 
+	//cout << "LA: (" << theta_f << "," << LL << "," << z_f << ") = " << lightAbsorbed << endl;
+	return lightAbsorbed;
 }
 
 // New frond length from growth as a function of light absorbed, frond length, and time
@@ -927,32 +1073,43 @@ inline double newLength(double lightAbsorbed,double LL,double tt)
 	double light_param = 1;
 	double length_param = 1;
 	double time_param = 1;
-	double growth = exp(lightAbsorbed*light_param - LL*length_param - tt*time_param);
+	double growth = lightAbsorbed * light_param / ((LL*length_param+1) * (tt*time_param+1))/10;
 	return LL + growth;
 }
 
-// Recalculate length distribution by integrating P_theta_f*P_L over R_i for each L_i,
-// where R_i is the region such that newLength(theta_f,LL) \in [ L_i , L_{i+1} )
-void recalculateLengthDistribution(double v_w,double z_f,double nLBin,double dLBin,double LBin_min,double LBin_max,double LBin_vals,double* P_L,double tt,int nLBins)
-calculateLightAbsorption(double theta_f,double LL,double z_f,double theta_p,double r_p,double z_p,double v_w,double theta_w,double phi_s,double theta_s,int nLBin,double* LBin_vals,int nzBin,double dzBin,double zBin_min,double zBin_max,double* zBin_vals,double** P_L,double surfaceIntensity,double attenuationCoef,double absorptionCoef)
+// Recalculate length distribution by integrating P_theta_f*P_L over R for each L_i,
+// where R is the region such that newLength(theta_f,LL) \in [ L_i , L_{i+1} )
+// This function recalculates for all z bins, then updates
+void recalculateLengthDistribution(double tt,double v_w,double theta_w,double phi_s,double theta_s,int nLBin,double dLBin,double LBin_min,double LBin_max,double* LBin_vals,int nzBin,double dzBin,double zBin_min,double zBin_max,double* zBin_vals,double** P_L,double surfaceIntensity,double attenuationCoef,double absorptionCoef)
 {
 	// Number of points to sample from theta_f
-	int n_theta_f = 20;
-	double dtheta_f = 2*PI/n_theta_f_points;
+	int n_theta_f = 5;
+	double dtheta_f = 2*PI/n_theta_f;
 
 	// Current sample coordinates
-	double theta_f = -PI;
+	double theta_f;
 	double LL_current;
+	double z_f;
 
 	// Light absorbed by frond
 	double lightAbsorbed;
 
-	// theta_f and LL coordinates of points in R_i for a given LL bin
-	vector<double>* R_i_theta_f = new vector<double>[nLBin];
-	vector<double>* R_i_LL = new vector<double>[nLBin];
+	// theta_f coordinates and LL indices of points in R for a given LL bin
+	// and new length distribution
+	int** nPoints = new int*[nzBin];
+	vector<double>** R_theta_f = new vector<double>*[nzBin];
+	vector<int>** R_LL = new vector<int>*[nzBin];
+	double** P_L_new = new double*[nzBin];
+	for(int kk=0;kk<nzBin;kk++)
+	{
+		nPoints[kk] = new int[nLBin];
+		R_theta_f[kk] = new vector<double>[nLBin];
+		R_LL[kk] = new vector<int>[nLBin];
+		P_L_new[kk] = new double[nLBin];
+	}
+
 
 	// Number of points which fall into each LL bin
-	vector<int>* nPoints = new vector<int>[nLBin];
 
 	// New length coordinate
 	double LL_new;
@@ -960,54 +1117,92 @@ calculateLightAbsorption(double theta_f,double LL,double z_f,double theta_p,doub
 	// Bin of new length coordinate
 	int new_bin;
 
-	// New length distribution
-	double* P_L_new = new double[nLBin];
-
-	// Loop through theta_f-LL space
-	for(int ii=0;ii<n_theta_f;ii++)
+	// Loop through depth bins
+	#pragma omp parallel for private(theta_f,z_f,LL_current,lightAbsorbed,LL_new,new_bin)
+	for(int kk=0;kk<nzBin;kk++)
 	{
+		// Reset point counters and P_L_new values
 		for(int jj=0;jj<nLBin;jj++)
 		{
-			// Get LL value for this index (use bin midpoint)
-			double LL_current = LBin_vals[jj] + dLBin/2;
-
-			// Calculate light absorbed by a frond with this particular theta_f and LL
-			lightAbsorbed = calculateLightAbsorption(theta_f,LL,z_f,theta_p,r_p,z_p,v_w,theta_w,phi_s,theta_s,nLBin,LBin_vals,nzBin,dzBin,zBin_min,zBin_max,zBin_vals,P_L,surfaceIntensity,attenuationCoef,absorptionCoef)
-
-			// Calculate new frond size for this type of frond
-			LL_new = newLength(lightAbsorbed,LL_current,tt);
-
-			// Determine which bin this new length falls into
-			new_bin = findBin(LBin_min,LBin_max,nLBin,LL_new);
-
-			// Save the indices of this theta_f,LL pair in the appropriate vector
-			R_i_theta_f[new_bin].push_back(LL_current);
-			R_i_LL[new_bin].push_back(theta_f);
-
-			// Increment point counter for this bin
-			nPoints[new_bin]++;
+			nPoints[kk][jj] = 0;
+			P_L_new[kk][jj] = 0;
 		}
 
-		// Increment sample point
-		theta_f += dtheta_f;
-	}
+		// Reset theta_f sample point
+		theta_f = -PI;
 
-	// Integrate 2d population distribution over appropriate region for each new length bin
-	// Loop through new length bins
-	for(int kk=0;kk<nLBin;kk++)
-	{
-		// Integrate 2d population distribution over theta_f,LL points which map to this bin
-		// This is the (approximate) percentage of the population 
-		// which will fall in this bin after growth (next time step)
+		// Get z_f value for this index (use bin midpoint)
+		z_f = zBin_vals[kk] + dzBin/2;
 
-		// Loop over points (use 2d midpoint rule)
-		for(int nn=0;nn<nPoints[kk];nn++)
-			P_L_new[kk] += P_theta_f(R_i_theta_f[kk][nn],v_w,theta_w)*dtheta_f*P_L(R_i_LL[kk][nn]);
+		// Loop through theta_f-LL space of possible living fronds (LL>0)
+		for(int ii=0;ii<n_theta_f;ii++)
+		{
+			for(int jj=1;jj<nLBin;jj++)
+			{
+				// Get LL value for this index (use bin midpoint)
+				LL_current = LBin_vals[jj] + dLBin/2;
+
+				// Calculate light absorbed by a frond with this particular theta_f and LL
+				lightAbsorbed = calculateLightAbsorption(theta_f,LL_current,z_f,v_w,theta_w,phi_s,theta_s,nLBin,LBin_vals,nzBin,dzBin,zBin_min,zBin_max,zBin_vals,P_L,surfaceIntensity,attenuationCoef,absorptionCoef);
+
+				// Calculate new frond size for this type of frond
+				LL_new = newLength(lightAbsorbed,LL_current,tt);
+
+				// Determine which bin this new length falls into
+				new_bin = findBin(LBin_min,LBin_max,nLBin,LL_new);
+				// but don't let it exceed the number of bins!
+				new_bin = min(new_bin,nLBin-1);
+				// nor be less than 0
+				new_bin = max(new_bin,0);
+
+				// Save the this theta_f value in the appropriate vector
+				R_theta_f[kk][new_bin].push_back(theta_f);
+				// Save the index of this LL value in the appropriate vector
+				R_LL[kk][new_bin].push_back(jj);
+
+				// Increment point counter for this bin
+				nPoints[kk][new_bin]++;
+			}
+			// Dead fronds stay dead (LL<0)
+			R_theta_f[kk][0].push_back(theta_f);
+			R_LL[kk][0].push_back(0);
+			nPoints[kk][0]++;
+
+			// Increment sample point
+			theta_f += dtheta_f;
+		}
+
+		// Integrate 2d population distribution over appropriate region for each new length bin
+		// Loop through new length bins
+		for(int jj=0;jj<nLBin;jj++)
+		{
+			// Loop over points (use 2d midpoint rule)
+			for(int nn=0;nn<nPoints[kk][jj];nn++)
+			{
+				if(P_L[kk][R_LL[kk][jj][nn]]<0)
+				{
+					cout << "PL (" << nn << "," << jj << "," << kk << ";" << R_LL[kk][jj][nn] << ") = " << P_L[kk][R_LL[kk][jj][nn]] << endl;
+				}
+				P_L_new[kk][jj] += P_theta_f(R_theta_f[kk][jj][nn],v_w,theta_w)*dtheta_f*P_L[kk][R_LL[kk][jj][nn]];
+			}
+		}
 	}
 
 	// Update length distribution
-	for(int kk=0;kk<nLBin;kk++)
-		P_L[kk] = P_L_new[kk];
+	for(int kk=0;kk<nzBin;kk++)
+		for(int jj=0;jj<nLBin;jj++)
+			P_L[kk][jj] = P_L_new[kk][jj];
+
+	// Deallocate arrays
+	for(int kk=0;kk<nzBin;kk++)
+	{
+		delete [] nPoints[kk];
+		delete [] P_L_new[kk];
+		delete [] R_theta_f[kk];
+		delete [] R_LL[kk];
+	}
+
+	delete [] nPoints,P_L_new,R_theta_f,R_LL;
 }
 
 

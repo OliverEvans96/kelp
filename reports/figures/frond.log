@@ -1,8 +1,8 @@
-This is pdfTeX, Version 3.1415926-2.5-1.40.14 (TeX Live 2013/Debian) (format=pdflatex 2016.1.22)  25 JUN 2016 19:10
+This is pdfTeX, Version 3.1415926-2.5-1.40.14 (TeX Live 2013/Debian) (format=pdflatex 2016.1.22)  12 JUL 2016 00:27
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
-**frond.tex
+**frond.tex frond_thin.pdf
 (./frond.tex
 LaTeX2e <2011/06/27>
 Babel <3.9h> and hyphenation patterns for 78 languages loaded.
@@ -399,17 +399,17 @@ LaTeX Font Info:    External font `cmex10' loaded for size
 
 {/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}] (./frond.aux) ) 
 Here is how much of TeX's memory you used:
- 10282 strings out of 493304
- 195780 string characters out of 6139871
- 235899 words of memory out of 5000000
- 13554 multiletter control sequences out of 15000+600000
+ 10279 strings out of 493304
+ 195733 string characters out of 6139871
+ 235897 words of memory out of 5000000
+ 13551 multiletter control sequences out of 15000+600000
  3640 words of font info for 14 fonts, out of 8000000 for 9000
  957 hyphenation exceptions out of 8191
- 63i,7n,57p,416b,542s stack positions out of 5000i,500n,10000p,200000b,80000s
+ 63i,7n,57p,431b,542s stack positions out of 5000i,500n,10000p,200000b,80000s
 </usr/share
 /texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/share/texli
 ve/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi7.pfb>
-Output written on frond.pdf (1 page, 17485 bytes).
+Output written on frond.pdf (1 page, 17495 bytes).
 PDF statistics:
  19 PDF objects out of 1000 (max. 8388607)
  13 compressed objects within 1 object stream

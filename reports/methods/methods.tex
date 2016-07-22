@@ -1,3 +1,4 @@
+PP1 = flipud(rollaxis(PP,2))
 \documentclass[10pt]{article}
 
 \usepackage{graphicx}
@@ -202,7 +203,7 @@ Here, we use $\mu = \theta_w$ and $\kappa = v_w$.
 
 The PDF for this distribution is
 \begin{equation}
-	P_{\theta_f}(\theta_f) = \frac{e^{(1/v_w)\cos(\theta_f-v_w)}}{2\pi I_0(1/v_w)}
+	P_{\theta_f}(\theta_f) = \frac{e^{(v_w)\cos(\theta_f-v_w)}}{2\pi I_0(v_w)}
 \end{equation}
 where $I_0(x)$ is the modified Bessel function of the first kind of order 0.
 Notice that unlike the normal distribution, the von Mises distribution approaches a \textit{non-zero} uniform distribution as $\kappa$ approaches 0.

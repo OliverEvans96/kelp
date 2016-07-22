@@ -2,7 +2,7 @@
 // Oliver Evans
 // Clarkson University REU 2016
 // Created: Wed 06 Jul 2016 01:11:25 PM EDT
-// Last Edited: Wed 06 Jul 2016 07:41:42 PM EDT
+// Last Edited: Thu 07 Jul 2016 11:31:42 AM EDT
 
 #include <iostream>
 #include <cmath>
@@ -32,6 +32,25 @@ double csimp(double (*ff)(double),double aa,double bb,int nn)
 		//x_{i+1}
 		x_ip1 = aa + hh*(ii+1);
 		total += hh/6 * (ff(x_i) + 4*ff((x_i+x_ip1)/2) + ff(x_ip1));
+	}
+
+	return total;
+}
+// Allow for one double parameter
+double csimp(double (*ff)(double,double),double aa,double bb,int nn,double pp)
+{
+	double total = 0;
+	double hh = (bb-aa)/nn;
+	double x_i,x_ip1;
+
+	// Loop through intervals
+	for(int ii=0;ii<nn;ii++)
+	{
+		//x_i
+		x_i = aa + hh*ii;
+		//x_{i+1}
+		x_ip1 = aa + hh*(ii+1);
+		total += hh/6 * (ff(x_i,pp) + 4*ff((x_i+x_ip1)/2,pp) + ff(x_ip1,pp));
 	}
 
 	return total;
@@ -104,6 +123,16 @@ double I0(double xx)
 // xx: input value
 // returns: PDF evaluated at xx
 double vonMisesPDF(double kk,double mu,double xx)
+{
+	return exp(kk*cos(xx-mu))/(2*PI*I0(kk));
+}
+
+// von Mises Distribution CDF
+// kk: kappa - sharpness parameter
+// mu: horizontal shift
+// xx: input value
+// returns: PDF evaluated at xx
+double vonMisesCDF(double kk,double mu,double xx)
 {
 	return exp(kk*cos(xx-mu))/(2*PI*I0(kk));
 }
@@ -186,6 +215,12 @@ double ff(double xx,double yy)
 	return sin(PI*xx)+sin(PI*yy);
 }
 
+// Unshifted von Mises PDF
+double vm(double xx,double kk)
+{
+	return vonMisesPDF(kk,0,xx);
+}
+
 int main()
 {
 	// Partition depth (units are meters)
@@ -201,8 +236,11 @@ int main()
 		yvals[ii] = vonMisesPDF(1,PI/2,xvals[ii]);
 	}
 
-	print1d(xvals,nx,"x");
-	print1d(yvals,nx,"y");
+	// print1d(xvals,nx,"x");
+	// print1d(yvals,nx,"y");
+
+	for(int kk=-10;kk<5;kk++)
+		cout << "k=" << pow(10,kk) << ": " << csimp(vm,-PI,PI,20,pow(10,kk)) << endl;
 
 	delete xvals;
 	delete yvals;
