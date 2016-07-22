@@ -2,7 +2,7 @@
 // Oliver Evans
 // Clarkson University REU 2016
 // Created: Wed 06 Jul 2016 01:11:25 PM EDT
-// Last Edited: Fri 22 Jul 2016 01:36:24 PM EDT
+// Last Edited: Fri 22 Jul 2016 01:40:51 PM EDT
 
 // Compile & run with:
 // g++ -fopenmp kelp_model.cpp -o kelp_model.out && time ./kelp_model.out &
@@ -79,12 +79,12 @@ inline double theta_min_shade(double theta_p,double r_p,double LL);
 inline double theta_max_shade(double theta_p,double r_p,double LL);
 double N_shade_3d(double theta_p,double r_p,double z_p,double v_w,double theta_w,double phi_s,double theta_s,int nLBin,double* LBin_vals,int nzBin,double dzBin,double zBin_min,double zBin_max,double* zBin_vals,double** P_L);
 double P_shade_2d(double theta_p,double r_p,double v_w,double theta_w,int nLBin,double* LBin_vals,double* P_L);
-double availableLight(double theta_p,double r_p,double z_p,double v_w,double theta_w,double phi_s,double theta_s,int nLBin,double* LBin_vals,int nzBin,double dzBin,double zBin_min,double zBin_max,double* zBin_vals,double** P_L,double surfaceIntensity,double attenuationCoef,double absorptionCoef);
+double availableLight(double theta_p,double r_p,double z_p,double v_w,double theta_w,double phi_s,double theta_s,int nLBin,double* LBin_vals,int nzBin,double dzBin,double zBin_min,double zBin_max,double* zBin_vals,double** P_L,double surfaceIntensity,double attenuationCoef,double a_k);
 inline void frondTransform(double ss,double tt,double &xx,double &yy,double theta_f,double LL);
 inline double JJ(double ss,double tt,double LL);
-double calculateLightAbsorption(double theta_f,double LL,double z_f,double v_w,double theta_w,double phi_s,double theta_s,int nLBin,double* LBin_vals,int nzBin,double dzBin,double zBin_min,double zBin_max,double* zBin_vals,double** P_L,double surfaceIntensity,double attenuationCoef,double absorptionCoef);
+double calculateLightAbsorption(double theta_f,double LL,double z_f,double v_w,double theta_w,double phi_s,double theta_s,int nLBin,double* LBin_vals,int nzBin,double dzBin,double zBin_min,double zBin_max,double* zBin_vals,double** P_L,double surfaceIntensity,double attenuationCoef,double a_k);
 inline double newLength(double lightAbsorbed,double LL,double tt);
-void recalculateLengthDistribution(double tt,double v_w,double theta_w,double phi_s,double theta_s,int nLBin,double dLBin,double LBin_min,double LBin_max,double* LBin_vals,int nzBin,double dzBin,double zBin_min,double zBin_max,double* zBin_vals,double** P_L,double surfaceIntensity,double attenuationCoef,double absorptionCoef);
+void recalculateLengthDistribution(double tt,double v_w,double theta_w,double phi_s,double theta_s,int nLBin,double dLBin,double LBin_min,double LBin_max,double* LBin_vals,int nzBin,double dzBin,double zBin_min,double zBin_max,double* zBin_vals,double** P_L,double surfaceIntensity,double attenuationCoef,double a_k);
 
 
 //////////
@@ -158,7 +158,12 @@ int main()
 	// Light
 	double surfaceIntensity = 10;
 	double attenuationCoef = 0.2;
-	double absorptionCoef = 0.5;
+	// Absorption by kelp
+	double a_k = 0.5;
+	// Absoroption by water
+	double a_w = 0.5;
+	// Scattering by water
+	double b_w; //Integral of beta (volume scattering function)
 
 
 	/////////////////////////////
@@ -300,7 +305,7 @@ int main()
 				zz_3d[ii][jj][kk] = z_p;
 				//PP_3d[ii][jj][kk] = N_shade_3d(theta_p,r_p,zBin_vals[kk],v_w,theta_w,phi_s,theta_s,nLBin,LBin_vals,nzBin,dzBin,zBin_min,zBin_max,zBin_vals,P_L);
 				// Amount of light NOT available - use reverse colormap
-				PP_3d[ii][jj][kk] = surfaceIntensity - availableLight(theta_p,r_p,z_p,v_w,theta_w,phi_s,theta_s,nLBin,LBin_vals,nzBin,dzBin,zBin_min,zBin_max,zBin_vals,P_L,surfaceIntensity,attenuationCoef,absorptionCoef);
+				PP_3d[ii][jj][kk] = surfaceIntensity - availableLight(theta_p,r_p,z_p,v_w,theta_w,phi_s,theta_s,nLBin,LBin_vals,nzBin,dzBin,zBin_min,zBin_max,zBin_vals,P_L,surfaceIntensity,attenuationCoef,a_k);
 			}
 		}
 	}
@@ -330,7 +335,7 @@ int main()
 	for(int nn = 0;nn<nTimeSteps;nn++)
 	{
 		cout << "t[" << nn << "] = " << tt << endl;
-		recalculateLengthDistribution(tt,v_w,theta_w,phi_s,theta_s,nLBin,dLBin,LBin_min,LBin_max,LBin_vals,nzBin,dzBin,zBin_min,zBin_max,zBin_vals,P_L,surfaceIntensity,attenuationCoef,absorptionCoef);
+		recalculateLengthDistribution(tt,v_w,theta_w,phi_s,theta_s,nLBin,dLBin,LBin_min,LBin_max,LBin_vals,nzBin,dzBin,zBin_min,zBin_max,zBin_vals,P_L,surfaceIntensity,attenuationCoef,a_k);
 		write2d(P_L,nzBin,nLBin,"P_L",nn+1,outFile);
 
 		// Increment time
@@ -996,10 +1001,10 @@ double P_shade_2d(double theta_p,double r_p,double v_w,double theta_w,int nLBin,
 
 // Calculate available light at a given 3d point
 // Not considering ambient light
-double availableLight(double theta_p,double r_p,double z_p,double v_w,double theta_w,double phi_s,double theta_s,int nLBin,double* LBin_vals,int nzBin,double dzBin,double zBin_min,double zBin_max,double* zBin_vals,double** P_L,double surfaceIntensity,double attenuationCoef,double absorptionCoef)
+double availableLight(double theta_p,double r_p,double z_p,double v_w,double theta_w,double phi_s,double theta_s,int nLBin,double* LBin_vals,int nzBin,double dzBin,double zBin_min,double zBin_max,double* zBin_vals,double** P_L,double surfaceIntensity,double attenuationCoef,double a_k)
 {
 	double nShade = N_shade_3d(theta_p,r_p,z_p,v_w,theta_w,phi_s,theta_s,nLBin,LBin_vals,nzBin,dzBin,zBin_min,zBin_max,zBin_vals,P_L);
-	double absorptionFactor = pow((1-absorptionCoef),nShade);
+	double absorptionFactor = pow((1-a_k),nShade);
 	double attenuationFactor = exp(-attenuationCoef*z_p);
 
 	return surfaceIntensity * absorptionFactor * attenuationFactor;
@@ -1023,7 +1028,7 @@ inline double JJ(double ss,double tt,double LL)
 // Calculate the light absorbed by a frond with a particular angle (theta_f) and length (LL)
 // at a particular depth (z_f)
 // Use n=2 Gaussian quadrature product rule to integrate light field over frond area by transforming frond to unit square
-double calculateLightAbsorption(double theta_f,double LL,double z_f,double v_w,double theta_w,double phi_s,double theta_s,int nLBin,double* LBin_vals,int nzBin,double dzBin,double zBin_min,double zBin_max,double* zBin_vals,double** P_L,double surfaceIntensity,double attenuationCoef,double absorptionCoef)
+double calculateLightAbsorption(double theta_f,double LL,double z_f,double v_w,double theta_w,double phi_s,double theta_s,int nLBin,double* LBin_vals,int nzBin,double dzBin,double zBin_min,double zBin_max,double* zBin_vals,double** P_L,double surfaceIntensity,double attenuationCoef,double a_k)
 {
 	// Abscissas on unit square
 	static double sa[2] = {-1/sqrt(3),1/sqrt(3)};
@@ -1053,7 +1058,7 @@ double calculateLightAbsorption(double theta_f,double LL,double z_f,double v_w,d
 			rfa = sqrt(xfa*xfa + yfa*yfa);
 
 			// Calculate contribution of this abscissa
-			absc_val = availableLight(tfa,rfa,z_f,v_w,theta_w,phi_s,theta_s,nLBin,LBin_vals,nzBin,dzBin,zBin_min,zBin_max,zBin_vals,P_L,surfaceIntensity,attenuationCoef,absorptionCoef);
+			absc_val = availableLight(tfa,rfa,z_f,v_w,theta_w,phi_s,theta_s,nLBin,LBin_vals,nzBin,dzBin,zBin_min,zBin_max,zBin_vals,P_L,surfaceIntensity,attenuationCoef,a_k);
 
 			// Multiply by weights according to quadrature product rule
 			// absc_val *= ww[ii] * ww[jj];
@@ -1080,7 +1085,7 @@ inline double newLength(double lightAbsorbed,double LL,double tt)
 // Recalculate length distribution by integrating P_theta_f*P_L over R for each L_i,
 // where R is the region such that newLength(theta_f,LL) \in [ L_i , L_{i+1} )
 // This function recalculates for all z bins, then updates
-void recalculateLengthDistribution(double tt,double v_w,double theta_w,double phi_s,double theta_s,int nLBin,double dLBin,double LBin_min,double LBin_max,double* LBin_vals,int nzBin,double dzBin,double zBin_min,double zBin_max,double* zBin_vals,double** P_L,double surfaceIntensity,double attenuationCoef,double absorptionCoef)
+void recalculateLengthDistribution(double tt,double v_w,double theta_w,double phi_s,double theta_s,int nLBin,double dLBin,double LBin_min,double LBin_max,double* LBin_vals,int nzBin,double dzBin,double zBin_min,double zBin_max,double* zBin_vals,double** P_L,double surfaceIntensity,double attenuationCoef,double a_k)
 {
 	// Number of points to sample from theta_f
 	int n_theta_f = 5;
@@ -1143,7 +1148,7 @@ void recalculateLengthDistribution(double tt,double v_w,double theta_w,double ph
 				LL_current = LBin_vals[jj] + dLBin/2;
 
 				// Calculate light absorbed by a frond with this particular theta_f and LL
-				lightAbsorbed = calculateLightAbsorption(theta_f,LL_current,z_f,v_w,theta_w,phi_s,theta_s,nLBin,LBin_vals,nzBin,dzBin,zBin_min,zBin_max,zBin_vals,P_L,surfaceIntensity,attenuationCoef,absorptionCoef);
+				lightAbsorbed = calculateLightAbsorption(theta_f,LL_current,z_f,v_w,theta_w,phi_s,theta_s,nLBin,LBin_vals,nzBin,dzBin,zBin_min,zBin_max,zBin_vals,P_L,surfaceIntensity,attenuationCoef,a_k);
 
 				// Calculate new frond size for this type of frond
 				LL_new = newLength(lightAbsorbed,LL_current,tt);
