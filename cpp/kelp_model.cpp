@@ -2,7 +2,7 @@
 // Oliver Evans
 // Clarkson University REU 2016
 // Created: Wed 06 Jul 2016 01:11:25 PM EDT
-// Last Edited: Fri 22 Jul 2016 01:40:51 PM EDT
+// Last E_dited: Tue 26 Jul 2016 10:49:56 AM EDT
 
 // Compile & run with:
 // g++ -fopenmp kelp_model.cpp -o kelp_model.out && time ./kelp_model.out &
@@ -44,6 +44,7 @@ double sign(double xx);
 double min(double xx, double yy);
 double max(double xx, double yy);
 double factorial(int nn);
+int mod(int aa,int bb);
 double I0(double xx,int nn);
 double I0(double xx);
 inline double vonMisesPDF(double xx,double kk,double mu);
@@ -51,19 +52,26 @@ inline double vonMisesPDF(double xx,double kk,double mu);
 // POLAR COORDINATE FUNCTIONS //
 double theta_xy(double xx,double yy);
 void polar_shift(double theta,double rr,double dz,double phi_s,double theta_s,double &theta_hat,double &rr_hat);
+inline double angleDiff(double theta,double phi,double theta_prime,double phi_prime);
 
 // NUMERICAL METHODS //
 double csimp(double (*ff)(double),double aa,double bb,int nn);
 double csimp(double (*ff)(double,double),double aa,double bb,int nn,double pp);
 double csimp(double (*ff)(double,double,double),double aa,double bb,int nn,double pp1,double pp2);
+double csimp(double (*ff)(double,double*,double*,int),double aa,double bb,int nn,double* pp1,double* pp2,int pp3);
 
 // INTERPOLATION //
-double linear(double* xx,double* yy,int nn,double xval);
+double linear(double xx,double x0,double x1,double y0,double y1);
 double bilinear(double* xx,double* yy,double** zz,int nn,int mm,double xval,double yval);
+double vsf(double xx,double* vsf_th,double* vsf_vals,int nVSF);
+double vsf1(double xx,double* vsf_th,double* vsf_vals,int nVSF);
 
 // UTILITY FUNCTIONS //
+int countLines(ifstream &inFile);
+int binarySearch(double xx,double* vv,int first,int last);
 inline int findBin(double aa, double bb,int nn,double xx);
 inline int upperBin(double aa, double bb,int nn,double xx);
+void read2column(ifstream &inFile,double* col1,double* col2,int numLines);
 void print3d(double*** v, int nx, int ny,int nz, const char *name);
 void write3d(double*** v, int nx, int ny,int nz, const char *name,ofstream &outFile);
 void print2d(double** v, int nx, int ny, const char *name);
@@ -79,12 +87,12 @@ inline double theta_min_shade(double theta_p,double r_p,double LL);
 inline double theta_max_shade(double theta_p,double r_p,double LL);
 double N_shade_3d(double theta_p,double r_p,double z_p,double v_w,double theta_w,double phi_s,double theta_s,int nLBin,double* LBin_vals,int nzBin,double dzBin,double zBin_min,double zBin_max,double* zBin_vals,double** P_L);
 double P_shade_2d(double theta_p,double r_p,double v_w,double theta_w,int nLBin,double* LBin_vals,double* P_L);
-double availableLight(double theta_p,double r_p,double z_p,double v_w,double theta_w,double phi_s,double theta_s,int nLBin,double* LBin_vals,int nzBin,double dzBin,double zBin_min,double zBin_max,double* zBin_vals,double** P_L,double surfaceIntensity,double attenuationCoef,double a_k);
+double availableLight(double theta_p,double r_p,double z_p,double v_w,double theta_w,double phi_s,double theta_s,int nLBin,double* LBin_vals,int nzBin,double dzBin,double zBin_min,double zBin_max,double* zBin_vals,double** P_L,double E_d0,double attenuationCoef,double a_k);
 inline void frondTransform(double ss,double tt,double &xx,double &yy,double theta_f,double LL);
 inline double JJ(double ss,double tt,double LL);
-double calculateLightAbsorption(double theta_f,double LL,double z_f,double v_w,double theta_w,double phi_s,double theta_s,int nLBin,double* LBin_vals,int nzBin,double dzBin,double zBin_min,double zBin_max,double* zBin_vals,double** P_L,double surfaceIntensity,double attenuationCoef,double a_k);
+double calculateLightAbsorption(double theta_f,double LL,double z_f,double v_w,double theta_w,double phi_s,double theta_s,int nLBin,double* LBin_vals,int nzBin,double dzBin,double zBin_min,double zBin_max,double* zBin_vals,double** P_L,double E_d0,double attenuationCoef,double a_k);
 inline double newLength(double lightAbsorbed,double LL,double tt);
-void recalculateLengthDistribution(double tt,double v_w,double theta_w,double phi_s,double theta_s,int nLBin,double dLBin,double LBin_min,double LBin_max,double* LBin_vals,int nzBin,double dzBin,double zBin_min,double zBin_max,double* zBin_vals,double** P_L,double surfaceIntensity,double attenuationCoef,double a_k);
+void recalculateLengthDistribution(double tt,double v_w,double theta_w,double phi_s,double theta_s,int nLBin,double dLBin,double LBin_min,double LBin_max,double* LBin_vals,int nzBin,double dzBin,double zBin_min,double zBin_max,double* zBin_vals,double** P_L,double E_d0,double attenuationCoef,double a_k);
 
 
 //////////
@@ -106,6 +114,30 @@ int main()
 
 	cout << "Start!" << endl;
 
+	////////////////////////
+	// READ VSF FROM FILE //
+	////////////////////////
+
+	// Open stream
+	ifstream vsfFile("../data/vsf/nuc_vsf.txt");
+
+	// Count lines
+	int nVSF = countLines(vsfFile)-1;
+
+	// Skip first line
+	string junk;
+	getline(vsfFile,junk);
+
+	// Allocate pointers
+	double* vsf_th = new double[nVSF];
+	double* vsf_vals = new double[nVSF];
+
+	// Read arrays
+	read2column(vsfFile,vsf_th,vsf_vals,nVSF);
+
+	// Close stream
+	vsfFile.close();
+
 	///////////////////////////
 	// SIMULATION PARAMETERS //
 	///////////////////////////
@@ -117,13 +149,17 @@ int main()
 	int nTimeSteps = t_max/dt;
 
 	// Space
-	double xmin = -10;
-	double xmax = 10;
-	double dx = 0.5;
+	double xmin = -5;
+	double xmax = 5;
+	double dx = 1;
 
-	double ymin = -10;
-	double ymax = 10;
-	double dy = 0.5;
+	double ymin = -5;
+	double ymax = 5;
+	double dy = 1;
+
+	double zmin = 0;
+	double zmax = 3;
+	double dz = 1;
 
 	// Zenith Angle
 	double phimin = 0;
@@ -138,14 +174,14 @@ int main()
 	// Depth
 	double dzBin = 0.5;
 	double zBin_min = 0;
-	double zBin_max = 5;
+	double zBin_max = 10;
 
 	// Length
 	double dLBin = .5;
 	double LBin_min = -dLBin;
 	double LBin_max = 10;
 
-	// Water
+	// Water Current
 	double theta_w = 0;
 	double v_w = 5;
 
@@ -156,14 +192,22 @@ int main()
 	double phi_s = asin(N_REFRACT*sin(phi_s_orig));
 
 	// Light
-	double surfaceIntensity = 10;
+	double E_d0 = 10;
 	double attenuationCoef = 0.2;
 	// Absorption by kelp
-	double a_k = 0.5;
+	double a_k = 2.0;
 	// Absoroption by water
-	double a_w = 0.5;
+	double a_w = 0.3;
 	// Scattering by water
-	double b_w; //Integral of beta (volume scattering function)
+	double b_w = csimp(vsf1,vsf_th[0],vsf_th[nVSF-1],100,vsf_th,vsf_vals,nVSF); //Integral of beta (volume scattering function)
+	cout << "b_w = " << b_w << endl;
+
+	printf("dx = %.2f\n",dx);
+	printf("dy = %.2f\n",dy);
+	printf("dz = %.2f\n",dz);
+	printf("dtheta = %.2f\n",dtheta);
+	printf("dphi = %.2f\n",dphi);
+	cout << endl;
 
 
 	/////////////////////////////
@@ -183,7 +227,7 @@ int main()
 	for(int ii=0;ii<nLBin;ii++)
 		LBin_vals[ii] = LBin_min + dLBin*ii;
 
-	// Set up xy grid
+	// Spatial grid
 	int nx = int(floor((xmax-xmin)/dx)+1);
 	double* xx = new double[nx];
 	for(int ii=0;ii<nx;ii++)
@@ -193,6 +237,73 @@ int main()
 	double* yy = new double[ny];
 	for(int jj=0;jj<ny;jj++)
 		yy[jj] = ymin + jj*dy;
+
+	int nz = int(floor((zmax-zmin)/dz)+1);
+	double* zz = new double[nz];
+	for(int kk=0;kk<nz;kk++)
+		zz[kk] = zmin + kk*dz;
+
+	// Angular grid
+	int ntheta = int(floor((thetamax-thetamin)/dtheta)+1);
+	double* theta = new double[ntheta];
+	for(int ll=0;ll<ntheta;ll++)
+		theta[ll] = thetamin + ll*dtheta;
+
+	int nphi = int(floor((phimax-phimin)/dphi)+1);
+	double* phi = new double[nphi];
+	for(int ll=0;ll<nphi;ll++)
+		phi[ll] = phimin + ll*dphi;
+
+
+	/////////////////////////////////////////////
+	// ALLOCATE RADIANCE AND IRRADIANCE ARRAYS //
+	/////////////////////////////////////////////
+
+	// Indices
+	// xx: 0 <= ii < nx
+	// yy: 0 <= jj < ny
+	// zz: 0 <= kk < nz
+	// theta: 0 <= ll < ntheta
+	// phi: 0 <= mm < nphi
+	// tt: 0 <= nn < nTimeSteps
+
+	// Radiance (L)
+	double***** RR = new double****[nx];
+
+	// Downward Irradiance (E_d)
+	double*** E_d = new double**[nx];
+
+	for(int ii=0;ii<nx;ii++)
+	{
+		RR[ii] = new double***[ny];
+		E_d[ii] = new double*[ny];
+		for(int jj=0;jj<ny;jj++)
+		{
+			RR[ii][jj] = new double**[nz];
+			E_d[ii][jj] = new double[nz];
+			for(int kk=0;kk<nz;kk++)
+			{
+				// Initialize downward irradiance to zero
+				E_d[ii][jj][kk] = 0; 
+				RR[ii][jj][kk] = new double*[ntheta];
+				for(int ll=0;ll<ntheta;ll++)
+				{
+					RR[ii][jj][kk][ll] = new double[nphi];
+					for(int mm=0;mm<nphi;mm++)
+					{
+						// Radiance Initial guess
+						// ZEROED OUT
+						RR[ii][jj][kk][ll][mm] = 0*E_d0*exp(-attenuationCoef*zz[kk]);
+
+						// Surface BC
+						if(kk==0)
+							RR[ii][jj][kk][ll][mm] = 1;
+
+					}
+				}
+			}
+		}
+	}
 
 
 	///////////////////////////////////////////////
@@ -247,6 +358,9 @@ int main()
 	P_L[5][nLBin-1] = 1;
 	*/
 
+	/////////////////////////
+	// INITIAL PYTHON CODE // 
+	/////////////////////////
 
 	// Output to python
 	ofstream outFile("../python/kelp_output.py");
@@ -257,6 +371,26 @@ int main()
 	outFile << "from vispy_volume import volume" << endl;
 	outFile << "P_L = zeros([" << nTimeSteps+1 << "," << nzBin << "," << nLBin << "])" << endl;
 	write2d(P_L,nzBin,nLBin,"P_L",0,outFile);
+
+	/*
+	// Test vsf interpolation
+	const int nvsftest = 10000;
+	double dxtest = PI/nvsftest;
+	double vsf_x[nvsftest];
+	double vsf_y[nvsftest];
+	for(int ii=0;ii<nvsftest;ii++)
+		vsf_x[ii] = (ii+1)*dxtest;
+	for(int ii=0;ii<nvsftest;ii++)
+	{
+		vsf_y[ii] = vsf(vsf_x[ii],vsf_th,vsf_vals,nVSF);
+	}
+
+	print1d(vsf_x,nvsftest,"vsf_x");
+	print1d(vsf_y,nvsftest,"vsf_y");
+	print1d(vsf_th,nvsftest,"vsf_th");
+	print1d(vsf_vals,nvsftest,"vsf_vals");
+	*/
+
 
 	//////////////////////////////////
 	// VISUALIZE LIGHT AVAILABILITY //
@@ -305,7 +439,7 @@ int main()
 				zz_3d[ii][jj][kk] = z_p;
 				//PP_3d[ii][jj][kk] = N_shade_3d(theta_p,r_p,zBin_vals[kk],v_w,theta_w,phi_s,theta_s,nLBin,LBin_vals,nzBin,dzBin,zBin_min,zBin_max,zBin_vals,P_L);
 				// Amount of light NOT available - use reverse colormap
-				PP_3d[ii][jj][kk] = surfaceIntensity - availableLight(theta_p,r_p,z_p,v_w,theta_w,phi_s,theta_s,nLBin,LBin_vals,nzBin,dzBin,zBin_min,zBin_max,zBin_vals,P_L,surfaceIntensity,attenuationCoef,a_k);
+				PP_3d[ii][jj][kk] = E_d0 - availableLight(theta_p,r_p,z_p,v_w,theta_w,phi_s,theta_s,nLBin,LBin_vals,nzBin,dzBin,zBin_min,zBin_max,zBin_vals,P_L,E_d0,attenuationCoef,a_k);
 			}
 		}
 	}
@@ -317,7 +451,7 @@ int main()
 	outFile << "xlim = [" << xmin-dx/2 << "," << xmax+dx/2 << "]" << endl;
 	outFile << "ylim = [" << ymin-dy/2 << "," << ymax+dy/2 << "]" << endl;
 	outFile << "zlim = [" << -zBin_max-dzBin/2 << "," << -zBin_min+dzBin/2 << "]" << endl;
-	outFile << "clim = array([0," << surfaceIntensity << "])" << endl;
+	outFile << "clim = array([0," << E_d0 << "])" << endl;
 	write3d(xx_3d,nx,ny,nzBin,"xx_3d",outFile);
 	write3d(yy_3d,nx,ny,nzBin,"yy_3d",outFile);
 	write3d(zz_3d,nx,ny,nzBin,"zz_3d",outFile);
@@ -327,20 +461,140 @@ int main()
 	outFile << "volume(xlim,ylim,zlim,PP_3d,clim)" << endl;
 	*/
 
+
+	////////////////////////
+	// SOLVE RADIANCE PDE //
+	////////////////////////
+
+	// Maximum number of SOR iterations
+	int maxiter = 10;
+	int depthLayer;
+	double rr_val,th_val;
+	double P_k = 0;
+	double c_ijk;
+	double R_star;
+	double dRdx,dRdy,dRdz;
+	double anglediff;
+	double R_new;
+	double residual;
+
+	// Loop through iterations
+	for(int iter=0;iter<maxiter;iter++)
+	{
+		// Reset residual
+		residual = 0;
+		// z
+		for(int kk=1;kk<nz;kk++)
+		{
+			// Determine depth layer
+			depthLayer = findBin(zBin_min,zBin_max,nzBin,zz[kk]);
+
+			// x
+			for(int ii=0;ii<nx;ii++)
+			{
+				// y
+				for(int jj=0;jj<ny;jj++)
+				{
+					// Reset  downward irradiance
+					E_d[ii][jj][kk] = 0;
+
+					rr_val = sqrt(xx[ii]*xx[ii] + yy[jj]*yy[jj]);
+					th_val = theta_xy(xx[ii],yy[ii]);
+
+					// Probability of kelp
+					// ZEROED OUT
+					//P_k = P_shade_2d(th_val,rr_val,v_w,theta_w,nLBin,LBin_vals,P_L[depthLayer]);
+
+					// Fractional radiance loss
+					c_ijk = (1 - P_k) * (a_w + b_w) + P_k * a_k;
+
+					// theta
+					for(int ll=0;ll<ntheta;ll++)
+					{
+						// phi
+						for(int mm=0;mm<nphi;mm++)
+						{
+							// Spacial finite differences (CD2)
+							// Periodic BC
+							dRdx = (RR[mod(ii+1,nx)][jj][kk][ll][mm] 
+									- RR[mod(ii-1,nx)][jj][kk][ll][mm]) / (2*dx);
+							dRdy = (RR[ii][mod(jj+1,ny)][kk][ll][mm] 
+									- RR[ii][mod(jj-1,ny)][kk][ll][mm]) / (2*dy);
+							if(kk<nz-1)
+								dRdz = (RR[ii][jj][kk+1][ll][mm] 
+										- RR[ii][jj][kk-1][ll][mm]) / (2*dz);
+							// BD2 on last point
+							else
+								dRdz = (3*RR[ii][jj][kk][ll][mm] 
+										- 4*RR[ii][jj][kk-1][ll][mm] + RR[ii][jj][kk-2][ll][mm]);
+							for(int pp=0;pp<ntheta;pp++)
+							{
+								// Gain from scattering
+								R_star = 0;
+
+								// phi'
+								for(int qq=0;qq<nphi;qq++)
+								{
+									// Skip qq==mm
+									if (qq!=mm)
+									{
+										// Calculate angle between (theta,phi) and (theta',phi')
+										anglediff = angleDiff(theta[mm],phi[ll],theta[pp],phi[qq]);
+										R_star += vsf(anglediff,vsf_th,vsf_vals,nVSF) 
+											* RR[ii][jj][kk][pp][qq] * sin(phi[qq])
+											* dphi * dtheta;
+									}
+									else
+										continue;
+								}
+
+								// PDE
+								R_new = (dRdx*sin(phi[mm])*cos(theta[ll]) 
+										+ dRdy*sin(phi[mm])*sin(theta[ll]) 
+										+ dRdz*cos(phi[mm]) + R_star) / c_ijk;
+
+								// Calculate residual
+								residual += abs(RR[ii][jj][kk][ll][mm] - R_new)/(nx*ny*nz);
+
+								// Update radiance value
+								RR[ii][jj][kk][ll][mm]  = R_new;
+
+								// Calculate downward irradiance
+								// Integrate radiance over upper hemisphere
+								if(phi[mm] >= PI)
+								{
+									E_d[ii][jj][kk] -= RR[ii][jj][kk][ll][mm] 
+										* cos(phi[mm]) * sin(phi[mm]) 
+										* dtheta * dphi;
+								}
+
+							}
+						}
+					}
+				}
+			}
+		cout << "kk=" << kk << ": resid = " << residual << endl;
+		}
+	}
+	// Print irradiance array
+	// print3d(E_d,nx,ny,nz,"E_d");
+
 	////////////////////
 	// RUN SIMULATION //
 	////////////////////
 
+	/*
 	// Loop through time
 	for(int nn = 0;nn<nTimeSteps;nn++)
 	{
 		cout << "t[" << nn << "] = " << tt << endl;
-		recalculateLengthDistribution(tt,v_w,theta_w,phi_s,theta_s,nLBin,dLBin,LBin_min,LBin_max,LBin_vals,nzBin,dzBin,zBin_min,zBin_max,zBin_vals,P_L,surfaceIntensity,attenuationCoef,a_k);
+		recalculateLengthDistribution(tt,v_w,theta_w,phi_s,theta_s,nLBin,dLBin,LBin_min,LBin_max,LBin_vals,nzBin,dzBin,zBin_min,zBin_max,zBin_vals,P_L,E_d0,attenuationCoef,a_k);
 		write2d(P_L,nzBin,nLBin,"P_L",nn+1,outFile);
 
 		// Increment time
 		tt += dt;
 	}
+	*/
 
 	//////////////
 	// CLEAN UP //
@@ -377,11 +631,39 @@ int main()
 	delete [] PP_3d;
 	*/
 
+
+
 	for(int ii=0;ii<nzBin;ii++)
 		delete P_L[ii];
 	delete [] P_L;
 	delete [] zBin_vals;
 	delete [] LBin_vals;
+
+	// Radiance and irradiance arrays
+	for(int ii=0;ii<nx;ii++)
+	{
+		for(int jj=0;jj<ny;jj++)
+		{
+			for(int kk=0;kk<nz;kk++)
+			{
+				for(int ll=0;ll<ntheta;ll++)
+				{
+					delete [] RR[ii][jj][kk][ll];
+				}
+				delete [] RR[ii][jj][kk];
+			}
+			delete [] RR[ii][jj];
+			delete [] E_d[ii][jj];
+		}
+		delete [] RR[ii];
+		delete [] E_d[ii];
+	}
+	delete [] RR;
+	delete [] E_d;
+
+	// VSF
+	delete [] vsf_th,vsf_vals;
+
 
 	cout << "Finish!" << endl;
 
@@ -430,6 +712,17 @@ double factorial(int nn)
 	for(int ii=1;ii<=nn;ii++)
 		result *= ii;
 	return result;
+}
+
+// Modulus
+// Always return positive remainder, like python
+// e.g. mod(-1,4) = 3. By default, C++ returns -1.
+int mod(int aa,int bb)
+{
+	if(aa>=0)
+		return aa%bb;
+	else
+		return bb+aa%bb;
 }
 
 // Modified bessel function of the first kind of order 0
@@ -518,6 +811,13 @@ void polar_shift(double theta,double rr,double dz,double phi_s,double theta_s,do
 	rr_hat = sqrt(xx_hat*xx_hat + yy_hat*yy_hat);
 }
 
+// Calculate angle between two unit vectors in the directions
+// (theta,phi) and (theta',phi')
+// (azim,zenith)
+inline double angleDiff(double theta,double phi,double theta_prime,double phi_prime)
+{
+	return acos(sin(phi)*sin(phi_prime) * cos(theta-theta_prime) + cos(phi)*cos(phi_prime));
+}
 
 ///////////////////////
 // NUMERICAL METHODS //
@@ -585,6 +885,25 @@ double csimp(double (*ff)(double,double,double),double aa,double bb,int nn,doubl
 
 	return total;
 }
+// Allow for two double pointer parameters, pp1 and pp2 and one int parameter, pp3, to be passed to ff
+double csimp(double (*ff)(double,double*,double*,int),double aa,double bb,int nn,double* pp1,double* pp2,int pp3)
+{
+	double total = 0;
+	double hh = (bb-aa)/nn;
+	double x_i,x_ip1;
+
+	// Loop through intervals
+	for(int ii=0;ii<nn;ii++)
+	{
+		//x_i
+		x_i = aa + hh*ii;
+		//x{i+1}
+		x_ip1 = aa + hh*(ii+1);
+		total += hh/6 * (ff(x_i,pp1,pp2,pp3) + 4*ff((x_i+x_ip1)/2,pp1,pp2,pp3) + ff(x_ip1,pp1,pp2,pp3));
+	}
+
+	return total;
+}
 
 
 ///////////////////
@@ -592,18 +911,15 @@ double csimp(double (*ff)(double,double,double),double aa,double bb,int nn,doubl
 ///////////////////
 
 // Linear interpolation
-// xx: 1d ordered arrays of known x values
-// yy: 1d ordered array of known y values
-// nn: length of xx and yy
-// xval: x value to interpolate
+// xx: value to interpolate
+// x0: low x value
+// x1: high x value
+// y0: y value corresponding to x0
+// y1: y value corresponding to x1
 // return: interpolated y value
-double linear(double* xx,double* yy,int nn,double xval)
+double linear(double xx,double x0,double x1,double y0,double y1)
 {
-	int ii = findBin(xx[0],xx[nn-1],nn,xval);
-	if(ii < nn)
-		return yy[ii] + (xval-xx[ii])/(xx[ii+1]-xx[ii]) * (yy[ii+1] - yy[ii]);
-	else
-		return yy[nn-1];
+	return y0 + (xx-x0)/(x1-x0) * (y1 - y0);
 }
 
 // Bilinear interpolation
@@ -665,10 +981,88 @@ double bilinear(double* xx,double* yy,double** zz,int nn,int mm,double xval,doub
 	return result;
 }
 
+// Evaluate volume scattering function by interpolating given points
+// STRANGE THING!!!
+// It seems that this interpolation is very close, but for some reason off by ~1e-2.
+// The interpolated values seem more accurate near the given points, but bulge between them
+// Similar to the shape of x(x-1) between 0 and 1
+double vsf(double xx,double* vsf_th,double* vsf_vals,int nVSF)
+{
+	int ind = binarySearch(xx,vsf_th,0,nVSF-1);
+	if(0 <= ind && ind < nVSF)
+		return linear(xx,vsf_th[ind],vsf_th[ind+1],vsf_vals[ind],vsf_vals[ind+1]);
+	else if(ind >= nVSF)
+		return vsf_vals[nVSF-1];
+	else
+		return vsf_vals[0];
+}
+double vsf1(double xx,double* vsf_th,double* vsf_vals,int nVSF)
+{
+	return vsf(xx,vsf_th,vsf_vals,nVSF)*sin(xx)*2*PI;
+}
 
 ///////////////////////
 // UTILITY FUNCTIONS //
 ///////////////////////
+
+// Count lines in a file
+//Count the number of timesteps
+int countLines(ifstream &inFile)
+{   
+    string line;
+    int numLines=0;
+    int lineNum=0;
+        
+    //Count number of timesteps
+    while(getline(inFile,line))
+        numLines++;
+        
+    //Unset eof flag (if set) & return to beginning of file
+    inFile.clear();
+    inFile.seekg(0,ios::beg);
+        
+    return numLines;
+}
+
+
+// Binary search
+// Search through an ordered list by splitting it in half until the closest lower value is found
+// xx: value to search for
+// vv: double pointer to search through
+// nn: length of vv
+// return: index of bin that xx belongs to
+int binarySearch(double xx,double* vv,int first,int last)
+{
+	int middle = (first+last)/2; // Integer division
+	// cout << "x=" << xx << endl;
+	// cout << "f: " << first << ", m: " << middle << ", l: " << last << endl;
+	// cout << "v[m]="  << vv[middle] << endl;
+
+	if(last - first > 1)
+	{
+		// cout << "l-f = " << last - first << endl;
+		if(xx < vv[middle])
+		{
+			// cout << "<" << endl;
+			return binarySearch(xx,vv,first,middle);
+		}
+		else if(xx > vv[middle])
+		{
+			// cout << ">" << endl;
+			return binarySearch(xx,vv,middle,last);
+		}
+		else
+		{
+			// cout << "=" << endl;
+			return middle;
+		}
+	}
+	else
+	{
+		// cout << "first=" << first << endl;
+		return first;
+	}
+}
 
 // Bin finder
 // Given an interval between aa and bb divided into nn bins,
@@ -695,6 +1089,16 @@ inline int findBin(double aa, double bb,int nn,double xx)
 inline int upperBin(double aa, double bb,int nn,double xx)
 {
 	return ceil((xx-aa)/(bb-aa)*nn);
+}
+
+// Read two column double data from file
+// inFile: input stream to read from
+// col1,col2: allocated doubles whose length equals the number of rows in the file
+void read2column(ifstream &inFile,double* col1,double* col2,int numLines)
+{
+	string line;
+	for(int ii=0;ii<numLines;ii++)
+		inFile >> col1[ii] >> col2[ii];
 }
 
 // Print 3d array for input to python
@@ -1001,13 +1405,13 @@ double P_shade_2d(double theta_p,double r_p,double v_w,double theta_w,int nLBin,
 
 // Calculate available light at a given 3d point
 // Not considering ambient light
-double availableLight(double theta_p,double r_p,double z_p,double v_w,double theta_w,double phi_s,double theta_s,int nLBin,double* LBin_vals,int nzBin,double dzBin,double zBin_min,double zBin_max,double* zBin_vals,double** P_L,double surfaceIntensity,double attenuationCoef,double a_k)
+double availableLight(double theta_p,double r_p,double z_p,double v_w,double theta_w,double phi_s,double theta_s,int nLBin,double* LBin_vals,int nzBin,double dzBin,double zBin_min,double zBin_max,double* zBin_vals,double** P_L,double E_d0,double attenuationCoef,double a_k)
 {
 	double nShade = N_shade_3d(theta_p,r_p,z_p,v_w,theta_w,phi_s,theta_s,nLBin,LBin_vals,nzBin,dzBin,zBin_min,zBin_max,zBin_vals,P_L);
 	double absorptionFactor = pow((1-a_k),nShade);
 	double attenuationFactor = exp(-attenuationCoef*z_p);
 
-	return surfaceIntensity * absorptionFactor * attenuationFactor;
+	return E_d0 * absorptionFactor * attenuationFactor;
 }
 
 // Transform a point (ss,tt) in the unit square: [-1,1]x[-1,1] to the corresponding point (xx,yy) on a frond of length L at an angle theta_f
@@ -1028,7 +1432,7 @@ inline double JJ(double ss,double tt,double LL)
 // Calculate the light absorbed by a frond with a particular angle (theta_f) and length (LL)
 // at a particular depth (z_f)
 // Use n=2 Gaussian quadrature product rule to integrate light field over frond area by transforming frond to unit square
-double calculateLightAbsorption(double theta_f,double LL,double z_f,double v_w,double theta_w,double phi_s,double theta_s,int nLBin,double* LBin_vals,int nzBin,double dzBin,double zBin_min,double zBin_max,double* zBin_vals,double** P_L,double surfaceIntensity,double attenuationCoef,double a_k)
+double calculateLightAbsorption(double theta_f,double LL,double z_f,double v_w,double theta_w,double phi_s,double theta_s,int nLBin,double* LBin_vals,int nzBin,double dzBin,double zBin_min,double zBin_max,double* zBin_vals,double** P_L,double E_d0,double attenuationCoef,double a_k)
 {
 	// Abscissas on unit square
 	static double sa[2] = {-1/sqrt(3),1/sqrt(3)};
@@ -1058,7 +1462,7 @@ double calculateLightAbsorption(double theta_f,double LL,double z_f,double v_w,d
 			rfa = sqrt(xfa*xfa + yfa*yfa);
 
 			// Calculate contribution of this abscissa
-			absc_val = availableLight(tfa,rfa,z_f,v_w,theta_w,phi_s,theta_s,nLBin,LBin_vals,nzBin,dzBin,zBin_min,zBin_max,zBin_vals,P_L,surfaceIntensity,attenuationCoef,a_k);
+			absc_val = availableLight(tfa,rfa,z_f,v_w,theta_w,phi_s,theta_s,nLBin,LBin_vals,nzBin,dzBin,zBin_min,zBin_max,zBin_vals,P_L,E_d0,attenuationCoef,a_k);
 
 			// Multiply by weights according to quadrature product rule
 			// absc_val *= ww[ii] * ww[jj];
@@ -1085,7 +1489,7 @@ inline double newLength(double lightAbsorbed,double LL,double tt)
 // Recalculate length distribution by integrating P_theta_f*P_L over R for each L_i,
 // where R is the region such that newLength(theta_f,LL) \in [ L_i , L_{i+1} )
 // This function recalculates for all z bins, then updates
-void recalculateLengthDistribution(double tt,double v_w,double theta_w,double phi_s,double theta_s,int nLBin,double dLBin,double LBin_min,double LBin_max,double* LBin_vals,int nzBin,double dzBin,double zBin_min,double zBin_max,double* zBin_vals,double** P_L,double surfaceIntensity,double attenuationCoef,double a_k)
+void recalculateLengthDistribution(double tt,double v_w,double theta_w,double phi_s,double theta_s,int nLBin,double dLBin,double LBin_min,double LBin_max,double* LBin_vals,int nzBin,double dzBin,double zBin_min,double zBin_max,double* zBin_vals,double** P_L,double E_d0,double attenuationCoef,double a_k)
 {
 	// Number of points to sample from theta_f
 	int n_theta_f = 5;
@@ -1148,7 +1552,7 @@ void recalculateLengthDistribution(double tt,double v_w,double theta_w,double ph
 				LL_current = LBin_vals[jj] + dLBin/2;
 
 				// Calculate light absorbed by a frond with this particular theta_f and LL
-				lightAbsorbed = calculateLightAbsorption(theta_f,LL_current,z_f,v_w,theta_w,phi_s,theta_s,nLBin,LBin_vals,nzBin,dzBin,zBin_min,zBin_max,zBin_vals,P_L,surfaceIntensity,attenuationCoef,a_k);
+				lightAbsorbed = calculateLightAbsorption(theta_f,LL_current,z_f,v_w,theta_w,phi_s,theta_s,nLBin,LBin_vals,nzBin,dzBin,zBin_min,zBin_max,zBin_vals,P_L,E_d0,attenuationCoef,a_k);
 
 				// Calculate new frond size for this type of frond
 				LL_new = newLength(lightAbsorbed,LL_current,tt);
