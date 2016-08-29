@@ -158,7 +158,7 @@ int main()
 	double dy = 1;
 
 	double zmin = 0;
-	double zmax = 3;
+	double zmax = 5;
 	double dz = 1;
 
 	// Zenith Angle
@@ -187,7 +187,7 @@ int main()
 
 	// Sun
 	double phi_s_orig = .48*PI;
-	double theta_s = PI/2;
+	double theta_s = 2*PI/3;
 	// Refracted angle of sun
 	double phi_s = asin(N_REFRACT*sin(phi_s_orig));
 
@@ -195,7 +195,7 @@ int main()
 	double E_d0 = 10;
 	double attenuationCoef = 0.2;
 	// Absorption by kelp
-	double a_k = 2.0;
+	double a_k = 0.7;
 	// Absoroption by water
 	double a_w = 0.3;
 	// Scattering by water
@@ -372,8 +372,11 @@ int main()
 	outFile << "P_L = zeros([" << nTimeSteps+1 << "," << nzBin << "," << nLBin << "])" << endl;
 	write2d(P_L,nzBin,nLBin,"P_L",0,outFile);
 
+
+	////////////////////////////
+	// Test vsf interpolation //
+	////////////////////////////
 	/*
-	// Test vsf interpolation
 	const int nvsftest = 10000;
 	double dxtest = PI/nvsftest;
 	double vsf_x[nvsftest];
@@ -395,8 +398,8 @@ int main()
 	//////////////////////////////////
 	// VISUALIZE LIGHT AVAILABILITY //
 	//////////////////////////////////
-
 	/*
+
 	// Allocate 3d arrays
 	double*** xx_3d = new double**[nx];
 	double*** yy_3d = new double**[nx];
@@ -459,9 +462,9 @@ int main()
 
 	// Plot volume
 	outFile << "volume(xlim,ylim,zlim,PP_3d,clim)" << endl;
+
+
 	*/
-
-
 	////////////////////////
 	// SOLVE RADIANCE PDE //
 	////////////////////////
@@ -554,7 +557,7 @@ int main()
 										+ dRdz*cos(phi[mm]) + R_star) / c_ijk;
 
 								// Calculate residual
-								residual += abs(RR[ii][jj][kk][ll][mm] - R_new)/(nx*ny*nz);
+								residual += abs(RR[ii][jj][kk][ll][mm] - R_new)/(nx*ny*nz*ntheta*nphi);
 
 								// Update radiance value
 								RR[ii][jj][kk][ll][mm]  = R_new;
@@ -573,8 +576,9 @@ int main()
 					}
 				}
 			}
-		cout << "kk=" << kk << ": resid = " << residual << endl;
 		}
+
+		cout << "iter=" << iter << ": resid = " << residual << endl;
 	}
 	// Print irradiance array
 	// print3d(E_d,nx,ny,nz,"E_d");
@@ -607,10 +611,8 @@ int main()
 	system("mkdir -p ../python/kelp_pickle");
 	// system("python ../python/kelp_output.py");
 
+	// Delete visualization arrays
 	/*
-	// Delete arrays
-	delete [] xx;
-	delete [] yy;
 	for(int ii=0;ii<nx;ii++)
 	{
 		for(int jj=0;jj<ny;jj++)
@@ -631,8 +633,6 @@ int main()
 	delete [] PP_3d;
 	*/
 
-
-
 	for(int ii=0;ii<nzBin;ii++)
 		delete P_L[ii];
 	delete [] P_L;
@@ -640,6 +640,7 @@ int main()
 	delete [] LBin_vals;
 
 	// Radiance and irradiance arrays
+	delete [] xx,yy,zz;
 	for(int ii=0;ii<nx;ii++)
 	{
 		for(int jj=0;jj<ny;jj++)
@@ -663,7 +664,6 @@ int main()
 
 	// VSF
 	delete [] vsf_th,vsf_vals;
-
 
 	cout << "Finish!" << endl;
 

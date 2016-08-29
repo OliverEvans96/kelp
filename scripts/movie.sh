@@ -6,4 +6,4 @@
 dir=$1
 name=$2
 
-ffmpeg -framerate 10 -i ${dir}/img/*.png -vcodec mpeg4 -b 800k -r 10 ${dir}/${name}.mp4 -y
+ffmpeg -framerate 30 -i ${dir}/img/*.png -vcodec mpeg4 -b 800k -r 30 ${dir}/${name}.mp4 -y
