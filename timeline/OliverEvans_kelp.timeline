@@ -1,0 +1,566 @@
+<?xml version="1.0" encoding="utf-8"?>
+<timeline>
+  <version>1.14.0 development</version>
+  <timetype>gregoriantime</timetype>
+  <categories>
+    <category>
+      <name>Academic Calendar</name>
+      <color>0,128,0</color>
+      <progress_color>144,238,144</progress_color>
+      <done_color>0,128,0</done_color>
+      <font_color>0,0,0</font_color>
+    </category>
+    <category>
+      <name>Thesis Deadlines</name>
+      <color>30,144,255</color>
+      <progress_color>255,153,153</progress_color>
+      <done_color>255,153,153</done_color>
+      <font_color>0,0,0</font_color>
+    </category>
+    <category>
+      <name>Events</name>
+      <color>255,255,0</color>
+      <progress_color>255,153,153</progress_color>
+      <done_color>255,153,153</done_color>
+      <font_color>0,0,0</font_color>
+    </category>
+    <category>
+      <name>Research Benchmarks</name>
+      <color>255,255,255</color>
+      <progress_color>255,153,153</progress_color>
+      <done_color>255,153,153</done_color>
+      <font_color>0,0,0</font_color>
+    </category>
+    <category>
+      <name>Numerical RTE</name>
+      <color>255,165,0</color>
+      <progress_color>255,153,153</progress_color>
+      <done_color>255,153,153</done_color>
+      <font_color>0,0,0</font_color>
+      <parent>Research Benchmarks</parent>
+    </category>
+    <category>
+      <name>Simplified Model</name>
+      <color>255,72,72</color>
+      <progress_color>255,153,153</progress_color>
+      <done_color>255,153,153</done_color>
+      <font_color>0,0,0</font_color>
+      <parent>Research Benchmarks</parent>
+    </category>
+    <category>
+      <name>Scattering Theory</name>
+      <color>144,238,144</color>
+      <progress_color>255,153,153</progress_color>
+      <done_color>255,153,153</done_color>
+      <font_color>0,0,0</font_color>
+      <parent>Research Benchmarks</parent>
+    </category>
+    <category>
+      <name>Experimental</name>
+      <color>173,216,230</color>
+      <progress_color>255,153,153</progress_color>
+      <done_color>255,153,153</done_color>
+      <font_color>0,0,0</font_color>
+      <parent>Research Benchmarks</parent>
+    </category>
+    <category>
+      <name>Literature Review</name>
+      <color>255,192,203</color>
+      <progress_color>255,153,153</progress_color>
+      <done_color>255,153,153</done_color>
+      <font_color>0,0,0</font_color>
+      <parent>Research Benchmarks</parent>
+    </category>
+    <category>
+      <name>Simulation</name>
+      <color>255,255,255</color>
+      <progress_color>255,153,153</progress_color>
+      <done_color>255,153,153</done_color>
+      <font_color>0,0,0</font_color>
+      <parent>Research Benchmarks</parent>
+    </category>
+    <category>
+      <name>Verification Simulation</name>
+      <color>191,191,191</color>
+      <progress_color>255,153,153</progress_color>
+      <done_color>255,153,153</done_color>
+      <font_color>0,0,0</font_color>
+      <parent>Simulation</parent>
+    </category>
+    <category>
+      <name>Effluent Simulation</name>
+      <color>132,132,132</color>
+      <progress_color>255,153,153</progress_color>
+      <done_color>255,153,153</done_color>
+      <font_color>0,0,0</font_color>
+      <parent>Simulation</parent>
+    </category>
+    <category>
+      <name>Research Articles</name>
+      <color>244,113,244</color>
+      <progress_color>255,153,153</progress_color>
+      <done_color>255,153,153</done_color>
+      <font_color>0,0,0</font_color>
+    </category>
+  </categories>
+  <events>
+    <event>
+      <start>2017-01-16 00:00:00</start>
+      <end>2018-05-13 00:00:00</end>
+      <text>[1]School Schedule</text>
+      <progress>0</progress>
+      <fuzzy>False</fuzzy>
+      <locked>False</locked>
+      <ends_today>False</ends_today>
+      <default_color>200,200,200</default_color>
+    </event>
+    <event>
+      <start>2017-05-13 00:00:00</start>
+      <end>2017-05-13 00:00:00</end>
+      <text>RTE 2D Finished</text>
+      <progress>0</progress>
+      <fuzzy>False</fuzzy>
+      <locked>False</locked>
+      <ends_today>False</ends_today>
+      <category>Numerical RTE</category>
+      <default_color>211,211,211</default_color>
+    </event>
+    <event>
+      <start>2017-07-08 07:46:58</start>
+      <end>2017-07-08 07:46:58</end>
+      <text>Simplified model: Draft</text>
+      <progress>0</progress>
+      <fuzzy>False</fuzzy>
+      <locked>False</locked>
+      <ends_today>False</ends_today>
+      <category>Simplified Model</category>
+      <default_color>211,211,211</default_color>
+    </event>
+    <event>
+      <start>2017-05-27 00:00:00</start>
+      <end>2017-05-27 00:00:00</end>
+      <text>RTE 3D Finished</text>
+      <progress>0</progress>
+      <fuzzy>False</fuzzy>
+      <locked>False</locked>
+      <ends_today>False</ends_today>
+      <category>Numerical RTE</category>
+      <default_color>211,211,211</default_color>
+    </event>
+    <event>
+      <start>2018-03-11 17:33:15</start>
+      <end>2018-03-11 17:33:15</end>
+      <text>2nd Research Article: Draft</text>
+      <progress>0</progress>
+      <fuzzy>False</fuzzy>
+      <locked>False</locked>
+      <ends_today>False</ends_today>
+      <category>Research Articles</category>
+      <default_color>211,211,211</default_color>
+    </event>
+    <event>
+      <start>2018-03-27 09:32:35</start>
+      <end>2018-03-27 09:32:35</end>
+      <text>2nd Research Article: Final</text>
+      <progress>0</progress>
+      <fuzzy>False</fuzzy>
+      <locked>False</locked>
+      <ends_today>False</ends_today>
+      <category>Research Articles</category>
+      <default_color>211,211,211</default_color>
+    </event>
+    <event>
+      <start>2018-04-09 06:14:00</start>
+      <end>2018-04-09 06:14:00</end>
+      <text>Thesis: Final Draft Due</text>
+      <progress>0</progress>
+      <fuzzy>False</fuzzy>
+      <locked>False</locked>
+      <ends_today>False</ends_today>
+      <category>Thesis Deadlines</category>
+      <default_color>211,211,211</default_color>
+    </event>
+    <event>
+      <start>2018-05-07 00:00:00</start>
+      <end>2018-05-07 00:00:00</end>
+      <text>Thesis: Final Submission Deadline</text>
+      <progress>0</progress>
+      <fuzzy>False</fuzzy>
+      <locked>False</locked>
+      <ends_today>False</ends_today>
+      <category>Thesis Deadlines</category>
+      <default_color>211,211,211</default_color>
+    </event>
+    <event>
+      <start>2017-10-26 22:40:19</start>
+      <end>2017-10-26 22:40:19</end>
+      <text>Experimental Design: Draft</text>
+      <progress>0</progress>
+      <fuzzy>False</fuzzy>
+      <locked>False</locked>
+      <ends_today>False</ends_today>
+      <category>Experimental</category>
+      <default_color>211,211,211</default_color>
+    </event>
+    <event>
+      <start>2017-11-02 00:00:00</start>
+      <end>2017-11-02 00:00:00</end>
+      <text>Experimental Design: Final</text>
+      <progress>0</progress>
+      <fuzzy>False</fuzzy>
+      <locked>False</locked>
+      <ends_today>False</ends_today>
+      <category>Experimental</category>
+      <default_color>211,211,211</default_color>
+    </event>
+    <event>
+      <start>2017-11-27 01:11:59</start>
+      <end>2017-11-27 01:11:59</end>
+      <text>Experimental data analyzed</text>
+      <progress>0</progress>
+      <fuzzy>False</fuzzy>
+      <locked>False</locked>
+      <ends_today>False</ends_today>
+      <category>Experimental</category>
+      <description>Kelp absorption coefficient determined</description>
+      <default_color>211,211,211</default_color>
+    </event>
+    <event>
+      <start>2017-07-22 22:47:53</start>
+      <end>2017-07-22 22:47:53</end>
+      <text>Simplified model: Final</text>
+      <progress>0</progress>
+      <fuzzy>False</fuzzy>
+      <locked>False</locked>
+      <ends_today>False</ends_today>
+      <category>Simplified Model</category>
+      <default_color>211,211,211</default_color>
+    </event>
+    <event>
+      <start>2017-08-14 05:57:29</start>
+      <end>2017-08-14 05:57:29</end>
+      <text>Simplified model: Implemented</text>
+      <progress>0</progress>
+      <fuzzy>False</fuzzy>
+      <locked>False</locked>
+      <ends_today>False</ends_today>
+      <category>Simplified Model</category>
+      <default_color>211,211,211</default_color>
+    </event>
+    <event>
+      <start>2017-06-17 03:28:00</start>
+      <end>2017-06-17 03:28:00</end>
+      <text>Kelp/RTE Lit. Review: Draft</text>
+      <progress>0</progress>
+      <fuzzy>False</fuzzy>
+      <locked>False</locked>
+      <ends_today>False</ends_today>
+      <category>Literature Review</category>
+      <default_color>211,211,211</default_color>
+    </event>
+    <event>
+      <start>2018-04-23 06:14:00</start>
+      <end>2018-04-23 06:14:00</end>
+      <text>Thesis Defense</text>
+      <progress>0</progress>
+      <fuzzy>False</fuzzy>
+      <locked>False</locked>
+      <ends_today>False</ends_today>
+      <category>Events</category>
+      <default_color>211,211,211</default_color>
+    </event>
+    <event>
+      <start>2017-12-08 09:58:24</start>
+      <end>2017-12-08 09:58:24</end>
+      <text>Validation Simulations w/ Light Model</text>
+      <progress>0</progress>
+      <fuzzy>False</fuzzy>
+      <locked>False</locked>
+      <ends_today>False</ends_today>
+      <category>Verification Simulation</category>
+      <default_color>211,211,211</default_color>
+    </event>
+    <event>
+      <start>2017-12-24 08:11:48</start>
+      <end>2017-12-24 08:11:48</end>
+      <text>Simulation Results Analyzed</text>
+      <progress>0</progress>
+      <fuzzy>False</fuzzy>
+      <locked>False</locked>
+      <ends_today>False</ends_today>
+      <category>Verification Simulation</category>
+      <default_color>211,211,211</default_color>
+    </event>
+    <event>
+      <start>2017-09-08 00:40:00</start>
+      <end>2017-09-08 00:40:00</end>
+      <text>Mie Scattering Lit. Review: Draft</text>
+      <progress>0</progress>
+      <fuzzy>False</fuzzy>
+      <locked>False</locked>
+      <ends_today>False</ends_today>
+      <category>Literature Review</category>
+      <default_color>211,211,211</default_color>
+    </event>
+    <event>
+      <start>2017-10-09 14:10:35</start>
+      <end>2017-10-09 14:10:35</end>
+      <text>Mie Scattering approach: Draft</text>
+      <progress>0</progress>
+      <fuzzy>False</fuzzy>
+      <locked>False</locked>
+      <ends_today>False</ends_today>
+      <category>Scattering Theory</category>
+      <default_color>211,211,211</default_color>
+    </event>
+    <event>
+      <start>2018-01-10 19:57:50</start>
+      <end>2018-01-10 19:57:50</end>
+      <text>1st Research Article: Draft</text>
+      <progress>0</progress>
+      <fuzzy>False</fuzzy>
+      <locked>False</locked>
+      <ends_today>False</ends_today>
+      <category>Research Articles</category>
+      <default_color>211,211,211</default_color>
+    </event>
+    <event>
+      <start>2018-01-25 08:54:01</start>
+      <end>2018-01-25 08:54:01</end>
+      <text>1st Research Article: Final</text>
+      <progress>0</progress>
+      <fuzzy>False</fuzzy>
+      <locked>False</locked>
+      <ends_today>False</ends_today>
+      <category>Research Articles</category>
+      <default_color>211,211,211</default_color>
+    </event>
+    <event>
+      <start>2017-10-17 23:46:00</start>
+      <end>2017-10-17 23:46:00</end>
+      <text>Mie Scattering approach: Final</text>
+      <progress>0</progress>
+      <fuzzy>False</fuzzy>
+      <locked>False</locked>
+      <ends_today>False</ends_today>
+      <category>Scattering Theory</category>
+      <default_color>211,211,211</default_color>
+    </event>
+    <event>
+      <start>2017-11-05 00:00:00</start>
+      <end>2017-11-10 00:00:00</end>
+      <text>Travel to Norway &amp; perform experiments</text>
+      <progress>0</progress>
+      <fuzzy>False</fuzzy>
+      <locked>False</locked>
+      <ends_today>False</ends_today>
+      <category>Events</category>
+      <default_color>211,211,211</default_color>
+    </event>
+    <event>
+      <start>2018-02-07 07:54:31</start>
+      <end>2018-02-07 07:54:31</end>
+      <text>Run Effluent Simulations</text>
+      <progress>0</progress>
+      <fuzzy>False</fuzzy>
+      <locked>False</locked>
+      <ends_today>False</ends_today>
+      <category>Effluent Simulation</category>
+      <default_color>211,211,211</default_color>
+    </event>
+    <event>
+      <start>2018-02-21 07:54:31</start>
+      <end>2018-02-21 07:54:31</end>
+      <text>Effluent Results Analyzed</text>
+      <progress>0</progress>
+      <fuzzy>False</fuzzy>
+      <locked>False</locked>
+      <ends_today>False</ends_today>
+      <category>Effluent Simulation</category>
+      <default_color>211,211,211</default_color>
+    </event>
+    <event>
+      <start>2017-04-07 06:36:55</start>
+      <end>2018-04-22 14:14:00</end>
+      <text>[2]Research Focus</text>
+      <progress>0</progress>
+      <fuzzy>False</fuzzy>
+      <locked>False</locked>
+      <ends_today>False</ends_today>
+      <default_color>200,200,200</default_color>
+    </event>
+    <event>
+      <start>2017-01-16 00:00:00</start>
+      <end>2017-05-14 00:00:00</end>
+      <text>(1)Spring 2017</text>
+      <progress>0</progress>
+      <fuzzy>False</fuzzy>
+      <locked>False</locked>
+      <ends_today>False</ends_today>
+      <category>Academic Calendar</category>
+      <default_color>200,200,200</default_color>
+    </event>
+    <event>
+      <start>2017-05-29 00:00:00</start>
+      <end>2017-08-18 00:00:00</end>
+      <text>(1)Berkeley Lab Summer Research</text>
+      <progress>0</progress>
+      <fuzzy>False</fuzzy>
+      <locked>False</locked>
+      <ends_today>False</ends_today>
+      <category>Academic Calendar</category>
+      <default_color>200,200,200</default_color>
+    </event>
+    <event>
+      <start>2017-08-28 00:00:00</start>
+      <end>2017-12-17 00:00:00</end>
+      <text>(1)Fall Semester 2017</text>
+      <progress>0</progress>
+      <fuzzy>False</fuzzy>
+      <locked>False</locked>
+      <ends_today>False</ends_today>
+      <category>Academic Calendar</category>
+      <default_color>200,200,200</default_color>
+    </event>
+    <event>
+      <start>2018-01-16 00:00:00</start>
+      <end>2018-05-13 00:00:00</end>
+      <text>(1)Spring 2018</text>
+      <progress>0</progress>
+      <fuzzy>False</fuzzy>
+      <locked>False</locked>
+      <ends_today>False</ends_today>
+      <category>Academic Calendar</category>
+      <default_color>200,200,200</default_color>
+    </event>
+    <event>
+      <start>2017-04-07 06:36:55</start>
+      <end>2017-05-31 22:14:40</end>
+      <text>(2)Numerical RTE</text>
+      <progress>0</progress>
+      <fuzzy>False</fuzzy>
+      <locked>False</locked>
+      <ends_today>False</ends_today>
+      <category>Numerical RTE</category>
+      <default_color>211,211,211</default_color>
+    </event>
+    <event>
+      <start>2017-05-31 22:14:40</start>
+      <end>2017-06-19 05:36:24</end>
+      <text>(2)Kelp/RTE Literature Review</text>
+      <progress>0</progress>
+      <fuzzy>False</fuzzy>
+      <locked>False</locked>
+      <ends_today>False</ends_today>
+      <category>Literature Review</category>
+      <default_color>211,211,211</default_color>
+    </event>
+    <event>
+      <start>2017-06-19 14:57:31</start>
+      <end>2017-08-17 22:14:40</end>
+      <text>(2)Simplified Model</text>
+      <progress>0</progress>
+      <fuzzy>False</fuzzy>
+      <locked>False</locked>
+      <ends_today>False</ends_today>
+      <category>Simplified Model</category>
+      <default_color>211,211,211</default_color>
+    </event>
+    <event>
+      <start>2017-08-27 22:14:40</start>
+      <end>2017-09-07 22:14:40</end>
+      <text>(2)Mie Scattering Theory Literature Review</text>
+      <progress>0</progress>
+      <fuzzy>False</fuzzy>
+      <locked>False</locked>
+      <ends_today>False</ends_today>
+      <category>Literature Review</category>
+      <default_color>211,211,211</default_color>
+    </event>
+    <event>
+      <start>2017-09-08 04:24:19</start>
+      <end>2017-10-20 15:39:40</end>
+      <text>(2)Mie Scattering Analysis</text>
+      <progress>0</progress>
+      <fuzzy>False</fuzzy>
+      <locked>False</locked>
+      <ends_today>False</ends_today>
+      <category>Scattering Theory</category>
+      <default_color>211,211,211</default_color>
+    </event>
+    <event>
+      <start>2017-10-20 22:14:40</start>
+      <end>2017-11-30 22:14:40</end>
+      <text>(2)Experiment</text>
+      <progress>0</progress>
+      <fuzzy>False</fuzzy>
+      <locked>False</locked>
+      <ends_today>False</ends_today>
+      <category>Experimental</category>
+      <default_color>211,211,211</default_color>
+    </event>
+    <event>
+      <start>2017-11-30 22:14:40</start>
+      <end>2018-01-06 02:24:40</end>
+      <text>(2)Validation Simulation</text>
+      <progress>0</progress>
+      <fuzzy>False</fuzzy>
+      <locked>False</locked>
+      <ends_today>False</ends_today>
+      <category>Verification Simulation</category>
+      <default_color>211,211,211</default_color>
+    </event>
+    <event>
+      <start>2018-01-09 21:08:40</start>
+      <end>2018-01-31 22:14:40</end>
+      <text>(2)Write Article #1</text>
+      <progress>0</progress>
+      <fuzzy>False</fuzzy>
+      <locked>False</locked>
+      <ends_today>False</ends_today>
+      <category>Research Articles</category>
+      <default_color>211,211,211</default_color>
+    </event>
+    <event>
+      <start>2018-01-31 22:14:40</start>
+      <end>2018-02-22 23:04:40</end>
+      <text>(2)Effluent Simulation</text>
+      <progress>0</progress>
+      <fuzzy>False</fuzzy>
+      <locked>False</locked>
+      <ends_today>False</ends_today>
+      <category>Effluent Simulation</category>
+      <default_color>211,211,211</default_color>
+    </event>
+    <event>
+      <start>2018-02-23 02:19:52</start>
+      <end>2018-03-26 15:37:25</end>
+      <text>(2)Write Article #2</text>
+      <progress>0</progress>
+      <fuzzy>False</fuzzy>
+      <locked>False</locked>
+      <ends_today>False</ends_today>
+      <category>Research Articles</category>
+      <default_color>211,211,211</default_color>
+    </event>
+    <event>
+      <start>2018-03-26 18:13:00</start>
+      <end>2018-04-22 14:14:00</end>
+      <text>(2)Final Revision</text>
+      <progress>0</progress>
+      <fuzzy>False</fuzzy>
+      <locked>False</locked>
+      <ends_today>False</ends_today>
+      <category>Thesis Deadlines</category>
+      <default_color>211,211,211</default_color>
+    </event>
+  </events>
+  <view>
+    <displayed_period>
+      <start>2017-02-22 08:05:43</start>
+      <end>2018-06-28 07:14:39</end>
+    </displayed_period>
+    <hidden_categories>
+    </hidden_categories>
+  </view>
+</timeline>

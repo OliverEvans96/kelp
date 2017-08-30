@@ -1,0 +1,41 @@
+16 Jan 2017 to 13 May 2018	School Schedule
+16 Jan 2017 to 14 May 2017	Spring 2017
+7 Apr 2017 06:36 to 22 Apr 2018 14:14	Research Focus
+7 Apr 2017 06:36 to 31 May 2017 22:14	Numerical RTE
+13 May 2017	RTE 2D Finished
+27 May 2017	RTE 3D Finished
+29 May 2017 to 18 Aug 2017	Berkeley Lab Summer Research
+31 May 2017 22:14 to 19 Jun 2017 05:36	Kelp/RTE Literature Review
+17 Jun 2017 03:28	Kelp/RTE Lit. Review: Draft
+19 Jun 2017 14:57 to 17 Aug 2017 22:14	Simplified Model
+8 Jul 2017 07:46	Simplified model: Draft
+22 Jul 2017 22:47	Simplified model: Final
+14 Aug 2017 05:57	Simplified model: Implemented
+27 Aug 2017 22:14 to 7 Sep 2017 22:14	Mie Scattering Theory Literature Review
+28 Aug 2017 to 17 Dec 2017	Fall Semester 2017
+8 Sep 2017 00:40	Mie Scattering Lit. Review: Draft
+8 Sep 2017 04:24 to 20 Oct 2017 15:39	Mie Scattering Analysis
+9 Oct 2017 14:10	Mie Scattering approach: Draft
+17 Oct 2017 23:46	Mie Scattering approach: Final
+20 Oct 2017 22:14 to 30 Nov 2017 22:14	Experiment
+26 Oct 2017 22:40	Experimental Design: Draft
+2 Nov 2017	Experimental Design: Final
+5 Nov 2017 to 10 Nov 2017	Travel to Norway & perform experiments
+27 Nov 2017 01:11	Experimental data analyzed
+30 Nov 2017 22:14 to 6 Jan 2018 02:24	Validation Simulation
+8 Dec 2017 09:58	Validation Simulations w/ Light Model
+24 Dec 2017 08:11	Simulation Results Analyzed
+9 Jan 2018 21:08 to 31 Jan 2018 22:14	Write Article #1
+10 Jan 2018 19:57	1st Research Article: Draft
+16 Jan 2018 to 13 May 2018	Spring 2018
+25 Jan 2018 08:54	1st Research Article: Final
+31 Jan 2018 22:14 to 22 Feb 2018 23:04	Effluent Simulation
+7 Feb 2018 07:54	Run Effluent Simulations
+21 Feb 2018 07:54	Effluent Results Analyzed
+23 Feb 2018 02:19 to 26 Mar 2018 15:37	Write Article #2
+11 Mar 2018 17:33	2nd Research Article: Draft
+26 Mar 2018 18:13 to 22 Apr 2018 14:14	Final Revision
+27 Mar 2018 09:32	2nd Research Article: Final
+9 Apr 2018 06:14	Thesis: Final Draft Due
+23 Apr 2018 06:14	Thesis Defense
+7 May 2018	Thesis: Final Submission Deadline

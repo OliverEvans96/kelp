@@ -1,0 +1,47 @@
+Spring 2017
+13 May 2017    RTE 2D Finished
+27 May 2017    RTE 3D Finished
+
+Summer 2017
+17 Jun 2017    Kelp/RTE Lit. Review: Draft
+08 Jul 2017    Simplified model: Draft
+22 Jul 2017    Simplified model: Final
+14 Aug 2017    Simplified model: Implemented
+
+Fall 2017
+08 Sep 2017    Mie Scattering Lit. Review: Draft
+09 Oct 2017    Mie Scattering approach: Draft
+17 Oct 2017    Mie Scattering approach: Final
+26 Oct 2017    Experimental Design: Draft
+02 Nov 2017    Experimental Design: Final
+27 Nov 2017    Experimental data analyzed
+8 Dec 2017     Validation Simulations w/ Light Model
+
+Winter Brea
+24 Dec 2017    Simulation Results Analyzed
+10 Jan 2018    1st Research Article: Draft
+
+Spring 2018
+25 Jan 2018    1st Research Article: Final
+07 Feb 2018    Run Effluent Simulations
+21 Feb 2018    Effluent Results Analyzed
+11 Mar 2018    2nd Research Article: Draft
+27 Mar 2018    2nd Research Article: Final
+09 Apr 2018    Thesis: Final Draft Due
+23 Apr 2018    Thesis Defense
+07 May 2018    Thesis: Final Submission Deadline
+
+
+Research Focus
+07 Apr 2017 - 31 May 2017    Numerical RTE
+31 May 2017 - 19 Jun 2017    Kelp/RTE Literature Review
+19 Jun 2017 - 17 Aug 2017    Simplified Model
+27 Aug 2017 - 07 Sep 2017    Mie Scattering Theory Literature Review
+08 Sep 2017 - 20 Oct 2017    Mie Scattering Analysis
+20 Oct 2017 - 30 Nov 2017    Experiment
+05 Nov 2017 - 10 Nov 2017    Travel to Norway & perform experiments
+30 Nov 2017 - 06 Jan 2018    Validation Simulation
+09 Jan 2018 - 31 Jan 2018    Write Article #1
+31 Jan 2018 - 22 Feb 2018    Effluent Simulation
+23 Feb 2018 - 26 Mar 2018    Write Article #2
+26 Mar 2018 - 22 Apr 2018    Final Revision
