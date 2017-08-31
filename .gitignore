@@ -1,2 +1,4 @@
 literature
 olemodel/*
+.ipynb_checkpoints/*
+*/.ipynb_checkpoints/*
