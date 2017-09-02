@@ -15,7 +15,7 @@
 # Project directories
 BASE=.
 BIN=$(BASE)/bin
-SRC=$(BASE)/src
+SRC=$(BASE)/fortran
 INC=$(BASE)/include
 
 # Fortran Compiler
@@ -31,10 +31,13 @@ BFLAGS=-J$(INC) -I$(INC)
 # Executables #
 ###############
 
-all: test_interp test_rte2d test_vsf
+all: test_interp test_rte2d test_vsf test_context
 
 test_interp: utils.o
 	 $(FC) $(BFLAGS) $(SRC)/test_interp.f90 $(INC)/utils.o -o $(BIN)/test_interp
+
+test_context: utils.o kelp_context.o
+	 $(FC) $(BFLAGS) $(SRC)/test_context.f90 $(INC)/utils.o $(INC)/kelp_context.o -o $(BIN)/test_context
 
 test_rte2d: rte2d.o
 	 $(FC) $(BFLAGS) $(SRC)/test_rte2d.f90 $(INC)/rte2d.o $(INC)/rte_core.o $(INC)/utils.o -o $(BIN)/test_rte2d
@@ -48,6 +51,12 @@ test_vsf: rte_core.o
 
 rte2d.o: rte_core.o
 	$(FC) $(OFLAGS) $(SRC)/rte2d.f90 -o $(INC)/rte2d.o
+
+sag.o:
+	$(FC) $(OFLAGS) $(SRC)/sag.f90 -o $(INC)/sag.o
+
+kelp_context.o: sag.o
+	$(FC) $(OFLAGS) $(SRC)/kelp_context.f90 -o $(INC)/kelp_context.o
 
 rte_core.o: utils.o
 	$(FC) $(OFLAGS) $(SRC)/rte_core.f90 -o $(INC)/rte_core.o

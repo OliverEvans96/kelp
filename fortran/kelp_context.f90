@@ -1,9 +1,10 @@
-module context_module
+module kelp_context
 use sag
+use utils
 
 type optical_properties
   integer num_vsf
-  double precision, dimension(:), allocatable :: vsf_array
+  double precision, dimension(:), allocatable :: vsf
   double precision abs_water, abs_kelp, scat_water, scat_kelp
 
   contains
@@ -22,25 +23,24 @@ end type rope_state
 
 
 contains
-  subroutine load_vsf(iops)
+  subroutine load_vsf(iops, filename, fmtstr)
     class(optical_properties) :: iops
+    character(len=*) :: filename, fmtstr
+    double precision, dimension(:,:), allocatable :: tmp_2d_arr
 
+    allocate(tmp_2d_arr(iops%num_vsf, 1))
+    allocate(iops%vsf(iops%num_vsf))
+
+    tmp_2d_arr = read_array(filename, fmtstr, iops%num_vsf, 1, 0)
+    iops%vsf = tmp_2d_arr(:,1)
   end subroutine load_vsf
 
   subroutine init_rope_state(rope)
     class(rope_state) :: rope
-    allocate(frond_lengths(grid%nz))
-    allocate(frond_stds(grid%nz))
-    allocate(water_speed(grid%nz))
-    allocate(water_angle(grid%nz))
-  end subroutine init_kelp_state
+    allocate(rope%frond_lengths(rope%grid%nz))
+    allocate(rope%frond_stds(rope%grid%nz))
+    allocate(rope%water_speed(rope%grid%nz))
+    allocate(rope%water_angle(rope%grid%nz))
+  end subroutine init_rope_state
 
-  ! Read array from file
-  subroutine read_array(arr, n, filename)
-
-  end subroutine read_array
-
-
-
-end module context_module
-
+end module kelp_context
