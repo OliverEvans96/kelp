@@ -4,20 +4,32 @@
 
 ! Given superindividual/water current data at each depth, generate kelp distribution at each point in 3D space
 
+use prob
+use cube_grid
+use intlib
+
 subroutine generate_grid(xmin, xmax, nx, ymin, ymax, ny, zmin, zmax, nz)
 end subroutine generate_grid
 
 subroutine calculate_kelp_on_grid()
 end subroutine calculate_kelp_on_grid
 
-function length_distribution_cdf()
+function length_distribution_cdf(L, L_mean, L_std)
 ! C_L(L)
-  !!! VON MISES CDF !!!
+  double precision, intent(in) :: L, L_mean, L_std
+  double precision, intent(out) :: length_distribution_cdf
+
+  ! Not 100% sure about the order of arguments. Probably good.
+  call normal_cdf(L, L_mean, L_std)
+
 end function length_distribution_cdf
 
-function angle_distribution_pdf()
+function angle_distribution_pdf(theta_f, theta_w, v_w)
 ! P_{\theta_f}(\theta_f)
+  double precision, intent(in) :: theta_f, v_w, theta_w
+  double precision, intent(out) :: angle_distribution_pdf
   !!! NORMAL DISTRIBUTION PDF !!!
+  call von_mises_pdf(theta_f, theta_w, v_w, angle_distribution_pdf)
 end function angle_distribution_pdf
 
 function alpha(fs, fr)
@@ -42,12 +54,24 @@ subroutine cartesian_to_polar(x, y, r, theta)
   theta = atan2(x, y)
 end subroutine cartesian_to_polar
 
+function integrate_length_angle_dist()
+end function integrate_length_angle_dist
+
+function shading_region_limits()
+end function shading_region_limits
+
 function prob_kelp(theta_p, r_p)
 ! P_s(theta_p, r_p)
   double precision, intent(in) :: theta_p, r_p,
   double precision, intent(out) :: prob_kelp
 
   !!! NUMERICAL INTEGRATION !!!
+
+  call shading_region_limits()
+  call integrate_length_angle_dist()
+
+  double precision, intent(in), external :: 
+
 end function prob_kelp
 
 function min_shading_length(r_p, theta, L)
