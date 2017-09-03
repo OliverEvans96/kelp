@@ -39,6 +39,12 @@ test_interp: utils.o
 test_context: utils.o kelp_context.o
 	 $(FC) $(BFLAGS) $(SRC)/test_context.f90 $(INC)/utils.o $(INC)/kelp_context.o -o $(BIN)/test_context
 
+test_gl: 
+	 $(FC) $(BFLAGS) $(SRC)/test_gl.f90 $(SRC)/download/fastgl.f90 -o $(BIN)/test_gl
+
+test_prob: 
+	 $(FC) $(BFLAGS) $(SRC)/test_prob.f90 $(SRC)/download/prob.f90 -o $(BIN)/test_prob
+
 test_rte2d: rte2d.o
 	 $(FC) $(BFLAGS) $(SRC)/test_rte2d.f90 $(INC)/rte2d.o $(INC)/rte_core.o $(INC)/utils.o -o $(BIN)/test_rte2d
 
