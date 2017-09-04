@@ -44,7 +44,10 @@ test_context: utils.o kelp_context.o
 test_gl: 
 	 $(FC) $(BFLAGS) $(SRC)/test_gl.f90 $(SRC)/download/fastgl.f90 -o $(BIN)/test_gl
 
-test_gmres: hdf5_utils.o utils.o
+test_grid: kelp_context.o
+	 $(FC) $(BFLAGS) $(SRC)/test_grid.f90 $(SRC)/kelp_context.f90 $(SRC)/download/fastgl.f90 $(INC)/sag.o $(INC)/utils.o -o $(BIN)/test_grid
+
+test_gmres: hdf5_utils.o
 	 $(H5FC) $(BFLAGS) $(SRC)/test_gmres.f90 $(SRC)/download/mgmres.f90 $(INC)/utils.o $(INC)/hdf5_utils.o -o $(BIN)/test_gmres 
 
 test_prob: 
@@ -63,7 +66,7 @@ test_vsf: rte_core.o
 rte2d.o: rte_core.o
 	$(FC) $(OFLAGS) $(SRC)/rte2d.f90 -o $(INC)/rte2d.o
 
-sag.o:
+sag.o: utils.o
 	$(FC) $(OFLAGS) $(SRC)/sag.f90 -o $(INC)/sag.o
 
 hdf5_utils.o: utils.o

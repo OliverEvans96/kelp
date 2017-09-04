@@ -4,9 +4,11 @@
 
 ! Given superindividual/water current data at each depth, generate kelp distribution at each point in 3D space
 
+module kelp3d
+
 use prob
-use cube_grid
 use intlib
+use 
 
 subroutine generate_grid(xmin, xmax, nx, ymin, ymax, ny, zmin, zmax, nz)
 end subroutine generate_grid
@@ -19,7 +21,6 @@ function length_distribution_cdf(L, L_mean, L_std)
   double precision, intent(in) :: L, L_mean, L_std
   double precision, intent(out) :: length_distribution_cdf
 
-  ! Not 100% sure about the order of arguments. Probably good.
   call normal_cdf(L, L_mean, L_std)
 
 end function length_distribution_cdf
@@ -114,3 +115,4 @@ function sgn(x)
 end function signum
 
 
+end module
