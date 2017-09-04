@@ -2,3 +2,7 @@ literature
 olemodel/*
 .ipynb_checkpoints/*
 */.ipynb_checkpoints/*
+*/*/.ipynb_checkpoints/*
+*.o
+.*.swp
+

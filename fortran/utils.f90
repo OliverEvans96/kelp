@@ -142,6 +142,20 @@ function bnd2arr(xmin,xmax,imax)
 
 end function
 
+function mod1(i, n)
+  integer i, n, m
+  integer mod1
+
+  m = mod(i, n)
+
+  if(m .eq. 0) then
+     mod1 = n
+  else
+     mod1 = m
+  end if
+
+end function mod1
+
 
 ! Interpolate single point from 1D data
 function interp(x0,xx,yy,nn)
@@ -317,6 +331,49 @@ function read_array(filename,fmtstr,nn,mm,skiplines_in)
 end function
 
 ! Print 2D array to stdout
+subroutine print_int_array(arr,nn,mm,fmtstr_in)
+  implicit none
+
+  ! INPUTS:
+  ! arr - array to print
+  integer, dimension (nn,mm), intent(in) :: arr
+  ! nn - number of data rows in file
+  ! nn - number of data columns in file
+  integer, intent(in) :: nn, mm
+  ! fmtstr - output format (no parentheses, don't specify columns)
+  ! e.g. 'E10.2', not '(2E10.2)'
+  character(len=*), optional :: fmtstr_in
+  character(len=256) fmtstr
+
+  ! NO OUTPUTS
+
+  ! BODY
+
+  ! Row counter
+  integer ii
+  ! Final format to use
+  character(len=256) finfmt
+
+  ! Determine string format
+  if(present(fmtstr_in)) then
+     fmtstr = fmtstr_in
+  else
+     fmtstr = 'I10'
+  end if
+
+  ! Generate final format string
+  write(finfmt,'(A,I4,A,A)') '(', mm, trim(fmtstr), ')'
+
+  ! Loop through rows
+  do ii = 1, nn
+     ! Print one row at a time
+     write(*,finfmt) arr(ii,:)
+  end do
+
+  ! Print blank line after
+  write(*,*) ' '
+
+end subroutine print_int_array
 subroutine print_array(arr,nn,mm,fmtstr_in)
     implicit none
 
@@ -344,7 +401,7 @@ subroutine print_array(arr,nn,mm,fmtstr_in)
     if(present(fmtstr_in)) then
         fmtstr = fmtstr_in
     else
-        fmtstr = 'E10.2'
+        fmtstr = 'ES10.2'
     end if
 
     ! Generate final format string
@@ -352,6 +409,8 @@ subroutine print_array(arr,nn,mm,fmtstr_in)
 
     ! Loop through rows
     do ii = 1, nn
+        ! Include row number
+        !write(*,'(I10)', advance='no') ii
         ! Print one row at a time
         write(*,finfmt) arr(ii,:)
     end do
