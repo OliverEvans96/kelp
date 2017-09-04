@@ -10,33 +10,33 @@ program test_grid
   call grid%init()
 
   write(*,*) 'x'
-  call print_array(grid%x, grid%nx, 1)
+  call print_array(grid%x%vals, grid%x%num, 1)
   write(*,*) 'y'
-  call print_array(grid%y, grid%ny, 1)
+  call print_array(grid%y%vals, grid%y%num, 1)
   write(*,*) 'z'
-  call print_array(grid%z, grid%nz, 1)
+  call print_array(grid%z%vals, grid%z%num, 1)
   write(*,*) 'theta'
-  call print_array(grid%theta, grid%ntheta, 1)
+  call print_array(grid%theta%vals, grid%theta%num, 1)
   write(*,*) 'phi'
-  call print_array(grid%phi, grid%nphi, 1)
+  call print_array(grid%phi%vals, grid%phi%num, 1)
 
   ! Test integration
   ! \int_0^2pi sin(theta/2) dtheta = 4
   ! \int_0^pi sin(phi) dphi = 2
 
   ! Hard
-  thetaint = pi * sum(grid%theta_weights * sin(grid%theta/2))
-  phiint = pi/2.d0 * sum(grid%phi_weights * sin(grid%phi))
+  thetaint = pi * sum(grid%theta%weights * sin(grid%theta%vals/2))
+  phiint = pi/2.d0 * sum(grid%phi%weights * sin(grid%phi%vals))
   write(*,*) 'thetaint = ', thetaint
   write(*,*) 'phiint = ', phiint
 
   ! Easier
-  write(*,*) 'thetaint = ', grid%theta_integrate_points(sin(grid%theta/2))
-  write(*,*) 'phiint = ', grid%phi_integrate_points(sin(grid%phi))
+  write(*,*) 'thetaint = ', grid%theta%integrate_points(sin(grid%theta%vals/2))
+  write(*,*) 'phiint = ', grid%phi%integrate_points(sin(grid%phi%vals))
 
   ! Easiest
-  write(*,*) 'thetaint = ', grid%theta_integrate_func(f1)
-  write(*,*) 'phiint = ', grid%phi_integrate_func(f2)
+  write(*,*) 'thetaint = ', grid%theta%integrate_func(f1)
+  write(*,*) 'phiint = ', grid%phi%integrate_func(f2)
 
 
   call grid%deinit()

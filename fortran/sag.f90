@@ -16,88 +16,145 @@ implicit none
 
 !integer, parameter :: pi = 3.141592653589793D+00
 
-type space_angle_grid !(sag)
-  integer nx, ny, nz, ntheta, nphi
-  double precision :: xmin, xmax, ymin, ymax, zmin, zmax
-  double precision :: dx, dy, dz, dtheta, dphi
-  ! Azimuthal angle
-  double precision :: thetamin = 0, thetamax = 2*pi
-  ! Polar angle
-  double precision :: phimin = 0, phimax = pi
+type angle_dim
+   integer num
+   double precision minval, maxval, prefactor
+   double precision, dimension(:), allocatable :: vals, weights
+ contains
+   procedure :: set_bounds => angle_set_bounds
+   procedure :: set_num => angle_set_num
+   procedure :: deinit => angle_deinit
+   procedure :: integrate_points => angle_integrate_points
+   procedure :: integrate_func => angle_integrate_func
+   procedure :: assign_legendre
+end type angle_dim
 
-  double precision, dimension(:), allocatable :: x, y, z, theta, phi
-  ! Gauss-Legendre weights for numerical integration
-  double precision, dimension(:), allocatable :: theta_weights, phi_weights
-  double precision theta_prefactor, phi_prefactor
+type space_dim
+   integer num
+   double precision minval, maxval, spacing
+   double precision, dimension(:), allocatable :: vals
+ contains
+   procedure :: set_bounds => space_set_bounds
+   procedure :: set_num => space_set_num
+   !procedure :: set_spacing => space_set_spacing
+   !procedure :: set_num_from_spacing
+   procedure :: set_spacing_from_num
+   procedure :: deinit => space_deinit
+   procedure :: assign_linspace
+end type space_dim
+
+type space_angle_grid !(sag)
+  type(space_dim) :: x, y, z
+  type(angle_dim) :: theta, phi
 contains
   procedure :: set_bounds => sag_set_bounds
   procedure :: set_num => sag_set_num
   procedure :: init => sag_init
   procedure :: deinit => sag_deinit
   !procedure :: set_num_from_spacing
-  procedure :: set_spacing_from_num
-  procedure :: theta_integrate_points
-  procedure :: theta_integrate_func
-  procedure :: phi_integrate_points
-  procedure :: phi_integrate_func
+  procedure :: set_spacing_from_num => sag_set_spacing_from_num
 end type space_angle_grid
 
-
 contains
-  subroutine sag_set_bounds(grid, xmin, xmax, ymin, ymax, zmin, zmax)
-    class(space_angle_grid) :: grid
-    double precision xmin, xmax, ymin, ymax, zmin, zmax
-    grid%xmin = xmin
-    grid%ymin = ymin
-    grid%zmin = zmin
-    grid%xmax = xmax
-    grid%ymax = ymax
-    grid%zmax = zmax
-  end subroutine sag_set_bounds
+  subroutine angle_set_bounds(angle, minval, maxval)
+    class(angle_dim) :: angle
+    double precision minval, maxval
+    angle%minval = minval
+    angle%maxval = maxval
+  end subroutine angle_set_bounds
 
-  ! subroutine sag_set_spacing(grid, dx, dy, dz)
-  !   class(space_angle_grid) :: grid
-  !   grid%dx = dx
-  !   grid%dy = dy
-  !   grid%dz = dz
-  ! 
-  !   call grid%set_num_from_spacing()
-  ! end subroutine sag_set_spacing
+  subroutine angle_set_num(angle, num)
+    class(angle_dim) :: angle
+    integer num
+    angle%num = num
+  end subroutine angle_set_num
 
-  subroutine sag_set_num(grid, nx, ny, nz, ntheta, nphi)
-    class(space_angle_grid) :: grid
-    integer nx, ny, nz, ntheta, nphi
-    grid%nx = nx
-    grid%ny = ny
-    grid%nz = nz
-    grid%ntheta = ntheta
-    grid%nphi = nphi
+  ! To calculate \int_{xmin}^{xmax} f(x) dx :
+  ! int = prefactor * sum(weights * f(roots))
+  subroutine assign_legendre(angle)
+    class(angle_dim) :: angle
+    double precision root, weight, theta
+    integer i
+    ! glpair produces both x and theta, where x=cos(theta). We'll throw out theta.
 
-    call grid%set_spacing_from_num()
-  end subroutine sag_set_num
+    allocate(angle%vals(angle%num))
+    allocate(angle%weights(angle%num))
 
-  subroutine sag_init(grid)
-    class(space_angle_grid) :: grid
+    ! Prefactor for integration
+    ! From change of variables
+    angle%prefactor = (angle%maxval - angle%minval) / 2.d0
 
-    call set_spacing_from_num(grid)
+    do i = 1, angle%num
+       call glpair(angle%num, i, theta, weight, root)
+       call affine_transform(root, -1.d0, 1.d0, angle%minval, angle%maxval)
+       angle%vals(i) = root
+       angle%weights(i) = weight
+    end do
+  end subroutine assign_legendre
 
-    call assign_linspace(grid%x, grid%xmin, grid%xmax, grid%nx)
-    call assign_linspace(grid%y, grid%ymin, grid%ymax, grid%ny)
-    call assign_linspace(grid%z, grid%zmin, grid%zmax, grid%nz)
+  ! Integrate callable function over angle via Gauss-Legendre quadrature
 
-    call assign_legendre(grid%theta, grid%theta_weights, grid%theta_prefactor, grid%thetamin, grid%thetamax, grid%ntheta)
-    call assign_legendre(grid%phi, grid%phi_weights, grid%phi_prefactor, grid%phimin, grid%phimax, grid%nphi)
+  function angle_integrate_func(angle, func_callable) result(integral)
+    class(angle_dim) :: angle
+    double precision, external :: func_callable
+    double precision, dimension(:), allocatable :: func_vals
+    double precision integral
+    integer i
 
-  end subroutine sag_init
+    allocate(func_vals(angle%num))
 
-  subroutine sag_deinit(grid)
-    class(space_angle_grid) :: grid
-    deallocate(grid%x)
-    deallocate(grid%y)
-    deallocate(grid%z)
-    deallocate(grid%theta)
-    deallocate(grid%phi)
-  end subroutine sag_deinit
+    do i=1, angle%num
+       func_vals(i) = func_callable(angle%vals(i))
+    end do
+
+    integral = angle%integrate_points(func_vals)
+
+    deallocate(func_vals)
+  end function angle_integrate_func
+
+  ! Integrate function given function values sampled at legendre theta values
+  function angle_integrate_points(angle, func_vals) result(integral)
+    class(angle_dim) :: angle
+    double precision, dimension(angle%num) :: func_vals
+    double precision integral
+
+    integral = angle%prefactor * sum(angle%weights * func_vals)
+  end function angle_integrate_points
+
+  subroutine angle_deinit(angle)
+    class(angle_dim) :: angle
+    deallocate(angle%vals)
+  end subroutine angle_deinit
+
+
+  !! SPACE !!
+
+  subroutine space_set_bounds(space, minval, maxval)
+    class(space_dim) :: space
+    double precision minval, maxval
+    space%minval = minval
+    space%maxval = maxval
+  end subroutine space_set_bounds
+  
+  subroutine space_set_num(space, num)
+    class(space_dim) :: space
+    integer num
+    space%num = num
+  end subroutine space_set_num
+
+  subroutine assign_linspace(space)
+    class(space_dim) :: space
+    integer i
+
+    allocate(space%vals(space%num))
+
+    space%spacing = spacing_from_num(space%minval, space%maxval, space%num)
+    write(*,*) 'space%spacing = ', space%spacing
+
+    do i=1, space%num
+       space%vals(i) = space%minval + dble(i-1) * space%spacing
+    end do
+  end subroutine assign_linspace
 
   ! subroutine set_num_from_spacing(grid)
   !   class(space_angle_grid) :: grid
@@ -105,12 +162,10 @@ contains
   !   grid%ny = num_from_spacing(grid%ymin, grid%ymax, grid%dy)
   !   grid%nz = num_from_spacing(grid%zmin, grid%zmax, grid%dz)
   ! end subroutine set_num_from_spacing
-
-  subroutine set_spacing_from_num(grid)
-    class(space_angle_grid) :: grid
-    grid%dx = spacing_from_num(grid%xmin, grid%xmax, grid%nx)
-    grid%dy = spacing_from_num(grid%ymin, grid%ymax, grid%ny)
-    grid%dz = spacing_from_num(grid%zmin, grid%zmax, grid%nz)
+  
+  subroutine set_spacing_from_num(space)
+    class(space_dim) :: space
+    space%spacing = spacing_from_num(space%minval, space%maxval, space%num)
   end subroutine set_spacing_from_num
 
   ! subroutine assign_linspace_spacing(arr, xmin, xmax, dx)
@@ -127,99 +182,75 @@ contains
   !   end do
   ! end subroutine assign_linspace_spacing
 
-  subroutine assign_linspace(arr, xmin, xmax, n)
-    double precision, dimension(:), allocatable :: arr
-    double precision xmin, xmax, dx
-    integer n, i
+  subroutine space_deinit(space)
+    class(space_dim) :: space
+    deallocate(space%vals)
+  end subroutine space_deinit
 
-    allocate(arr(n))
+  !! SAG !!
 
-    dx = spacing_from_num(xmin, xmax, n)
-    write(*,*) 'dx = ', dx
+  subroutine sag_set_bounds(grid, xmin, xmax, ymin, ymax, zmin, zmax)
+    class(space_angle_grid) :: grid
+    double precision xmin, xmax, ymin, ymax, zmin, zmax
 
-    do i=1, n
-       arr(i) = xmin + dble(i-1) * dx
-    end do
-  end subroutine assign_linspace
+    double precision, parameter :: thetamin = 0, thetamax = 2*pi
+    double precision, parameter :: phimin = 0, phimax = pi
 
-  ! To calculate \int_{xmin}^{xmax} f(x) dx :
-  ! int = prefactor * sum(weights * f(roots))
-  subroutine assign_legendre(roots, weights, prefactor, xmin, xmax, nx)
-    double precision, dimension(:), allocatable :: roots, weights
-    double precision xmin, xmax, prefactor, root, weight, theta
-    integer nx, i
-    ! glpair produces both x and theta, where x=cos(theta). We'll throw out theta.
+    call grid%x%set_bounds(xmin, xmax)
+    call grid%y%set_bounds(ymin, ymax)
+    call grid%z%set_bounds(zmin, zmax)
+    call grid%theta%set_bounds(thetamin, thetamax)
+    call grid%phi%set_bounds(phimin, phimax)
+  end subroutine sag_set_bounds
 
-    allocate(roots(nx))
-    allocate(weights(nx))
+  ! subroutine sag_set_spacing(grid, dx, dy, dz)
+  !   class(space_angle_grid) :: grid
+  !   grid%dx = dx
+  !   grid%dy = dy
+  !   grid%dz = dz
+  ! 
+  !   call grid%set_num_from_spacing()
+  ! end subroutine sag_set_spacing
 
-    ! Prefactor for integration
-    ! From change of variables
-    prefactor = (xmax - xmin) / 2
+  subroutine sag_set_num(grid, nx, ny, nz, ntheta, nphi)
+    class(space_angle_grid) :: grid
+    integer nx, ny, nz, ntheta, nphi
+    call grid%x%set_num(nx)
+    call grid%y%set_num(ny)
+    call grid%z%set_num(nz)
+    call grid%theta%set_num(ntheta)
+    call grid%phi%set_num(nphi)
+  end subroutine sag_set_num
 
-    do i = 1, nx
-       call glpair(nx, i, theta, weight, root)
-       call affine_transform(root, -1.d0, 1.d0, xmin, xmax)
-       roots(i) = root
-       weights(i) = weight
-    end do
-  end subroutine assign_legendre
+  subroutine sag_init(grid)
+    class(space_angle_grid) :: grid
+
+    call grid%set_spacing_from_num()
+
+    call grid%x%assign_linspace()
+    call grid%y%assign_linspace()
+    call grid%z%assign_linspace()
+
+    call grid%theta%assign_legendre()
+    call grid%phi%assign_legendre()
+
+  end subroutine sag_init
   
-  ! Integrate callable function over theta
-  function theta_integrate_func(grid, func_callable) result(integral)
+  subroutine sag_set_spacing_from_num(grid)
     class(space_angle_grid) :: grid
-    double precision, external :: func_callable
-    double precision, dimension(:), allocatable :: func_vals
-    double precision integral
-    integer i
+    call grid%x%set_spacing_from_num()
+    call grid%y%set_spacing_from_num()
+    call grid%z%set_spacing_from_num()
+  end subroutine sag_set_spacing_from_num
 
-    allocate(func_vals(grid%ntheta))
-
-    do i=1, grid%ntheta
-       func_vals(i) = func_callable(grid%theta(i))
-    end do
-
-    integral = grid%theta_integrate_points(func_vals)
-
-    deallocate(func_vals)
-  end function theta_integrate_func
-
-  ! Integrate function given function values sampled at legendre theta values
-  function theta_integrate_points(grid, func_vals) result(integral)
+  subroutine sag_deinit(grid)
     class(space_angle_grid) :: grid
-    double precision, dimension(grid%ntheta) :: func_vals
-    double precision integral
-
-    integral = grid%theta_prefactor * sum(grid%theta_weights * func_vals)
-  end function theta_integrate_points
-  
-  ! Integrate callable function over phi
-  function phi_integrate_func(grid, func_callable) result(integral)
-    class(space_angle_grid) :: grid
-    double precision, external :: func_callable
-    double precision, dimension(:), allocatable :: func_vals
-    double precision integral
-    integer i
-
-    allocate(func_vals(grid%nphi))
-
-    do i=1, grid%nphi
-       func_vals(i) = func_callable(grid%phi(i))
-    end do
-
-    integral = grid%phi_integrate_points(func_vals)
-
-    deallocate(func_vals)
-  end function phi_integrate_func
-
-  ! Integrate function given function values sampled at legendre phi values
-  function phi_integrate_points(grid, func_vals) result(integral)
-    class(space_angle_grid) :: grid
-    double precision, dimension(grid%nphi) :: func_vals
-    double precision integral
-
-    integral = grid%phi_prefactor * sum(grid%phi_weights * func_vals)
-  end function phi_integrate_points
+    call grid%x%deinit()
+    call grid%y%deinit()
+    call grid%z%deinit()
+    call grid%theta%deinit()
+    call grid%phi%deinit()
+  end subroutine sag_deinit
 
   ! Affine shift on x from [xmin, xmax] to [ymin, ymax]
   subroutine affine_transform(x, xmin, xmax, ymin, ymax)

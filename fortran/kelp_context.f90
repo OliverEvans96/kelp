@@ -37,10 +37,10 @@ contains
 
   subroutine init_rope_state(rope)
     class(rope_state) :: rope
-    allocate(rope%frond_lengths(rope%grid%nz))
-    allocate(rope%frond_stds(rope%grid%nz))
-    allocate(rope%water_speed(rope%grid%nz))
-    allocate(rope%water_angle(rope%grid%nz))
+    allocate(rope%frond_lengths(rope%grid%z%num))
+    allocate(rope%frond_stds(rope%grid%z%num))
+    allocate(rope%water_speed(rope%grid%z%num))
+    allocate(rope%water_angle(rope%grid%z%num))
   end subroutine init_rope_state
 
 end module kelp_context

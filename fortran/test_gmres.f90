@@ -14,10 +14,10 @@ subroutine test_real()
   implicit none
 
   integer error
-  character(len=24) :: a_fn = "fortran/download/h5/A.h5"
-  character(len=24) :: rhs_fn = "fortran/download/h5/b.h5"
-  character(len=24) :: x_fn = "fortran/download/h5/x.h5"
-  character(len=27) :: test_fn = "fortran/download/h5/test.h5"
+  character(len=24) :: a_fn = "fortran/hdf5test/A.h5"
+  character(len=24) :: rhs_fn = "fortran/hdf5test/b.h5"
+  character(len=24) :: x_fn = "fortran/hdf5test/x.h5"
+  character(len=27) :: test_fn = "fortran/hdf5test/test.h5"
   integer, dimension(:), allocatable :: row, col
   double precision, dimension(:), allocatable :: data, x, x_true, rhs, test
   integer n, m, nnz_a, nnz_rhs, nnz_x_true
