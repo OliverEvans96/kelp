@@ -20,6 +20,8 @@ INC=$(BASE)/include
 
 # Fortran Compiler
 FC=gfortran
+# HDF5 Fortan Compiler
+H5FC=h5fc
 
 # Fortran Compilation flags
 # Object files (.o)
@@ -42,6 +44,9 @@ test_context: utils.o kelp_context.o
 test_gl: 
 	 $(FC) $(BFLAGS) $(SRC)/test_gl.f90 $(SRC)/download/fastgl.f90 -o $(BIN)/test_gl
 
+test_gmres: hdf5_utils.o
+	 $(H5FC) $(BFLAGS) $(SRC)/test_gmres.f90 $(INC)/hdf5_utils.o $(SRC)/download/mgmres.f90 -o $(BIN)/test_gmres
+
 test_prob: 
 	 $(FC) $(BFLAGS) $(SRC)/test_prob.f90 $(SRC)/download/prob.f90 -o $(BIN)/test_prob
 
@@ -60,6 +65,9 @@ rte2d.o: rte_core.o
 
 sag.o:
 	$(FC) $(OFLAGS) $(SRC)/sag.f90 -o $(INC)/sag.o
+
+hdf5_utils.o:
+	$(H5FC) $(OFLAGS) $(SRC)/hdf5_utils.f90 -o $(INC)/hdf5_utils.o
 
 kelp_context.o: sag.o
 	$(FC) $(OFLAGS) $(SRC)/kelp_context.f90 -o $(INC)/kelp_context.o
