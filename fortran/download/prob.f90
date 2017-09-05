@@ -1,3 +1,5 @@
+module prob
+contains
 subroutine angle_cdf ( x, n, cdf )
 
 !*****************************************************************************80
@@ -40487,3 +40489,4 @@ subroutine zipf_variance ( a, variance )
 
   return
 end
+end module prob

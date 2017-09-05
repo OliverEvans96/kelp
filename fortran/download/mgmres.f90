@@ -1,3 +1,5 @@
+module mgmres
+contains
 subroutine atx_cr ( n, nz_num, ia, ja, a, x, w )
 
 !*****************************************************************************80
@@ -1506,3 +1508,4 @@ subroutine timestamp ( )
 
   return
 end
+end module mgmres

@@ -1,3 +1,5 @@
+module fastgl
+contains
 subroutine besseljzero ( k, x )
 
 !*****************************************************************************80
@@ -6449,3 +6451,4 @@ subroutine timestamp ( )
 
   return
 end
+end module fastgl
