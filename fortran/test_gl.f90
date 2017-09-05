@@ -1,4 +1,5 @@
-program test_lg
+program test_gl
+  use fastgl
   integer n, k
   double precision theta, weight, x
 
@@ -11,4 +12,4 @@ program test_lg
 
   ! Looks good. x = cos(theta).
 
-end program test_lg
+end program test_gl

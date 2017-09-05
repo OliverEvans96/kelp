@@ -10,6 +10,7 @@ end program test_gmres
 subroutine test_real()
   use hdf5_utils
   use utils
+  use mgmres
 
   implicit none
 

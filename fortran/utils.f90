@@ -472,5 +472,4 @@ subroutine write_array(arr,nn,mm,filename,fmtstr_in)
 
 end subroutine
 
-
 end module
