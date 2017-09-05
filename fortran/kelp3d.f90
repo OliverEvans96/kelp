@@ -6,111 +6,91 @@
 
 module kelp3d
 
-use sag
-use prob
+use kelp_context
+
+implicit none
+
+contains
 
 subroutine generate_grid(xmin, xmax, nx, ymin, ymax, ny, zmin, zmax, nz, ntheta, nphi, grid, p_kelp)
-  double precision, intent(in) :: xmin, xmax, ymin, ymax, zmin, zmax 
-  integer, intent(in) :: nx, ny, nz, ntheta, nphi
-  type(space_angle_grid), intent(out) :: grid
-  double precision, dimension(:,:,:), allocatable, intent(out) :: p_kelp
+  double precision xmin, xmax, ymin, ymax, zmin, zmax 
+  integer nx, ny, nz, ntheta, nphi
+  type(space_angle_grid) grid
+  double precision, dimension(:,:,:), allocatable :: p_kelp
 
-  grid%set_bounds(xmin, xmax, ymin, ymax, zmin, zmax)
-  grid%set_num(nx, ny, nz, ntheta, nphi)
+  call grid%set_bounds(xmin, xmax, ymin, ymax, zmin, zmax)
+  call grid%set_num(nx, ny, nz, ntheta, nphi)
 
   allocate(p_kelp(nx,ny,nz))
 
 end subroutine generate_grid
 
 subroutine deinit(grid, p_kelp)
-  grid%deinit()
+  type(space_angle_grid) grid
+  double precision, dimension(:,:,:), allocatable :: p_kelp
+  call grid%deinit()
   deallocate(p_kelp)
 end subroutine
 
-subroutine calculate_kelp_on_grid(grid, p_kelp, fs, fr)
-  type(space_angle_grid) :: grid
-  double precision, dimension(grid%nx, grid%ny, grid%nz) :: p_kelp
-  double precision theta_p, r_p
-  integer i, j, k
+subroutine calculate_kelp_on_grid(grid, p_kelp, frond, rope, quadrature_degree)
+  type(space_angle_grid), intent(in) :: grid
+  type(frond_shape), intent(in) :: frond
+  type(rope_state), intent(in) :: rope
+  type(point3d) point
+  integer, intent(in) :: quadrature_degree
+  double precision, dimension(grid%x%num, grid%y%num, grid%z%num) :: p_kelp
+  type(depth_state) depth
 
-  do i=1, grid%nx
-     do j=1, grid%ny
-        do k=1, grid%nz
-           cartesian_to_polar(grid%x(i), grid%y(j), theta_p, r_p)
-           p_kelp = prob_kelp(theta_p, r_p, fs, fr)
-        end do
-     end do
+  integer i, j, k, nx, ny, nz
+  double precision x, y, z
+
+  nx = grid%x%num
+  ny = grid%y%num
+  nz = grid%z%num
+
+  do k=1, nz
+    z = grid%z%vals(k)
+    call depth%set_depth(rope, k) 
+    do i=1, nx
+      x = grid%x%vals(i)
+      do j=1, ny
+        y = grid%y%vals(j)
+        call point%set_cart(x, y, z)
+        p_kelp = prob_kelp(point, frond, depth, quadrature_degree)
+      end do
+    end do
   end do
 end subroutine calculate_kelp_on_grid
 
-function length_distribution_cdf(L, L_mean, L_std) result(output)
-! C_L(L)
-  double precision, intent(in) :: L, L_mean, L_std
-  double precision, intent(out) :: output
-
-  call normal_cdf(L, L_mean, L_std, output)
-end function length_distribution_cdf
-
-function angle_distribution_pdf(theta_f, theta_w, v_w) result output
-! P_{\theta_f}(\theta_f)
-  double precision, intent(in) :: theta_f, v_w, theta_w
-  double precision, intent(out) :: output
-  call von_mises_pdf(theta_f, theta_w, v_w, output
-end function angle_distribution_pdf
-
-function alpha(fs, fr)
-  double precision, intent(in) :: fs, fr
-  double precision, intent(out) :: alpha
-
-  alpha = atan(tan_alpha(fs, fr))
-
-end function alpha
-
-function tan_alpha(fs, fr)
-  double precision, intent(in) :: fs, fr
-  double precision, intent(out) :: tan_alpha
-
-  tan_alpha = 2*fs*fr / (1 + fs)
-
-end function alpha
-
-subroutine polar_to_cartesian(r, theta, x, y)
-  double precision, intent(in) :: r, theta
-  double precision, intent(out) :: x, y
-  x = r*cos(theta)
-  y = r*sin(theta)
-end subroutine polar_to_cartesian
-
-subroutine cartesian_to_polar(x, y, r, theta)
-  double precision, intent(in) :: x, y
-  double precision, intent(out) :: r, theta
-  r = sqrt(x**2 + y**2)
-  theta = atan2(x, y)
-end subroutine cartesian_to_polar
-
-function shading_region_limits(theta_low_lim, theta_high_lim, theta_p, fs, fr)
-  double precision, intent(in) :: theta_p, fs, fr
+subroutine shading_region_limits(theta_low_lim, theta_high_lim, point, frond)
+  type(point3d), intent(in) :: point
+  type(frond_shape), intent(in) :: frond
   double precision, intent(out) :: theta_low_lim, theta_high_lim
 
-  theta_low_lim = theta_p - alpha(fs, fr)
-  theta_high_lim = theta_p + alpha(fs, fr)
-end function shading_region_limits
+  theta_low_lim = point%theta - frond%alpha
+  theta_high_lim = point%theta + frond%alpha
+end subroutine shading_region_limits
 
-function prob_kelp(theta_p, r_p, fs, fr)
+function prob_kelp(point, frond, depth, quadrature_degree)
 ! P_s(theta_p, r_p)
-  double precision, intent(in) :: theta_p, r_p, fs, fr
+  type(point3d), intent(in) :: point
+  type(frond_shape), intent(in) :: frond
+  type(depth_state), intent(in) :: depth
   integer, intent(in) :: quadrature_degree
-  double precision, intent(out) :: prob_kelp
+  double precision prob_kelp
+  double precision theta_low_lim, theta_high_lim
 
-  call shading_region_limits(theta_low_lim, theta_high_lim, theta_p, fs, fr)
-  prob_kelp = integrate_ps(theta_low_lim, theta_high_lim, quadrature_degree, theta_p, r_p, fs, fr)
+  call shading_region_limits(theta_low_lim, theta_high_lim, point, frond)
+  prob_kelp = integrate_ps(theta_low_lim, theta_high_lim, quadrature_degree, point, frond, depth)
 end function prob_kelp
 
-function integrate_ps(theta_low_lim, theta_high_lim, quadrature_degree, theta_p, r_p, fs, fr) result(integral)
+function integrate_ps(theta_low_lim, theta_high_lim, quadrature_degree, point, frond, depth) result(integral)
+  type(point3d), intent(in) :: point
+  type(frond_shape), intent(in) :: frond
   double precision, intent(in) :: theta_low_lim, theta_high_lim
   integer, intent(in) :: quadrature_degree
-  double precision, intent(in) :: theta_p, r_p, fs, fr
-  double precision, intent(out) :: integral
+  type(depth_state), intent(in) :: depth
+  double precision integral
   double precision, dimension(:), allocatable :: integrand_vals
   integer i
 
@@ -118,76 +98,81 @@ function integrate_ps(theta_low_lim, theta_high_lim, quadrature_degree, theta_p,
 
   allocate(integrand_vals(theta_f%num))
 
-  theta_f%set_bounds(theta_low_lim, theta_high_lim)
-  theta_f%set_num(quadrature_degree)
+  call theta_f%set_bounds(theta_low_lim, theta_high_lim)
+  call theta_f%set_num(quadrature_degree)
 
   do i=1, theta_f%num
-    integrand_vals(i) = ps_integrand(theta_f(i), theta_p, r_p, fs, fr)
+    integrand_vals(i) = ps_integrand(theta_f%vals(i), point, frond, depth)
   end do
 
   integral = theta_f%integrate_points(integrand_vals)
 
   deallocate(integrand_vals)
-  theta_f%deinit()
+  call theta_f%deinit()
 
 end function integrate_ps
 
-
-function ps_integrand(theta_f, theta_p, r_p, fs, fr)
-  double precision theta_f, theta_p, l_min, r_p
+function ps_integrand(theta_f, point, frond, depth)
+  type(point3d), intent(in) :: point
+  type(frond_shape), intent(in) :: frond
+  type(depth_state), intent(in) :: depth
+  double precision theta_f, l_min
   double precision angular_part, length_part
   double precision ps_integrand
 
-  l_min = min_shading_length(theta_f, theta_p, r_p, fs, fr)
+  l_min = min_shading_length(theta_f, point, frond)
 
-  angular_part = angle_distribution_pdf(theta_f) 
-  length_part =  1 - length_distribution_cdf(l_min)
+  angular_part = depth%angle_distribution_pdf(theta_f)
+  length_part =  1 - depth%length_distribution_cdf(l_min)
 
   ps_integrand = angular_part * length_part
 end function ps_integrand
 
 
-function min_shading_length(theta_f, theta_p, r_p, fs, fr) result(l_min)
+function min_shading_length(theta_f, point, frond) result(l_min)
 ! L_min(\theta)
-  double precision, intent(in) :: theta_f, theta_p, r_p, fs, fr
-  double precision, intent(out) :: l_min
+  type(point3d), intent(in) :: point
+  type(frond_shape), intent(in) :: frond
+  double precision, intent(in) :: theta_f
+  double precision l_min
   double precision tpp
 
   ! tpp = theta_p_prime
-  tpp = theta_p - theta_f + pi / 2.d0
-  l_min = r_p * (sin(tpp) + angular_sign(tpp) * tan_alpha(fs, fr) * cos(tpp))
+  tpp = point%theta - theta_f + pi / 2.d0
+  l_min = point%r * (sin(tpp) + angular_sign(tpp) * frond%tan_alpha * cos(tpp))
 end function min_shading_length
 
-function frond_edge(theta, theta_f L, fs, fr)
-! r_f(\theta)
-  double precision, intent(in) :: theta, theta_f, L, fs, fr
-  double precision, intent(out) :: frond_edge
-
-  frond_edge = relative_frond_edge(theta - theta_f + pi/2.d0)
-
-end function frond_edge
-
-function relative_frond_edge(theta_prime, L, fs, fr)
-! r_f'(\theta')
-  double precision, intent(in) :: theta_prime, L, fs, fr
-  double precision, intent(out) :: relative_frond_edge
-
-  relative_frond_edge = L / (sin(theta_prime) + angular_sign(theta_prime * alpha(fs, fr) * cos(theta_prime)))
-end function relative_frond_edge
+! function frond_edge(theta, theta_f, L, fs, fr)
+! ! r_f(\theta)
+!   double precision, intent(in) :: theta, theta_f, L, fs, fr
+!   double precision, intent(out) :: frond_edge
+! 
+!   frond_edge = relative_frond_edge(theta - theta_f + pi/2.d0)
+! 
+! end function frond_edge
+! 
+! function relative_frond_edge(theta_prime, L, fs, fr)
+! ! r_f'(\theta')
+!   double precision, intent(in) :: theta_prime, L, fs, fr
+!   double precision, intent(out) :: relative_frond_edge
+! 
+!   relative_frond_edge = L / (sin(theta_prime) + angular_sign(theta_prime * alpha(fs, fr) * cos(theta_prime)))
+! end function relative_frond_edge
 
 function angular_sign(theta_prime)
 ! S(\theta')
   double precision, intent(in) :: theta_prime
-  double precision, intent(out) :: angular_sign
+  double precision angular_sign
 
   angular_sign = sgn(theta_prime - pi/2.d0)
 end function angular_sign
 
 function sgn(x)
+  double precision x, sgn
 ! Standard signum function
-  sgn = sign(1,x) 
+  sgn = sign(1.d0,x) 
   if(x .eq. 0.) sgn = 0 
-end function signum
+end function sgn
 
+end module kelp3d
 
-end module
