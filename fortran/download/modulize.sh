@@ -10,7 +10,7 @@ BEGIN {
     }
 }
 
-$1 == "function"{current=$2}
+$1~/(function|subroutine)/ {current=$2}
 $1~/(logical|integer|real)/ && ($NF in values) && ($NF != current) {printf "!123"}
 {print}
 END{}

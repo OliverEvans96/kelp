@@ -9879,7 +9879,7 @@ subroutine deranged_pdf ( x, a, pdf )
 
   integer ( kind = 4 ) a
   integer ( kind = 4 ) cnk
-  integer ( kind = 4 ) deranged_enum
+!123  integer ( kind = 4 ) deranged_enum
   integer ( kind = 4 ) dnmk
 !123  integer ( kind = 4 ) i4_choose
   real ( kind = 8 ) pdf
@@ -24455,7 +24455,7 @@ subroutine multinomial_coef1 ( nfactor, factor, ncomb )
   integer ( kind = 4 ) factor(nfactor)
   integer ( kind = 4 ) i
 !123  integer ( kind = 4 ) i4_huge
-  logical multicoef_check
+!123  logical multicoef_check
   integer ( kind = 4 ) n
   integer ( kind = 4 ) ncomb
 
@@ -24537,7 +24537,7 @@ subroutine multinomial_coef2 ( nfactor, factor, ncomb )
 !123  integer ( kind = 4 ) i4_huge
   integer ( kind = 4 ) j
   integer ( kind = 4 ) k
-  logical multicoef_check
+!123  logical multicoef_check
   integer ( kind = 4 ) ncomb
 
   check = multicoef_check ( nfactor, factor )
