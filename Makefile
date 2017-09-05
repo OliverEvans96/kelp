@@ -126,8 +126,7 @@ clean: rmo
 	rm -f $(INC)/*.mod $(INC)/*.o $(BIN)/*
 
 rmo: 
-	rm -f $(BASE)/*.o
-
+	rm -f $(BASE)/*.o $(BASE)/*.mod
 
 ls:
 	ls $(SRC) $(BIN) $(INC)
