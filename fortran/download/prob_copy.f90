@@ -41,7 +41,7 @@ subroutine angle_cdf ( x, n, cdf )
   integer ( kind = 4 ) n
   real ( kind = 8 ) n_real
   real ( kind = 8 ), parameter :: r8_pi = 3.141592653589793D+00
-!123  real ( kind = 8 ) sin_power_int
+  real ( kind = 8 ) sin_power_int
   real ( kind = 8 ) x
   real ( kind = 8 ), parameter :: zero = 0.0D+00
 
@@ -361,7 +361,7 @@ subroutine anglit_sample ( seed, x )
   implicit none
 
   real ( kind = 8 ) cdf
-!123  real ( kind = 8 ) r8_uniform_01
+  real ( kind = 8 ) r8_uniform_01
   integer ( kind = 4 ) seed
   real ( kind = 8 ) x
 
@@ -692,7 +692,7 @@ subroutine arcsin_sample ( a, seed, x )
 
   real ( kind = 8 ) a
   real ( kind = 8 ) cdf
-!123  real ( kind = 8 ) r8_uniform_01
+  real ( kind = 8 ) r8_uniform_01
   integer ( kind = 4 ) seed
   real ( kind = 8 ) x
 
@@ -767,7 +767,7 @@ subroutine benford_cdf ( x, cdf )
   implicit none
 
   real ( kind = 8 ) cdf
-!123  logical ( kind = 4 ) i4_is_power_of_10
+  logical ( kind = 4 ) i4_is_power_of_10
   integer ( kind = 4 ) x
 
   if ( x <= 0 ) then
@@ -1538,7 +1538,7 @@ subroutine bernoulli_sample ( a, seed, x )
 
   real ( kind = 8 ) a
   real ( kind = 8 ) cdf
-!123  real ( kind = 8 ) r8_uniform_01
+  real ( kind = 8 ) r8_uniform_01
   integer ( kind = 4 ) seed
   integer ( kind = 4 ) x
 
@@ -2268,7 +2268,7 @@ subroutine beta_binomial_cdf ( x, a, b, c, cdf )
   integer ( kind = 4 ) c
   real ( kind = 8 ) cdf
   real ( kind = 8 ) pdf
-!123  real ( kind = 8 ) r8_beta
+  real ( kind = 8 ) r8_beta
   integer ( kind = 4 ) x
   integer ( kind = 4 ) y
 
@@ -2339,7 +2339,7 @@ subroutine beta_binomial_cdf_inv ( cdf, a, b, c, x )
   real ( kind = 8 ) cdf
   real ( kind = 8 ) cum
   real ( kind = 8 ) pdf
-!123  real ( kind = 8 ) r8_beta
+  real ( kind = 8 ) r8_beta
   integer ( kind = 4 ) x
   integer ( kind = 4 ) y
 
@@ -2555,7 +2555,7 @@ subroutine beta_binomial_pdf ( x, a, b, c, pdf )
   real ( kind = 8 ) b
   integer ( kind = 4 ) c
   real ( kind = 8 ) pdf
-!123  real ( kind = 8 ) r8_beta
+  real ( kind = 8 ) r8_beta
   integer ( kind = 4 ) x
 
   if ( x < 0 ) then
@@ -2615,7 +2615,7 @@ subroutine beta_binomial_sample ( a, b, c, seed, x )
   real ( kind = 8 ) b
   integer ( kind = 4 ) c
   real ( kind = 8 ) cdf
-!123  real ( kind = 8 ) r8_uniform_01
+  real ( kind = 8 ) r8_uniform_01
   integer ( kind = 4 ) seed
   integer ( kind = 4 ) x
 
@@ -2699,7 +2699,7 @@ subroutine beta_cdf ( x, a, b, cdf )
 
   real ( kind = 8 ) a
   real ( kind = 8 ) b
-!123  real ( kind = 8 ) beta_inc
+  real ( kind = 8 ) beta_inc
   real ( kind = 8 ) cdf
   real ( kind = 8 ) x
 
@@ -2762,7 +2762,7 @@ subroutine beta_cdf_inv ( cdf, p, q, x )
   real ( kind = 8 ) a
   real ( kind = 8 ) acu
   real ( kind = 8 ) adj
-!123  real ( kind = 8 ) beta_inc
+  real ( kind = 8 ) beta_inc
   real ( kind = 8 ) beta_log
   real ( kind = 8 ) cdf
   real ( kind = 8 ) fpu
@@ -3528,7 +3528,7 @@ function beta_inc ( a, b, x )
   real ( kind = 8 ) pp
   real ( kind = 8 ) psq
   real ( kind = 8 ) qq
-!123  real ( kind = 8 ) r8_beta
+  real ( kind = 8 ) r8_beta
   real ( kind = 8 ) rx
   real ( kind = 8 ) temp
   real ( kind = 8 ) term
@@ -4012,7 +4012,7 @@ subroutine beta_pdf ( x, a, b, pdf )
   real ( kind = 8 ) a
   real ( kind = 8 ) b
   real ( kind = 8 ) pdf
-!123  real ( kind = 8 ) r8_beta
+  real ( kind = 8 ) r8_beta
   real ( kind = 8 ) x
 
   if ( x < 0.0D+00 .or. 1.0D+00 < x ) then
@@ -4064,7 +4064,7 @@ subroutine beta_sample ( a, b, seed, x )
 
   real ( kind = 8 ) a
   real ( kind = 8 ) b
-!123  real ( kind = 8 ) r8_uniform_01
+  real ( kind = 8 ) r8_uniform_01
   real ( kind = 8 ) mu
   integer ( kind = 4 ) seed
   real ( kind = 8 ) stdev
@@ -4323,7 +4323,7 @@ subroutine binomial_cdf ( x, a, b, cdf )
   real ( kind = 8 ) b
   integer ( kind = 4 ) cnk
   real ( kind = 8 ) cdf
-!123  integer ( kind = 4 ) i4_choose
+  integer ( kind = 4 ) i4_choose
   integer ( kind = 4 ) j
   real ( kind = 8 ) pr
   integer ( kind = 4 ) x
@@ -4567,7 +4567,7 @@ subroutine binomial_pdf ( x, a, b, pdf )
   integer ( kind = 4 ) a
   real ( kind = 8 ) b
   integer ( kind = 4 ) cnk
-!123  integer ( kind = 4 ) i4_choose
+  integer ( kind = 4 ) i4_choose
   real ( kind = 8 ) pdf
   integer ( kind = 4 ) x
 
@@ -4647,7 +4647,7 @@ subroutine binomial_sample ( a, b, seed, x )
 
   integer ( kind = 4 ) a
   real ( kind = 8 ) b
-!123  real ( kind = 8 ) r8_uniform_01
+  real ( kind = 8 ) r8_uniform_01
   integer ( kind = 4 ) i
   integer ( kind = 4 ) seed
   real ( kind = 8 ) u
@@ -4985,7 +4985,7 @@ subroutine bradford_sample ( a, b, c, seed, x )
   real ( kind = 8 ) b
   real ( kind = 8 ) c
   real ( kind = 8 ) cdf
-!123  real ( kind = 8 ) r8_uniform_01
+  real ( kind = 8 ) r8_uniform_01
   integer ( kind = 4 ) seed
   real ( kind = 8 ) x
 
@@ -5708,7 +5708,7 @@ subroutine burr_mean ( a, b, c, d, mean )
   real ( kind = 8 ) c
   real ( kind = 8 ) d
   real ( kind = 8 ) mean
-!123  real ( kind = 8 ) r8_beta
+  real ( kind = 8 ) r8_beta
   real ( kind = 8 ) ymean
 
   ymean = d * r8_beta ( d - 1.0D+00 / c, 1.0D+00 + 1.0D+00 / c )
@@ -5817,7 +5817,7 @@ subroutine burr_sample ( a, b, c, d, seed, x )
   real ( kind = 8 ) c
   real ( kind = 8 ) cdf
   real ( kind = 8 ) d
-!123  real ( kind = 8 ) r8_uniform_01
+  real ( kind = 8 ) r8_uniform_01
   integer ( kind = 4 ) seed
   real ( kind = 8 ) x
 
@@ -5861,7 +5861,7 @@ subroutine burr_variance ( a, b, c, d, variance )
   real ( kind = 8 ) d
   real ( kind = 8 ) mu1
   real ( kind = 8 ) mu2
-!123  real ( kind = 8 ) r8_beta
+  real ( kind = 8 ) r8_beta
   real ( kind = 8 ) variance
 
   if ( c <= 2.0D+00 ) then
@@ -5908,7 +5908,7 @@ subroutine c8_normal_01_sample ( seed, x )
 !
   implicit none
 
-!123  real ( kind = 8 ) r8_uniform_01
+  real ( kind = 8 ) r8_uniform_01
   real ( kind = 8 ), parameter :: r8_pi = 3.141592653589793D+00
   integer ( kind = 4 ) seed
   real ( kind = 8 ) v1
@@ -6225,7 +6225,7 @@ subroutine cardioid_sample ( a, b, seed, x )
   real ( kind = 8 ) a
   real ( kind = 8 ) b
   real ( kind = 8 ) cdf
-!123  real ( kind = 8 ) r8_uniform_01
+  real ( kind = 8 ) r8_uniform_01
   integer ( kind = 4 ) seed
   real ( kind = 8 ) x
 
@@ -6659,7 +6659,7 @@ subroutine cauchy_sample ( a, b, seed, x )
   real ( kind = 8 ) a
   real ( kind = 8 ) b
   real ( kind = 8 ) cdf
-!123  real ( kind = 8 ) r8_uniform_01
+  real ( kind = 8 ) r8_uniform_01
   integer ( kind = 4 ) seed
   real ( kind = 8 ) x
 
@@ -6890,7 +6890,7 @@ function chebyshev1_sample ( seed )
 
   real ( kind = 8 ) cdf
   real ( kind = 8 ) chebyshev1_sample
-!123  real ( kind = 8 ) r8_uniform_01
+  real ( kind = 8 ) r8_uniform_01
   integer ( kind = 4 ) seed
   real ( kind = 8 ) x
 
@@ -7107,7 +7107,7 @@ subroutine chi_cdf ( x, a, b, c, cdf )
   real ( kind = 8 ) c
   real ( kind = 8 ) cdf
   real ( kind = 8 ) p2
-!123  real ( kind = 8 ) r8_gamma_inc
+  real ( kind = 8 ) r8_gamma_inc
   real ( kind = 8 ) x
   real ( kind = 8 ) x2
   real ( kind = 8 ) y
@@ -7622,7 +7622,7 @@ subroutine chi_square_cdf_inv ( cdf, a, x )
   real ( kind = 8 ) p1
   real ( kind = 8 ) p2
   real ( kind = 8 ) q
-!123  real ( kind = 8 ) r8_gamma_inc
+  real ( kind = 8 ) r8_gamma_inc
   real ( kind = 8 ) s1
   real ( kind = 8 ) s2
   real ( kind = 8 ) s3
@@ -8598,7 +8598,7 @@ subroutine circular_normal_01_sample ( seed, x )
 !
   implicit none
 
-!123  real ( kind = 8 ) r8_uniform_01
+  real ( kind = 8 ) r8_uniform_01
   real ( kind = 8 ), parameter :: r8_pi = 3.141592653589793D+00
   integer ( kind = 4 ) seed
   real ( kind = 8 ) v1
@@ -8763,7 +8763,7 @@ subroutine circular_normal_sample ( a, b, seed, x )
   real ( kind = 8 ) b
   real ( kind = 8 ) r
   real ( kind = 8 ), parameter :: r8_pi = 3.141592653589793D+00
-!123  real ( kind = 8 ) r8_uniform_01
+  real ( kind = 8 ) r8_uniform_01
   integer ( kind = 4 ) seed
   real ( kind = 8 ) v1
   real ( kind = 8 ) v2
@@ -9142,7 +9142,7 @@ subroutine cosine_sample ( a, b, seed, x )
   real ( kind = 8 ) a
   real ( kind = 8 ) b
   real ( kind = 8 ) cdf
-!123  real ( kind = 8 ) r8_uniform_01
+  real ( kind = 8 ) r8_uniform_01
   integer ( kind = 4 ) seed
   real ( kind = 8 ) x
 
@@ -9238,7 +9238,7 @@ subroutine coupon_complete_pdf ( type_num, box_num, pdf )
   real ( kind = 8 ) factor
   integer ( kind = 4 ) i
   real ( kind = 8 ) pdf
-!123  integer ( kind = 4 ) stirling2_value
+  integer ( kind = 4 ) stirling2_value
   integer ( kind = 4 ) type_num
 !
 !  Nonsense cases.
@@ -9413,7 +9413,7 @@ subroutine coupon_sample ( type_num, seed, coupon, box_num )
   integer ( kind = 4 ) box_num
   integer ( kind = 4 ) coupon(type_num)
   integer ( kind = 4 ) i
-!123  integer ( kind = 4 ) i4_uniform_ab
+  integer ( kind = 4 ) i4_uniform_ab
   integer ( kind = 4 ) seed
   integer ( kind = 4 ) straight
 
@@ -9560,10 +9560,10 @@ subroutine deranged_cdf ( x, a, cdf )
   integer ( kind = 4 ) a
   real ( kind = 8 ) cdf
   integer ( kind = 4 ) cnk
-!123  integer ( kind = 4 ) deranged_enum
+  integer ( kind = 4 ) deranged_enum
   integer ( kind = 4 ) dnmk
-!123  integer ( kind = 4 ) i4_choose
-!123  real ( kind = 8 ) r8_factorial
+  integer ( kind = 4 ) i4_choose
+  real ( kind = 8 ) r8_factorial
   integer ( kind = 4 ) sum2
   integer ( kind = 4 ) x
   integer ( kind = 4 ) x2
@@ -9881,7 +9881,7 @@ subroutine deranged_pdf ( x, a, pdf )
   integer ( kind = 4 ) cnk
   integer ( kind = 4 ) deranged_enum
   integer ( kind = 4 ) dnmk
-!123  integer ( kind = 4 ) i4_choose
+  integer ( kind = 4 ) i4_choose
   real ( kind = 8 ) pdf
   integer ( kind = 4 ) x
 
@@ -9927,7 +9927,7 @@ subroutine deranged_sample ( a, seed, x )
 
   integer ( kind = 4 ) a
   real ( kind = 8 ) cdf
-!123  real ( kind = 8 ) r8_uniform_01
+  real ( kind = 8 ) r8_uniform_01
   integer ( kind = 4 ) seed
   integer ( kind = 4 ) x
 
@@ -11461,7 +11461,7 @@ subroutine discrete_sample ( a, b, seed, x )
   real ( kind = 8 ) b(a)
   real ( kind = 8 ) b_sum
   real ( kind = 8 ) cdf
-!123  real ( kind = 8 ) r8_uniform_01
+  real ( kind = 8 ) r8_uniform_01
   integer ( kind = 4 ) seed
   integer ( kind = 4 ) x
 
@@ -11601,7 +11601,7 @@ subroutine disk_sample ( a, b, c, seed, x1, x2 )
   real ( kind = 8 ) angle
   real ( kind = 8 ) b
   real ( kind = 8 ) c
-!123  real ( kind = 8 ) r8_uniform_01
+  real ( kind = 8 ) r8_uniform_01
   real ( kind = 8 ), parameter :: r8_pi = 3.141592653589793D+00
   real ( kind = 8 ) radius_frac
   integer ( kind = 4 ) seed
@@ -12065,7 +12065,7 @@ subroutine empirical_discrete_sample ( a, b, c, seed, x )
   real ( kind = 8 ) b(a)
   real ( kind = 8 ) c(a)
   real ( kind = 8 ) cdf
-!123  real ( kind = 8 ) r8_uniform_01
+  real ( kind = 8 ) r8_uniform_01
   integer ( kind = 4 ) seed
   real ( kind = 8 ) x
 
@@ -12340,7 +12340,7 @@ subroutine english_letter_sample ( seed, c )
 
   character c
   real ( kind = 8 ) cdf
-!123  real ( kind = 8 ) r8_uniform_01
+  real ( kind = 8 ) r8_uniform_01
   integer ( kind = 4 ) seed
 
   cdf = r8_uniform_01 ( seed )
@@ -12914,7 +12914,7 @@ subroutine english_sentence_length_sample ( seed, x )
   implicit none
 
   real ( kind = 8 ) cdf
-!123  real ( kind = 8 ) r8_uniform_01
+  real ( kind = 8 ) r8_uniform_01
   integer ( kind = 4 ) seed
   integer ( kind = 4 ) x
 
@@ -13414,7 +13414,7 @@ subroutine english_word_length_sample ( seed, x )
   implicit none
 
   real ( kind = 8 ) cdf
-!123  real ( kind = 8 ) r8_uniform_01
+  real ( kind = 8 ) r8_uniform_01
   integer ( kind = 4 ) seed
   integer ( kind = 4 ) x
 
@@ -13540,7 +13540,7 @@ subroutine erlang_cdf ( x, a, b, c, cdf )
   integer ( kind = 4 ) c
   real ( kind = 8 ) cdf
   real ( kind = 8 ) p2
-!123  real ( kind = 8 ) r8_gamma_inc
+  real ( kind = 8 ) r8_gamma_inc
   real ( kind = 8 ) x
   real ( kind = 8 ) x2
 
@@ -14128,7 +14128,7 @@ subroutine exponential_01_sample ( seed, x )
   implicit none
 
   real ( kind = 8 ) cdf
-!123  real ( kind = 8 ) r8_uniform_01
+  real ( kind = 8 ) r8_uniform_01
   integer ( kind = 4 ) seed
   real ( kind = 8 ) x
 
@@ -14543,7 +14543,7 @@ subroutine exponential_sample ( a, b, seed, x )
   real ( kind = 8 ) a
   real ( kind = 8 ) b
   real ( kind = 8 ) cdf
-!123  real ( kind = 8 ) r8_uniform_01
+  real ( kind = 8 ) r8_uniform_01
   integer ( kind = 4 ) seed
   real ( kind = 8 ) x
 
@@ -14884,7 +14884,7 @@ subroutine extreme_values_mean ( a, b, mean )
 
   real ( kind = 8 ) a
   real ( kind = 8 ) b
-!123  real ( kind = 8 ) euler_constant
+  real ( kind = 8 ) euler_constant
   real ( kind = 8 ) mean
 
   mean = a + b * euler_constant ( )
@@ -14982,7 +14982,7 @@ subroutine extreme_values_sample ( a, b, seed, x )
   real ( kind = 8 ) a
   real ( kind = 8 ) b
   real ( kind = 8 ) cdf
-!123  real ( kind = 8 ) r8_uniform_01
+  real ( kind = 8 ) r8_uniform_01
   integer ( kind = 4 ) seed
   real ( kind = 8 ) x
 
@@ -15069,7 +15069,7 @@ subroutine f_cdf ( x, m, n, cdf )
   real ( kind = 8 ) arg1
   real ( kind = 8 ) arg2
   real ( kind = 8 ) arg3
-!123  real ( kind = 8 ) beta_inc
+  real ( kind = 8 ) beta_inc
   real ( kind = 8 ) cdf
   integer ( kind = 4 ) m
   integer ( kind = 4 ) n
@@ -15398,7 +15398,7 @@ subroutine f_pdf ( x, m, n, pdf )
   integer ( kind = 4 ) m
   integer ( kind = 4 ) n
   real ( kind = 8 ) pdf
-!123  real ( kind = 8 ) r8_beta
+  real ( kind = 8 ) r8_beta
   real ( kind = 8 ) top
   real ( kind = 8 ) x
 
@@ -15902,7 +15902,7 @@ subroutine fermi_dirac_sample ( u, v, seed, z )
   real ( kind = 8 ) b
   integer ( kind = 4 ), parameter :: iter_max = 1000
   integer ( kind = 4 ) iter_num
-!123  real ( kind = 8 ) r8_uniform_01
+  real ( kind = 8 ) r8_uniform_01
   integer ( kind = 4 ) seed
   real ( kind = 8 ) u
   real ( kind = 8 ) v
@@ -16380,7 +16380,7 @@ subroutine fisk_mean ( a, b, c, mean )
   real ( kind = 8 ) c
   real ( kind = 8 ) mean
   real ( kind = 8 ), parameter :: r8_pi = 3.141592653589793D+00
-!123  real ( kind = 8 ) r8_csc
+  real ( kind = 8 ) r8_csc
 
   if ( c <= 1.0D+00 ) then
     write ( *, '(a)' ) ' '
@@ -16490,7 +16490,7 @@ subroutine fisk_sample ( a, b, c, seed, x )
   real ( kind = 8 ) b
   real ( kind = 8 ) c
   real ( kind = 8 ) cdf
-!123  real ( kind = 8 ) r8_uniform_01
+  real ( kind = 8 ) r8_uniform_01
   integer ( kind = 4 ) seed
   real ( kind = 8 ) x
 
@@ -16533,7 +16533,7 @@ subroutine fisk_variance ( a, b, c, variance )
   real ( kind = 8 ) c
   real ( kind = 8 ) g
   real ( kind = 8 ), parameter :: r8_pi = 3.141592653589793D+00
-!123  real ( kind = 8 ) r8_csc
+  real ( kind = 8 ) r8_csc
   real ( kind = 8 ) variance
 
   if ( c <= 2.0D+00 ) then
@@ -16901,7 +16901,7 @@ subroutine folded_normal_sample ( a, b, seed, x )
   real ( kind = 8 ) a
   real ( kind = 8 ) b
   real ( kind = 8 ) cdf
-!123  real ( kind = 8 ) r8_uniform_01
+  real ( kind = 8 ) r8_uniform_01
   integer ( kind = 4 ) seed
   real ( kind = 8 ) x
 
@@ -17179,7 +17179,7 @@ subroutine frechet_sample ( alpha, seed, x )
 
   real ( kind = 8 ) alpha
   real ( kind = 8 ) cdf
-!123  real ( kind = 8 ) r8_uniform_01
+  real ( kind = 8 ) r8_uniform_01
   integer ( kind = 4 ) seed
   real ( kind = 8 ) x
 
@@ -17280,7 +17280,7 @@ subroutine gamma_cdf ( x, a, b, c, cdf )
   real ( kind = 8 ) c
   real ( kind = 8 ) cdf
   real ( kind = 8 ) p2
-!123  real ( kind = 8 ) r8_gamma_inc
+  real ( kind = 8 ) r8_gamma_inc
   real ( kind = 8 ) x
   real ( kind = 8 ) x2
 
@@ -17798,7 +17798,7 @@ subroutine gamma_sample ( a, b, c, seed, x )
   real ( kind = 8 ) c
   real ( kind = 8 ) co
   real ( kind = 8 ) d
-!123  real ( kind = 8 ) r8_uniform_01
+  real ( kind = 8 ) r8_uniform_01
   real ( kind = 8 ) e
   real ( kind = 8 ), parameter :: e1 = 1.0D+00
   real ( kind = 8 ), parameter :: e2 = 0.4999897D+00
@@ -18208,8 +18208,8 @@ subroutine genlogistic_mean ( a, b, c, mean )
   real ( kind = 8 ) a
   real ( kind = 8 ) b
   real ( kind = 8 ) c
-!123  real ( kind = 8 ) digamma
-!123  real ( kind = 8 ) euler_constant
+  real ( kind = 8 ) digamma
+  real ( kind = 8 ) euler_constant
   real ( kind = 8 ) mean
 
   mean = a + b * ( euler_constant ( ) + digamma ( c ) )
@@ -18299,7 +18299,7 @@ subroutine genlogistic_sample ( a, b, c, seed, x )
   real ( kind = 8 ) b
   real ( kind = 8 ) c
   real ( kind = 8 ) cdf
-!123  real ( kind = 8 ) r8_uniform_01
+  real ( kind = 8 ) r8_uniform_01
   integer ( kind = 4 ) seed
   real ( kind = 8 ) x
 
@@ -18341,7 +18341,7 @@ subroutine genlogistic_variance ( a, b, c, variance )
   real ( kind = 8 ) b
   real ( kind = 8 ) c
   real ( kind = 8 ), parameter :: r8_pi = 3.141592653589793D+00
-!123  real ( kind = 8 ) trigamma
+  real ( kind = 8 ) trigamma
   real ( kind = 8 ) variance
 
   variance = b * b * ( r8_pi * r8_pi / 6.0D+00 + trigamma ( c ) )
@@ -18751,7 +18751,7 @@ subroutine geometric_sample ( a, seed, x )
 
   real ( kind = 8 ) a
   real ( kind = 8 ) cdf
-!123  real ( kind = 8 ) r8_uniform_01
+  real ( kind = 8 ) r8_uniform_01
   integer ( kind = 4 ) seed
   integer ( kind = 4 ) x
 
@@ -19055,7 +19055,7 @@ subroutine gompertz_sample ( a, b, seed, x )
   real ( kind = 8 ) a
   real ( kind = 8 ) b
   real ( kind = 8 ) cdf
-!123  real ( kind = 8 ) r8_uniform_01
+  real ( kind = 8 ) r8_uniform_01
   integer ( kind = 4 ) seed
   real ( kind = 8 ) x
 
@@ -19163,7 +19163,7 @@ subroutine gumbel_mean ( mean )
 !
   implicit none
 
-!123  real ( kind = 8 ) euler_constant
+  real ( kind = 8 ) euler_constant
   real ( kind = 8 ) mean
 
   mean = euler_constant ( )
@@ -19243,7 +19243,7 @@ subroutine gumbel_sample ( seed, x )
   implicit none
 
   real ( kind = 8 ) cdf
-!123  real ( kind = 8 ) r8_uniform_01
+  real ( kind = 8 ) r8_uniform_01
   integer ( kind = 4 ) seed
   real ( kind = 8 ) x
 
@@ -19550,7 +19550,7 @@ subroutine half_normal_sample ( a, b, seed, x )
   real ( kind = 8 ) a
   real ( kind = 8 ) b
   real ( kind = 8 ) cdf
-!123  real ( kind = 8 ) r8_uniform_01
+  real ( kind = 8 ) r8_uniform_01
   integer ( kind = 4 ) seed
   real ( kind = 8 ) x
 
@@ -19634,7 +19634,7 @@ subroutine hypergeometric_cdf ( x, n, m, l, cdf )
   real ( kind = 8 ) cdf
   real ( kind = 8 ) c1_log
   real ( kind = 8 ) c2_log
-!123  real ( kind = 8 ) i4_choose_log
+  real ( kind = 8 ) i4_choose_log
   integer ( kind = 4 ) l
   integer ( kind = 4 ) m
   integer ( kind = 4 ) n
@@ -19945,7 +19945,7 @@ subroutine hypergeometric_pdf ( x, n, m, l, pdf )
   real ( kind = 8 ) c1
   real ( kind = 8 ) c2
   real ( kind = 8 ) c3
-!123  real ( kind = 8 ) i4_choose_log
+  real ( kind = 8 ) i4_choose_log
   integer ( kind = 4 ) l
   integer ( kind = 4 ) m
   integer ( kind = 4 ) n
@@ -20039,11 +20039,11 @@ subroutine hypergeometric_sample ( n, m, l, seed, x )
   real ( kind = 8 ) b
   real ( kind = 8 ) c1_log
   real ( kind = 8 ) c2_log
-!123  real ( kind = 8 ) i4_choose_log
+  real ( kind = 8 ) i4_choose_log
   integer ( kind = 4 ) l
   integer ( kind = 4 ) m
   integer ( kind = 4 ) n
-!123  real ( kind = 8 ) r8_uniform_01
+  real ( kind = 8 ) r8_uniform_01
   integer ( kind = 4 ) seed
   real ( kind = 8 ) u
   integer ( kind = 4 ) x
@@ -20409,7 +20409,7 @@ function i4_uniform_ab ( a, b, seed )
 
   integer ( kind = 4 ) a
   integer ( kind = 4 ) b
-!123  integer ( kind = 4 ) i4_huge
+  integer ( kind = 4 ) i4_huge
   integer ( kind = 4 ) i4_uniform_ab
   integer ( kind = 4 ) k
   real ( kind = 4 ) r
@@ -21325,7 +21325,7 @@ subroutine inverse_gaussian_sample ( a, b, seed, x )
   real ( kind = 8 ) a
   real ( kind = 8 ) b
   real ( kind = 8 ) phi
-!123  real ( kind = 8 ) r8_uniform_01
+  real ( kind = 8 ) r8_uniform_01
   integer ( kind = 4 ) seed
   real ( kind = 8 ) t
   real ( kind = 8 ) u
@@ -21771,7 +21771,7 @@ subroutine laplace_sample ( a, b, seed, x )
   real ( kind = 8 ) a
   real ( kind = 8 ) b
   real ( kind = 8 ) cdf
-!123  real ( kind = 8 ) r8_uniform_01
+  real ( kind = 8 ) r8_uniform_01
   integer ( kind = 4 ) seed
   real ( kind = 8 ) x
 
@@ -21932,7 +21932,7 @@ subroutine levy_cdf ( x, a, b, cdf )
   real ( kind = 8 ) a
   real ( kind = 8 ) b
   real ( kind = 8 ) cdf
-!123  real ( kind = 8 ) r8_error_f
+  real ( kind = 8 ) r8_error_f
   real ( kind = 8 ) x
 
   if ( b <= 0.0D+00 ) then
@@ -22103,7 +22103,7 @@ subroutine levy_sample ( a, b, seed, x )
   real ( kind = 8 ) a
   real ( kind = 8 ) b
   real ( kind = 8 ) cdf
-!123  real ( kind = 8 ) r8_uniform_01
+  real ( kind = 8 ) r8_uniform_01
   integer ( kind = 4 ) seed
   real ( kind = 8 ) x
 
@@ -22493,7 +22493,7 @@ subroutine logistic_sample ( a, b, seed, x )
   real ( kind = 8 ) a
   real ( kind = 8 ) b
   real ( kind = 8 ) cdf
-!123  real ( kind = 8 ) r8_uniform_01
+  real ( kind = 8 ) r8_uniform_01
   integer ( kind = 4 ) seed
   real ( kind = 8 ) x
 
@@ -22945,7 +22945,7 @@ subroutine log_normal_sample ( a, b, seed, x )
   real ( kind = 8 ) a
   real ( kind = 8 ) b
   real ( kind = 8 ) cdf
-!123  real ( kind = 8 ) r8_uniform_01
+  real ( kind = 8 ) r8_uniform_01
   integer ( kind = 4 ) seed
   real ( kind = 8 ) x
 
@@ -23420,7 +23420,7 @@ subroutine log_series_sample ( a, seed, x )
   implicit none
 
   real ( kind = 8 ) a
-!123  real ( kind = 8 ) r8_uniform_01
+  real ( kind = 8 ) r8_uniform_01
   integer ( kind = 4 ) seed
   real ( kind = 8 ) u
   real ( kind = 8 ) v
@@ -23727,7 +23727,7 @@ subroutine log_uniform_sample ( a, b, seed, x )
   real ( kind = 8 ) a
   real ( kind = 8 ) b
   real ( kind = 8 ) cdf
-!123  real ( kind = 8 ) r8_uniform_01
+  real ( kind = 8 ) r8_uniform_01
   integer ( kind = 4 ) seed
   real ( kind = 8 ) x
 
@@ -23915,7 +23915,7 @@ subroutine lorentz_sample ( seed, x )
   implicit none
 
   real ( kind = 8 ) cdf
-!123  real ( kind = 8 ) r8_uniform_01
+  real ( kind = 8 ) r8_uniform_01
   integer ( kind = 4 ) seed
   real ( kind = 8 ) x
 
@@ -23994,7 +23994,7 @@ subroutine maxwell_cdf ( x, a, cdf )
   real ( kind = 8 ) a
   real ( kind = 8 ) cdf
   real ( kind = 8 ) p2
-!123  real ( kind = 8 ) r8_gamma_inc
+  real ( kind = 8 ) r8_gamma_inc
   real ( kind = 8 ) x
   real ( kind = 8 ) x2
 
@@ -24454,7 +24454,7 @@ subroutine multinomial_coef1 ( nfactor, factor, ncomb )
   real ( kind = 8 ) facn
   integer ( kind = 4 ) factor(nfactor)
   integer ( kind = 4 ) i
-!123  integer ( kind = 4 ) i4_huge
+  integer ( kind = 4 ) i4_huge
   logical multicoef_check
   integer ( kind = 4 ) n
   integer ( kind = 4 ) ncomb
@@ -24534,7 +24534,7 @@ subroutine multinomial_coef2 ( nfactor, factor, ncomb )
   logical check
   integer ( kind = 4 ) factor(nfactor)
   integer ( kind = 4 ) i
-!123  integer ( kind = 4 ) i4_huge
+  integer ( kind = 4 ) i4_huge
   integer ( kind = 4 ) j
   integer ( kind = 4 ) k
   logical multicoef_check
@@ -25062,7 +25062,7 @@ subroutine nakagami_cdf ( x, a, b, c, cdf )
   real ( kind = 8 ) c
   real ( kind = 8 ) cdf
   real ( kind = 8 ) p2
-!123  real ( kind = 8 ) r8_gamma_inc
+  real ( kind = 8 ) r8_gamma_inc
   real ( kind = 8 ) x
   real ( kind = 8 ) x2
   real ( kind = 8 ) y
@@ -25425,7 +25425,7 @@ subroutine negative_binomial_cdf ( x, a, b, cdf )
   real ( kind = 8 ) b
   real ( kind = 8 ) cdf
   integer ( kind = 4 ) cnk
-!123  integer ( kind = 4 ) i4_choose
+  integer ( kind = 4 ) i4_choose
   real ( kind = 8 ) pdf
   integer ( kind = 4 ) x
   integer ( kind = 4 ) y
@@ -25832,7 +25832,7 @@ subroutine negative_binomial_pdf ( x, a, b, pdf )
   integer ( kind = 4 ) a
   real ( kind = 8 ) b
   integer ( kind = 4 ) cnk
-!123  integer ( kind = 4 ) i4_choose
+  integer ( kind = 4 ) i4_choose
   real ( kind = 8 ) pdf
   integer ( kind = 4 ) x
 
@@ -25885,10 +25885,10 @@ subroutine negative_binomial_sample ( a, b, seed, x )
 
   integer ( kind = 4 ) a
   real ( kind = 8 ) b
-!123  integer ( kind = 4 ) i4_huge
+  integer ( kind = 4 ) i4_huge
   integer ( kind = 4 ) num_success
   real ( kind = 8 ) r
-!123  real ( kind = 8 ) r8_uniform_01
+  real ( kind = 8 ) r8_uniform_01
   integer ( kind = 4 ) seed
   integer ( kind = 4 ) x
 
@@ -26154,7 +26154,7 @@ subroutine normal_01_cdf_inv ( p, x )
   real ( kind = 8 ) p
   real ( kind = 8 ) q
   real ( kind = 8 ) r
-!123  real ( kind = 8 ) r8poly_value_horner
+  real ( kind = 8 ) r8poly_value_horner
   real ( kind = 8 ), parameter :: split1 = 0.425D+00
   real ( kind = 8 ), parameter :: split2 = 5.0D+00
   real ( kind = 8 ) x
@@ -26434,7 +26434,7 @@ subroutine normal_01_sample ( seed, x )
   real ( kind = 8 ) r1
   real ( kind = 8 ) r2
   real ( kind = 8 ), parameter :: r8_pi = 3.141592653589793D+00
-!123  real ( kind = 8 ) r8_uniform_01
+  real ( kind = 8 ) r8_uniform_01
   integer ( kind = 4 ) seed
   real ( kind = 8 ) x
 
@@ -26531,7 +26531,7 @@ subroutine normal_01_vector ( n, seed, x )
   integer ( kind = 4 ) m
   real ( kind = 8 ) r(n+1)
   real ( kind = 8 ), parameter :: r8_pi = 3.141592653589793D+00
-!123  real ( kind = 8 ) r8_uniform_01
+  real ( kind = 8 ) r8_uniform_01
   integer ( kind = 4 ) seed
   real ( kind = 8 ) x(n)
   integer ( kind = 4 ) x_hi_index
@@ -27357,7 +27357,7 @@ subroutine normal_truncated_ab_sample ( mu, s, a, b, seed, x )
   real ( kind = 8 ) beta
   real ( kind = 8 ) beta_cdf
   real ( kind = 8 ) mu
-!123  real ( kind = 8 ) r8_uniform_01
+  real ( kind = 8 ) r8_uniform_01
   real ( kind = 8 ) s
   integer ( kind = 4 ) seed
   real ( kind = 8 ) u
@@ -27680,7 +27680,7 @@ subroutine normal_truncated_a_sample ( mu, s, a, seed, x )
   real ( kind = 8 ) alpha
   real ( kind = 8 ) alpha_cdf
   real ( kind = 8 ) mu
-!123  real ( kind = 8 ) r8_uniform_01
+  real ( kind = 8 ) r8_uniform_01
   real ( kind = 8 ) s
   integer ( kind = 4 ) seed
   real ( kind = 8 ) u
@@ -27994,7 +27994,7 @@ subroutine normal_truncated_b_sample ( mu, s, b, seed, x )
   real ( kind = 8 ) beta
   real ( kind = 8 ) beta_cdf
   real ( kind = 8 ) mu
-!123  real ( kind = 8 ) r8_uniform_01
+  real ( kind = 8 ) r8_uniform_01
   real ( kind = 8 ) s
   integer ( kind = 4 ) seed
   real ( kind = 8 ) u
@@ -28481,7 +28481,7 @@ subroutine pareto_sample ( a, b, seed, x )
   real ( kind = 8 ) a
   real ( kind = 8 ) b
   real ( kind = 8 ) cdf
-!123  real ( kind = 8 ) r8_uniform_01
+  real ( kind = 8 ) r8_uniform_01
   integer ( kind = 4 ) seed
   real ( kind = 8 ) x
 
@@ -28817,7 +28817,7 @@ subroutine planck_mean ( a, b, mean )
   real ( kind = 8 ) a
   real ( kind = 8 ) b
   real ( kind = 8 ) mean
-!123  real ( kind = 8 ) r8_zeta
+  real ( kind = 8 ) r8_zeta
 
   mean = ( b + 1.0D+00 ) * r8_zeta ( b + 2.0D+00 ) / r8_zeta ( b + 1.0D+00 )
 
@@ -28886,7 +28886,7 @@ subroutine planck_pdf ( x, a, b, pdf )
   real ( kind = 8 ) b
   real ( kind = 8 ) k
   real ( kind = 8 ) pdf
-!123  real ( kind = 8 ) r8_zeta
+  real ( kind = 8 ) r8_zeta
   real ( kind = 8 ) x
 
   if ( x < 0.0D+00 ) then
@@ -28992,7 +28992,7 @@ subroutine planck_variance ( a, b, variance )
   real ( kind = 8 ) a
   real ( kind = 8 ) b
   real ( kind = 8 ) mean
-!123  real ( kind = 8 ) r8_zeta
+  real ( kind = 8 ) r8_zeta
   real ( kind = 8 ) variance
 
   call planck_mean ( a, b, mean )
@@ -29053,7 +29053,7 @@ subroutine point_distance_1d_pdf ( x, a, b, pdf )
   integer ( kind = 4 ) a
   real ( kind = 8 ) b
   real ( kind = 8 ) pdf
-!123  real ( kind = 8 ) r8_factorial
+  real ( kind = 8 ) r8_factorial
   real ( kind = 8 ) x
 
   if ( a < 1 ) then
@@ -29135,7 +29135,7 @@ subroutine point_distance_2d_pdf ( x, a, b, pdf )
   integer ( kind = 4 ) a
   real ( kind = 8 ) b
   real ( kind = 8 ) pdf
-!123  real ( kind = 8 ) r8_factorial
+  real ( kind = 8 ) r8_factorial
   real ( kind = 8 ), parameter :: r8_pi = 3.141592653589793D+00
   real ( kind = 8 ) x
 
@@ -29219,7 +29219,7 @@ subroutine point_distance_3d_pdf ( x, a, b, pdf )
   integer ( kind = 4 ) a
   real ( kind = 8 ) b
   real ( kind = 8 ) pdf
-!123  real ( kind = 8 ) r8_factorial
+  real ( kind = 8 ) r8_factorial
   real ( kind = 8 ), parameter :: r8_pi = 3.141592653589793D+00
   real ( kind = 8 ) x
 
@@ -29654,8 +29654,8 @@ subroutine poisson_kernel ( r, n, c, x, y, p )
   real ( kind = 8 ) c(n)
   real ( kind = 8 ) p
   real ( kind = 8 ) r
-!123  real ( kind = 8 ) r8vec_diff_norm
-!123  real ( kind = 8 ) sphere_unit_area_nd
+  real ( kind = 8 ) r8vec_diff_norm
+  real ( kind = 8 ) sphere_unit_area_nd
   real ( kind = 8 ) t
   real ( kind = 8 ) x(n)
   real ( kind = 8 ) xc_diff_norm
@@ -29719,7 +29719,7 @@ subroutine poisson_pdf ( x, a, pdf )
 
   real ( kind = 8 ) a
   real ( kind = 8 ) pdf
-!123  real ( kind = 8 ) r8_factorial
+  real ( kind = 8 ) r8_factorial
   integer ( kind = 4 ) x
 
   if ( x < 0 ) then
@@ -29762,7 +29762,7 @@ subroutine poisson_sample ( a, seed, x )
 
   real ( kind = 8 ) a
   real ( kind = 8 ) cdf
-!123  real ( kind = 8 ) r8_uniform_01
+  real ( kind = 8 ) r8_uniform_01
   integer ( kind = 4 ) seed
   integer ( kind = 4 ) x
 
@@ -30074,7 +30074,7 @@ subroutine power_sample ( a, b, seed, x )
   real ( kind = 8 ) a
   real ( kind = 8 ) b
   real ( kind = 8 ) cdf
-!123  real ( kind = 8 ) r8_uniform_01
+  real ( kind = 8 ) r8_uniform_01
   integer ( kind = 4 ) seed
   real ( kind = 8 ) x
 
@@ -30538,7 +30538,7 @@ subroutine quasigeometric_sample ( a, b, seed, x )
   real ( kind = 8 ) a
   real ( kind = 8 ) b
   real ( kind = 8 ) cdf
-!123  real ( kind = 8 ) r8_uniform_01
+  real ( kind = 8 ) r8_uniform_01
   integer ( kind = 4 ) seed
   integer ( kind = 4 ) x
 
@@ -31819,7 +31819,7 @@ function r8_is_int ( r )
   implicit none
 
   integer ( kind = 4 ) i
-!123  integer ( kind = 4 ) i4_huge
+  integer ( kind = 4 ) i4_huge
   real ( kind = 8 ) r
   logical r8_is_int
 
@@ -31940,7 +31940,7 @@ function r8_uniform_01 ( seed )
 !
   implicit none
 
-!123  integer ( kind = 4 ) i4_huge
+  integer ( kind = 4 ) i4_huge
   integer ( kind = 4 ) k
   real ( kind = 8 ) r8_uniform_01
   integer ( kind = 4 ) seed
@@ -32170,7 +32170,7 @@ subroutine r8mat_print_some ( m, n, a, ilo, jlo, ihi, jhi, title )
   integer ( kind = 4 ) j2lo
   integer ( kind = 4 ) jhi
   integer ( kind = 4 ) jlo
-!123  logical r8_is_int
+  logical r8_is_int
   character ( len = * ) title
 
   if ( 0 < len_trim ( title ) ) then
@@ -32820,7 +32820,7 @@ subroutine r8vec_uniform ( n, a, b, seed, r )
   real ( kind = 8 ) a
   real ( kind = 8 ) b
   integer ( kind = 4 ) i
-!123  integer ( kind = 4 ) i4_huge
+  integer ( kind = 4 ) i4_huge
   integer ( kind = 4 ) k
   integer ( kind = 4 ) seed
   real ( kind = 8 ) r(n)
@@ -32902,7 +32902,7 @@ subroutine r8vec_uniform_01 ( n, seed, r )
   integer ( kind = 4 ) n
 
   integer ( kind = 4 ) i
-!123  integer ( kind = 4 ) i4_huge
+  integer ( kind = 4 ) i4_huge
   integer ( kind = 4 ) k
   integer ( kind = 4 ) seed
   real ( kind = 8 ) r(n)
@@ -33533,7 +33533,7 @@ subroutine rayleigh_sample ( a, seed, x )
 
   real ( kind = 8 ) a
   real ( kind = 8 ) cdf
-!123  real ( kind = 8 ) r8_uniform_01
+  real ( kind = 8 ) r8_uniform_01
   integer ( kind = 4 ) seed
   real ( kind = 8 ) x
 
@@ -33839,7 +33839,7 @@ subroutine reciprocal_sample ( a, b, seed, x )
   real ( kind = 8 ) a
   real ( kind = 8 ) b
   real ( kind = 8 ) cdf
-!123  real ( kind = 8 ) r8_uniform_01
+  real ( kind = 8 ) r8_uniform_01
   integer ( kind = 4 ) seed
   real ( kind = 8 ) x
 
@@ -34580,7 +34580,7 @@ subroutine runs_pdf ( m, n, r, pdf )
 !
   implicit none
 
-!123  integer ( kind = 4 ) i4_choose
+  integer ( kind = 4 ) i4_choose
   integer ( kind = 4 ) m
   integer ( kind = 4 ) n
   real ( kind = 8 ) pdf
@@ -34725,7 +34725,7 @@ subroutine runs_simulate ( m, n, seed, a )
 
   integer ( kind = 4 ) a(m+n)
   integer ( kind = 4 ) i
-!123  integer ( kind = 4 ) i4_uniform_ab
+  integer ( kind = 4 ) i4_uniform_ab
   integer ( kind = 4 ) j
   integer ( kind = 4 ) k
   integer ( kind = 4 ) seed
@@ -35030,7 +35030,7 @@ subroutine sech_pdf ( x, a, b, pdf )
   real ( kind = 8 ) b
   real ( kind = 8 ) pdf
   real ( kind = 8 ), parameter :: r8_pi = 3.141592653589793D+00
-!123  real ( kind = 8 ) sech
+  real ( kind = 8 ) sech
   real ( kind = 8 ) x
   real ( kind = 8 ) y
 
@@ -35073,7 +35073,7 @@ subroutine sech_sample ( a, b, seed, x )
   real ( kind = 8 ) a
   real ( kind = 8 ) b
   real ( kind = 8 ) cdf
-!123  real ( kind = 8 ) r8_uniform_01
+  real ( kind = 8 ) r8_uniform_01
   real ( kind = 8 ), parameter :: r8_pi = 3.141592653589793D+00
   integer ( kind = 4 ) seed
   real ( kind = 8 ) x
@@ -35447,7 +35447,7 @@ subroutine semicircular_sample ( a, b, seed, x )
   real ( kind = 8 ) a
   real ( kind = 8 ) angle
   real ( kind = 8 ) b
-!123  real ( kind = 8 ) r8_uniform_01
+  real ( kind = 8 ) r8_uniform_01
   real ( kind = 8 ), parameter :: r8_pi = 3.141592653589793D+00
   real ( kind = 8 ) radius
   integer ( kind = 4 ) seed
@@ -35823,7 +35823,7 @@ subroutine student_cdf ( x, a, b, c, cdf )
   real ( kind = 8 ) a2
   real ( kind = 8 ) b
   real ( kind = 8 ) b2
-!123  real ( kind = 8 ) beta_inc
+  real ( kind = 8 ) beta_inc
   real ( kind = 8 ) c
   real ( kind = 8 ) c2
   real ( kind = 8 ) cdf
@@ -36301,7 +36301,7 @@ subroutine student_noncentral_cdf ( x, idf, d, cdf )
   real ( kind = 8 ), parameter :: r8_pi = 3.141592653589793D+00
   real ( kind = 8 ) sum2
   real ( kind = 8 ) temp
-!123  real ( kind = 8 ) tfn
+  real ( kind = 8 ) tfn
   real ( kind = 8 ) x
 
   f = real ( idf, kind = 8 )
@@ -37127,7 +37127,7 @@ subroutine triangle_sample ( a, b, c, seed, x )
   real ( kind = 8 ) b
   real ( kind = 8 ) c
   real ( kind = 8 ) cdf
-!123  real ( kind = 8 ) r8_uniform_01
+  real ( kind = 8 ) r8_uniform_01
   integer ( kind = 4 ) seed
   real ( kind = 8 ) x
 
@@ -37434,7 +37434,7 @@ subroutine triangular_sample ( a, b, seed, x )
   real ( kind = 8 ) a
   real ( kind = 8 ) b
   real ( kind = 8 ) cdf
-!123  real ( kind = 8 ) r8_uniform_01
+  real ( kind = 8 ) r8_uniform_01
   integer ( kind = 4 ) seed
   real ( kind = 8 ) x
 
@@ -37734,7 +37734,7 @@ subroutine uniform_01_order_sample ( n, seed, x )
 
   integer ( kind = 4 ) n
 
-!123  real ( kind = 8 ) r8_uniform_01
+  real ( kind = 8 ) r8_uniform_01
   integer ( kind = 4 ) i
   integer ( kind = 4 ) seed
   real ( kind = 8 ) u
@@ -38169,7 +38169,7 @@ subroutine uniform_sample ( a, b, seed, x )
   real ( kind = 8 ) a
   real ( kind = 8 ) b
   real ( kind = 8 ) cdf
-!123  real ( kind = 8 ) r8_uniform_01
+  real ( kind = 8 ) r8_uniform_01
   integer ( kind = 4 ) seed
   real ( kind = 8 ) x
 
@@ -38479,7 +38479,7 @@ subroutine uniform_discrete_sample ( a, b, seed, x )
   integer ( kind = 4 ) a
   integer ( kind = 4 ) b
   real ( kind = 8 ) cdf
-!123  real ( kind = 8 ) r8_uniform_01
+  real ( kind = 8 ) r8_uniform_01
   integer ( kind = 4 ) seed
   integer ( kind = 4 ) x
 
@@ -38644,7 +38644,7 @@ subroutine von_mises_cdf ( x, a, b, cdf )
   real ( kind = 8 ) p
   real ( kind = 8 ), parameter :: r8_pi = 3.141592653589793D+00
   real ( kind = 8 ) r
-!123  real ( kind = 8 ) r8_error_f
+  real ( kind = 8 ) r8_error_f
   real ( kind = 8 ) s
   real ( kind = 8 ) sn
   real ( kind = 8 ) u
@@ -39118,8 +39118,8 @@ subroutine von_mises_circular_variance ( a, b, circular_variance )
 
   real ( kind = 8 ) a
   real ( kind = 8 ) b
-!123  real ( kind = 8 ) bessel_i0
-!123  real ( kind = 8 ) bessel_i1
+  real ( kind = 8 ) bessel_i0
+  real ( kind = 8 ) bessel_i1
   real ( kind = 8 ) circular_variance
 
   circular_variance = 1.0D+00 - bessel_i1 ( b ) / bessel_i0 ( b )
@@ -39244,7 +39244,7 @@ subroutine von_mises_pdf ( x, a, b, pdf )
 
   real ( kind = 8 ) a
   real ( kind = 8 ) b
-!123  real ( kind = 8 ) bessel_i0
+  real ( kind = 8 ) bessel_i0
   real ( kind = 8 ) pdf
   real ( kind = 8 ), parameter :: r8_pi = 3.141592653589793D+00
   real ( kind = 8 ) x
@@ -39307,7 +39307,7 @@ subroutine von_mises_sample ( a, b, seed, x )
   real ( kind = 8 ) a
   real ( kind = 8 ) b
   real ( kind = 8 ) c
-!123  real ( kind = 8 ) r8_uniform_01
+  real ( kind = 8 ) r8_uniform_01
   real ( kind = 8 ) f
   real ( kind = 8 ), parameter :: r8_pi = 3.141592653589793D+00
   real ( kind = 8 ) r
@@ -39769,7 +39769,7 @@ subroutine weibull_sample ( a, b, c, seed, x )
   real ( kind = 8 ) b
   real ( kind = 8 ) c
   real ( kind = 8 ) cdf
-!123  real ( kind = 8 ) r8_uniform_01
+  real ( kind = 8 ) r8_uniform_01
   integer ( kind = 4 ) seed
   real ( kind = 8 ) x
 
@@ -39899,7 +39899,7 @@ subroutine weibull_discrete_cdf_inv ( cdf, a, b, x )
   real ( kind = 8 ) a
   real ( kind = 8 ) b
   real ( kind = 8 ) cdf
-!123  integer ( kind = 4 ) r8_ceiling
+  integer ( kind = 4 ) r8_ceiling
   integer ( kind = 4 ) x
 
   if ( cdf < 0.0D+00 .or. 1.0D+00 < cdf ) then
@@ -40051,7 +40051,7 @@ subroutine weibull_discrete_sample ( a, b, seed, x )
   real ( kind = 8 ) a
   real ( kind = 8 ) b
   real ( kind = 8 ) cdf
-!123  real ( kind = 8 ) r8_uniform_01
+  real ( kind = 8 ) r8_uniform_01
   integer ( kind = 4 ) seed
   integer ( kind = 4 ) x
 
@@ -40100,7 +40100,7 @@ subroutine zipf_cdf ( x, a, cdf )
   real ( kind = 8 ), save :: c = 0.0D+00
   real ( kind = 8 ) cdf
   real ( kind = 8 ) pdf
-!123  real ( kind = 8 ) r8_zeta
+  real ( kind = 8 ) r8_zeta
   integer ( kind = 4 ) x
   integer ( kind = 4 ) y
 
@@ -40167,7 +40167,7 @@ subroutine zipf_cdf_inv ( a, cdf, x )
   real ( kind = 8 ) cdf
   real ( kind = 8 ) cdf2
   real ( kind = 8 ) pdf
-!123  real ( kind = 8 ) r8_zeta
+  real ( kind = 8 ) r8_zeta
   integer ( kind = 4 ) x
   integer ( kind = 4 ) y
 
@@ -40267,7 +40267,7 @@ subroutine zipf_mean ( a, mean )
 
   real ( kind = 8 ) a
   real ( kind = 8 ) mean
-!123  real ( kind = 8 ) r8_zeta
+  real ( kind = 8 ) r8_zeta
 
   if ( a <= 2.0D+00 ) then
     write ( *, '(a)' ) ' '
@@ -40339,7 +40339,7 @@ subroutine zipf_pdf ( x, a, pdf )
   real ( kind = 8 ), save :: asave = 0.0D+00
   real ( kind = 8 ), save :: c = 0.0D+00
   real ( kind = 8 ) pdf
-!123  real ( kind = 8 ) r8_zeta
+  real ( kind = 8 ) r8_zeta
   integer ( kind = 4 ) x
 
   if ( x < 1 ) then
@@ -40404,8 +40404,8 @@ subroutine zipf_sample ( a, seed, x )
 
   real ( kind = 8 ) a
   real ( kind = 8 ) b
-!123  integer ( kind = 4 ) i4_huge
-!123  real ( kind = 8 ) r8_uniform_01
+  integer ( kind = 4 ) i4_huge
+  real ( kind = 8 ) r8_uniform_01
   integer ( kind = 4 ) seed
   real ( kind = 8 ) t
   real ( kind = 8 ) test
@@ -40473,7 +40473,7 @@ subroutine zipf_variance ( a, variance )
 
   real ( kind = 8 ) a
   real ( kind = 8 ) mean
-!123  real ( kind = 8 ) r8_zeta
+  real ( kind = 8 ) r8_zeta
   real ( kind = 8 ) variance
 
   if ( a <= 3.0D+00 ) then
