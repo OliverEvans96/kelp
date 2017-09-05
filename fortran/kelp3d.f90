@@ -25,9 +25,11 @@ subroutine generate_grid(xmin, xmax, nx, ymin, ymax, ny, zmin, zmax, nz, ntheta,
 
 end subroutine generate_grid
 
-subroutine deinit(grid, p_kelp)
+subroutine deinit(grid, rope, p_kelp)
   type(space_angle_grid) grid
+  type(rope_state) rope
   double precision, dimension(:,:,:), allocatable :: p_kelp
+  call rope%deinit()
   call grid%deinit()
   deallocate(p_kelp)
 end subroutine
@@ -49,6 +51,7 @@ subroutine calculate_kelp_on_grid(grid, p_kelp, frond, rope, quadrature_degree)
   nz = grid%z%num
 
   do k=1, nz
+    write(*,*) 'k=', k
     z = grid%z%vals(k)
     call depth%set_depth(rope, k) 
     do i=1, nx
@@ -95,11 +98,11 @@ function integrate_ps(theta_low_lim, theta_high_lim, quadrature_degree, point, f
   integer i
 
   type(angle_dim) :: theta_f
-
-  allocate(integrand_vals(theta_f%num))
-
   call theta_f%set_bounds(theta_low_lim, theta_high_lim)
   call theta_f%set_num(quadrature_degree)
+  call theta_f%assign_legendre()
+
+  allocate(integrand_vals(theta_f%num))
 
   do i=1, theta_f%num
     integrand_vals(i) = ps_integrand(theta_f%vals(i), point, frond, depth)

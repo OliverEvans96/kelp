@@ -20,10 +20,10 @@ contains
 end type frond_shape
 
 type rope_state
-   type(space_angle_grid) :: grid
    double precision, dimension(:), allocatable :: frond_lengths, frond_stds, water_speeds, water_angles
 contains
     procedure :: init => rope_init
+    procedure :: deinit => rope_deinit
 end type rope_state
 
 type depth_state
@@ -40,6 +40,7 @@ type optical_properties
    double precision abs_water, abs_kelp, scat_water, scat_kelp
  contains
    procedure :: load_vsf
+   procedure :: deinit => iop_deinit
 end type optical_properties
 
 contains
@@ -75,6 +76,7 @@ contains
 
   subroutine frond_set_shape(frond, fs, fr)
     class(frond_shape) frond
+    double precision fs, fr
     frond%fs = fs
     frond%fr = fr
     call frond%calculate_angles()
@@ -98,13 +100,22 @@ contains
     iops%vsf = tmp_2d_arr(:,1)
   end subroutine load_vsf
 
-  subroutine rope_init(rope)
+  subroutine rope_init(rope, grid)
     class(rope_state) :: rope
-    allocate(rope%frond_lengths(rope%grid%z%num))
-    allocate(rope%frond_stds(rope%grid%z%num))
-    allocate(rope%water_speeds(rope%grid%z%num))
-    allocate(rope%water_angles(rope%grid%z%num))
+    type(space_angle_grid) :: grid
+    allocate(rope%frond_lengths(grid%z%num))
+    allocate(rope%frond_stds(grid%z%num))
+    allocate(rope%water_speeds(grid%z%num))
+    allocate(rope%water_angles(grid%z%num))
   end subroutine rope_init
+  
+  subroutine rope_deinit(rope)
+    class(rope_state) rope
+    deallocate(rope%frond_lengths)
+    deallocate(rope%frond_stds)
+    deallocate(rope%water_speeds)
+    deallocate(rope%water_angles)
+  end subroutine rope_deinit
 
   subroutine set_depth(depth, rope, depth_layer)
     class(depth_state) depth
@@ -141,5 +152,9 @@ contains
     call von_mises_pdf(theta_f, theta_w, v_w, output)
   end function angle_distribution_pdf
 
+  subroutine iop_deinit(iops)
+    class(optical_properties) iops
+    deallocate(iops%vsf)
+  end subroutine iop_deinit
 
 end module kelp_context

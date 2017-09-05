@@ -39,9 +39,9 @@ H5FC=h5fc
 
 # Fortran Compilation flags
 # Object files (.o)
-OFLAGS=-c#-J$(INC) -I$(INC) -c
+OFLAGS=-J$(INC) -I$(INC) -c
 # Binary files (executable)
-BFLAGS=#-J$(INC) -I$(INC)
+BFLAGS=-J$(INC) -I$(INC)
 
 
 ###############

@@ -37,8 +37,8 @@ type space_dim
  contains
    procedure :: set_bounds => space_set_bounds
    procedure :: set_num => space_set_num
-   !procedure :: set_spacing => space_set_spacing
-   !procedure :: set_num_from_spacing
+   procedure :: set_spacing => space_set_spacing
+   procedure :: set_num_from_spacing
    procedure :: set_spacing_from_num
    procedure :: deinit => space_deinit
    procedure :: assign_linspace
@@ -52,7 +52,7 @@ contains
   procedure :: set_num => sag_set_num
   procedure :: init => sag_init
   procedure :: deinit => sag_deinit
-  !procedure :: set_num_from_spacing
+  procedure :: set_num_from_spacing => sag_set_num_from_spacing
   procedure :: set_spacing_from_num => sag_set_spacing_from_num
 end type space_angle_grid
 
@@ -136,12 +136,18 @@ contains
     space%minval = minval
     space%maxval = maxval
   end subroutine space_set_bounds
-  
+
   subroutine space_set_num(space, num)
     class(space_dim) :: space
     integer num
     space%num = num
   end subroutine space_set_num
+
+  subroutine space_set_spacing(space, spacing)
+    class(space_dim) :: space
+    integer spacing
+    space%spacing = spacing
+  end subroutine space_set_spacing
 
   subroutine assign_linspace(space)
     class(space_dim) :: space
@@ -150,38 +156,21 @@ contains
     allocate(space%vals(space%num))
 
     space%spacing = spacing_from_num(space%minval, space%maxval, space%num)
-    write(*,*) 'space%spacing = ', space%spacing
 
     do i=1, space%num
        space%vals(i) = space%minval + dble(i-1) * space%spacing
     end do
   end subroutine assign_linspace
 
-  ! subroutine set_num_from_spacing(grid)
-  !   class(space_angle_grid) :: grid
-  !   grid%nx = num_from_spacing(grid%xmin, grid%xmax, grid%dx)
-  !   grid%ny = num_from_spacing(grid%ymin, grid%ymax, grid%dy)
-  !   grid%nz = num_from_spacing(grid%zmin, grid%zmax, grid%dz)
-  ! end subroutine set_num_from_spacing
-  
   subroutine set_spacing_from_num(space)
     class(space_dim) :: space
     space%spacing = spacing_from_num(space%minval, space%maxval, space%num)
   end subroutine set_spacing_from_num
 
-  ! subroutine assign_linspace_spacing(arr, xmin, xmax, dx)
-  !   double precision, dimension(:), allocatable :: arr
-  !   double precision xmin, xmax, dx
-  !   integer n, i
-
-  !   n = num_from_spacing(xmin, xmax, dx)
-
-  !   allocate(arr(n))
-
-  !   do i=1, n
-  !      arr = xmin + dble(i-1) * dx
-  !   end do
-  ! end subroutine assign_linspace_spacing
+  subroutine set_num_from_spacing(space)
+    class(space_dim) :: space
+    space%num = num_from_spacing(space%minval, space%maxval, space%spacing)
+  end subroutine set_num_from_spacing
 
   subroutine space_deinit(space)
     class(space_dim) :: space
@@ -204,14 +193,13 @@ contains
     call grid%phi%set_bounds(phimin, phimax)
   end subroutine sag_set_bounds
 
-  ! subroutine sag_set_spacing(grid, dx, dy, dz)
-  !   class(space_angle_grid) :: grid
-  !   grid%dx = dx
-  !   grid%dy = dy
-  !   grid%dz = dz
-  ! 
-  !   call grid%set_num_from_spacing()
-  ! end subroutine sag_set_spacing
+  subroutine sag_set_spacing(grid, dx, dy, dz)
+    class(space_angle_grid) :: grid
+    double precision dx, dy, dz
+    grid%x%spacing = dx
+    grid%y%spacing = dy
+    grid%z%spacing = dz
+  end subroutine sag_set_spacing
 
   subroutine sag_set_num(grid, nx, ny, nz, ntheta, nphi)
     class(space_angle_grid) :: grid
@@ -226,8 +214,6 @@ contains
   subroutine sag_init(grid)
     class(space_angle_grid) :: grid
 
-    call grid%set_spacing_from_num()
-
     call grid%x%assign_linspace()
     call grid%y%assign_linspace()
     call grid%z%assign_linspace()
@@ -236,13 +222,21 @@ contains
     call grid%phi%assign_legendre()
 
   end subroutine sag_init
-  
+
   subroutine sag_set_spacing_from_num(grid)
     class(space_angle_grid) :: grid
     call grid%x%set_spacing_from_num()
     call grid%y%set_spacing_from_num()
     call grid%z%set_spacing_from_num()
   end subroutine sag_set_spacing_from_num
+
+  subroutine sag_set_num_from_spacing(grid)
+    class(space_angle_grid) :: grid
+    call grid%x%set_num_from_spacing()
+    call grid%y%set_num_from_spacing()
+    call grid%z%set_num_from_spacing()
+
+  end subroutine sag_set_num_from_spacing
 
   subroutine sag_deinit(grid)
     class(space_angle_grid) :: grid
@@ -259,10 +253,11 @@ contains
     x = ymin + (ymax-ymin)/(xmax-xmin) * (x-xmin)
   end subroutine affine_transform
 
-  ! function num_from_spacing(xmin, xmax, dx) result(n)
-  !   double precision xmin, xmax, dx
-  !   n = floor( (xmax - xmin) / dx )
-  ! end function num_from_spacing
+  function num_from_spacing(xmin, xmax, dx) result(n)
+    double precision xmin, xmax, dx
+    integer n
+    n = floor( (xmax - xmin) / dx )
+  end function num_from_spacing
 
   function spacing_from_num(xmin, xmax, nx) result(dx)
     double precision xmin, xmax, dx
