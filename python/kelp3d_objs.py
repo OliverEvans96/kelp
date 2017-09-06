@@ -52,13 +52,16 @@ class Rope(tr.HasTraits):
         a = 2e-1
         b = 1e-1
         c = 5e-1
+        d = np.pi / 4
 
         z = grid.z
 
-        self.frond_lengths = np.exp(-a*z) * np.sin(z) ** 2
+        #self.frond_lengths = np.exp(-a*z) * np.sin(z) ** 2
+        self.frond_lengths = .5 * z**2 * np.exp(1-z)
         self.frond_stds = b * np.ones_like(z)
         self.water_speeds = c * np.ones_like(z)
-        self.water_angles = 2*np.pi / grid.zmax * z
+        #self.water_angles = 2*np.pi / grid.zmax * z
+        self.water_angles = d * np.ones_like(z)
 
 class Frond(tr.HasTraits):
     fs = tr.Float()

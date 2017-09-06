@@ -25,11 +25,12 @@ def calculate_kelp(grid, rope, frond, params):
     )
     stdout = result.stdout.decode()
     stderr = result.stderr.decode()
-    print("OUT:")
-    print(stdout)
-    print("ERR:")
-    print(stderr)
-    print("END")
+    if len(stdout) > 0:
+        print("OUT:")
+        print(stdout)
+    if len(stderr) > 0:
+        print("ERR:")
+        print(stderr)
 
 def read_all(kelp, grid):
     kelpfile = '../hdf5/kelp3d/kelp.hdf5'  
