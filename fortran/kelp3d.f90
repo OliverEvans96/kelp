@@ -51,7 +51,7 @@ subroutine calculate_kelp_on_grid(grid, p_kelp, frond, rope, quadrature_degree)
   nz = grid%z%num
 
   do k=1, nz
-    write(*,*) 'k=', k
+    !write(*,*) 'k=', k
     z = grid%z%vals(k)
     call depth%set_depth(rope, k) 
     do i=1, nx

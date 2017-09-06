@@ -150,25 +150,15 @@ contains
     character(len=*) :: filename
     integer(hsize_t), dimension(3) :: data_dims
 
-    write(*,*) 'kelpfile = ', filename
-
     call h5open_f(error)
-    write(*,*) 's'
     ! Create file
     call h5fcreate_f(filename, h5f_acc_trunc_f, file_id, error)
-    write(*,*) 't'
-
-    write(*,*) 'nx =', grid%x%num
-    write(*,*) 'ny =', grid%y%num
-    write(*,*) 'nz =', grid%z%num
 
     data_dims(1) = grid%x%num
     data_dims(2) = grid%y%num
     data_dims(3) = grid%z%num
-
-    write(*,*) 'u'
     call dset_write_3d_double(file_id, 'p_kelp', data_dims, p_kelp, error)
-    write(*,*) 'v'
+
     call h5fclose_f(file_id, error)
     call h5close_f(error)
   end subroutine hdf_write_kelp
@@ -259,20 +249,9 @@ contains
     double precision, dimension(:) :: output
     integer error
 
-    write(*,*) 'a'
     call h5dopen_f(file_id, dsetname, dset_id, error)
-    write(*,*) 'b'
-    write(*,*) ''
-    write(*,*) 'dset_id =', dset_id
-    write(*,*) 'h5t_native_double =', h5t_native_double
-    write(*,*) 'size(output) =', size(output)
-    write(*,*) 'data_dims(1) =', data_dims(1)
-    write(*,*) 'error =', error
-    write(*,*) ''
     call h5dread_f(dset_id, h5t_native_double, output, data_dims, error)
-    write(*,*) 'c'
     call h5dclose_f(dset_id, error)
-    write(*,*) 'd'
   end subroutine dset_read_1d_double
 
   subroutine dset_read_3d_double(file_id, dsetname, data_dims, output, error)
@@ -316,24 +295,15 @@ contains
     integer error
     integer i
 
-
-    write(*,*) 'DATA_DIMS', data_dims
-    write(*,*) 'a1'
     ! Create dataspace
     call h5screate_simple_f(rank, data_dims, dspace_id, error)
     ! Create dataset
     call h5dcreate_f(file_id, dsetname, h5t_native_double, dspace_id, dset_id, error)
 
-    write(*,*) 'b1'
-    do i = 1, data_dims(1)
-       write(*,*) 'p', i, '= ', input(i,1,1)
-    end do
     call h5dwrite_f(dset_id, h5t_native_double, input, data_dims, error)
-    write(*,*) 'c1'
 
     call h5dclose_f(dset_id, error)
     call h5sclose_f(dspace_id, error)
-    write(*,*) 'd1'
   end subroutine dset_write_3d_double
 
   subroutine dset_write_5d_double(file_id, dsetname, data_dims, input, error)
@@ -413,18 +383,7 @@ subroutine read_1d_array_from_coo(filename, arr, n, nnz)
   call h5fclose_f(file_id, error)
   call h5close_f(error)
 
-  ! write(*,*) 'row'
-  ! call print_int_array(row, nnz, 1)
-  ! write(*,*) 'col'
-  ! call print_int_array(col, nnz, 1)
-  ! write(*,*) 'data'
-  ! call print_array(data, nnz, 1)
-
   call dense_from_coo(row, col, data, arr, n, m, nnz)
-
-  !write(*,*) 'arr'
-  !call print_array(arr, n, m)
-
 end subroutine read_1d_array_from_coo
 
 subroutine read_coo(filename, row, col, data, nnz)
