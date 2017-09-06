@@ -1,19 +1,10 @@
-program test_gmres
-
-  implicit none
-
-  call test_easy()
-  call test_real()
-
-end program test_gmres
-
-subroutine test_real()
+module test_gmres_mod
   use hdf5_utils
   use utils
   use mgmres
-
   implicit none
-
+contains
+subroutine test_real()
   integer error
   character(len=24) :: a_fn = "fortran/hdf5test/A.h5"
   character(len=24) :: rhs_fn = "fortran/hdf5test/b.h5"
@@ -29,6 +20,8 @@ subroutine test_real()
   ! Max # of inner iterations
   integer mr
   double precision tol_abs, tol_rel
+
+  write(*,*) 'REAL TEST'
 
   itr_max = 10
   mr = 10
@@ -87,6 +80,8 @@ subroutine test_easy()
   ! Max # of inner iterations
   integer mr
   double precision tol_abs, tol_rel
+
+  write(*,*) 'EASY TEST'
 
   itr_max = 100
   mr = 10
@@ -174,5 +169,12 @@ subroutine create_test_equation(row, col, data, b, x_true)
 
   call coo_from_dense(a, n, n, row, col, data)
 end subroutine create_test_equation
+end module
 
+program test_gmres
+  use test_gmres_mod
 
+  call test_easy()
+  call test_real()
+
+end program test_gmres

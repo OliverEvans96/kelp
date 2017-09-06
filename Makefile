@@ -62,7 +62,7 @@ test_grid: kelp_context.o fastgl.o sag.o utils.o prob.o
 	 $(FC) $(BFLAGS) $(SRC)/test_grid.f90 $(INC)/kelp_context.o $(INC)/fastgl.o $(INC)/prob.o $(INC)/sag.o $(INC)/utils.o -o $(BIN)/test_grid
 
 test_gmres: mgmres.o hdf5_utils.o
-	 $(H5FC) $(BFLAGS) $(SRC)/test_gmres.f90 $(INC)/mgmres.o $(INC)/utils.o $(INC)/hdf5_utils.o -o $(BIN)/test_gmres 
+	 $(H5FC) $(BFLAGS) $(SRC)/test_gmres.f90 $(INC)/mgmres.o $(INC)/utils.o $(INC)/hdf5_utils.o $(INC)/kelp_context.o $(INC)/sag.o $(INC)/fastgl.o $(INC)/prob.o -o $(BIN)/test_gmres 
 
 test_prob: prob.o
 	 $(FC) $(BFLAGS) $(SRC)/test_prob.f90 $(INC)/prob.o -o $(BIN)/test_prob
@@ -90,7 +90,7 @@ test_vsf: rte_core.o utils.o
 sag.o: utils.o fastgl.o
 	$(FC) $(OFLAGS) $(SRC)/sag.f90 -o $(INC)/sag.o
 
-hdf5_utils.o: utils.o
+hdf5_utils.o: utils.o kelp_context.o
 	$(H5FC) $(OFLAGS) $(SRC)/hdf5_utils.f90 -o $(INC)/hdf5_utils.o
 
 kelp_context.o: sag.o prob.o
