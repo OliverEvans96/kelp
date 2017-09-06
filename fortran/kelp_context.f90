@@ -20,6 +20,7 @@ contains
 end type frond_shape
 
 type rope_state
+   integer nz
    double precision, dimension(:), allocatable :: frond_lengths, frond_stds, water_speeds, water_angles
 contains
     procedure :: init => rope_init
@@ -103,10 +104,12 @@ contains
   subroutine rope_init(rope, grid)
     class(rope_state) :: rope
     type(space_angle_grid) :: grid
-    allocate(rope%frond_lengths(grid%z%num))
-    allocate(rope%frond_stds(grid%z%num))
-    allocate(rope%water_speeds(grid%z%num))
-    allocate(rope%water_angles(grid%z%num))
+
+    rope%nz = grid%z%num
+    allocate(rope%frond_lengths(rope%nz))
+    allocate(rope%frond_stds(rope%nz))
+    allocate(rope%water_speeds(rope%nz))
+    allocate(rope%water_angles(rope%nz))
   end subroutine rope_init
   
   subroutine rope_deinit(rope)
