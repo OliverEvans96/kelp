@@ -10,7 +10,8 @@ contains
     integer error
     type(space_angle_grid) grid
     double precision, dimension(6) :: bounds
-    double precision, dimension(5) :: spacings
+    !double precision, dimension(5) :: spacings
+    integer, dimension(5) :: nums
 
     integer(hid_t), dimension(1) :: data_dims
     integer(hid_t) :: file_id
@@ -22,12 +23,25 @@ contains
     data_dims(1) = 6
     call dset_read_1d_double(file_id, 'bounds', data_dims, bounds, error)
     data_dims(1) = 5
-    call dset_read_1d_double(file_id, 'spacings', data_dims, spacings, error)
+    call dset_read_1d_int(file_id, 'nums', data_dims, nums, error)
 
     call h5fclose_f(file_id, error)
     call h5close_f(error)
 
-    call grid%set_num_from_spacing()
+    grid%x%minval = bounds(1)
+    grid%x%maxval = bounds(2)
+    grid%y%minval = bounds(3)
+    grid%y%maxval = bounds(4)
+    grid%z%minval = bounds(5)
+    grid%z%maxval = bounds(6)
+
+    grid%x%num = nums(1)
+    grid%y%num = nums(2)
+    grid%z%num = nums(3)
+    grid%theta%num = nums(4)
+    grid%phi%num = nums(5)
+
+    call grid%set_spacing_from_num()
     call grid%init()
   end subroutine hdf_read_grid
 
@@ -35,7 +49,6 @@ contains
     integer error
     type(rope_state) rope
     type(space_angle_grid) grid
-    double precision, dimension(rope%nz) :: kelp_lengths, kelp_stds, water_speeds, water_angles
 
     integer(hid_t) :: file_id
     character(len=*) :: filename
@@ -44,47 +57,91 @@ contains
     call h5open_f(error)
     call h5fopen_f(filename, h5f_acc_rdwr_f, file_id, error)
 
+    call rope%init(grid)
     data_dims(1) = rope%nz
 
-    call dset_read_1d_double(file_id, 'kelp_lengths', data_dims, kelp_lengths, error)
-    call dset_read_1d_double(file_id, 'kelp_stds', data_dims, kelp_stds, error)
-    call dset_read_1d_double(file_id, 'water_speeds', data_dims, water_speeds, error)
-    call dset_read_1d_double(file_id, 'water_angles', data_dims, water_angles, error)
+    call dset_read_1d_double(file_id, 'frond_lengths', data_dims, rope%frond_lengths, error)
+    call dset_read_1d_double(file_id, 'frond_stds', data_dims, rope%frond_stds, error)
+    call dset_read_1d_double(file_id, 'water_speeds', data_dims, rope%water_speeds, error)
+    call dset_read_1d_double(file_id, 'water_angles', data_dims, rope%water_angles, error)
 
     call h5fclose_f(file_id, error)
     call h5close_f(error)
-
-    call rope%init(grid)
   end subroutine hdf_read_rope
 
-  subroutine hdf_read_kelp(filename, p_kelp, grid)
+  ! subroutine hdf_read_kelp(filename, p_kelp, grid)
+  !   integer error
+  !   double precision, dimension(:,:,:) :: p_kelp
+  !   type(space_angle_grid) grid
+
+  !   integer(hid_t) :: file_id
+  !   character(len=*) :: filename
+  !   integer(hsize_t), dimension(3) :: data_dims
+
+  !   call h5open_f(error)
+  !   call h5fopen_f(filename, h5f_acc_rdwr_f, file_id, error)
+
+  !   data_dims(1) = grid%x%num
+  !   data_dims(2) = grid%y%num
+  !   data_dims(3) = grid%z%num
+
+  !   call dset_read_3d_double(file_id, 'p_kelp', data_dims, p_kelp, error)
+
+  !   call h5fclose_f(file_id, error)
+  !   call h5close_f(error)
+  ! end subroutine hdf_read_kelp
+
+  subroutine hdf_read_frond(filename, frond)
     integer error
-    double precision, dimension(:,:,:) :: p_kelp
-    type(space_angle_grid) grid
+    type(frond_shape) frond
 
     integer(hid_t) :: file_id
     character(len=*) :: filename
-    integer(hsize_t), dimension(3) :: data_dims
+    integer(hsize_t), dimension(1) :: data_dims
+    double precision, dimension(2) :: frond_arr
+    double precision fs, fr
 
     call h5open_f(error)
     call h5fopen_f(filename, h5f_acc_rdwr_f, file_id, error)
 
-    data_dims(1) = grid%x%num
-    data_dims(2) = grid%y%num
-    data_dims(3) = grid%z%num
+    data_dims(1) = 2
 
-    call dset_read_3d_double(file_id, 'p_kelp', data_dims, p_kelp, error)
+    call dset_read_1d_double(file_id, 'frond_arr', data_dims, frond_arr, error)
+    fs = frond_arr(1)
+    fr = frond_arr(2)
+
+    call frond%set_shape(fs, fr)
 
     call h5fclose_f(file_id, error)
     call h5close_f(error)
-  end subroutine hdf_read_kelp
+  end subroutine hdf_read_frond
 
+  subroutine hdf_read_params(filename, quadrature_degree)
+    integer error
+    integer quadrature_degree
+
+    integer(hid_t) :: file_id
+    character(len=*) :: filename
+    integer(hsize_t), dimension(1) :: data_dims
+    double precision, dimension(1) :: param_arr
+
+    call h5open_f(error)
+    call h5fopen_f(filename, h5f_acc_rdwr_f, file_id, error)
+
+    data_dims(1) = 1
+
+    call dset_read_1d_double(file_id, 'param_arr', data_dims, param_arr, error)
+    quadrature_degree = param_arr(1)
+
+    call h5fclose_f(file_id, error)
+    call h5close_f(error)
+  end subroutine hdf_read_params
   !subroutine hdf_read_light()
   !end subroutine hdf_read_light
 
   !- hdf WRITE kelp
 
-  subroutine hdf_write_kelp(filename, p_kelp)
+  subroutine hdf_write_kelp(filename, p_kelp, grid)
     integer error
     type(space_angle_grid) grid
     double precision, dimension(:,:,:) :: p_kelp
@@ -93,15 +150,25 @@ contains
     character(len=*) :: filename
     integer(hsize_t), dimension(3) :: data_dims
 
+    write(*,*) 'kelpfile = ', filename
+
     call h5open_f(error)
-    call h5fopen_f(filename, h5f_acc_rdwr_f, file_id, error)
+    write(*,*) 's'
+    ! Create file
+    call h5fcreate_f(filename, h5f_acc_trunc_f, file_id, error)
+    write(*,*) 't'
+
+    write(*,*) 'nx =', grid%x%num
+    write(*,*) 'ny =', grid%y%num
+    write(*,*) 'nz =', grid%z%num
 
     data_dims(1) = grid%x%num
     data_dims(2) = grid%y%num
     data_dims(3) = grid%z%num
 
+    write(*,*) 'u'
     call dset_write_3d_double(file_id, 'p_kelp', data_dims, p_kelp, error)
-
+    write(*,*) 'v'
     call h5fclose_f(file_id, error)
     call h5close_f(error)
   end subroutine hdf_write_kelp
@@ -192,9 +259,20 @@ contains
     double precision, dimension(:) :: output
     integer error
 
+    write(*,*) 'a'
     call h5dopen_f(file_id, dsetname, dset_id, error)
+    write(*,*) 'b'
+    write(*,*) ''
+    write(*,*) 'dset_id =', dset_id
+    write(*,*) 'h5t_native_double =', h5t_native_double
+    write(*,*) 'size(output) =', size(output)
+    write(*,*) 'data_dims(1) =', data_dims(1)
+    write(*,*) 'error =', error
+    write(*,*) ''
     call h5dread_f(dset_id, h5t_native_double, output, data_dims, error)
+    write(*,*) 'c'
     call h5dclose_f(dset_id, error)
+    write(*,*) 'd'
   end subroutine dset_read_1d_double
 
   subroutine dset_read_3d_double(file_id, dsetname, data_dims, output, error)
@@ -225,16 +303,37 @@ contains
     integer error
 
     call h5dopen_f(file_id, dsetname, dset_id, error)
-    call h5dread_f(dset_id, h5t_native_integer, input, data_dims, error)
+    call h5dwrite_f(dset_id, h5t_native_integer, input, data_dims, error)
     call h5dclose_f(dset_id, error)
   end subroutine dset_write_1d_double
 
   subroutine dset_write_3d_double(file_id, dsetname, data_dims, input, error)
-    integer(hid_t) :: file_id, dset_id
-    integer(hsize_t), dimension(1) :: data_dims
+    integer(hid_t) :: file_id, dspace_id, dset_id
+    integer, parameter :: rank = 3
+    integer(hsize_t), dimension(rank) :: data_dims
     character(len=*) :: dsetname
     double precision, dimension(:,:,:) :: input
     integer error
+    integer i
+
+
+    write(*,*) 'DATA_DIMS', data_dims
+    write(*,*) 'a1'
+    ! Create dataspace
+    call h5screate_simple_f(rank, data_dims, dspace_id, error)
+    ! Create dataset
+    call h5dcreate_f(file_id, dsetname, h5t_native_double, dspace_id, dset_id, error)
+
+    write(*,*) 'b1'
+    do i = 1, data_dims(1)
+       write(*,*) 'p', i, '= ', input(i,1,1)
+    end do
+    call h5dwrite_f(dset_id, h5t_native_double, input, data_dims, error)
+    write(*,*) 'c1'
+
+    call h5dclose_f(dset_id, error)
+    call h5sclose_f(dspace_id, error)
+    write(*,*) 'd1'
   end subroutine dset_write_3d_double
 
   subroutine dset_write_5d_double(file_id, dsetname, data_dims, input, error)
@@ -278,7 +377,7 @@ subroutine hdf_read_1d_double(filename, dsetname, output, n)
   data_dims(1) = n
 
   call h5open_f(error)
-  call h5fopen_f(filename, h5f_acc_rdwr_f, file_id, error)
+  call h5fopen_f(filename, h5f_acc_rdonly_f, file_id, error)
 
   call dset_read_1d_double(file_id, dsetname, data_dims, output, error)
 

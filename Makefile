@@ -50,6 +50,14 @@ BFLAGS=-J$(INC) -I$(INC)
 
 all: test old
 
+pykelp3d: kelp3d.o hdf5_utils.o
+	 $(H5FC) $(BFLAGS) $(SRC)/pykelp3d.f90 $(INC)/prob.o $(INC)/fastgl.o $(INC)/sag.o $(INC)/utils.o $(INC)/kelp3d.o $(INC)/kelp_context.o $(INC)/hdf5_utils.o -o $(BIN)/pykelp3d
+
+
+#########
+# Tests #
+#########
+
 test: test_context test_gl test_grid test_gmres test_prob test_kelp_3d
 
 test_context: utils.o kelp_context.o prob.o

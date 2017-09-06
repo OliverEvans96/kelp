@@ -59,7 +59,7 @@ subroutine calculate_kelp_on_grid(grid, p_kelp, frond, rope, quadrature_degree)
       do j=1, ny
         y = grid%y%vals(j)
         call point%set_cart(x, y, z)
-        p_kelp = prob_kelp(point, frond, depth, quadrature_degree)
+        p_kelp(i, j, k) = prob_kelp(point, frond, depth, quadrature_degree)
       end do
     end do
   end do

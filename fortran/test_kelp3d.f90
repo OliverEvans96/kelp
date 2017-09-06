@@ -1,5 +1,6 @@
 module test_kelp3d_mod
   use kelp3d
+  use hdf5_utils
   implicit none
 contains
 
@@ -15,8 +16,8 @@ subroutine init_grid(grid)
   grid%y%spacing = .5d-1
 
   grid%z%minval = 0.d0
-  grid%z%maxval = 1.d0
-  grid%z%spacing = 1.d-1
+  grid%z%maxval = 1.d1
+  grid%z%spacing = 1.d0
 
   grid%theta%num = 20
   grid%phi%num = 10
