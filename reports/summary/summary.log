@@ -1,11 +1,11 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.17 (TeX Live 2016/Arch Linux) (preloaded format=pdflatex 2016.8.22)  28 AUG 2016 21:52
+This is pdfTeX, Version 3.14159265-2.6-1.40.18 (TeX Live 2017/Arch Linux) (preloaded format=pdflatex 2017.8.15)  9 SEP 2017 18:14
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
 **summary.tex
 (./summary.tex
-LaTeX2e <2016/03/31> patch level 3
-Babel <3.9r> and hyphenation patterns for 83 language(s) loaded.
+LaTeX2e <2017-04-15>
+Babel <3.12> and hyphenation patterns for 84 language(s) loaded.
 (/usr/share/texmf-dist/tex/latex/base/article.cls
 Document Class: article 2014/09/29 v1.4h Standard LaTeX document class
 (/usr/share/texmf-dist/tex/latex/base/size10.clo
@@ -24,14 +24,14 @@ File: size10.clo 2014/09/29 v1.4h Standard LaTeX file (size option)
 \bibindent=\dimen102
 )
 (/usr/share/texmf-dist/tex/latex/graphics/graphicx.sty
-Package: graphicx 2014/10/28 v1.0g Enhanced LaTeX Graphics (DPC,SPQR)
+Package: graphicx 2017/06/01 v1.1a Enhanced LaTeX Graphics (DPC,SPQR)
 
 (/usr/share/texmf-dist/tex/latex/graphics/keyval.sty
 Package: keyval 2014/10/28 v1.15 key=value parser (DPC)
 \KV@toks@=\toks14
 )
 (/usr/share/texmf-dist/tex/latex/graphics/graphics.sty
-Package: graphics 2016/07/10 v1.0t Standard LaTeX Graphics (DPC,SPQR)
+Package: graphics 2017/06/25 v1.2c Standard LaTeX Graphics (DPC,SPQR)
 
 (/usr/share/texmf-dist/tex/latex/graphics/trig.sty
 Package: trig 2016/01/03 v1.10 sin cos tan (DPC)
@@ -42,21 +42,13 @@ File: graphics.cfg 2016/06/04 v1.11 sample graphics configuration
 Package graphics Info: Driver file: pdftex.def on input line 99.
 
 (/usr/share/texmf-dist/tex/latex/graphics-def/pdftex.def
-File: pdftex.def 2016/07/10 v0.06j Graphics/color for pdfTeX
-
-(/usr/share/texmf-dist/tex/generic/oberdiek/infwarerr.sty
-Package: infwarerr 2016/05/16 v1.4 Providing info/warning/error messages (HO)
-)
-(/usr/share/texmf-dist/tex/generic/oberdiek/ltxcmds.sty
-Package: ltxcmds 2016/05/16 v1.23 LaTeX kernel commands for general use (HO)
-)
-\Gread@gobject=\count87
+File: pdftex.def 2017/06/24 v1.0g Graphics/color driver for pdftex
 ))
 \Gin@req@height=\dimen103
 \Gin@req@width=\dimen104
 )
 (/usr/share/texmf-dist/tex/latex/amsmath/amsmath.sty
-Package: amsmath 2016/06/28 v2.15d AMS math features
+Package: amsmath 2016/11/05 v2.16a AMS math features
 \@mathmargin=\skip43
 
 For additional information on amsmath, use the `?' option.
@@ -75,30 +67,30 @@ Package: amsbsy 1999/11/29 v1.2d Bold Symbols
 (/usr/share/texmf-dist/tex/latex/amsmath/amsopn.sty
 Package: amsopn 2016/03/08 v2.02 operator names
 )
-\inf@bad=\count88
-LaTeX Info: Redefining \frac on input line 199.
-\uproot@=\count89
-\leftroot@=\count90
-LaTeX Info: Redefining \overline on input line 297.
-\classnum@=\count91
-\DOTSCASE@=\count92
-LaTeX Info: Redefining \ldots on input line 394.
-LaTeX Info: Redefining \dots on input line 397.
-LaTeX Info: Redefining \cdots on input line 518.
+\inf@bad=\count87
+LaTeX Info: Redefining \frac on input line 213.
+\uproot@=\count88
+\leftroot@=\count89
+LaTeX Info: Redefining \overline on input line 375.
+\classnum@=\count90
+\DOTSCASE@=\count91
+LaTeX Info: Redefining \ldots on input line 472.
+LaTeX Info: Redefining \dots on input line 475.
+LaTeX Info: Redefining \cdots on input line 596.
 \Mathstrutbox@=\box26
 \strutbox@=\box27
 \big@size=\dimen107
-LaTeX Font Info:    Redeclaring font encoding OML on input line 634.
-LaTeX Font Info:    Redeclaring font encoding OMS on input line 635.
-\macc@depth=\count93
-\c@MaxMatrixCols=\count94
+LaTeX Font Info:    Redeclaring font encoding OML on input line 712.
+LaTeX Font Info:    Redeclaring font encoding OMS on input line 713.
+\macc@depth=\count92
+\c@MaxMatrixCols=\count93
 \dotsspace@=\muskip10
-\c@parentequation=\count95
-\dspbrk@lvl=\count96
+\c@parentequation=\count94
+\dspbrk@lvl=\count95
 \tag@help=\toks16
-\row@=\count97
-\column@=\count98
-\maxfields@=\count99
+\row@=\count96
+\column@=\count97
+\maxfields@=\count98
 \andhelp@=\toks17
 \eqnshift@=\dimen108
 \alignsep@=\dimen109
@@ -110,8 +102,8 @@ LaTeX Font Info:    Redeclaring font encoding OMS on input line 635.
 \multlinegap=\skip44
 \multlinetaggap=\skip45
 \mathdisplay@stack=\toks19
-LaTeX Info: Redefining \[ on input line 2739.
-LaTeX Info: Redefining \] on input line 2740.
+LaTeX Info: Redefining \[ on input line 2817.
+LaTeX Info: Redefining \] on input line 2818.
 )
 (/usr/share/texmf-dist/tex/latex/amsfonts/amssymb.sty
 Package: amssymb 2013/01/14 v3.01 AMS font symbols
@@ -127,29 +119,29 @@ LaTeX Font Info:    Overwriting math alphabet `\mathfrak' in version `bold'
 Package: gensymb 2003/07/02 v1.0 (WaS)
 )
 (/usr/share/texmf-dist/tex/latex/mathtools/mathtools.sty
-Package: mathtools 2015/11/12 v1.18 mathematical typesetting tools
+Package: mathtools 2017/05/24 v1.19 mathematical typesetting tools
 
 (/usr/share/texmf-dist/tex/latex/tools/calc.sty
 Package: calc 2014/10/28 v4.3 Infix arithmetic (KKT,FJ)
-\calc@Acount=\count100
-\calc@Bcount=\count101
+\calc@Acount=\count99
+\calc@Bcount=\count100
 \calc@Adimen=\dimen114
 \calc@Bdimen=\dimen115
 \calc@Askip=\skip46
 \calc@Bskip=\skip47
 LaTeX Info: Redefining \setlength on input line 80.
 LaTeX Info: Redefining \addtolength on input line 81.
-\calc@Ccount=\count102
+\calc@Ccount=\count101
 \calc@Cskip=\skip48
 )
 (/usr/share/texmf-dist/tex/latex/mathtools/mhsetup.sty
-Package: mhsetup 2010/01/21 v1.2a programming setup (MH)
+Package: mhsetup 2017/03/31 v1.3 programming setup (MH)
 )
 LaTeX Info: Thecontrolsequence`\('isalreadyrobust on input line 129.
 LaTeX Info: Thecontrolsequence`\)'isalreadyrobust on input line 129.
 LaTeX Info: Thecontrolsequence`\['isalreadyrobust on input line 129.
 LaTeX Info: Thecontrolsequence`\]'isalreadyrobust on input line 129.
-\g_MT_multlinerow_int=\count103
+\g_MT_multlinerow_int=\count102
 \l_MT_multwidth_dim=\dimen116
 \origjot=\skip49
 \l_MT_shortvdotswithinadjustabove_dim=\dimen117
@@ -160,8 +152,8 @@ LaTeX Info: Thecontrolsequence`\]'isalreadyrobust on input line 129.
 \l_MT_below_shortintertext_sep=\dimen122
 )
 (/usr/share/texmf-dist/tex/latex/etoolbox/etoolbox.sty
-Package: etoolbox 2015/08/02 v2.2a e-TeX tools for LaTeX (JAW)
-\etb@tempcnta=\count104
+Package: etoolbox 2017/01/02 v2.4 e-TeX tools for LaTeX (JAW)
+\etb@tempcnta=\count103
 )
 (/usr/share/texmf-dist/tex/latex/booktabs/booktabs.sty
 Package: booktabs 2016/04/27 v1.618033 publication quality tables
@@ -175,17 +167,17 @@ Package: booktabs 2016/04/27 v1.618033 publication quality tables
 \cmidrulesep=\dimen130
 \cmidrulekern=\dimen131
 \defaultaddspace=\dimen132
-\@cmidla=\count105
-\@cmidlb=\count106
+\@cmidla=\count104
+\@cmidlb=\count105
 \@aboverulesep=\dimen133
 \@belowrulesep=\dimen134
-\@thisruleclass=\count107
-\@lastruleclass=\count108
+\@thisruleclass=\count106
+\@lastruleclass=\count107
 \@thisrulewidth=\dimen135
 )
 (/usr/share/texmf-dist/tex/latex/float/float.sty
 Package: float 2001/11/08 v1.3d Float enhancements (AL)
-\c@float@type=\count109
+\c@float@type=\count108
 \float@exts=\toks20
 \float@box=\box28
 \@float@everytoks=\toks21
@@ -195,7 +187,7 @@ Package: float 2001/11/08 v1.3d Float enhancements (AL)
 Package: geometry 2010/09/12 v5.6 Page Geometry
 
 (/usr/share/texmf-dist/tex/generic/oberdiek/ifpdf.sty
-Package: ifpdf 2016/05/14 v3.1 Provides the ifpdf switch
+Package: ifpdf 2017/03/15 v3.2 Provides the ifpdf switch
 )
 (/usr/share/texmf-dist/tex/generic/oberdiek/ifvtex.sty
 Package: ifvtex 2016/05/16 v1.6 Detect VTeX and its facilities (HO)
@@ -204,9 +196,9 @@ Package ifvtex Info: VTeX not detected.
 (/usr/share/texmf-dist/tex/generic/ifxetex/ifxetex.sty
 Package: ifxetex 2010/09/12 v0.6 Provides ifxetex conditional
 )
-\Gm@cnth=\count110
-\Gm@cntv=\count111
-\c@Gm@tempcnt=\count112
+\Gm@cnth=\count109
+\Gm@cntv=\count110
+\c@Gm@tempcnt=\count111
 \Gm@bindingoffset=\dimen136
 \Gm@wd@mp=\dimen137
 \Gm@odd@mp=\dimen138
@@ -218,15 +210,15 @@ Package: ifxetex 2010/09/12 v0.6 Provides ifxetex conditional
 \Gm@dimlist=\toks22
 )
 (/usr/share/texmf-dist/tex/latex/tools/multicol.sty
-Package: multicol 2016/04/07 v1.8p multicolumn formatting (FMi)
-\c@tracingmulticols=\count113
+Package: multicol 2017/04/11 v1.8q multicolumn formatting (FMi)
+\c@tracingmulticols=\count112
 \mult@box=\box30
 \multicol@leftmargin=\dimen144
-\c@unbalance=\count114
-\c@collectmore=\count115
-\doublecol@number=\count116
-\multicoltolerance=\count117
-\multicolpretolerance=\count118
+\c@unbalance=\count113
+\c@collectmore=\count114
+\doublecol@number=\count115
+\multicoltolerance=\count116
+\multicolpretolerance=\count117
 \full@width=\dimen145
 \page@free=\dimen146
 \premulticols=\dimen147
@@ -257,14 +249,14 @@ Package: multicol 2016/04/07 v1.8p multicolumn formatting (FMi)
 \@tempa=\box51
 \@tempa=\box52
 \@tempa=\box53
-\c@columnbadness=\count119
-\c@finalcolumnbadness=\count120
+\c@columnbadness=\count118
+\c@finalcolumnbadness=\count119
 \last@try=\dimen150
 \multicolovershoot=\dimen151
 \multicolundershoot=\dimen152
 \mult@nat@firstbox=\box54
 \colbreak@box=\box55
-\mc@col@check@num=\count121
+\mc@col@check@num=\count120
 )
 (/usr/share/texmf-dist/tex/latex/caption/caption.sty
 Package: caption 2016/02/21 v3.3-144 Customizing captions (AR)
@@ -280,7 +272,7 @@ Package caption3 Info: TeX engine: e-TeX on input line 67.
 \caption@parindent=\dimen158
 \caption@hangindent=\dimen159
 )
-\c@ContinuedFloat=\count122
+\c@ContinuedFloat=\count121
 Package caption Info: float package is loaded.
 )
 (/usr/share/texmf-dist/tex/latex/oberdiek/epstopdf.sty
@@ -289,12 +281,18 @@ Package: epstopdf 2016/05/15 v2.6 Conversion with epstopdf on the fly (HO)
 (/usr/share/texmf-dist/tex/latex/oberdiek/epstopdf-base.sty
 Package: epstopdf-base 2016/05/15 v2.6 Base part for package epstopdf
 
+(/usr/share/texmf-dist/tex/generic/oberdiek/infwarerr.sty
+Package: infwarerr 2016/05/16 v1.4 Providing info/warning/error messages (HO)
+)
 (/usr/share/texmf-dist/tex/latex/oberdiek/grfext.sty
 Package: grfext 2016/05/16 v1.2 Manage graphics extensions (HO)
 
 (/usr/share/texmf-dist/tex/generic/oberdiek/kvdefinekeys.sty
 Package: kvdefinekeys 2016/05/16 v1.4 Define keys (HO)
-))
+
+(/usr/share/texmf-dist/tex/generic/oberdiek/ltxcmds.sty
+Package: ltxcmds 2016/05/16 v1.23 LaTeX kernel commands for general use (HO)
+)))
 (/usr/share/texmf-dist/tex/latex/oberdiek/kvoptions.sty
 Package: kvoptions 2016/05/16 v3.12 Key value format for package options (HO)
 
@@ -314,7 +312,7 @@ Package etexcmds Info: Could not find \expanded.
 (etexcmds)             In the latter case, load this package earlier.
 )))
 (/usr/share/texmf-dist/tex/generic/oberdiek/pdftexcmds.sty
-Package: pdftexcmds 2016/05/21 v0.22 Utility functions of pdfTeX for LuaTeX (HO
+Package: pdftexcmds 2017/03/19 v0.25 Utility functions of pdfTeX for LuaTeX (HO
 )
 Package pdftexcmds Info: LuaTeX not detected.
 Package pdftexcmds Info: \pdf@primitive is available.
@@ -324,7 +322,7 @@ Package pdftexcmds Info: \pdfdraftmode found.
 Package epstopdf-base Info: Redefining graphics rule for `.eps' on input line 4
 38.
 Package grfext Info: Graphics extension search list:
-(grfext)             [.png,.pdf,.jpg,.mps,.jpeg,.jbig2,.jb2,.PNG,.PDF,.JPG,.JPE
+(grfext)             [.pdf,.png,.jpg,.mps,.jpeg,.jbig2,.jb2,.PDF,.PNG,.JPG,.JPE
 G,.JBIG2,.JB2,.eps]
 (grfext)             \AppendGraphicsExtensions on input line 456.
 
@@ -348,16 +346,16 @@ LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 43.
 LaTeX Font Info:    ... okay on input line 43.
  (/usr/share/texmf-dist/tex/context/base/mkii/supp-pdf.mkii
 [Loading MPS to PDF converter (version 2006.09.02).]
-\scratchcounter=\count123
+\scratchcounter=\count122
 \scratchdimen=\dimen160
 \scratchbox=\box56
-\nofMPsegments=\count124
-\nofMParguments=\count125
+\nofMPsegments=\count123
+\nofMParguments=\count124
 \everyMPshowfont=\toks23
-\MPscratchCnt=\count126
+\MPscratchCnt=\count125
 \MPscratchDim=\dimen161
-\MPnumerator=\count127
-\makeMPintoPDFobject=\count128
+\MPnumerator=\count126
+\makeMPintoPDFobject=\count127
 \everyMPtoPDFconversion=\toks24
 )
 LaTeX Info: Redefining \celsius on input line 43.
@@ -421,77 +419,83 @@ LaTeX Font Info:    Try loading font information for U+msb on input line 115.
 (/usr/share/texmf-dist/tex/latex/amsfonts/umsb.fd
 File: umsb.fd 2013/01/14 v3.01 AMS symbols B
 ) [1]
-<../figures/frond.pdf, id=19, 161.71516pt x 212.05524pt>
+<../figures/frond.pdf, id=19, pagebox=cropbox, 161.71516pt x 212.05524pt>
 File: ../figures/frond.pdf Graphic file (type pdf)
-
 <use ../figures/frond.pdf>
-Package pdftex.def Info: ../figures/frond.pdf used on input line 144.
-(pdftex.def)             Requested size: 216.81pt x 284.32077pt.
+Package pdftex.def Info: ../figures/frond.pdf  used on input line 144. on input
+ line 144.
+Package pdftex.def Info: Requested size: 216.81pt x 284.32077pt on input line 1
+44.
  [2 <../figures/frond.pdf>]
-<../figures/normal.pdf, id=36, 578.16pt x 433.62pt>
+<../figures/normal.pdf, id=36, pagebox=cropbox, 578.16pt x 433.62pt>
 File: ../figures/normal.pdf Graphic file (type pdf)
-
 <use ../figures/normal.pdf>
-Package pdftex.def Info: ../figures/normal.pdf used on input line 245.
-(pdftex.def)             Requested size: 266.0125pt x 199.50731pt.
-
-<../figures/vonmises_2.pdf, id=37, 578.16pt x 397.485pt>
+Package pdftex.def Info: ../figures/normal.pdf  used on input line 245. on inpu
+t line 245.
+Package pdftex.def Info: Requested size: 266.0125pt x 199.50731pt on input line
+ 245.
+<../figures/vonmises_2.pdf, id=37, pagebox=cropbox, 578.16pt x 397.485pt>
 File: ../figures/vonmises_2.pdf Graphic file (type pdf)
-
 <use ../figures/vonmises_2.pdf>
-Package pdftex.def Info: ../figures/vonmises_2.pdf used on input line 272.
-(pdftex.def)             Requested size: 266.0125pt x 182.8817pt.
-
-<../figures/prob_2d.pdf, id=38, 289.08pt x 216.81pt>
+Package pdftex.def Info: ../figures/vonmises_2.pdf  used on input line 272. on 
+input line 272.
+Package pdftex.def Info: Requested size: 266.0125pt x 182.8817pt on input line 
+272.
+<../figures/prob_2d.pdf, id=38, pagebox=cropbox, 289.08pt x 216.81pt>
 File: ../figures/prob_2d.pdf Graphic file (type pdf)
-
 <use ../figures/prob_2d.pdf>
-Package pdftex.def Info: ../figures/prob_2d.pdf used on input line 305.
-(pdftex.def)             Requested size: 266.0125pt x 199.52054pt.
+Package pdftex.def Info: ../figures/prob_2d.pdf  used on input line 305. on inp
+ut line 305.
+Package pdftex.def Info: Requested size: 266.0125pt x 199.52054pt on input line
+ 305.
  [3 <../figures/normal.pdf> <../figures/vonmises_2.pdf
 
 pdfTeX warning: pdflatex (file ../figures/vonmises_2.pdf): PDF inclusion: multi
 ple pdfs with page group included in a single page
->] <../figures/kelp_sample.pdf, id=155, 289.08pt x 289.08pt>
+>]
+<../figures/kelp_sample.pdf, id=155, pagebox=cropbox, 289.08pt x 289.08pt>
 File: ../figures/kelp_sample.pdf Graphic file (type pdf)
-
 <use ../figures/kelp_sample.pdf>
-Package pdftex.def Info: ../figures/kelp_sample.pdf used on input line 313.
-(pdftex.def)             Requested size: 266.0125pt x 266.02739pt.
+Package pdftex.def Info: ../figures/kelp_sample.pdf  used on input line 313. on
+ input line 313.
+Package pdftex.def Info: Requested size: 266.0125pt x 266.02739pt on input line
+ 313.
  [4 <../figures/prob_2d.pdf> <../figures/kelp_sample.pdf
 
 pdfTeX warning: pdflatex (file ../figures/kelp_sample.pdf): PDF inclusion: mult
 iple pdfs with page group included in a single page
->] <../figures/shade_area.pdf, id=208, 289.08pt x 289.08pt>
+>]
+<../figures/shade_area.pdf, id=208, pagebox=cropbox, 289.08pt x 289.08pt>
 File: ../figures/shade_area.pdf Graphic file (type pdf)
-
 <use ../figures/shade_area.pdf>
-Package pdftex.def Info: ../figures/shade_area.pdf used on input line 414.
-(pdftex.def)             Requested size: 266.0125pt x 266.02739pt.
-
-<../figures/cart_shade.pdf, id=209, 289.08pt x 216.81pt>
+Package pdftex.def Info: ../figures/shade_area.pdf  used on input line 414. on 
+input line 414.
+Package pdftex.def Info: Requested size: 266.0125pt x 266.02739pt on input line
+ 414.
+<../figures/cart_shade.pdf, id=209, pagebox=cropbox, 289.08pt x 216.81pt>
 File: ../figures/cart_shade.pdf Graphic file (type pdf)
-
 <use ../figures/cart_shade.pdf>
-Package pdftex.def Info: ../figures/cart_shade.pdf used on input line 426.
-(pdftex.def)             Requested size: 266.0125pt x 199.52054pt.
-
-<../figures/prob_shade.pdf, id=210, 325.215pt x 289.08pt>
+Package pdftex.def Info: ../figures/cart_shade.pdf  used on input line 426. on 
+input line 426.
+Package pdftex.def Info: Requested size: 266.0125pt x 199.52054pt on input line
+ 426.
+<../figures/prob_shade.pdf, id=210, pagebox=cropbox, 325.215pt x 289.08pt>
 File: ../figures/prob_shade.pdf Graphic file (type pdf)
-
 <use ../figures/prob_shade.pdf>
-Package pdftex.def Info: ../figures/prob_shade.pdf used on input line 464.
-(pdftex.def)             Requested size: 266.0125pt x 236.4737pt.
+Package pdftex.def Info: ../figures/prob_shade.pdf  used on input line 464. on 
+input line 464.
+Package pdftex.def Info: Requested size: 266.0125pt x 236.4737pt on input line 
+464.
  [5 <../figures/shade_area.pdf> <../figures/cart_shade.pdf
 
 pdfTeX warning: pdflatex (file ../figures/cart_shade.pdf): PDF inclusion: multi
 ple pdfs with page group included in a single page
 >] [6 <../figures/prob_shade.pdf>] (./summary.aux) ) 
 Here is how much of TeX's memory you used:
- 5100 strings out of 493013
- 74948 string characters out of 6139317
- 167512 words of memory out of 5000000
- 8564 multiletter control sequences out of 15000+600000
+ 5058 strings out of 492990
+ 74752 string characters out of 6138688
+ 164586 words of memory out of 5000000
+ 8537 multiletter control sequences out of 15000+600000
  8684 words of font info for 33 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
  42i,15n,39p,793b,363s stack positions out of 5000i,500n,10000p,200000b,80000s
@@ -510,7 +514,7 @@ lic/amsfonts/cm/cmsy5.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/cm
 /cmsy7.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmti10.pfb></u
 sr/share/texmf-dist/fonts/type1/public/amsfonts/symbols/msam10.pfb></usr/share/
 texmf-dist/fonts/type1/public/amsfonts/symbols/msbm10.pfb>
-Output written on summary.pdf (7 pages, 803165 bytes).
+Output written on summary.pdf (7 pages, 803293 bytes).
 PDF statistics:
  375 PDF objects out of 1000 (max. 8388607)
  189 compressed objects within 2 object streams
