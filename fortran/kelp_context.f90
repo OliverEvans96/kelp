@@ -166,9 +166,12 @@ contains
     diff = depth%angle_diff(theta_f, theta_w)
 
     call von_mises_pdf(diff, 0.d0, v_w, output)
+<<<<<<< Updated upstream
     !call von_mises_pdf(theta_f, theta_w, v_w, output)
     !call von_mises_pdf(theta_f, 0.d0, v_w, output)
     !write(*,*) 'out =', output
+=======
+>>>>>>> Stashed changes
   end function angle_distribution_pdf
 
   function angle_mod(depth, theta) result(mod_theta)

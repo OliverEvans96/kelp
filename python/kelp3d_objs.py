@@ -88,3 +88,14 @@ class Kelp(tr.HasTraits):
 
     def __init__(self):
         pass
+
+class OpticalProperties(tr.HasTraits):
+    a_kelp = tr.Float()
+    b_kelp = tr.Float()
+    a_water = tr.Float()
+    b_water = tr.Float()
+
+class BoundaryCondition(tr.HasTraits):
+
+    def __init__(self):
+        pass
