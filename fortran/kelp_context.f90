@@ -28,11 +28,14 @@ contains
 end type rope_state
 
 type depth_state
-   double precision frond_length, frond_std, water_speed, water_angle
+   double precision frond_length, frond_std, water_speeds, water_angles, depth
+   integer depth_layer
 contains
    procedure :: set_depth
    procedure :: length_distribution_cdf
    procedure :: angle_distribution_pdf
+   procedure :: angle_mod
+   procedure :: angle_diff
 end type depth_state
 
 type optical_properties
@@ -72,7 +75,7 @@ contains
   subroutine cartesian_to_polar(point)
     class(point3d) :: point
     point%r = sqrt(point%x**2 + point%y**2)
-    point%theta = atan2(point%x, point%y)
+    point%theta = atan2(point%y, point%x)
   end subroutine cartesian_to_polar
 
   subroutine frond_set_shape(frond, fs, fr)
@@ -85,8 +88,8 @@ contains
 
   subroutine frond_calculate_angles(frond)
     class(frond_shape) frond
-    frond%tan_alpha = 2*frond%fs*frond%fr / (1 + frond%fs)
-    frond%alpha = tan(frond%tan_alpha)
+    frond%tan_alpha = 2.d0*frond%fs*frond%fr / (1.d0 + frond%fs)
+    frond%alpha = atan(frond%tan_alpha)
   end subroutine
 
   subroutine load_vsf(iops, filename, fmtstr)
@@ -120,15 +123,18 @@ contains
     deallocate(rope%water_angles)
   end subroutine rope_deinit
 
-  subroutine set_depth(depth, rope, depth_layer)
+  subroutine set_depth(depth, rope, grid, depth_layer)
     class(depth_state) depth
     type(rope_state) rope
+    type(space_angle_grid) grid
     integer depth_layer
 
     depth%frond_length = rope%frond_lengths(depth_layer)
     depth%frond_std = rope%frond_stds(depth_layer)
-    depth%water_speed = rope%water_speeds(depth_layer)
-    depth%water_angle = rope%water_angles(depth_layer)
+    depth%water_speeds = rope%water_speeds(depth_layer)
+    depth%water_angles = rope%water_angles(depth_layer)
+    depth%depth_layer = depth_layer
+    depth%depth = grid%z%vals(depth_layer)
   end subroutine set_depth
 
   function length_distribution_cdf(depth, L) result(output)
@@ -148,12 +154,47 @@ contains
     class(depth_state) depth
     double precision theta_f, v_w, theta_w
     double precision output
+    double precision diff
 
-    v_w = depth%water_speed
-    theta_w = depth%water_angle
+    v_w = depth%water_speeds
+    theta_w = depth%water_angles
 
-    call von_mises_pdf(theta_f, theta_w, v_w, output)
+    ! von_mises_pdf is only defined on [-pi, pi]
+    ! So take difference of angles and input into
+    ! von_mises dist. centered & x=0.
+
+    diff = depth%angle_diff(theta_f, theta_w)
+
+    call von_mises_pdf(diff, 0.d0, v_w, output)
+    !call von_mises_pdf(theta_f, theta_w, v_w, output)
+    !call von_mises_pdf(theta_f, 0.d0, v_w, output)
+    !write(*,*) 'out =', output
   end function angle_distribution_pdf
+
+  function angle_mod(depth, theta) result(mod_theta)
+    ! Shift theta to the interval [-pi, pi]
+    ! which is where von_mises_pdf is defined.
+
+    class(depth_state) depth
+    double precision theta, mod_theta
+
+    mod_theta = mod(theta + pi, 2.d0*pi) - pi
+  end function angle_mod
+
+  function angle_diff(depth, theta1, theta2) result(diff)
+    ! Shortest difference between two angles
+    class(depth_state) depth
+    double precision theta1, theta2, diff
+    double precision modt1, modt2
+
+    ! Shift to [0, 2*pi]
+    modt1 = mod(theta1, 2*pi)
+    modt2 = mod(theta2, 2*pi)
+
+    ! https://gamedev.stackexchange.com/questions/4467/comparing-angles-and-working-out-the-difference
+
+    diff = pi - abs(abs(modt1-modt2) - pi)
+  end function angle_diff
 
   subroutine iop_deinit(iops)
     class(optical_properties) iops

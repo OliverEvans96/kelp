@@ -51,9 +51,8 @@ subroutine calculate_kelp_on_grid(grid, p_kelp, frond, rope, quadrature_degree)
   nz = grid%z%num
 
   do k=1, nz
-    !write(*,*) 'k=', k
     z = grid%z%vals(k)
-    call depth%set_depth(rope, k) 
+    call depth%set_depth(rope, grid, k) 
     do i=1, nx
       x = grid%x%vals(i)
       do j=1, ny
@@ -139,10 +138,12 @@ function min_shading_length(theta_f, point, frond) result(l_min)
   double precision, intent(in) :: theta_f
   double precision l_min
   double precision tpp
+  double precision frond_frac
 
-  ! tpp = theta_p_prime
+  ! tpp === theta_p_prime
   tpp = point%theta - theta_f + pi / 2.d0
-  l_min = point%r * (sin(tpp) + angular_sign(tpp) * frond%tan_alpha * cos(tpp))
+  frond_frac = 2.d0 * frond%fr / (1.d0 + frond%fs)
+  l_min = point%r * (sin(tpp) + angular_sign(tpp) * frond_frac * cos(tpp))
 end function min_shading_length
 
 ! function frond_edge(theta, theta_f, L, fs, fr)
@@ -167,7 +168,10 @@ function angular_sign(theta_prime)
   double precision, intent(in) :: theta_prime
   double precision angular_sign
 
-  angular_sign = sgn(theta_prime - pi/2.d0)
+  ! This seems to be incorrect in summary.pdf as of 9/9/18
+  ! In the report, it's written as sgn(theta_print - pi/2.d0)
+  ! This results in L_min < 0 - not good!
+  angular_sign = sgn(pi/2.d0 - theta_prime)
 end function angular_sign
 
 function sgn(x)

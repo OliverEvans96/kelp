@@ -122,6 +122,13 @@ program test_kelp3d
   integer quadrature_degree
   double precision, dimension(:,:,:), allocatable :: p_kelp
 
+  type(depth_state) depth
+  type(angle_dim) theta
+  double precision thetamin, thetamax
+  integer ntheta
+  double precision pth
+  integer i
+
   call init_grid(grid)
   call init_rope(rope, grid)
   call init_kelp(p_kelp, grid)
@@ -131,6 +138,25 @@ program test_kelp3d
   call calculate_memory_usage(grid)
   call calculate_kelp_on_grid(grid, p_kelp, frond, rope, quadrature_degree)
 
+  thetamin = -3 * pi
+  thetamax = 3 * pi
+  ntheta = 61
+
+  call theta%set_bounds(thetamin, thetamax)
+  call theta%set_num(ntheta)
+  call theta%assign_legendre()
+
+  call depth%set_depth(rope, grid, 1)
+
+  do i=1, theta%num
+     pth = depth%angle_distribution_pdf(theta%vals(i))
+     write(*,*) 'Theta = ', theta%vals(i)
+     write(*,*) 'P_th = ', pth
+     write(*,*)
+  end do
+
+
+  call theta%deinit()
   call deinit(grid, rope, p_kelp)
 
 end program test_kelp3d

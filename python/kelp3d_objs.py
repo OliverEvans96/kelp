@@ -23,16 +23,22 @@ class Grid(tr.HasTraits):
     nz = tr.Int()
 
     def __init__(self):
-        self.xmin, self.xmax, self.dx = -1, 1, 5e-2
-        self.ymin, self.ymax, self.dy = -1, 1, 5e-2
+        self.xmin, self.xmax, self.dx = -1, 1, 2.5e-2
+        self.ymin, self.ymax, self.dy = -1, 1, 2.5e-2
         self.zmin, self.zmax, self.dz = 0, 10, 1
         self.ntheta = 20
         self.nphi = 10
 
+        self.num_from_spacing()
+        self.assign_linspace()
+
+
+    def num_from_spacing(self):
         self.nx = num_from_spacing(self.xmin, self.xmax, self.dx)
         self.ny = num_from_spacing(self.ymin, self.ymax, self.dy)
         self.nz = num_from_spacing(self.zmin, self.zmax, self.dz)
 
+    def assign_linspace(self):
         self.x = np.arange(self.xmin, self.xmax, self.dx)
         self.y = np.arange(self.ymin, self.ymax, self.dy)
         self.z = np.arange(self.zmin, self.zmax, self.dz)

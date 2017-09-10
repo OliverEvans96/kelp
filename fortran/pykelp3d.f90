@@ -17,7 +17,6 @@ program pykelp3d
 
   call hdf_read_grid(gridfile, grid)
   call hdf_read_rope(ropefile, rope, grid)
-  !call hdf_read_kelp(kelpfile, p_kelp)
   call hdf_read_frond(frondfile, frond)
   call hdf_read_params(paramfile, quadrature_degree)
 
