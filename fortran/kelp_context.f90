@@ -35,16 +35,18 @@ contains
    procedure :: length_distribution_cdf
    procedure :: angle_distribution_pdf
    procedure :: angle_mod
-   procedure :: angle_diff
+   procedure :: angle_diff_2d
 end type depth_state
 
 type optical_properties
    integer num_vsf
    double precision, dimension(:), allocatable :: vsf_angles, vsf_vals
    double precision abs_water, abs_kelp, scat_water, scat_kelp
+   double precision vsf ! On theta grid
  contains
    procedure :: load_vsf
-   procedure :: vsf => eval_vsf
+   procedure :: eval_vsf
+   procedure :: calc_vsf_on_grid
    procedure :: deinit => iop_deinit
 end type optical_properties
 
@@ -176,7 +178,7 @@ contains
     ! So take difference of angles and input into
     ! von_mises dist. centered & x=0.
 
-    diff = depth%angle_diff(theta_f, theta_w)
+    diff = depth%angle_diff_2d(theta_f, theta_w)
 
     call von_mises_pdf(diff, 0.d0, v_w, output)
   end function angle_distribution_pdf
@@ -191,8 +193,9 @@ contains
     mod_theta = mod(theta + pi, 2.d0*pi) - pi
   end function angle_mod
 
-  function angle_diff(depth, theta1, theta2) result(diff)
-    ! Shortest difference between two angles
+  function angle_diff_2d(depth, theta1, theta2) result(diff)
+    ! Shortest difference between two angles which may be
+    ! in different periods.
     class(depth_state) depth
     double precision theta1, theta2, diff
     double precision modt1, modt2
@@ -204,7 +207,47 @@ contains
     ! https://gamedev.stackexchange.com/questions/4467/comparing-angles-and-working-out-the-difference
 
     diff = pi - abs(abs(modt1-modt2) - pi)
-  end function angle_diff
+  end function angle_diff_2d
+
+  function angle_diff_3d(theta, phi, theta_prime, phi_prime) result(diff)
+    ! Angle between two vectors in spherical coordinates
+    double precision theta, phi, theta_prime, phi_prime
+    double precision alpha, diff
+
+    ! Faster, but produces lots of NaNs (at least in Python)
+    !alpha = sin(theta)*sin(theta_prime)*cos(theta-theta_prime) + cos(phi)*cos(phi_prime)
+
+    ! Slower, but more accurate
+    alpha = (
+      sin(phi)*cos(theta)*sin(phi_prime)*cos(theta_prime)
+      + sin(phi)*sin(theta)*sin(phi_prime)*sin(theta_prime)
+      + cos(phi)*cos(phi_prime)
+    )
+
+    diff = acos(alpha)
+  end function angle_diff_3d
+
+  subroutine calc_vsf_on_grid(iops, grid)
+    class(optical_properties) iops
+    type(space_angle_grid) grid
+
+    integer ntheta, nphi
+
+    ntheta = grid%theta%num
+    nphi = grid%phi%num
+
+    allocate(vsf(ntheta, nphi, ntheta, nphi))
+
+    do l=1, ntheta
+       do m=1, nphi
+          do lp=1, ntheta
+             do mp=1, nphi
+                vsf(l,m,lp,mp) = angle_diff_3d(grid%theta(l),grid%phi(m),grid%theta(lp),grid%phi(mp))
+             end do
+          end do
+       end do
+    end do
+  end subroutine calc_vsf_on_grid
 
   subroutine iop_deinit(iops)
     class(optical_properties) iops

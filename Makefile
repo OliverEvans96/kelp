@@ -107,6 +107,12 @@ kelp_context.o: sag.o prob.o
 kelp3d.o: kelp_context.o
 	$(FC) $(OFLAGS) $(SRC)/kelp3d.f90 -o $(INC)/kelp3d.o
 
+rte_sparse_matrices.o: sag.o kelp_context.o
+	$(FC) $(OFLAGS) $(SRC)/rte_sparse_matrices.f90 -o $(INC)/rte_sparse_matrices.o
+
+rte3d.o: kelp_context.o rte_sparse_matrices.o
+	$(FC) $(OFLAGS) $(SRC)/rte3d.f90 -o $(INC)/rte3d.o
+
 # Old
 
 rte_core.o: utils.o

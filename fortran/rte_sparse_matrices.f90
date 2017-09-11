@@ -1,5 +1,6 @@
 module rte_sparse_matrices
 use sag
+use kelp_context
 
 type rte_mat
    type(space_angle_grid) grid
@@ -13,7 +14,7 @@ type rte_mat
    double precision, dimension(:), allocatable :: rhs
  contains
    procedure init, deinit
-   procedure assign => mat_assign
+   procedure :: assign => mat_assign
    procedure nonzero
    procedure ind
 
@@ -34,7 +35,7 @@ end type rte_mat
 contains
 
   subroutine init(mat, grid)
-    class(rte_matrix) mat
+    class(rte_mat) mat
     type(space_angle_grid) grid
     integer nnz
 
@@ -45,7 +46,7 @@ contains
   end subroutine init
 
   subroutine deinit(mat)
-    class(rte_matrix) mat
+    class(rte_mat) mat
     deallocate(mat%row)
     deallocate(mat%col)
     deallocate(mat%data)
@@ -60,7 +61,7 @@ contains
     class(rte_mat) mat
     type(space_angle_grid) grid
     integer i, j, k, l, m, ind
-    integer z_block_size, y_block_size, x_block_size,
+    integer z_block_size, y_block_size, x_block_size
     integer phi_block_size, theta_block_size
 
     integer nx, ny, nz, ntheta, nphi
@@ -93,14 +94,14 @@ contains
     mat%data(mat%ent) = data
 
     mat%ent = mat%ent + 1
-  end subroutine assign
+  end subroutine mat_assign
 
-  subroutine attenuate(mat, iops)
+  subroutine attenuate(mat, grid, iops)
     class(rte_mat) mat
     type(space_angle_grid) grid
     double precision attenuation
     attenuation = aa(mat%i, mat%j, mat%k) + bb(mat%i, mat%j, mat%k)
-    mat%assign(attenuation, i, j, k, l, m)
+    call mat%assign(attenuation, i, j, k, l, m)
   end subroutine attenuate
 
   subroutine x_cd2(mat, grid)
@@ -115,8 +116,8 @@ contains
 
     val = sin(phi) * cos(theta) / (2.d0 * dx)
 
-    mat%assign(-val,i-1,j,k,l,m)
-    mat%assign(val,i+1,j,k,l,m)
+    call mat%assign(-val,i-1,j,k,l,m)
+    call mat%assign(val,i+1,j,k,l,m)
   end subroutine x_cd2
   
   subroutine x_cd2_first(mat, grid)
@@ -133,9 +134,9 @@ contains
 
     val = sin(phi) * cos(theta) / (2.d0 * dx)
 
-    mat%assign(-val,nx,j,k,l,m)
-    mat%assign(val,i+1,j,k,l,m)
-  end subroutine x_cd2
+    call mat%assign(-val,nx,j,k,l,m)
+    call mat%assign(val,i+1,j,k,l,m)
+  end subroutine x_cd2_first
   
   subroutine x_cd2_last(mat, grid)
     class(rte_mat) mat
@@ -150,9 +151,9 @@ contains
 
     val = sin(phi) * cos(theta) / (2.d0 * dx)
 
-    mat%assign(-val,i-1,j,k,l,m)
-    mat%assign(val,1,j,k,l,m)
-  end subroutine x_cd2_first
+    call mat%assign(-val,i-1,j,k,l,m)
+    call mat%assign(val,1,j,k,l,m)
+  end subroutine x_cd2_last
   
   subroutine y_cd2(mat, grid)
     class(rte_mat) mat
@@ -166,8 +167,8 @@ contains
 
     val = sin(phi) * sin(theta) / (2.d0 * dy)
 
-    mat%assign(-val,i,j-1,k,l,m)
-    mat%assign(val,i,j+1,k,l,m)
+    call mat%assign(-val,i,j-1,k,l,m)
+    call mat%assign(val,i,j+1,k,l,m)
   end subroutine y_cd2
   
   subroutine y_cd2_first(mat, grid)
@@ -184,8 +185,8 @@ contains
 
     val = sin(phi) * sin(theta) / (2.d0 * dy)
 
-    mat%assign(-val,i,ny,k,l,m)
-    mat%assign(val,i,j+1,k,l,m)
+    call mat%assign(-val,i,ny,k,l,m)
+    call mat%assign(val,i,j+1,k,l,m)
   end subroutine y_cd2_first
 
   subroutine y_cd2_last(mat, grid)
@@ -201,8 +202,8 @@ contains
 
     val = sin(phi) * sin(theta) / (2.d0 * dy)
 
-    mat%assign(-val,i,j-1,k,l,m)
-    mat%assign(val,i,1,k,l,m)
+    call mat%assign(-val,i,j-1,k,l,m)
+    call mat%assign(val,i,1,k,l,m)
   end subroutine y_cd2_last
 
   subroutine z_cd2(mat, grid)
@@ -217,8 +218,8 @@ contains
 
     val = cos(phi) / (2.d0 * dz)
 
-    mat%assign(-val,i,j,k-1,l,m)
-    mat%assign(val,i,j,k+1,l,m)
+    call mat%assign(-val,i,j,k-1,l,m)
+    call mat%assign(val,i,j,k+1,l,m)
   end subroutine z_cd2
   
   subroutine z_fd2(mat, grid)
@@ -237,9 +238,9 @@ contains
     val2 = 2.d0 * val
     val3 = -val
 
-    mat%assign(val1,i,j,k,l,m)
-    mat%assign(val2,i,j,k+1,l,m)
-    mat%assign(val3,i,j,k+2,l,m)
+    call mat%assign(val1,i,j,k,l,m)
+    call mat%assign(val2,i,j,k+1,l,m)
+    call mat%assign(val3,i,j,k+2,l,m)
   end subroutine z_fd2
 
   subroutine z_bd2(mat, grid)
@@ -258,9 +259,9 @@ contains
     val2 = -2.d0 * val
     val3 = val
 
-    mat%assign(val1,i,j,k,l,m)
-    mat%assign(val2,i,j,k-1,l,m)
-    mat%assign(val3,i,j,k-2,l,m)
+    call mat%assign(val1,i,j,k,l,m)
+    call mat%assign(val2,i,j,k-1,l,m)
+    call mat%assign(val3,i,j,k-2,l,m)
   end subroutine z_bd2
 
   subroutine angular_integral(mat, grid, iops)
@@ -281,4 +282,4 @@ contains
 
   end subroutine angular_integral
 
-end module
+end module rte_sparse_matrices
