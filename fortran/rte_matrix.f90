@@ -12,6 +12,7 @@ type rte_mat
    ! b stored in rhs in full form
    double precision, dimension(:), allocatable :: rhs
  contains
+   procedure init, deinit
    procedure assign => mat_assign
    procedure nonzero
    procedure ind
@@ -32,11 +33,50 @@ end type rte_mat
 
 contains
 
-  function nonzero()
+  subroutine init(mat, grid)
+    class(rte_matrix) mat
+    type(space_angle_grid) grid
+    integer nnz
 
-  function ind(mat, i, j, k, l, m)
+    nnz = mat%nonzero()
+    allocate(mat%row(nnz))
+    allocate(mat%col(nnz))
+    allocate(mat%data(nnz))
+  end subroutine init
+
+  subroutine deinit(mat)
+    class(rte_matrix) mat
+    deallocate(mat%row)
+    deallocate(mat%col)
+    deallocate(mat%data)
+  end subroutine deinit
+
+  function nonzero(mat)
+    !!! *** !!!
+  end function nonzero
+
+  function ind(mat, grid, i, j, k, l, m)
     ! Assuming var ordering: z, y, x, phi, theta
-    ind =
+    class(rte_mat) mat
+    type(space_angle_grid) grid
+    integer i, j, k, l, m, ind
+    integer z_block_size, y_block_size, x_block_size,
+    integer phi_block_size, theta_block_size
+
+    integer nx, ny, nz, ntheta, nphi
+    nx = grid%x%num
+    ny = grid%y%num
+    nz = grid%z%num
+    ntheta = grid%theta%num
+    nphi = grid%phi%num
+
+    theta_block_size = 1
+    phi_block_size = theta_block_size * ntheta
+    x_block_size = phi_block_size * nphi
+    y_block_size = x_block_size * nx
+    z_block_size = y_block_size * ny
+
+    ind = (i-1) * x_block_size + (j-1) * y_block_size + (k-1) * z_block_size + (l) * theta_block_size + (m-1) * phi_block_size
   end function ind
 
   subroutine mat_assign(mat, data, i, j, k, l, m)
@@ -75,8 +115,8 @@ contains
 
     val = sin(phi) * cos(theta) / (2.d0 * dx)
 
-    mat%assign(-val, i-1,j,k,l,m)
-    mat%assign(val, i+1,j,k,l,m)
+    mat%assign(-val,i-1,j,k,l,m)
+    mat%assign(val,i+1,j,k,l,m)
   end subroutine x_cd2
   
   subroutine x_cd2_first(mat, grid)
@@ -89,12 +129,12 @@ contains
     theta = grid%theta%vals(mat%k)
     phi = grid%theta%vals(mat%l)
     dx = grid%x%spacing
-    nx = grid%n%num
+    nx = grid%x%num
 
     val = sin(phi) * cos(theta) / (2.d0 * dx)
 
-    mat%assign(-val, nx,j,k,l,m)
-    mat%assign(val, i+1,j,k,l,m)
+    mat%assign(-val,nx,j,k,l,m)
+    mat%assign(val,i+1,j,k,l,m)
   end subroutine x_cd2
   
   subroutine x_cd2_last(mat, grid)
@@ -106,12 +146,12 @@ contains
     theta = grid%theta%vals(mat%k)
     phi = grid%theta%vals(mat%l)
     dx = grid%x%spacing
-    nx = grid%n%num
+    nx = grid%x%num
 
     val = sin(phi) * cos(theta) / (2.d0 * dx)
 
-    mat%assign(-val, i-1,j,k,l,m)
-    mat%assign(val, 1,j,k,l,m)
+    mat%assign(-val,i-1,j,k,l,m)
+    mat%assign(val,1,j,k,l,m)
   end subroutine x_cd2_first
   
   subroutine y_cd2(mat, grid)
@@ -126,8 +166,8 @@ contains
 
     val = sin(phi) * sin(theta) / (2.d0 * dy)
 
-    mat%assign(-val, i,j+1,k,l,m)
-    mat%assign(val, i,j+1,k,l,m)
+    mat%assign(-val,i,j-1,k,l,m)
+    mat%assign(val,i,j+1,k,l,m)
   end subroutine y_cd2
   
   subroutine y_cd2_first(mat, grid)
@@ -140,12 +180,12 @@ contains
     theta = grid%theta%vals(mat%k)
     phi = grid%theta%vals(mat%l)
     dy = grid%y%spacing
-    ny = grid%n%num
+    ny = grid%y%num
 
     val = sin(phi) * sin(theta) / (2.d0 * dy)
 
-    mat%assign(-val, ny,ny,k,l,m)
-    mat%assign(val, i,j+1,k,l,m)
+    mat%assign(-val,i,ny,k,l,m)
+    mat%assign(val,i,j+1,k,l,m)
   end subroutine y_cd2_first
 
   subroutine y_cd2_last(mat, grid)
@@ -161,8 +201,8 @@ contains
 
     val = sin(phi) * sin(theta) / (2.d0 * dy)
 
-    mat%assign(-val, i,j-1,k,l,m)
-    mat%assign(val, i ,1,k,l,m)
+    mat%assign(-val,i,j-1,k,l,m)
+    mat%assign(val,i,1,k,l,m)
   end subroutine y_cd2_last
 
   subroutine z_cd2(mat, grid)
@@ -175,10 +215,10 @@ contains
     phi = grid%theta%vals(mat%l)
     dz = grid%z%spacing
 
-    val = sin(phi) * cos(theta) / (2.d0 * dz)
+    val = cos(phi) / (2.d0 * dz)
 
-    mat%assign(-val, i,j,k-1,l,m)
-    mat%assign(val, i,j,k+1,l,m)
+    mat%assign(-val,i,j,k-1,l,m)
+    mat%assign(val,i,j,k+1,l,m)
   end subroutine z_cd2
   
   subroutine z_fd2(mat, grid)
@@ -186,12 +226,10 @@ contains
     type(space_angle_grid) grid
     double precision val, val1, val2, val3
     double precision theta, phi, dz
-    integer nz
 
     theta = grid%theta%vals(mat%k)
     phi = grid%theta%vals(mat%l)
     dz = grid%z%spacing
-    nz = grid%n%num
 
     val = cos(phi) / (2.d0 * dz)
 
@@ -209,12 +247,10 @@ contains
     type(space_angle_grid) grid
     double precision val, val1, val2, val3
     double precision theta, phi, dz
-    integer nz
 
     theta = grid%theta%vals(mat%k)
     phi = grid%theta%vals(mat%l)
     dz = grid%z%spacing
-    nz = grid%n%num
 
     val = cos(phi) / (2.d0 * dz)
 

@@ -3,20 +3,16 @@ use kelp_context
 implicit none
 contains
 
-  subroutine gen_matrix()
+  subroutine gen_matrix(grid, mat)
     type(space_angle_grid) grid
-    double precision, dimension(:), allocatable :: row, col, data
+    type(rte_matrix) mat
     integer nonzero
     double precision phi, sinphi, theta, sintheta, costheta 
     integer i, j, k, l, m
 
     nonzero = mat%nonzero()
 
-    allocate(row(nonzero))
-    allocate(col(nonzero))
-    allocate(data(nonzero))
-
-    ent = 1
+    mat%init(grid)
 
     do k=2 , grid%z%num - 1
        do i=1, grid%x%num
@@ -35,6 +31,11 @@ contains
           end do
        end do
     end do
+
+    mat%deinit()
+
 end subroutine gen_matrix
+
+subroutine matrix_deinit()
 
 end module rte3d
