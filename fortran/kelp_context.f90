@@ -40,10 +40,11 @@ end type depth_state
 
 type optical_properties
    integer num_vsf
-   double precision, dimension(:), allocatable :: vsf
+   double precision, dimension(:), allocatable :: vsf_angles, vsf_vals
    double precision abs_water, abs_kelp, scat_water, scat_kelp
  contains
    procedure :: load_vsf
+   procedure :: vsf => eval_vsf
    procedure :: deinit => iop_deinit
 end type optical_properties
 
@@ -98,11 +99,23 @@ contains
     double precision, dimension(:,:), allocatable :: tmp_2d_arr
 
     allocate(tmp_2d_arr(iops%num_vsf, 1))
-    allocate(iops%vsf(iops%num_vsf))
+    allocate(iops%vsf_angles(iops%num_vsf))
+    allocate(iops%vsf_vals(iops%num_vsf))
 
+    ! First column is the angle at which the measurement is taken
+    ! Second column is the value of the VSF at that angle
     tmp_2d_arr = read_array(filename, fmtstr, iops%num_vsf, 1, 0)
-    iops%vsf = tmp_2d_arr(:,1)
+    iops%vsf_angles = tmp_2d_arr(:,1)
+    iops%vsf_vals = tmp_2d_arr(:,2)
   end subroutine load_vsf
+
+  function eval_vsf(iops, theta)
+    class(optical_properties) iops
+    double precision theta
+    double precision eval_vsf
+
+    eval_vsf = interp(theta, iops%vsf_angles, iops%vsf_vals, iops%num_vsf)
+  end function eval_vsf
 
   subroutine rope_init(rope, grid)
     class(rope_state) :: rope
@@ -166,12 +179,6 @@ contains
     diff = depth%angle_diff(theta_f, theta_w)
 
     call von_mises_pdf(diff, 0.d0, v_w, output)
-<<<<<<< Updated upstream
-    !call von_mises_pdf(theta_f, theta_w, v_w, output)
-    !call von_mises_pdf(theta_f, 0.d0, v_w, output)
-    !write(*,*) 'out =', output
-=======
->>>>>>> Stashed changes
   end function angle_distribution_pdf
 
   function angle_mod(depth, theta) result(mod_theta)
@@ -201,7 +208,8 @@ contains
 
   subroutine iop_deinit(iops)
     class(optical_properties) iops
-    deallocate(iops%vsf)
+    deallocate(iops%vsf_angles)
+    deallocate(iops%vsf_vals)
   end subroutine iop_deinit
 
 end module kelp_context
