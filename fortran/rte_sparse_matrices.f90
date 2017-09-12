@@ -16,6 +16,7 @@ type rte_mat
  contains
    procedure init, deinit
    procedure :: assign => mat_assign
+   procedure :: solve => mat_solve
    procedure nonzero
    procedure ind
    procedure attenuate
@@ -446,5 +447,11 @@ contains
     type(index_list) indices
     call mat%z_cd2(indices)
   end subroutine wrap_z_cd2
+
+  subroutine mat_solve(mat)
+    class(rte_mat) mat
+
+  end subroutine mat_solve
+
 end module rte_sparse_matrices
 
