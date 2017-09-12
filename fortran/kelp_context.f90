@@ -42,8 +42,10 @@ type optical_properties
    integer num_vsf
    double precision, dimension(:), allocatable :: vsf_angles, vsf_vals
    double precision abs_water, abs_kelp, scat_water, scat_kelp
-   double precision abs_grid, scat_grid ! On x, y, z grid - including water & kelp.
-   double precision vsf ! On theta grid
+   ! On x, y, z grid - including water & kelp.
+   double precision, dimension(:,:,:), allocatable :: abs_grid, scat_grid 
+   ! On theta, phi, theta_prime, phi_prime grid
+   double precision, dimension(:,:,:,:), allocatable :: vsf 
  contains
    procedure :: init => iop_init
    procedure :: calculate_coef_grids
@@ -101,6 +103,7 @@ contains
   subroutine iop_init(iops, grid)
     class(optical_properties) iops
     type(space_angle_grid) grid
+    allocate(iops%vsf(grid%theta%num, grid%phi%num, grid%theta%num, grid%phi%num))
     allocate(iops%abs_grid(grid%x%num, grid%y%num, grid%z%num))
     allocate(iops%scat_grid(grid%x%num, grid%y%num, grid%z%num))
   end subroutine iop_init
@@ -237,10 +240,10 @@ contains
     !alpha = sin(theta)*sin(theta_prime)*cos(theta-theta_prime) + cos(phi)*cos(phi_prime)
 
     ! Slower, but more accurate
-    alpha = (
-      sin(phi)*cos(theta)*sin(phi_prime)*cos(theta_prime)
-      + sin(phi)*sin(theta)*sin(phi_prime)*sin(theta_prime)
-      + cos(phi)*cos(phi_prime)
+    alpha = ( &
+      sin(phi)*cos(theta)*sin(phi_prime)*cos(theta_prime) &
+      + sin(phi)*sin(theta)*sin(phi_prime)*sin(theta_prime) &
+      + cos(phi)*cos(phi_prime) &
     )
 
     diff = acos(alpha)
@@ -249,19 +252,22 @@ contains
   subroutine calc_vsf_on_grid(iops, grid)
     class(optical_properties) iops
     type(space_angle_grid) grid
+    double precision th, ph, thp, php
 
     integer ntheta, nphi
 
     ntheta = grid%theta%num
     nphi = grid%phi%num
 
-    allocate(vsf(ntheta, nphi, ntheta, nphi))
-
     do l=1, ntheta
+       th = grid%theta%vals(l)
        do m=1, nphi
+          ph = grid%phi%vals(m)
           do lp=1, ntheta
+             thp = grid%theta%vals(lp)
              do mp=1, nphi
-                iops%vsf(l,m,lp,mp) = iops%eval_vsf(angle_diff_3d(grid%theta(l),grid%phi(m),grid%theta(lp),grid%phi(mp)))
+                ph = grid%phi%vals(mp)
+                iops%vsf(l,m,lp,mp) = iops%eval_vsf(angle_diff_3d(th,ph,thp,php))
              end do
           end do
        end do

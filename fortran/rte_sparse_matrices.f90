@@ -34,11 +34,12 @@ end type rte_mat
 
 contains
 
-  subroutine init(mat, grid)
+  subroutine init(mat)
     class(rte_mat) mat
     type(space_angle_grid) grid
     integer nnz
 
+    mat%grid = grid
     nnz = mat%nonzero()
     allocate(mat%row(nnz))
     allocate(mat%col(nnz))
@@ -53,18 +54,22 @@ contains
   end subroutine deinit
 
   function nonzero(mat)
+    class(rte_mat) mat
+    double precision nonzero
     !!! *** !!!
+    nonzero = 0
   end function nonzero
 
-  function ind(mat, grid, i, j, k, l, m)
+  function ind(mat, i, j, k, l, m)
     ! Assuming var ordering: z, y, x, phi, theta
     class(rte_mat) mat
     type(space_angle_grid) grid
     integer i, j, k, l, m, ind
     integer z_block_size, y_block_size, x_block_size
     integer phi_block_size, theta_block_size
-
     integer nx, ny, nz, ntheta, nphi
+    grid = mat%grid
+
     nx = grid%x%num
     ny = grid%y%num
     nz = grid%z%num
@@ -96,19 +101,39 @@ contains
     mat%ent = mat%ent + 1
   end subroutine mat_assign
 
-  subroutine attenuate(mat, grid, iops)
+  subroutine attenuate(mat, iops, indices)
     class(rte_mat) mat
     type(space_angle_grid) grid
+    type(optical_properties) iops
     double precision attenuation
-    attenuation = aa(mat%i, mat%j, mat%k) + bb(mat%i, mat%j, mat%k)
+    type(index_list) indices
+    integer i, j, k, l, m
+    i = indices%i
+    j = indices%j
+    k = indices%k
+    l = indices%l
+    m = indices%m
+
+    aa = iops%abs_grid(i, j, k)
+    bb = iops%scat_grid(i, j, k)
+
+    attenuation = aa + bb
     call mat%assign(attenuation, i, j, k, l, m)
   end subroutine attenuate
 
-  subroutine x_cd2(mat, grid)
+  subroutine x_cd2(mat, indices)
     class(rte_mat) mat
     type(space_angle_grid) grid
     double precision val
     double precision theta, phi, dx
+    type(index_list) indices
+    integer i, j, k, l, m
+    i = indices%i
+    j = indices%j
+    k = indices%k
+    l = indices%l
+    m = indices%m
+    mat%grid = grid
 
     theta = grid%theta%vals(mat%k)
     phi = grid%theta%vals(mat%l)
@@ -120,12 +145,20 @@ contains
     call mat%assign(val,i+1,j,k,l,m)
   end subroutine x_cd2
   
-  subroutine x_cd2_first(mat, grid)
+  subroutine x_cd2_first(mat, indices)
     class(rte_mat) mat
     type(space_angle_grid) grid
     double precision val
     double precision theta, phi, dx
     integer nx
+    type(index_list) indices
+    integer i, j, k, l, m
+    i = indices%i
+    j = indices%j
+    k = indices%k
+    l = indices%l
+    m = indices%m
+    mat%grid = grid
 
     theta = grid%theta%vals(mat%k)
     phi = grid%theta%vals(mat%l)
@@ -138,11 +171,19 @@ contains
     call mat%assign(val,i+1,j,k,l,m)
   end subroutine x_cd2_first
   
-  subroutine x_cd2_last(mat, grid)
+  subroutine x_cd2_last(mat, indices)
     class(rte_mat) mat
     type(space_angle_grid) grid
     double precision val
     double precision theta, phi, dx
+    type(index_list) indices
+    integer i, j, k, l, m
+    i = indices%i
+    j = indices%j
+    k = indices%k
+    l = indices%l
+    m = indices%m
+    mat%grid = grid
 
     theta = grid%theta%vals(mat%k)
     phi = grid%theta%vals(mat%l)
@@ -155,11 +196,20 @@ contains
     call mat%assign(val,1,j,k,l,m)
   end subroutine x_cd2_last
   
-  subroutine y_cd2(mat, grid)
+  subroutine y_cd2(mat, indices)
     class(rte_mat) mat
     type(space_angle_grid) grid
     double precision val
     double precision theta, phi, dy
+    type(index_list) indices
+    integer i, j, k, l, m
+    i = indices%i
+    j = indices%j
+    k = indices%k
+    l = indices%l
+    m = indices%m
+    mat%grid = grid
+
 
     theta = grid%theta%vals(mat%k)
     phi = grid%theta%vals(mat%l)
@@ -171,12 +221,21 @@ contains
     call mat%assign(val,i,j+1,k,l,m)
   end subroutine y_cd2
   
-  subroutine y_cd2_first(mat, grid)
+  subroutine y_cd2_first(mat, indices)
     class(rte_mat) mat
     type(space_angle_grid) grid
     double precision val
     double precision theta, phi, dy
     integer ny
+    type(index_list) indices
+    integer i, j, k, l, m
+    i = indices%i
+    j = indices%j
+    k = indices%k
+    l = indices%l
+    m = indices%m
+    mat%grid = grid
+
 
     theta = grid%theta%vals(mat%k)
     phi = grid%theta%vals(mat%l)
@@ -189,12 +248,21 @@ contains
     call mat%assign(val,i,j+1,k,l,m)
   end subroutine y_cd2_first
 
-  subroutine y_cd2_last(mat, grid)
+  subroutine y_cd2_last(mat, indices)
     class(rte_mat) mat
     type(space_angle_grid) grid
     double precision val
     double precision theta, phi, dy
     integer ny
+    type(index_list) indices
+    integer i, j, k, l, m
+    i = indices%i
+    j = indices%j
+    k = indices%k
+    l = indices%l
+    m = indices%m
+    mat%grid = grid
+
 
     theta = grid%theta%vals(mat%k)
     phi = grid%theta%vals(mat%l)
@@ -206,11 +274,20 @@ contains
     call mat%assign(val,i,1,k,l,m)
   end subroutine y_cd2_last
 
-  subroutine z_cd2(mat, grid)
+  subroutine z_cd2(mat, indices)
     class(rte_mat) mat
     type(space_angle_grid) grid
     double precision val
     double precision theta, phi, dz
+    type(index_list) indices
+    integer i, j, k, l, m
+    i = indices%i
+    j = indices%j
+    k = indices%k
+    l = indices%l
+    m = indices%m
+    mat%grid = grid
+
 
     theta = grid%theta%vals(mat%k)
     phi = grid%theta%vals(mat%l)
@@ -222,11 +299,20 @@ contains
     call mat%assign(val,i,j,k+1,l,m)
   end subroutine z_cd2
   
-  subroutine z_fd2(mat, grid)
+  subroutine z_fd2(mat, indices)
     class(rte_mat) mat
     type(space_angle_grid) grid
     double precision val, val1, val2, val3
     double precision theta, phi, dz
+    type(index_list) indices
+    integer i, j, k, l, m
+    i = indices%i
+    j = indices%j
+    k = indices%k
+    l = indices%l
+    m = indices%m
+    mat%grid = grid
+
 
     theta = grid%theta%vals(mat%k)
     phi = grid%theta%vals(mat%l)
@@ -243,11 +329,20 @@ contains
     call mat%assign(val3,i,j,k+2,l,m)
   end subroutine z_fd2
 
-  subroutine z_bd2(mat, grid)
+  subroutine z_bd2(mat, indices)
     class(rte_mat) mat
     type(space_angle_grid) grid
     double precision val, val1, val2, val3
     double precision theta, phi, dz
+    type(index_list) indices
+    integer i, j, k, l, m
+    i = indices%i
+    j = indices%j
+    k = indices%k
+    l = indices%l
+    m = indices%m
+    mat%grid = grid
+
 
     theta = grid%theta%vals(mat%k)
     phi = grid%theta%vals(mat%l)
@@ -264,15 +359,22 @@ contains
     call mat%assign(val3,i,j,k-2,l,m)
   end subroutine z_bd2
 
-  subroutine angular_integral(mat, grid, iops)
+  subroutine angular_integral(mat, iops, indices)
     class(rte_mat) mat
     type(space_angle_grid) grid
     type(optical_properties) iops
     ! Primed integration variables
     integer lp, mp
     double precision val
-
     double precision prefactor
+    type(index_list) indices
+    integer i, j, k, l, m
+    i = indices%i
+    j = indices%j
+    k = indices%k
+    l = indices%l
+    m = indices%m
+    mat%grid = grid
 
     prefactor = grid%theta%prefactor * grid%phi%prefactor
 
@@ -284,11 +386,56 @@ contains
 
   end subroutine angular_integral
 
-  subroutine z_surface_bc
+  subroutine z_surface_bc(mat)
+    class(rte_mat) mat
   end subroutine z_surface_bc
 
-  subroutine z_bottom_bc
+  subroutine z_bottom_bc(mat)
+    class(rte_mat) mat
   end subroutine z_bottom_bc
 
+  ! Finite difference wrappers
 
+  subroutine wrap_x_cd2(mat, indices)
+    type(rte_mat) mat
+    type(index_list) indices
+    call mat%x_cd2(indices)
+  end subroutine wrap_x_cd2
+  
+  subroutine wrap_x_cd2_last(mat, indices)
+    type(rte_mat) mat
+    type(index_list) indices
+    call mat%x_cd2_last(indices)
+  end subroutine wrap_x_cd2_last
+
+  subroutine wrap_x_cd2_first(mat, indices)
+    type(rte_mat) mat
+    type(index_list) indices
+    call mat%x_cd2_first(indices)
+  end subroutine wrap_x_cd2_first
+
+  subroutine wrap_y_cd2(mat, indices)
+    type(rte_mat) mat
+    type(index_list) indices
+    call mat%y_cd2(indices)
+  end subroutine wrap_y_cd2
+
+  subroutine wrap_y_cd2_last(mat, indices)
+    type(rte_mat) mat
+    type(index_list) indices
+    call mat%y_cd2_last(indices)
+  end subroutine wrap_y_cd2_last
+
+  subroutine wrap_y_cd2_first(mat, indices)
+    type(rte_mat) mat
+    type(index_list) indices
+    call mat%y_cd2_first(indices)
+  end subroutine wrap_y_cd2_first
+
+  subroutine wrap_z_cd2(mat, indices)
+    type(rte_mat) mat
+    type(index_list) indices
+    call mat%z_cd2(indices)
+  end subroutine wrap_z_cd2
 end module rte_sparse_matrices
+
