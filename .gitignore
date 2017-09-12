@@ -6,5 +6,4 @@ olemodel/*
 *.o
 *.mod
 .*.swp
-hdf5/*
 
