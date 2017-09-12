@@ -4,7 +4,7 @@ use rte_matrix
 implicit none
 contains
 
-subroutine interior(grid, mat, kelp, indices)
+subroutine interior_space_loop(grid, mat, kelp, indices)
   class(rte_mat) rte_matrix
   type(space_angle_grid) grid
   type(kelp_state) kelp
@@ -57,7 +57,7 @@ subroutine interior(grid, mat, kelp, indices)
 end subroutine
 
 
-subroutine surface(grid, mat, kelp, indices)
+subroutine surface_space_loop(grid, mat, kelp, indices)
   class(rte_mat) rte_matrix
   type(space_angle_grid) grid
   type(kelp_state) kelp
@@ -107,7 +107,7 @@ subroutine surface(grid, mat, kelp, indices)
 
 end subroutine
 
-subroutine bottom(grid, mat, kelp, indices)
+subroutine bottom_space_loop(grid, mat, kelp, indices)
   class(rte_mat) rte_matrix
   type(space_angle_grid) grid
   type(kelp_state) kelp
@@ -266,9 +266,9 @@ subroutine gen_matrix(grid, kelp, mat)
 
   mat%init(grid)
 
-  call surface(mat, grid, kelp, indices)
-  call interior(mat, grid, kelp, indices)
-  call bottom(mat, grid, kelp, indices)
+  call surface_space_loop(mat, grid, kelp, indices)
+  call interior_space_loop(mat, grid, kelp, indices)
+  call bottom_space_loop(mat, grid, kelp, indices)
 
   mat%deinit()
 

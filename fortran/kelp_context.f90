@@ -42,8 +42,11 @@ type optical_properties
    integer num_vsf
    double precision, dimension(:), allocatable :: vsf_angles, vsf_vals
    double precision abs_water, abs_kelp, scat_water, scat_kelp
+   double precision abs_grid, scat_grid ! On x, y, z grid - including water & kelp.
    double precision vsf ! On theta grid
  contains
+   procedure :: init => iop_init
+   procedure :: calculate_coef_grids
    procedure :: load_vsf
    procedure :: eval_vsf
    procedure :: calc_vsf_on_grid
@@ -94,6 +97,22 @@ contains
     frond%tan_alpha = 2.d0*frond%fs*frond%fr / (1.d0 + frond%fs)
     frond%alpha = atan(frond%tan_alpha)
   end subroutine
+
+  subroutine iop_init(iops, grid)
+    class(optical_properties) iops
+    type(space_angle_grid) grid
+    allocate(iops%abs_grid(grid%x%num, grid%y%num, grid%z%num))
+    allocate(iops%scat_grid(grid%x%num, grid%y%num, grid%z%num))
+  end subroutine iop_init
+
+  subroutine calculate_coef_grids(iops, p_kelp)
+    class(optical_properties) iops
+    double precision, dimension(:,:,:) :: p_kelp
+
+    iops%abs_grid = (iops%abs_kelp - iops%abs_water) * p_kelp + iops%abs_water
+    iops%scat_grid = (iops%scat_kelp - iops%scat_water) * p_kelp + iops%scat_water
+  end subroutine calculate_coef_grids
+
 
   subroutine load_vsf(iops, filename, fmtstr)
     class(optical_properties) :: iops
@@ -254,6 +273,8 @@ contains
     deallocate(iops%vsf_angles)
     deallocate(iops%vsf_vals)
     deallocate(iops%vsf)
+    deallocate(iops%abs_grid)
+    deallocate(iops%scat_grid)
   end subroutine iop_deinit
 
 end module kelp_context
