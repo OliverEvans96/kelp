@@ -32,7 +32,7 @@ class RopeWidget(ipw.VBox):
         }
 
         maxs = {
-            'vw': 1,
+            'vw': 10,
             'theta_w_rad': 2*np.pi,
             'L_mean': 1,
             'L_std': 1
