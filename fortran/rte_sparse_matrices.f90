@@ -4,6 +4,7 @@ use kelp_context
 
 type rte_mat
    type(space_angle_grid) grid
+   type(optical_properties) iops
    integer nx, ny, nz, ntheta, nphi
    integer ent, i, j, k, l, m
 
@@ -17,6 +18,8 @@ type rte_mat
    procedure :: assign => mat_assign
    procedure nonzero
    procedure ind
+   procedure attenuate
+   procedure angular_integral
 
    ! Derivative subroutines
    procedure x_cd2
@@ -34,12 +37,14 @@ end type rte_mat
 
 contains
 
-  subroutine init(mat)
+  subroutine init(mat, grid, iops)
     class(rte_mat) mat
     type(space_angle_grid) grid
+    type(optical_properties) iops
     integer nnz
 
     mat%grid = grid
+    mat%iops = iops
     nnz = mat%nonzero()
     allocate(mat%row(nnz))
     allocate(mat%col(nnz))
@@ -101,9 +106,8 @@ contains
     mat%ent = mat%ent + 1
   end subroutine mat_assign
 
-  subroutine attenuate(mat, iops, indices)
+  subroutine attenuate(mat, indices)
     class(rte_mat) mat
-    type(space_angle_grid) grid
     type(optical_properties) iops
     double precision attenuation
     type(index_list) indices
@@ -113,6 +117,8 @@ contains
     k = indices%k
     l = indices%l
     m = indices%m
+
+    iops = mat%iops
 
     aa = iops%abs_grid(i, j, k)
     bb = iops%scat_grid(i, j, k)
@@ -359,7 +365,7 @@ contains
     call mat%assign(val3,i,j,k-2,l,m)
   end subroutine z_bd2
 
-  subroutine angular_integral(mat, iops, indices)
+  subroutine angular_integral(mat, indices)
     class(rte_mat) mat
     type(space_angle_grid) grid
     type(optical_properties) iops
@@ -374,7 +380,8 @@ contains
     k = indices%k
     l = indices%l
     m = indices%m
-    mat%grid = grid
+    grid = mat%grid
+    iops = mat%iops
 
     prefactor = grid%theta%prefactor * grid%phi%prefactor
 
@@ -386,12 +393,14 @@ contains
 
   end subroutine angular_integral
 
-  subroutine z_surface_bc(mat)
+  subroutine z_surface_bc(mat, indices)
     class(rte_mat) mat
+    type(index_list) indices
   end subroutine z_surface_bc
 
-  subroutine z_bottom_bc(mat)
+  subroutine z_bottom_bc(mat, indices)
     class(rte_mat) mat
+    type(index_list) indices
   end subroutine z_bottom_bc
 
   ! Finite difference wrappers

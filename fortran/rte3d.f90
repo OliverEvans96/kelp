@@ -4,12 +4,11 @@ use rte_sparse_matrices
 implicit none
 contains
 
-subroutine interior_space_loop(mat, iops, indices)
+subroutine interior_space_loop(mat, indices)
   type(rte_mat) mat
   type(space_angle_grid) grid
-  type(optical_properties) kelp
   type(index_list) indices
-  integer i, j, k, l, m
+  integer i, j, k
 
   ! z interior
   do k=2 , grid%z%num - 1
@@ -62,11 +61,11 @@ subroutine interior_space_loop(mat, iops, indices)
 end subroutine
 
 
-subroutine surface_space_loop(mat, iops, indices)
+subroutine surface_space_loop(mat, indices)
   type(rte_mat) mat
   type(space_angle_grid) grid
-  type(optical_properties) kelp
   type(index_list) indices
+  integer i, j, k
 
   ! z surface
   indices%k=1
@@ -114,13 +113,13 @@ subroutine surface_space_loop(mat, iops, indices)
        indices%j=grid%y%num
        call surface_angle_loop(mat, indices, wrap_x_cd2_last, wrap_y_cd2_last)
 
-end subroutine
+end subroutine surface_space_loop
 
-subroutine bottom_space_loop(mat, iops, indices)
+subroutine bottom_space_loop(mat, indices)
   type(rte_mat) mat
   type(space_angle_grid) grid
-  type(optical_properties) kelp
   type(index_list) indices
+  integer i, j, k
 
   ! z bottom
   indices%k=grid%z%num
@@ -174,6 +173,7 @@ subroutine interior_angle_loop(mat, indices, ddx, ddy)
   type(space_angle_grid) grid
   type(rte_mat) mat
   type(index_list) indices
+  integer l, m
 
   ! Allow derivative subroutines to be passed as arguments
   interface
@@ -195,11 +195,11 @@ subroutine interior_angle_loop(mat, indices, ddx, ddy)
   indices%m = m
      do l=1, grid%theta%num
      indices%l = l
-        call mat%attenuate(mat, iops, indices)
+        call mat%attenuate(indices)
         call ddx(mat, indices)
         call ddy(mat, indices)
-        call mat%z_cd2(mat, indices)
-        call mat%angular_integral(mat, iops, indices)
+        call mat%z_cd2(indices)
+        call mat%angular_integral(indices)
      end do
   end do
 end subroutine
@@ -209,6 +209,7 @@ subroutine surface_angle_loop(mat, indices, ddx, ddy)
   type(space_angle_grid) grid
   type(rte_mat) mat
   type(index_list) indices
+  integer l, m
   
   ! Allow derivative subroutines to be passed as arguments
   interface
@@ -231,7 +232,7 @@ subroutine surface_angle_loop(mat, indices, ddx, ddy)
   indices%m = m
      do l=1, grid%theta%num
      indices%l = l
-        call mat%z_surface_bc(mat, indices)
+        call mat%z_surface_bc(indices)
      end do
   end do
 
@@ -240,11 +241,11 @@ subroutine surface_angle_loop(mat, indices, ddx, ddy)
   indices%m = m
      do l=1, grid%theta%num
      indices%l = l
-        call mat%attenuate(mat, iops, indices)
+        call mat%attenuate(indices)
         call ddx(mat, indices)
         call ddy(mat, indices)
-        call mat%z_fd2(mat, indices)
-        call mat%angular_integral(mat, iops, indices)
+        call mat%z_fd2(indices)
+        call mat%angular_integral(indices)
      end do
   end do
 end subroutine surface_angle_loop
@@ -253,6 +254,7 @@ subroutine bottom_angle_loop(mat, indices, ddx, ddy)
   type(space_angle_grid) grid
   type(rte_mat) mat
   type(index_list) indices
+  integer l, m
   
   ! Allow derivative subroutines to be passed as arguments
   interface
@@ -275,11 +277,11 @@ subroutine bottom_angle_loop(mat, indices, ddx, ddy)
   indices%m = m
      do l=1, grid%theta%num
      indices%l = l
-        call mat%attenuate(mat, iops, indices)
+        call mat%attenuate(indices)
         call ddx(mat, indices)
         call ddy(mat, indices)
-        call mat%z_bd2(mat, indices)
-        call mat%angular_integral(mat, iops, indices)
+        call mat%z_bd2(indices)
+        call mat%angular_integral(indices)
      end do
   end do
 
@@ -288,24 +290,24 @@ subroutine bottom_angle_loop(mat, indices, ddx, ddy)
   indices%m = m
      do l=1, grid%theta%num
      indices%l = l
-        call mat%z_bottom_bc(mat, indices)
+        call mat%z_bottom_bc(indices)
      end do
   end do
 end subroutine bottom_angle_loop
 
-subroutine gen_matrix(grid, iops, mat)
+subroutine gen_matrix(grid, mat, iops)
   type(rte_mat) mat
   type(space_angle_grid) grid
-  type(optical_properties) kelp
+  type(optical_properties) iops
   type(index_list) indices
 
-  mat%init(grid)
+  call mat%init(grid, iops)
 
-  call surface_space_loop(mat, grid, iops, indices)
-  call interior_space_loop(mat, grid, iops, indices)
-  call bottom_space_loop(mat, grid, iops, indices)
+  call surface_space_loop(mat, indices)
+  call interior_space_loop(mat, indices)
+  call bottom_space_loop(mat, indices)
 
-  mat%deinit()
+  call mat%deinit()
 
 end subroutine gen_matrix
 
