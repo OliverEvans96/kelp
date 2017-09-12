@@ -242,7 +242,7 @@ contains
        do m=1, nphi
           do lp=1, ntheta
              do mp=1, nphi
-                vsf(l,m,lp,mp) = angle_diff_3d(grid%theta(l),grid%phi(m),grid%theta(lp),grid%phi(mp))
+                iops%vsf(l,m,lp,mp) = iops%eval_vsf(angle_diff_3d(grid%theta(l),grid%phi(m),grid%theta(lp),grid%phi(mp)))
              end do
           end do
        end do
@@ -253,6 +253,7 @@ contains
     class(optical_properties) iops
     deallocate(iops%vsf_angles)
     deallocate(iops%vsf_vals)
+    deallocate(iops%vsf)
   end subroutine iop_deinit
 
 end module kelp_context

@@ -17,6 +17,10 @@ implicit none
 
 !integer, parameter :: pi = 3.141592653589793D+00
 
+type index_list
+   integer i, j, k, l, m
+end type index_list
+
 type angle_dim
    integer num
    double precision minval, maxval, prefactor

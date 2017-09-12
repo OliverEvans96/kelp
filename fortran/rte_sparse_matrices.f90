@@ -270,16 +270,25 @@ contains
     type(optical_properties) iops
     ! Primed integration variables
     integer lp, mp
+    double precision val
 
     double precision prefactor
-    double precision angdiff
+
+    prefactor = grid%theta%prefactor * grid%phi%prefactor
 
     do lp=1, grid%theta%num
        do mp=1, grid%phi%num
-          prefactor * iops%vsf(angdiff)
+          val = prefactor * iops%vsf(l,m,lp,mp)
        end do
     end do
 
   end subroutine angular_integral
+
+  subroutine z_surface_bc
+  end subroutine z_surface_bc
+
+  subroutine z_bottom_bc
+  end subroutine z_bottom_bc
+
 
 end module rte_sparse_matrices
