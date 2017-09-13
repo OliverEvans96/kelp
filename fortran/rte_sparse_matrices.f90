@@ -1,12 +1,20 @@
 module rte_sparse_matrices
 use sag
 use kelp_context
+use mgmres
+
+type solver_params
+   integer maxiter_inner, maxiter_outer
+   double precision tol_abs, tol_rel
+end type solver_params
 
 type rte_mat
    type(space_angle_grid) grid
    type(optical_properties) iops
+   type(solver_params) params
    integer nx, ny, nz, ntheta, nphi
    integer ent, i, j, k, l, m
+   integer nonzero, n_total
 
    ! A stored in coordinate form in row, col, data
    integer, dimension(:), allocatable :: row, col
@@ -14,11 +22,12 @@ type rte_mat
    ! b and x stored in rhs in full form
    double precision, dimension(:), allocatable :: rhs, sol
  contains
-   procedure init, deinit
-   procedure set_solve_parameters
+   procedure :: init => mat_init
+   procedure :: deinit => mat_deinit
+   procedure calculate_size
+   procedure set_solver_params
    procedure :: assign => mat_assign
    procedure :: solve => mat_solve
-   procedure nonzero
    procedure ind
    procedure attenuate
    procedure angular_integral
@@ -39,35 +48,35 @@ end type rte_mat
 
 contains
 
-  subroutine init(mat, grid, iops)
+  subroutine mat_init(mat, grid, iops)
     class(rte_mat) mat
     type(space_angle_grid) grid
     type(optical_properties) iops
-    integer nnz
+    integer nnz, n_total
 
     mat%grid = grid
     mat%iops = iops
 
-    mat%calculate_size()
+    call mat%calculate_size()
 
     n_total = mat%n_total
     nnz = mat%nonzero
     allocate(mat%row(nnz))
     allocate(mat%col(nnz))
     allocate(mat%data(nnz))
-    allocate(mat%rhs(n_total)
-    allocate(mat%sol(n_total)
+    allocate(mat%rhs(n_total))
+    allocate(mat%sol(n_total))
 
-  end subroutine init
+  end subroutine mat_init
 
-  subroutine deinit(mat)
+  subroutine mat_deinit(mat)
     class(rte_mat) mat
     deallocate(mat%row)
     deallocate(mat%col)
     deallocate(mat%data)
     deallocate(mat%rhs)
     deallocate(mat%sol)
-  end subroutine deinit
+  end subroutine mat_deinit
 
   subroutine calculate_size(mat)
     class(rte_mat) mat
@@ -82,24 +91,29 @@ contains
     mat%nonzero = nx * ny * (nz-2) * (6 + ntheta * nphi)
     mat%n_total = nx * ny * nz * ntheta * nphi
   
+  end subroutine calculate_size
+
   subroutine mat_solve(mat)
     class(rte_mat) mat
+    type(solver_params) params
 
-    call mgmres_st(mat%n, mat%nnz, mat%row, mat%col, mat%data, &
-         mat%sol, mat%rhs, mat%maxiter_outer, mat%maxiter_inner &
-         mat%tol_abs, mat%tol_rel)
+    params = mat%params
+
+    call mgmres_st(mat%n_total, mat%nonzero, mat%row, mat%col, mat%data, &
+         mat%sol, mat%rhs, params%maxiter_outer, params%maxiter_inner, &
+         params%tol_abs, params%tol_rel)
 
   end subroutine mat_solve
 
-  subroutine set_solve_paramters(mat, maxiter_outer, &
+  subroutine set_solver_params(mat, maxiter_outer, &
        maxiter_inner, tol_abs, tol_rel)
     class(rte_mat) mat
 
-    mat%maxiter_outer = maxiter_outer
-    mat%maxiter_inner = maxiter_inner
-    mat%tol_abs = tol_abs
-    mat%tol_rel = tol_rel
-  end subroutine set_solve_paramters
+    mat%params%maxiter_outer = maxiter_outer
+    mat%params%maxiter_inner = maxiter_inner
+    mat%params%tol_abs = tol_abs
+    mat%params%tol_rel = tol_rel
+  end subroutine set_solver_params
 
   function ind(mat, i, j, k, l, m)
     ! Assuming var ordering: z, y, x, phi, theta
