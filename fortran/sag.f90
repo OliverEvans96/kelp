@@ -19,12 +19,15 @@ implicit none
 
 type index_list
    integer i, j, k, l, m
+ contains
+   procedure :: init => index_list_init
+   procedure :: print => index_list_print
 end type index_list
 
 type angle_dim
    integer num
    double precision minval, maxval, prefactor
-   double precision, dimension(:), allocatable :: vals, weights
+   double precision, dimension(:), allocatable :: vals, weights, sin, cos
  contains
    procedure :: set_bounds => angle_set_bounds
    procedure :: set_num => angle_set_num
@@ -64,6 +67,22 @@ contains
 end type space_angle_grid
 
 contains
+
+  subroutine index_list_init(indices)
+    class(index_list) indices
+    indices%i = 1
+    indices%j = 1
+    indices%k = 1
+    indices%l = 1
+    indices%m = 1
+  end subroutine
+
+  subroutine index_list_print(indices)
+    class(index_list) indices
+
+    write(*,*) 'i, j, k, l, m =', indices%i, indices%j, indices%k, indices%l, indices%m
+  end subroutine index_list_print
+
   subroutine angle_set_bounds(angle, minval, maxval)
     class(angle_dim) :: angle
     double precision minval, maxval
@@ -87,6 +106,8 @@ contains
 
     allocate(angle%vals(angle%num))
     allocate(angle%weights(angle%num))
+    allocate(angle%sin(angle%num))
+    allocate(angle%cos(angle%num))
 
     ! Prefactor for integration
     ! From change of variables
@@ -97,6 +118,8 @@ contains
        call affine_transform(root, -1.d0, 1.d0, angle%minval, angle%maxval)
        angle%vals(i) = root
        angle%weights(i) = weight
+       angle%sin(i) = sin(root)
+       angle%cos(i) = cos(root)
     end do
   end subroutine assign_legendre
 
@@ -132,6 +155,9 @@ contains
   subroutine angle_deinit(angle)
     class(angle_dim) :: angle
     deallocate(angle%vals)
+    deallocate(angle%weights)
+    deallocate(angle%sin)
+    deallocate(angle%cos)
   end subroutine angle_deinit
 
 

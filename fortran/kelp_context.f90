@@ -1,6 +1,7 @@
 module kelp_context
 use sag
 use prob
+implicit none
 
 ! Point in cylindrical coordinates
 type point3d
@@ -121,14 +122,19 @@ contains
     class(optical_properties) :: iops
     character(len=*) :: filename, fmtstr
     double precision, dimension(:,:), allocatable :: tmp_2d_arr
-
-    allocate(tmp_2d_arr(iops%num_vsf, 1))
-    allocate(iops%vsf_angles(iops%num_vsf))
-    allocate(iops%vsf_vals(iops%num_vsf))
+    integer num_rows, num_cols, skiplines_in
 
     ! First column is the angle at which the measurement is taken
     ! Second column is the value of the VSF at that angle
-    tmp_2d_arr = read_array(filename, fmtstr, iops%num_vsf, 1, 0)
+    num_rows = iops%num_vsf
+    num_cols = 2
+    skiplines_in = 1 ! Ignore comment on first line
+
+    allocate(tmp_2d_arr(num_rows, num_cols))
+    allocate(iops%vsf_angles(iops%num_vsf))
+    allocate(iops%vsf_vals(iops%num_vsf))
+
+    tmp_2d_arr = read_array(filename, fmtstr, num_rows, num_cols, skiplines_in)
     iops%vsf_angles = tmp_2d_arr(:,1)
     iops%vsf_vals = tmp_2d_arr(:,2)
   end subroutine load_vsf
@@ -253,7 +259,7 @@ contains
     class(optical_properties) iops
     type(space_angle_grid) grid
     double precision th, ph, thp, php
-
+    integer l, m, lp, mp
     integer ntheta, nphi
 
     ntheta = grid%theta%num
