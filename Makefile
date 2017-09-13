@@ -75,8 +75,8 @@ test_gmres: mgmres.o hdf5_utils.o
 test_prob: prob.o
 	 $(FC) $(BFLAGS) $(SRC)/test_prob.f90 $(INC)/prob.o -o $(BIN)/test_prob
 
-test_kelp3d: kelp3d.o
-	 $(FC) $(BFLAGS) $(SRC)/test_kelp3d.f90 $(INC)/prob.o $(INC)/fastgl.o $(INC)/sag.o $(INC)/utils.o $(INC)/kelp3d.o $(INC)/kelp_context.o -o $(BIN)/test_kelp3d
+test_kelp3d: kelp3d.o hdf5_utils.o
+	 $(H5FC) $(BFLAGS) $(SRC)/test_kelp3d.f90 $(INC)/prob.o $(INC)/fastgl.o $(INC)/sag.o $(INC)/utils.o $(INC)/kelp3d.o $(INC)/kelp_context.o -o $(BIN)/test_kelp3d
 
 ### Old tests
 old: test_interp test_rte2d test_vsf
