@@ -93,12 +93,14 @@ $(INC)/hdf5_utils.o: $(SRC)/hdf5_utils.f90 $(INC)/utils.o $(INC)/kelp_context.o
 	$(H5FC) $(OFLAGS) $< -o $@
 $(INC)/kelp_context.o: $(SRC)/kelp_context.f90 $(INC)/sag.o $(INC)/prob.o
 	$(FC) $(OFLAGS) $< -o $@
+$(INC)/light_context.o: $(SRC)/kelp_context.f90 $(INC)/kelp3d.o $(INC)/kelp_context.o $(INC)/sag.o $(INC)/prob.o
+	$(FC) $(OFLAGS) $< -o $@
 $(INC)/kelp3d.o: $(SRC)/kelp3d.f90 $(INC)/kelp_context.o
 	$(FC) $(OFLAGS) $< -o $@
 $(INC)/test_kelp3d_mod.o: $(SRC)/test_kelp3d_mod.f90 $(INC)/kelp3d.o $(INC)/hdf5_utils.o
-	$(FC) $(OFLAGS) $< -o $@
-$(INC)/test_rte3d_mod.o: $(SRC)/test_rte3d_mod.f90 $(INC)/rte3d.o $(INC)/kelp3d.o $(INC)/hdf5_utils.o
-	$(FC) $(OFLAGS) $< -o $@
+	$(H5FC) $(OFLAGS) $< -o $@
+$(INC)/test_rte3d_mod.o: $(SRC)/test_rte3d_mod.f90 $(INC)/test_kelp3d_mod.o $(INC)/rte3d.o $(INC)/kelp3d.o $(INC)/hdf5_utils.o
+	$(H5FC) $(OFLAGS) $< -o $@
 $(INC)/rte_sparse_matrices.o: $(SRC)/rte_sparse_matrices.f90 $(INC)/sag.o $(INC)/kelp_context.o $(INC)/mgmres.o
 	$(FC) $(OFLAGS) $< -o $@
 $(INC)/rte3d.o: $(SRC)/rte3d.f90 $(INC)/kelp_context.o $(INC)/rte_sparse_matrices.o

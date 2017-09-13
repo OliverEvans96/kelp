@@ -2,6 +2,7 @@ module rte_sparse_matrices
 use sag
 use kelp_context
 use mgmres
+implicit none
 
 type solver_params
    integer maxiter_inner, maxiter_outer
@@ -28,6 +29,7 @@ type rte_mat
    procedure set_solver_params
    procedure :: assign => mat_assign
    procedure :: add => mat_add
+   procedure :: assign_rhs => mat_assign_rhs
    procedure :: find_index => mat_find_index
    procedure :: solve => mat_solve
    procedure ind
@@ -69,6 +71,9 @@ contains
     allocate(mat%rhs(n_total))
     allocate(mat%sol(n_total))
 
+    call zeros(mat%rhs, n_total)
+    call zeros(mat%sol, n_total)
+
   end subroutine mat_init
 
   subroutine mat_deinit(mat)
@@ -90,7 +95,7 @@ contains
     ntheta = mat%grid%theta%num
     nphi = mat%grid%phi%num
 
-    mat%nonzero = nx * ny * (nz-2) * (6 + ntheta * nphi)
+    mat%nonzero = nx * ny * (2*nz-2) * (6 + ntheta * nphi)
     mat%n_total = nx * ny * nz * ntheta * nphi
 
   end subroutine calculate_size
@@ -101,6 +106,14 @@ contains
 
     params = mat%params
 
+    write(*,*) 'mat%n_total =', mat%n_total
+    write(*,*) 'mat%nonzero =', mat%nonzero
+    write(*,*) 'size(mat%row) =', size(mat%row)
+    write(*,*) 'size(mat%col) =', size(mat%col)
+    write(*,*) 'size(mat%data) =', size(mat%data)
+    write(*,*) 'size(mat%sol) =', size(mat%sol)
+    write(*,*) 'size(mat%rhs) =', size(mat%rhs)
+
     call mgmres_st(mat%n_total, mat%nonzero, mat%row, mat%col, mat%data, &
          mat%sol, mat%rhs, params%maxiter_outer, params%maxiter_inner, &
          params%tol_abs, params%tol_rel)
@@ -110,6 +123,8 @@ contains
   subroutine set_solver_params(mat, maxiter_outer, &
        maxiter_inner, tol_abs, tol_rel)
     class(rte_mat) mat
+    integer maxiter_outer, maxiter_inner
+    double precision tol_abs, tol_rel
 
     mat%params%maxiter_outer = maxiter_outer
     mat%params%maxiter_inner = maxiter_inner
@@ -141,7 +156,7 @@ contains
 
     ind = (i-1) * x_block_size + (j-1) * y_block_size + (k-1) * z_block_size + (l) * theta_block_size + (m-1) * phi_block_size
   end function ind
-  
+
   subroutine mat_assign(mat, data, i, j, k, l, m)
     ! It's assumed that this is the only time this entry is defined
     class(rte_mat) mat
@@ -176,6 +191,17 @@ contains
     mat%data(index) = mat%data(index) + data
   end subroutine mat_add
 
+  subroutine mat_assign_rhs(mat, data, i, j, k, l, m)
+    class(rte_mat) mat
+    double precision data
+    integer i, j, k, l, m
+    integer row_num
+
+    row_num = mat%ind(mat%i, mat%j, mat%k, mat%l, mat%m)
+
+    mat%rhs(row_num) = data
+  end subroutine mat_assign_rhs
+
   function mat_find_index(mat, row_num, col_num) result(index)
     ! Find the position in row, col, data where this entry
     ! is defined.
@@ -200,6 +226,7 @@ contains
     double precision attenuation
     type(index_list) indices
     integer i, j, k, l, m
+    double precision aa, bb
     i = indices%i
     j = indices%j
     k = indices%k
@@ -282,7 +309,6 @@ contains
     theta = grid%theta%vals(mat%k)
     phi = grid%theta%vals(mat%l)
     dx = grid%x%spacing
-    nx = grid%x%num
 
     val = sin(phi) * cos(theta) / (2.d0 * dx)
 
@@ -480,17 +506,56 @@ contains
        end do
     end do
 
-
   end subroutine angular_integral
 
   subroutine z_surface_bc(mat, indices)
     class(rte_mat) mat
+    type(space_angle_grid) grid
+    double precision bc_val
+    double precision theta, phi, dx
     type(index_list) indices
+    integer i, j, k, l, m
+    i = indices%i
+    j = indices%j
+    k = indices%k
+    l = indices%l
+    m = indices%m
+    mat%grid = grid
+
+    theta = grid%theta%vals(mat%k)
+    phi = grid%theta%vals(mat%l)
+    dx = grid%x%spacing
+
+    ! Constant light from above in all directions
+    bc_val = 1.d0
+
+    call mat%assign(1.d0,i,j,k,l,m)
+    call mat%assign_rhs(bc_val, i, j, k, l, m)
   end subroutine z_surface_bc
 
   subroutine z_bottom_bc(mat, indices)
     class(rte_mat) mat
+    type(space_angle_grid) grid
+    double precision bc_val
+    double precision theta, phi, dx
     type(index_list) indices
+    integer i, j, k, l, m
+    i = indices%i
+    j = indices%j
+    k = indices%k
+    l = indices%l
+    m = indices%m
+    mat%grid = grid
+
+    theta = grid%theta%vals(mat%k)
+    phi = grid%theta%vals(mat%l)
+    dx = grid%x%spacing
+
+    ! No light from below
+    bc_val = 0.d0
+
+    call mat%assign(1.d0,i,j,k,l,m)
+    call mat%assign_rhs(bc_val, i, j, k, l, m)
   end subroutine z_bottom_bc
 
   ! Finite difference wrappers

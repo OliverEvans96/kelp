@@ -472,4 +472,13 @@ subroutine write_array(arr,nn,mm,filename,fmtstr_in)
 
 end subroutine
 
+subroutine zeros(x, n)
+  integer n, i
+  double precision, dimension(n) :: x
+
+  do i=1, n
+     x(i) = 0
+  end do
+end subroutine zeros
+
 end module

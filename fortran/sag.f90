@@ -56,6 +56,7 @@ type space_angle_grid !(sag)
 contains
   procedure :: set_bounds => sag_set_bounds
   procedure :: set_num => sag_set_num
+  procedure :: integrate_angle_2d => sag_integrate_angle_2d
   procedure :: init => sag_init
   procedure :: deinit => sag_deinit
   procedure :: set_num_from_spacing => sag_set_num_from_spacing
@@ -247,6 +248,24 @@ contains
     call grid%phi%assign_legendre()
 
   end subroutine sag_init
+
+  function sag_integrate_angle_2d(grid, func_vals) result(integral)
+    class(space_angle_grid) grid
+    double precision, dimension(:,:) :: func_vals
+    double precision integral
+    double precision prefactor
+    integer lp, mp
+
+    prefactor = grid%theta%prefactor * grid%phi%prefactor
+    integral = 0
+
+    do lp=1, grid%theta%num
+       do mp=1, grid%phi%num
+          integral = integral + prefactor * func_vals(lp, mp)
+       end do
+    end do
+
+  end function sag_integrate_angle_2d
 
   subroutine sag_set_spacing_from_num(grid)
     class(space_angle_grid) :: grid

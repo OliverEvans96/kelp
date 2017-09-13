@@ -303,12 +303,19 @@ subroutine gen_matrix(grid, mat, iops)
 
   call mat%init(grid, iops)
 
+  write(*,*) 'Surface'
   call surface_space_loop(mat, indices)
+  write(*,*) 'Interior'
   call interior_space_loop(mat, indices)
+  write(*,*) 'Bottom'
   call bottom_space_loop(mat, indices)
+  write(*,*) 'Generated'
+end subroutine gen_matrix
+
+subroutine rte3d_deinit(mat)
+  type(rte_mat) mat
 
   call mat%deinit()
-
-end subroutine gen_matrix
+end subroutine
 
 end module rte3d
