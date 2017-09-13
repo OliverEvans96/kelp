@@ -195,11 +195,11 @@ subroutine interior_angle_loop(mat, indices, ddx, ddy)
   indices%m = m
      do l=1, grid%theta%num
      indices%l = l
-        call mat%attenuate(indices)
         call ddx(mat, indices)
         call ddy(mat, indices)
         call mat%z_cd2(indices)
         call mat%angular_integral(indices)
+        call mat%attenuate(indices)
      end do
   end do
 end subroutine
@@ -241,11 +241,11 @@ subroutine surface_angle_loop(mat, indices, ddx, ddy)
   indices%m = m
      do l=1, grid%theta%num
      indices%l = l
-        call mat%attenuate(indices)
         call ddx(mat, indices)
         call ddy(mat, indices)
         call mat%z_fd2(indices)
         call mat%angular_integral(indices)
+        call mat%attenuate(indices)
      end do
   end do
 end subroutine surface_angle_loop
@@ -277,11 +277,11 @@ subroutine bottom_angle_loop(mat, indices, ddx, ddy)
   indices%m = m
      do l=1, grid%theta%num
      indices%l = l
-        call mat%attenuate(indices)
         call ddx(mat, indices)
         call ddy(mat, indices)
         call mat%z_bd2(indices)
         call mat%angular_integral(indices)
+        call mat%attenuate(indices)
      end do
   end do
 

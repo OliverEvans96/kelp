@@ -27,6 +27,8 @@ type rte_mat
    procedure calculate_size
    procedure set_solver_params
    procedure :: assign => mat_assign
+   procedure :: add => mat_add
+   procedure :: find_index => mat_find_index
    procedure :: solve => mat_solve
    procedure ind
    procedure attenuate
@@ -80,17 +82,17 @@ contains
 
   subroutine calculate_size(mat)
     class(rte_mat) mat
-    type(space_angle_grid) grid
     integer nx, ny, nz, ntheta, nphi
-    nx = grid%x%num
-    ny = grid%y%num
-    nz = grid%z%num
-    ntheta = grid%theta%num
-    nphi = grid%phi%num
+
+    nx = mat%grid%x%num
+    ny = mat%grid%y%num
+    nz = mat%grid%z%num
+    ntheta = mat%grid%theta%num
+    nphi = mat%grid%phi%num
 
     mat%nonzero = nx * ny * (nz-2) * (6 + ntheta * nphi)
     mat%n_total = nx * ny * nz * ntheta * nphi
-  
+
   end subroutine calculate_size
 
   subroutine mat_solve(mat)
@@ -139,8 +141,9 @@ contains
 
     ind = (i-1) * x_block_size + (j-1) * y_block_size + (k-1) * z_block_size + (l) * theta_block_size + (m-1) * phi_block_size
   end function ind
-
+  
   subroutine mat_assign(mat, data, i, j, k, l, m)
+    ! It's assumed that this is the only time this entry is defined
     class(rte_mat) mat
     double precision data
     integer i, j, k, l, m
@@ -156,7 +159,42 @@ contains
     mat%ent = mat%ent + 1
   end subroutine mat_assign
 
+  subroutine mat_add(mat, data, i, j, k, l, m)
+    ! Use this when you know that this entry has already been assigned
+    ! and you'd like to add this value to the existing value.
+    class(rte_mat) mat
+    double precision data
+    integer i, j, k, l, m
+    integer row_num, col_num
+    integer index
+
+    row_num = mat%ind(mat%i, mat%j, mat%k, mat%l, mat%m)
+    col_num = mat%ind(i, j, k, l, m)
+
+    index = mat%find_index(row_num, col_num)
+
+    mat%data(index) = mat%data(index) + data
+  end subroutine mat_add
+
+  function mat_find_index(mat, row_num, col_num) result(index)
+    ! Find the position in row, col, data where this entry
+    ! is defined.
+    class(rte_mat) mat
+    integer row_num, col_num, index
+
+    ! Only search up to most recently assigned index
+    do index=1, mat%ent-1
+       if( (mat%row(index) .eq. row_num) .and. (mat%col(index) .eq. col_num)) then
+          exit
+       end if
+    end do
+  end function mat_find_index
+
   subroutine attenuate(mat, indices)
+    ! Has to be called after angular_integral
+    ! Because they both write to the same matrix entry
+    ! And adding here is more efficient than a conditional
+    ! in the angular loop.
     class(rte_mat) mat
     type(optical_properties) iops
     double precision attenuation
@@ -174,7 +212,7 @@ contains
     bb = iops%scat_grid(i, j, k)
 
     attenuation = aa + bb
-    call mat%assign(attenuation, i, j, k, l, m)
+    call mat%add(attenuation, i, j, k, l, m)
   end subroutine attenuate
 
   subroutine x_cd2(mat, indices)
@@ -438,8 +476,10 @@ contains
     do lp=1, grid%theta%num
        do mp=1, grid%phi%num
           val = prefactor * iops%vsf(l,m,lp,mp)
+          call mat%assign(val, i, j, k, lp, mp)
        end do
     end do
+
 
   end subroutine angular_integral
 
