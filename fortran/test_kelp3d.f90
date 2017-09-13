@@ -46,7 +46,7 @@ subroutine init_rope(rope, grid)
   allocate(ones(nz))
 
   z = grid%z%vals
-  ones = z / z
+  ones = 0 * z + 1
 
   ! Make up some goofy shape
   a = 2.d-1
@@ -122,6 +122,7 @@ subroutine run_test_kelp_3d(grid, rope, p_kelp, theta)
   integer ntheta
   double precision pth
   integer i
+  integer nz
 
   call init_grid(grid)
   call init_rope(rope, grid)
@@ -132,9 +133,21 @@ subroutine run_test_kelp_3d(grid, rope, p_kelp, theta)
   call calculate_memory_usage(grid)
   call calculate_kelp_on_grid(grid, p_kelp, frond, rope, quadrature_degree)
 
+  nz = grid%z%num
+  write(*,*) 'nz =', nz
+
   thetamin = -3 * pi
   thetamax = 3 * pi
   ntheta = 61
+
+  write(*,*) rope%frond_lengths
+  write(*,*)
+  write(*,*) rope%frond_stds
+  write(*,*)
+  write(*,*) rope%water_speeds
+  write(*,*)
+  write(*,*) rope%water_angles
+  write(*,*)
 
   call theta%set_bounds(thetamin, thetamax)
   call theta%set_num(ntheta)
