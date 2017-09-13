@@ -108,14 +108,8 @@ subroutine calculate_memory_usage(grid)
   write(*,'(A,F10.3,A)') 'Total: ', total_megabytes, ' MB'
 end subroutine
 
-end module test_kelp3d_mod
 
-!! Main Program !!
-
-program test_kelp3d
-  use test_kelp3d_mod
-  implicit none
-
+subroutine run_test_kelp_3d(grid, rope, p_kelp, theta)
   type(space_angle_grid) grid
   type(rope_state) rope
   type(frond_shape) frond
@@ -149,12 +143,26 @@ program test_kelp3d
   call depth%set_depth(rope, grid, 1)
 
   do i=1, theta%num
-     pth = depth%angle_distribution_pdf(theta%vals(i))
-     write(*,*) 'Theta = ', theta%vals(i)
-     write(*,*) 'P_th = ', pth
-     write(*,*)
+    pth = depth%angle_distribution_pdf(theta%vals(i))
+    write(*,*) 'Theta = ', theta%vals(i)
+    write(*,*) 'P_th = ', pth
+    write(*,*)
   end do
 
+end subroutine run_test_kelp_3d
+end module test_kelp3d_mod
+
+!! Main Program !!
+
+program test_kelp3d
+  use test_kelp3d_mod
+  implicit none
+  double precision, dimension(:,:,:), allocatable :: p_kelp
+  type(space_angle_grid) grid
+  type(rope_state) rope
+  type(angle_dim) theta
+
+  call run_test_kelp_3d(grid, rope, p_kelp, theta)
 
   call theta%deinit()
   call deinit(grid, rope, p_kelp)
