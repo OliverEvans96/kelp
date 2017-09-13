@@ -6,7 +6,7 @@ program test_kelp3d
   type(rope_state) rope
   type(angle_dim) theta
 
-  call run_test_kelp_3d(grid, rope, p_kelp, theta)
+  call test_vm_dist(grid, rope, p_kelp, theta)
 
   call theta%deinit()
   call deinit(grid, rope, p_kelp)

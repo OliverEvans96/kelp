@@ -109,7 +109,7 @@ subroutine calculate_memory_usage(grid)
 end subroutine
 
 
-subroutine run_test_kelp_3d(grid, rope, p_kelp, theta)
+subroutine test_vm_dist(grid, rope, p_kelp, theta)
   type(space_angle_grid) grid
   type(rope_state) rope
   type(frond_shape) frond
@@ -117,6 +117,43 @@ subroutine run_test_kelp_3d(grid, rope, p_kelp, theta)
   double precision, dimension(:,:,:), allocatable :: p_kelp
 
   type(depth_state) depth
+  type(angle_dim) theta
+  double precision thetamin, thetamax
+  integer ntheta
+  double precision pth
+  integer i
+  integer nz
+
+  call gen_kelp(grid, rope, p_kelp)
+
+  nz = grid%z%num
+
+  thetamin = -3 * pi
+  thetamax = 3 * pi
+  ntheta = 61
+
+  call theta%set_bounds(thetamin, thetamax)
+  call theta%set_num(ntheta)
+  call theta%assign_legendre()
+
+  call depth%set_depth(rope, grid, 1)
+
+  do i=1, theta%num
+     pth = depth%angle_distribution_pdf(theta%vals(i))
+     write(*,*) 'Theta = ', theta%vals(i)
+     write(*,*) 'P_th = ', pth
+     write(*,*)
+  end do
+
+end subroutine test_vm_dist
+
+subroutine gen_kelp(grid, rope, p_kelp)
+  type(space_angle_grid) grid
+  type(rope_state) rope
+  type(frond_shape) frond
+  integer quadrature_degree
+  double precision, dimension(:,:,:), allocatable :: p_kelp
+
   type(angle_dim) theta
   double precision thetamin, thetamax
   integer ntheta
@@ -132,21 +169,6 @@ subroutine run_test_kelp_3d(grid, rope, p_kelp, theta)
 
   call calculate_memory_usage(grid)
   call calculate_kelp_on_grid(grid, p_kelp, frond, rope, quadrature_degree)
+end subroutine gen_kelp
 
-  nz = grid%z%num
-
-  thetamin = -3 * pi
-  thetamax = 3 * pi
-  ntheta = 61
-
-  call theta%set_bounds(thetamin, thetamax)
-  call theta%set_num(ntheta)
-  call theta%assign_legendre()
-
-  call depth%set_depth(rope, grid, 1)
-
-end subroutine run_test_kelp_3d
 end module test_kelp3d_mod
-
-!! Main Program !!
-
