@@ -25,14 +25,14 @@ subroutine generate_grid(xmin, xmax, nx, ymin, ymax, ny, zmin, zmax, nz, ntheta,
 
 end subroutine generate_grid
 
-subroutine deinit(grid, rope, p_kelp)
+subroutine kelp3d_deinit(grid, rope, p_kelp)
   type(space_angle_grid) grid
   type(rope_state) rope
   double precision, dimension(:,:,:), allocatable :: p_kelp
   call rope%deinit()
   call grid%deinit()
   deallocate(p_kelp)
-end subroutine
+end subroutine kelp3d_deinit
 
 subroutine calculate_kelp_on_grid(grid, p_kelp, frond, rope, quadrature_degree)
   type(space_angle_grid), intent(in) :: grid

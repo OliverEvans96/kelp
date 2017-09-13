@@ -9,6 +9,6 @@ program test_kelp3d
   call test_vm_dist(grid, rope, p_kelp, theta)
 
   call theta%deinit()
-  call deinit(grid, rope, p_kelp)
+  call kelp3d_deinit(grid, rope, p_kelp)
 
 end program test_kelp3d
