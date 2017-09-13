@@ -11,10 +11,11 @@ type rte_mat
    ! A stored in coordinate form in row, col, data
    integer, dimension(:), allocatable :: row, col
    double precision, dimension(:), allocatable :: data
-   ! b stored in rhs in full form
-   double precision, dimension(:), allocatable :: rhs
+   ! b and x stored in rhs in full form
+   double precision, dimension(:), allocatable :: rhs, sol
  contains
    procedure init, deinit
+   procedure set_solve_parameters
    procedure :: assign => mat_assign
    procedure :: solve => mat_solve
    procedure nonzero
@@ -46,10 +47,17 @@ contains
 
     mat%grid = grid
     mat%iops = iops
-    nnz = mat%nonzero()
+
+    mat%calculate_size()
+
+    n_total = mat%n_total
+    nnz = mat%nonzero
     allocate(mat%row(nnz))
     allocate(mat%col(nnz))
     allocate(mat%data(nnz))
+    allocate(mat%rhs(n_total)
+    allocate(mat%sol(n_total)
+
   end subroutine init
 
   subroutine deinit(mat)
@@ -57,14 +65,41 @@ contains
     deallocate(mat%row)
     deallocate(mat%col)
     deallocate(mat%data)
+    deallocate(mat%rhs)
+    deallocate(mat%sol)
   end subroutine deinit
 
-  function nonzero(mat)
+  subroutine calculate_size(mat)
     class(rte_mat) mat
-    double precision nonzero
-    !!! *** !!!
-    nonzero = 0
-  end function nonzero
+    type(space_angle_grid) grid
+    integer nx, ny, nz, ntheta, nphi
+    nx = grid%x%num
+    ny = grid%y%num
+    nz = grid%z%num
+    ntheta = grid%theta%num
+    nphi = grid%phi%num
+
+    mat%nonzero = nx * ny * (nz-2) * (6 + ntheta * nphi)
+    mat%n_total = nx * ny * nz * ntheta * nphi
+  
+  subroutine mat_solve(mat)
+    class(rte_mat) mat
+
+    call mgmres_st(mat%n, mat%nnz, mat%row, mat%col, mat%data, &
+         mat%sol, mat%rhs, mat%maxiter_outer, mat%maxiter_inner &
+         mat%tol_abs, mat%tol_rel)
+
+  end subroutine mat_solve
+
+  subroutine set_solve_paramters(mat, maxiter_outer, &
+       maxiter_inner, tol_abs, tol_rel)
+    class(rte_mat) mat
+
+    mat%maxiter_outer = maxiter_outer
+    mat%maxiter_inner = maxiter_inner
+    mat%tol_abs = tol_abs
+    mat%tol_rel = tol_rel
+  end subroutine set_solve_paramters
 
   function ind(mat, i, j, k, l, m)
     ! Assuming var ordering: z, y, x, phi, theta
@@ -447,11 +482,6 @@ contains
     type(index_list) indices
     call mat%z_cd2(indices)
   end subroutine wrap_z_cd2
-
-  subroutine mat_solve(mat)
-    class(rte_mat) mat
-
-  end subroutine mat_solve
 
 end module rte_sparse_matrices
 
