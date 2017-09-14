@@ -13,7 +13,7 @@ subroutine init_grid(grid)
 
   grid%y%minval = -1.d0
   grid%y%maxval = 1.d0
-  grid%y%spacing = 1.d-0
+  grid%y%spacing = 5.d-1
 
   grid%z%minval = 0.d0
   grid%z%maxval = 1.d1

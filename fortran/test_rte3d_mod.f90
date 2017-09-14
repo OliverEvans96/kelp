@@ -29,7 +29,7 @@ contains
     call set_solver_params(mat)
 
     write(*,*) 'Solve'
-    call mat%solve()
+    !call mat%solve()
 
     write(*,*) 'Kelp deinit'
     call kelp3d_deinit(grid, rope, p_kelp)
