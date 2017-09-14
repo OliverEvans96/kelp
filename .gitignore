@@ -6,4 +6,5 @@ olemodel/*
 *.o
 *.mod
 .*.swp
+gmon.out
 
