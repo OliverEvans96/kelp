@@ -9,15 +9,15 @@ subroutine init_grid(grid)
 
   grid%x%minval = -1.d0
   grid%x%maxval = 1.d0
-  grid%x%spacing = 2.d-1
+  grid%x%spacing = 1.d-0
 
   grid%y%minval = -1.d0
   grid%y%maxval = 1.d0
-  grid%y%spacing = 2.d-1
+  grid%y%spacing = 1.d-0
 
   grid%z%minval = 0.d0
   grid%z%maxval = 1.d1
-  grid%z%spacing = 1.d0
+  grid%z%spacing = 5.d0
 
   grid%theta%num = 20
   grid%phi%num = 10
