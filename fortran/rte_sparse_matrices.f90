@@ -113,17 +113,17 @@ contains
 
     params = mat%params
 
-!     write(*,*) 'mat%n_total =', mat%n_total
-!     write(*,*) 'mat%nonzero =', mat%nonzero
-!     write(*,*) 'size(mat%row) =', size(mat%row)
-!     write(*,*) 'size(mat%col) =', size(mat%col)
-!     write(*,*) 'size(mat%data) =', size(mat%data)
-!     write(*,*) 'size(mat%sol) =', size(mat%sol)
-!     write(*,*) 'size(mat%rhs) =', size(mat%rhs)
-!     write(*,*) 'params%maxiter_outer =', params%maxiter_outer
-!     write(*,*) 'params%maxiter_inner =', params%maxiter_inner
-!     write(*,*) 'params%tol_rel =', params%tol_rel
-!     write(*,*) 'params%tol_abs =', params%tol_abs
+    write(*,*) 'mat%n_total =', mat%n_total
+    write(*,*) 'mat%nonzero =', mat%nonzero
+    write(*,*) 'size(mat%row) =', size(mat%row)
+    write(*,*) 'size(mat%col) =', size(mat%col)
+    write(*,*) 'size(mat%data) =', size(mat%data)
+    write(*,*) 'size(mat%sol) =', size(mat%sol)
+    write(*,*) 'size(mat%rhs) =', size(mat%rhs)
+    write(*,*) 'params%maxiter_outer =', params%maxiter_outer
+    write(*,*) 'params%maxiter_inner =', params%maxiter_inner
+    write(*,*) 'params%tol_rel =', params%tol_rel
+    write(*,*) 'params%tol_abs =', params%tol_abs
 
     call mgmres_st(mat%n_total, mat%nonzero, mat%row, mat%col, mat%data, &
          mat%sol, mat%rhs, params%maxiter_outer, params%maxiter_inner, &
@@ -173,6 +173,9 @@ contains
     class(rte_mat) mat
     type(index_list) indices
 
+    write(*,*) 'Setting Mat Ind'
+    call indices%print()
+
     mat%i = indices%i
     mat%j = indices%j
     mat%k = indices%k
@@ -190,25 +193,31 @@ contains
     row_num = mat%ind(mat%i, mat%j, mat%k, mat%l, mat%m)
     col_num = mat%ind(i, j, k, l, m)
 
-!     write(*,*) 'inds =', i, j, k, l, m
-!     write(*,*) 'rcd =', row_num, col_num, data
-!     write(*,*) 'ent =', mat%ent
+    !write(*,*) 'inds =', i, j, k, l, m
+    !write(*,*) 'rcd =', row_num, col_num, data
+    !write(*,*) 'ent =', mat%ent
 
-    if( ((row_num .gt. mat%nonzero) .or. (col_num .gt. mat%nonzero)) &
+    if( ((row_num .gt. mat%n_total) .or. (col_num .gt. mat%nonzero)) &
          .or. ((row_num .lt. 1) .or. (col_num .lt. 1)) ) then
        write(*,*) 'OUT OF BOUNDS: ', row_num, col_num
-       write(*,*) 'whereas NNZ =', mat%nonzero
+       write(*,*) 'Using ROW i,j,k,l,m =', mat%i, mat%j, mat%k, mat%l, mat%m
+       write(*,*) 'Using COL i,j,k,l,m =', i, j, k, l, m
+       write(*,*)
+       !!! END PROGRAM !!!
+       write(*,*) 'Exiting'
+       stop
+       !write(*,*) 'whereas N =', mat%n_total
     end if
 
     mat%row(mat%ent) = row_num
-!     write(*,*) 'a.1'
+    !write(*,*) 'a.1'
     mat%col(mat%ent) = col_num
-!     write(*,*) 'a.2'
+    !write(*,*) 'a.2'
     mat%data(mat%ent) = data
-!     write(*,*) 'a.3'
+    !write(*,*) 'a.3'
 
     mat%ent = mat%ent + 1
-!     write(*,*) 'a.4'
+    !write(*,*) 'a.4'
   end subroutine mat_assign
 
   subroutine mat_add(mat, data, i, j, k, l, m)
@@ -301,13 +310,13 @@ contains
 
     val = sinphi * costheta / (2.d0 * dx)
 
-!     write(*,*) 'VAL =', val
+    write(*,*) 'VAL =', val
 
-!     write(*,*) '1'
+    write(*,*) '1'
     call mat%set_ind(indices)
     !call indices%print()
     call mat%assign(-val,i-1,j,k,l,m)
-!     write(*,*) '2'
+    write(*,*) '2'
     call mat%assign(val,i+1,j,k,l,m)
   end subroutine x_cd2
   
@@ -384,7 +393,7 @@ contains
     m = indices%m
     grid = mat%grid
 
-!     write(*,*) 'ycd2'
+    write(*,*) 'ycd2'
 
 
     sintheta = grid%theta%sin(k)
