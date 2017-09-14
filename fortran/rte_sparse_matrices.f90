@@ -80,6 +80,7 @@ contains
   subroutine mat_deinit(mat)
     class(rte_mat) mat
     write(*,*) 'md.1'
+    write(*,*) allocated(mat%row)
     deallocate(mat%row)
     write(*,*) 'md.2'
     deallocate(mat%col)
@@ -173,8 +174,8 @@ contains
     class(rte_mat) mat
     type(index_list) indices
 
-    write(*,*) 'Setting Mat Ind'
-    call indices%print()
+    !write(*,*) 'Setting Mat Ind'
+    !call indices%print()
 
     mat%i = indices%i
     mat%j = indices%j
@@ -301,6 +302,7 @@ contains
     l = indices%l
     m = indices%m
     grid = mat%grid
+    write(*,*) 'x cd2'
 
     sintheta = grid%theta%sin(k)
     costheta = grid%theta%cos(k)
@@ -328,6 +330,7 @@ contains
     integer nx
     type(index_list) indices
     integer i, j, k, l, m
+    write(*,*) 'x cd2 first'
 
     i = indices%i
     j = indices%j
@@ -364,6 +367,7 @@ contains
     l = indices%l
     m = indices%m
     grid = mat%grid
+    write(*,*) 'x cd2 last'
 
     sintheta = grid%theta%sin(k)
     costheta = grid%theta%cos(k)
@@ -425,6 +429,7 @@ contains
     m = indices%m
     grid = mat%grid
 
+    write(*,*) 'y cd2 first'
 
     sintheta = grid%theta%sin(k)
     costheta = grid%theta%cos(k)
@@ -455,6 +460,7 @@ contains
     l = indices%l
     m = indices%m
     grid = mat%grid
+    write(*,*) 'y cd2 last'
 
 
     sintheta = grid%theta%sin(k)
@@ -484,7 +490,7 @@ contains
     l = indices%l
     m = indices%m
     grid = mat%grid
-
+    write(*,*) 'z cd2'
 
     sintheta = grid%theta%sin(k)
     costheta = grid%theta%cos(k)
@@ -495,6 +501,7 @@ contains
     val = cosphi / (2.d0 * dz)
 
     call mat%set_ind(indices)
+    write(*,*) 'zcd2 ind:'
     !call indices%print()
     call mat%assign(-val,i,j,k-1,l,m)
     call mat%assign(val,i,j,k+1,l,m)
@@ -513,6 +520,7 @@ contains
     l = indices%l
     m = indices%m
     grid = mat%grid
+    write(*,*) 'z fd2'
 
 
     sintheta = grid%theta%sin(k)
@@ -547,7 +555,7 @@ contains
     l = indices%l
     m = indices%m
     grid = mat%grid
-
+    write(*,*) 'z bd2'
 
     sintheta = grid%theta%sin(k)
     costheta = grid%theta%cos(k)
@@ -562,7 +570,8 @@ contains
     val3 = val
 
     call mat%set_ind(indices)
-    !call indices%print()
+    write(*,*) 'Z BD2'
+    call indices%print()
     call mat%assign(val1,i,j,k,l,m)
     call mat%assign(val2,i,j,k-1,l,m)
     call mat%assign(val3,i,j,k-2,l,m)
