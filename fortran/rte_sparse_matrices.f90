@@ -82,18 +82,11 @@ contains
 
   subroutine mat_deinit(mat)
     class(rte_mat) mat
-    write(*,*) 'md.1'
-    write(*,*) allocated(mat%row)
     deallocate(mat%row)
-    write(*,*) 'md.2'
     deallocate(mat%col)
-    write(*,*) 'md.3'
     deallocate(mat%data)
-    write(*,*) 'md.4'
     deallocate(mat%rhs)
-    write(*,*) 'md.5'
     deallocate(mat%sol)
-    write(*,*) 'md.6'
   end subroutine mat_deinit
 
   subroutine calculate_size(mat)
@@ -177,9 +170,6 @@ contains
     class(rte_mat) mat
     type(index_list) indices
 
-    !write(*,*) 'Setting Mat Ind'
-    !call indices%print()
-
     mat%i = indices%i
     mat%j = indices%j
     mat%k = indices%k
@@ -197,36 +187,11 @@ contains
     row_num = mat%ind(mat%i, mat%j, mat%k, mat%l, mat%m)
     col_num = mat%ind(i, j, k, l, m)
 
-    !write(*,*) 'inds =', i, j, k, l, m
-    !write(*,*) 'rcd =', row_num, col_num, data
-    !write(*,*) 'ent =', mat%ent
-
-    if( ((row_num .gt. mat%n_total) .or. (col_num .gt. mat%nonzero)) &
-         .or. ((row_num .lt. 1) .or. (col_num .lt. 1)) ) then
-       write(*,*) 'OUT OF BOUNDS: ', row_num, col_num
-       write(*,*) 'Using ROW i,j,k,l,m =', mat%i, mat%j, mat%k, mat%l, mat%m
-       write(*,*) 'Using COL i,j,k,l,m =', i, j, k, l, m
-       write(*,*)
-       !!! END PROGRAM !!!
-       write(*,*) 'Exiting'
-       stop
-       !write(*,*) 'whereas N =', mat%n_total
-    end if
-
-    if( mat%ent .gt. 0*mat%nonzero ) then
-       !write(*,*) 'ACESS TOO FAR'
-       write(*,*) 'ENT =', mat%ent, '/', mat%nonzero
-    end if
-
     mat%row(mat%ent) = row_num
-    !write(*,*) 'a.1'
     mat%col(mat%ent) = col_num
-    !write(*,*) 'a.2'
     mat%data(mat%ent) = data
-    !write(*,*) 'a.3'
 
     mat%ent = mat%ent + 1
-    !write(*,*) 'a.4'
   end subroutine mat_assign
 
   subroutine mat_add(mat, data, i, j, k, l, m)
@@ -310,7 +275,6 @@ contains
     l = indices%l
     m = indices%m
     grid = mat%grid
-    !write(*,*) 'x cd2'
 
     sintheta = grid%theta%sin(k)
     costheta = grid%theta%cos(k)
@@ -320,13 +284,8 @@ contains
 
     val = sinphi * costheta / (2.d0 * dx)
 
-    write(*,*) 'VAL =', val
-
-    write(*,*) '1'
     call mat%set_ind(indices)
-    !call indices%print()
     call mat%assign(-val,i-1,j,k,l,m)
-    write(*,*) '2'
     call mat%assign(val,i+1,j,k,l,m)
   end subroutine x_cd2
   
@@ -338,7 +297,6 @@ contains
     integer nx
     type(index_list) indices
     integer i, j, k, l, m
-    !write(*,*) 'x cd2 first'
 
     i = indices%i
     j = indices%j
@@ -357,7 +315,6 @@ contains
     val = sinphi * costheta / (2.d0 * dx)
 
     call mat%set_ind(indices)
-    !call indices%print()
     call mat%assign(-val,nx,j,k,l,m)
     call mat%assign(val,i+1,j,k,l,m)
   end subroutine x_cd2_first
@@ -375,7 +332,6 @@ contains
     l = indices%l
     m = indices%m
     grid = mat%grid
-    !write(*,*) 'x cd2 last'
 
     sintheta = grid%theta%sin(k)
     costheta = grid%theta%cos(k)
@@ -386,7 +342,6 @@ contains
     val = sinphi * costheta / (2.d0 * dx)
 
     call mat%set_ind(indices)
-    !call indices%print()
     call mat%assign(-val,i-1,j,k,l,m)
     call mat%assign(val,1,j,k,l,m)
   end subroutine x_cd2_last
@@ -405,9 +360,6 @@ contains
     m = indices%m
     grid = mat%grid
 
-   ! write(*,*) 'ycd2'
-
-
     sintheta = grid%theta%sin(k)
     costheta = grid%theta%cos(k)
     sinphi = grid%phi%sin(l)
@@ -417,7 +369,6 @@ contains
     val = sinphi * sintheta / (2.d0 * dy)
 
     call mat%set_ind(indices)
-    !call indices%print()
     call mat%assign(-val,i,j-1,k,l,m)
     call mat%assign(val,i,j+1,k,l,m)
   end subroutine y_cd2
@@ -437,8 +388,6 @@ contains
     m = indices%m
     grid = mat%grid
 
-    !write(*,*) 'y cd2 first'
-
     sintheta = grid%theta%sin(k)
     costheta = grid%theta%cos(k)
     sinphi = grid%phi%sin(l)
@@ -449,7 +398,6 @@ contains
     val = sinphi * sintheta / (2.d0 * dy)
 
     call mat%set_ind(indices)
-    !call indices%print()
     call mat%assign(-val,i,ny,k,l,m)
     call mat%assign(val,i,j+1,k,l,m)
   end subroutine y_cd2_first
@@ -468,8 +416,6 @@ contains
     l = indices%l
     m = indices%m
     grid = mat%grid
-    !write(*,*) 'y cd2 last'
-
 
     sintheta = grid%theta%sin(k)
     costheta = grid%theta%cos(k)
@@ -480,7 +426,6 @@ contains
     val = sinphi * sintheta / (2.d0 * dy)
 
     call mat%set_ind(indices)
-    !call indices%print()
     call mat%assign(-val,i,j-1,k,l,m)
     call mat%assign(val,i,1,k,l,m)
   end subroutine y_cd2_last
@@ -498,7 +443,6 @@ contains
     l = indices%l
     m = indices%m
     grid = mat%grid
-    !write(*,*) 'z cd2'
 
     sintheta = grid%theta%sin(k)
     costheta = grid%theta%cos(k)
@@ -509,8 +453,6 @@ contains
     val = cosphi / (2.d0 * dz)
 
     call mat%set_ind(indices)
-   ! write(*,*) 'zcd2 ind:'
-    !call indices%print()
     call mat%assign(-val,i,j,k-1,l,m)
     call mat%assign(val,i,j,k+1,l,m)
   end subroutine z_cd2
@@ -532,8 +474,6 @@ contains
     l = indices%l
     m = indices%m
     grid = mat%grid
-    !write(*,*) 'z fd2'
-
 
     sintheta = grid%theta%sin(k)
     costheta = grid%theta%cos(k)
@@ -548,7 +488,6 @@ contains
     val3 = -val
 
     call mat%set_ind(indices)
-    !call indices%print()
     call mat%add(val1,i,j,k,l,m)
     call mat%assign(val2,i,j,k+1,l,m)
     call mat%assign(val3,i,j,k+2,l,m)
@@ -571,7 +510,6 @@ contains
     l = indices%l
     m = indices%m
     grid = mat%grid
-    !write(*,*) 'z bd2'
 
     sintheta = grid%theta%sin(k)
     costheta = grid%theta%cos(k)
@@ -586,8 +524,6 @@ contains
     val3 = val
 
     call mat%set_ind(indices)
-    !write(*,*) 'Z BD2'
-    !call indices%print()
     call mat%add(val1,i,j,k,l,m)
     call mat%assign(val2,i,j,k-1,l,m)
     call mat%assign(val3,i,j,k-2,l,m)
@@ -613,7 +549,6 @@ contains
 
     prefactor = grid%theta%prefactor * grid%phi%prefactor
     call mat%set_ind(indices)
-    !call indices%print()
 
     do lp=1, grid%theta%num
        do mp=1, grid%phi%num
@@ -649,7 +584,6 @@ contains
     bc_val = 1.d0
 
     call mat%set_ind(indices)
-    !call indices%print()
     call mat%assign(1.d0,i,j,k,l,m)
     call mat%assign_rhs(bc_val, i, j, k, l, m)
   end subroutine z_surface_bc
@@ -679,7 +613,6 @@ contains
     bc_val = 0.d0
 
     call mat%set_ind(indices)
-    !call indices%print()
     call mat%assign(1.d0,i,j,k,l,m)
     call mat%assign_rhs(bc_val, i, j, k, l, m)
   end subroutine z_bottom_bc
