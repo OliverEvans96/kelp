@@ -163,8 +163,29 @@ contains
     call h5close_f(error)
   end subroutine hdf_write_kelp
 
-  ! subroutine hdf_read_rad(filename, rad)
-  ! end subroutine hdf_read_rad()
+  subroutine hdf_write_radiance(filename, radiance)
+    integer error
+    type(space_angle_grid) grid
+    double precision, dimension(:,:,:,:,:) :: radiance
+
+    integer(hid_t) :: file_id
+    character(len=*) :: filename
+    integer(hsize_t), dimension(5) :: data_dims
+
+    call h5open_f(error)
+    ! Create file
+    call h5fcreate_f(filename, h5f_acc_trunc_f, file_id, error)
+
+    data_dims(1) = grid%x%num
+    data_dims(2) = grid%y%num
+    data_dims(3) = grid%z%num
+    data_dims(4) = grid%theta%num
+    data_dims(5) = grid%phi%num
+    call dset_write_5d_double(file_id, 'radiance', data_dims, radiance, error)
+
+    call h5fclose_f(file_id, error)
+    call h5close_f(error)
+  end subroutine hdf_write_radiance
 
   ! subroutine hdf_read_irrad()
   ! end subroutine hdf_read_irrad
@@ -307,11 +328,23 @@ contains
   end subroutine dset_write_3d_double
 
   subroutine dset_write_5d_double(file_id, dsetname, data_dims, input, error)
-    integer(hid_t) :: file_id, dset_id
-    integer(hsize_t), dimension(1) :: data_dims
+    integer(hid_t) :: file_id, dspace_id, dset_id
+    integer, parameter :: rank = 5
+    integer(hsize_t), dimension(rank) :: data_dims
     character(len=*) :: dsetname
-    integer, dimension(:) :: input
+    double precision, dimension(:,:,:,:,:) :: input
     integer error
+    integer i
+
+    ! Create dataspace
+    call h5screate_simple_f(rank, data_dims, dspace_id, error)
+    ! Create dataset
+    call h5dcreate_f(file_id, dsetname, h5t_native_double, dspace_id, dset_id, error)
+
+    call h5dwrite_f(dset_id, h5t_native_double, input, data_dims, error)
+
+    call h5dclose_f(dset_id, error)
+    call h5sclose_f(dspace_id, error)
   end subroutine dset_write_5d_double
 
   !- hdf READ int

@@ -37,11 +37,21 @@ FC=gfortran
 # HDF5 Fortan Compiler
 H5FC=h5fc
 
+# Profiling (timing) flags
+# Add to OFLAGS and BFLAGS
+# (Should replace CFLAGS in OFLAGS)
+# Compile & run normally,
+# Then call gprof `executable`
+PFLAGS=-pg
+
+# Normal compilation flag (no profiling)
+CFLAGS=-c
+
 # Fortran Compilation flags
 # Object files (.o)
-OFLAGS=-J$(INC) -I$(INC) -c
+OFLAGS=-J$(INC) -I$(INC) $(CFLAGS) $(PFLAGS) 
 # Binary files (executable)
-BFLAGS=-J$(INC) -I$(INC)
+BFLAGS=-J$(INC) -I$(INC) $(PFLAGS)
 
 
 ###############
@@ -70,9 +80,9 @@ test_gmres: $(SRC)/test_gmres.f90 $(INC)/mgmres.o $(INC)/utils.o $(INC)/hdf5_uti
 $(INC)/test_prob: $(SRC)/test_prob.f90 $(INC)/prob.o $(INC)/prob.o
 	$(FC) $(BFLAGS) $^ -o $(BIN)/$@
 test_kelp3d: $(SRC)/test_kelp3d.f90 $(INC)/test_kelp3d_mod.o $(INC)/prob.o $(INC)/fastgl.o $(INC)/sag.o $(INC)/utils.o $(INC)/kelp3d.o $(INC)/kelp_context.o
-	$(H5FC) $(BFLAGS) $^ -o $(BIN)/$@
+	$(FC) $(BFLAGS) $^ -o $(BIN)/$@
 test_rte3d: $(SRC)/test_rte3d.f90 $(INC)/rte_sparse_matrices.o $(INC)/test_rte3d_mod.o $(INC)/mgmres.o $(INC)/rte3d.o $(INC)/test_kelp3d_mod.o $(INC)/prob.o $(INC)/fastgl.o $(INC)/sag.o $(INC)/utils.o $(INC)/kelp3d.o $(INC)/kelp_context.o
-	$(H5FC) $(BFLAGS) $^ -o $(BIN)/$@
+	$(FC) $(BFLAGS) $^ -o $(BIN)/$@
 ### Old tests
 old: test_interp test_rte2d test_vsf
 
@@ -98,9 +108,9 @@ $(INC)/light_context.o: $(SRC)/kelp_context.f90 $(INC)/kelp3d.o $(INC)/kelp_cont
 $(INC)/kelp3d.o: $(SRC)/kelp3d.f90 $(INC)/kelp_context.o
 	$(FC) $(OFLAGS) $< -o $@
 $(INC)/test_kelp3d_mod.o: $(SRC)/test_kelp3d_mod.f90 $(INC)/kelp3d.o $(INC)/hdf5_utils.o
-	$(H5FC) $(OFLAGS) $< -o $@
+	$(FC) $(OFLAGS) $< -o $@
 $(INC)/test_rte3d_mod.o: $(SRC)/test_rte3d_mod.f90 $(INC)/test_kelp3d_mod.o $(INC)/rte3d.o $(INC)/kelp3d.o $(INC)/hdf5_utils.o
-	$(H5FC) $(OFLAGS) $< -o $@
+	$(FC) $(OFLAGS) $< -o $@
 $(INC)/rte_sparse_matrices.o: $(SRC)/rte_sparse_matrices.f90 $(INC)/sag.o $(INC)/kelp_context.o $(INC)/mgmres.o
 	$(FC) $(OFLAGS) $< -o $@
 $(INC)/rte3d.o: $(SRC)/rte3d.f90 $(INC)/kelp_context.o $(INC)/rte_sparse_matrices.o
