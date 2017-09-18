@@ -117,15 +117,6 @@ subroutine test_easy()
 end subroutine test_easy
 
 
-subroutine zeros(x, n)
-  integer n, i
-  double precision, dimension(n) :: x
-
-  do i=1, n
-     x(i) = 0
-  end do
-end subroutine zeros
-
 subroutine create_test_equation(row, col, data, b, x_true)
   use utils
   use hdf5_utils
