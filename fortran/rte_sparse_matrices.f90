@@ -15,13 +15,18 @@ type rte_mat
    type(solver_params) params
    integer nx, ny, nz, ntheta, nphi
    integer ent, i, j, k, l, m
+   integer repeat_index
    integer nonzero, n_total
+   integer x_block_size, y_block_size, z_block_size, theta_block_size, phi_block_size
 
    ! A stored in coordinate form in row, col, data
    integer, dimension(:), allocatable :: row, col
    double precision, dimension(:), allocatable :: data
    ! b and x stored in rhs in full form
    double precision, dimension(:), allocatable :: rhs, sol
+
+   ! Given row and column number, determine corresponding position in row, col, data
+   !integer, dimension(:,:), allocatable :: index_map
  contains
    procedure :: init => mat_init
    procedure :: deinit => mat_deinit
@@ -31,9 +36,11 @@ type rte_mat
    procedure :: assign => mat_assign
    procedure :: add => mat_add
    procedure :: assign_rhs => mat_assign_rhs
-   procedure :: find_index => mat_find_index
+   !procedure :: store_index => mat_store_index
+   !procedure :: find_index => mat_find_index
    procedure :: solve => mat_solve
    procedure :: ind => mat_ind
+   procedure :: calculate_repeat_index => mat_calculate_repeat_index
    procedure attenuate
    procedure angular_integral
 
@@ -72,6 +79,11 @@ contains
     allocate(mat%rhs(n_total))
     allocate(mat%sol(n_total))
 
+    ! Expensive in terms of memory, but huge saver for CPU time
+    write(*,*) 'here'
+    !allocate(mat%index_map(n_total, n_total))
+    write(*,*) 'here1'
+
     call zeros(mat%rhs, n_total)
     call zeros(mat%sol, n_total)
 
@@ -101,6 +113,12 @@ contains
 
     mat%nonzero = nx * ny * ntheta * nphi * ( (nz-1) * (6 + ntheta * nphi) + 1)
     mat%n_total = nx * ny * nz * ntheta * nphi
+
+    mat%theta_block_size = 1
+    mat%phi_block_size = mat%theta_block_size * ntheta
+    mat%x_block_size = mat%phi_block_size * nphi
+    mat%y_block_size = mat%x_block_size * nx
+    mat%z_block_size = mat%y_block_size * ny
 
   end subroutine calculate_size
 
@@ -140,29 +158,27 @@ contains
     mat%params%tol_rel = tol_rel
   end subroutine mat_set_solver_params
 
+  subroutine mat_calculate_repeat_index(mat, indices)
+    ! Must be called from angular loop
+    ! Assuming outer loop is theta, inner is phi
+    class(rte_mat) mat
+    type(index_list) indices
+
+    mat%repeat_index = mat%ent + mat%theta_block_size * (indices%l-1) &
+         + mat%phi_block_size * indices%m
+  end subroutine mat_calculate_repeat_index
+
   function mat_ind(mat, i, j, k, l, m) result(ind)
     ! Assuming var ordering: z, y, x, phi, theta
     class(rte_mat) mat
     type(space_angle_grid) grid
-    integer i, j, k, l, m, ind
-    integer z_block_size, y_block_size, x_block_size
-    integer phi_block_size, theta_block_size
-    integer nx, ny, nz, ntheta, nphi
+    integer i, j, k, l, m
+    integer ind
     grid = mat%grid
 
-    nx = grid%x%num
-    ny = grid%y%num
-    nz = grid%z%num
-    ntheta = grid%theta%num
-    nphi = grid%phi%num
-
-    theta_block_size = 1
-    phi_block_size = theta_block_size * ntheta
-    x_block_size = phi_block_size * nphi
-    y_block_size = x_block_size * nx
-    z_block_size = y_block_size * ny
-
-    ind = (i-1) * x_block_size + (j-1) * y_block_size + (k-1) * z_block_size + (l) * theta_block_size + (m-1) * phi_block_size
+    ind = (i-1) * mat%x_block_size + (j-1) * mat%y_block_size + &
+         (k-1) * mat%z_block_size + (l) * mat%theta_block_size + &
+         (m-1) * mat%phi_block_size
   end function mat_ind
 
   subroutine mat_set_ind(mat, indices)
@@ -191,22 +207,20 @@ contains
     mat%col(mat%ent) = col_num
     mat%data(mat%ent) = data
 
+    ! Remember where we stored information for this matrix element
+    !call mat%store_index(row_num, col_num)
+
     mat%ent = mat%ent + 1
   end subroutine mat_assign
 
-  subroutine mat_add(mat, data, i, j, k, l, m)
+  subroutine mat_add(mat, data)
     ! Use this when you know that this entry has already been assigned
     ! and you'd like to add this value to the existing value.
     class(rte_mat) mat
     double precision data
-    integer i, j, k, l, m
-    integer row_num, col_num
     integer index
 
-    row_num = mat%ind(mat%i, mat%j, mat%k, mat%l, mat%m)
-    col_num = mat%ind(i, j, k, l, m)
-
-    index = mat%find_index(row_num, col_num)
+    index = mat%repeat_index
 
     mat%data(index) = mat%data(index) + data
   end subroutine mat_add
@@ -222,19 +236,29 @@ contains
     mat%rhs(row_num) = data
   end subroutine mat_assign_rhs
 
-  function mat_find_index(mat, row_num, col_num) result(index)
-    ! Find the position in row, col, data where this entry
-    ! is defined.
-    class(rte_mat) mat
-    integer row_num, col_num, index
+  ! subroutine mat_store_index(mat, row_num, col_num)
+  !   ! Remember where we stored information for this matrix element
+  !   class(rte_mat) mat
+  !   integer row_num, col_num
+  !   !mat%index_map(row_num, col_num) = mat%ent
+  ! end subroutine
 
-    ! Only search up to most recently assigned index
-    do index=1, mat%ent-1
-       if( (mat%row(index) .eq. row_num) .and. (mat%col(index) .eq. col_num)) then
-          exit
-       end if
-    end do
-  end function mat_find_index
+  ! function mat_find_index(mat, row_num, col_num) result(index)
+  !   ! Find the position in row, col, data where this entry
+  !   ! is defined.
+  !   class(rte_mat) mat
+  !   integer row_num, col_num, index
+
+  !   index = mat%index_map(row_num, col_num)
+
+  !   ! This took up 95% of execution time.
+  !   ! Only search up to most recently assigned index
+  !   ! do index=1, mat%ent-1
+  !   !    if( (mat%row(index) .eq. row_num) .and. (mat%col(index) .eq. col_num)) then
+  !   !       exit
+  !   !    end if
+  !   ! end do
+  ! end function mat_find_index
 
   subroutine attenuate(mat, indices)
     ! Has to be called after angular_integral
@@ -259,7 +283,7 @@ contains
     bb = iops%scat_grid(i, j, k)
 
     attenuation = aa + bb
-    call mat%add(attenuation, i, j, k, l, m)
+    call mat%add(attenuation)
   end subroutine attenuate
 
   subroutine x_cd2(mat, indices)
@@ -488,7 +512,7 @@ contains
     val3 = -val
 
     call mat%set_ind(indices)
-    call mat%add(val1,i,j,k,l,m)
+    call mat%add(val1)
     call mat%assign(val2,i,j,k+1,l,m)
     call mat%assign(val3,i,j,k+2,l,m)
   end subroutine z_fd2
@@ -524,7 +548,7 @@ contains
     val3 = val
 
     call mat%set_ind(indices)
-    call mat%add(val1,i,j,k,l,m)
+    call mat%add(val1)
     call mat%assign(val2,i,j,k-1,l,m)
     call mat%assign(val3,i,j,k-2,l,m)
   end subroutine z_bd2
@@ -549,6 +573,10 @@ contains
 
     prefactor = grid%theta%prefactor * grid%phi%prefactor
     call mat%set_ind(indices)
+
+    ! Store entry number of element at i,j,k,l,m
+    ! to allow other functions to add to it
+    call mat%calculate_repeat_index(indices)
 
     do lp=1, grid%theta%num
        do mp=1, grid%phi%num

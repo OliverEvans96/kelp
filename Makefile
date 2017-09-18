@@ -42,16 +42,20 @@ H5FC=h5fc
 # (Should replace CFLAGS in OFLAGS)
 # Compile & run normally,
 # Then call gprof `executable`
-PFLAGS=-pg
+#PFLAGS=-g -O0
+
+# Optimize performance
+#https://stackoverflow.com/questions/42386065/inlining-functions-in-fortran
+OPTFLAGS=-Ofast -flto
 
 # Normal compilation flag (no profiling)
 CFLAGS=-c
 
 # Fortran Compilation flags
 # Object files (.o)
-OFLAGS=-J$(INC) -I$(INC) $(CFLAGS) $(PFLAGS) 
+OFLAGS=-J$(INC) -I$(INC) $(CFLAGS) $(PFLAGS) $(OPTFLAGS)
 # Binary files (executable)
-BFLAGS=-J$(INC) -I$(INC) $(PFLAGS)
+BFLAGS=-J$(INC) -I$(INC) $(PFLAGS) $(OPTFLAGS)
 
 
 ###############

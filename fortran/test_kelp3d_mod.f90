@@ -18,8 +18,8 @@ subroutine init_grid(grid)
   grid%z%maxval = 1.d1
   grid%z%spacing = 1.d0
 
-  grid%theta%num = 10
-  grid%phi%num = 10
+  grid%theta%num = 13
+  grid%phi%num = 13
 
   call grid%set_num_from_spacing()
   call grid%init()
@@ -88,8 +88,8 @@ end subroutine init_params
 
 subroutine calculate_memory_usage(grid)
   type(space_angle_grid) grid
-  integer nx, ny, nz, ntheta, nphi, space_bytes, total_bytes
-  double precision space_megabytes, total_megabytes
+  integer nx, ny, nz, ntheta, nphi, space_bytes, total_bytes, total_square_bytes
+  double precision space_megabytes, total_megabytes, total_square_megabytes
 
   nx = grid%x%num
   ny = grid%y%num
@@ -99,12 +99,15 @@ subroutine calculate_memory_usage(grid)
 
   space_bytes = 8 * nx * ny * nz
   total_bytes = space_bytes * ntheta * nphi
+  total_square_bytes = 8 * (nx * ny * nz * ntheta * nphi) ** 2
 
   space_megabytes = dble(space_bytes) / dble(1024 ** 2)
   total_megabytes = dble(total_bytes) / dble(1024 ** 2)
+  total_square_megabytes = dble(total_square_bytes) / dble(1024 ** 2)
 
   write(*,'(A,F10.3,A)') 'Space: ', space_megabytes, ' MB'
   write(*,'(A,F10.3,A)') 'Total: ', total_megabytes, ' MB'
+  write(*,'(A,F10.3,A)') 'Total^2: ', total_square_megabytes, ' MB'
 end subroutine
 
 
