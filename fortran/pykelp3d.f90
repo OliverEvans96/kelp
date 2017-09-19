@@ -1,6 +1,5 @@
 program pykelp3d
   use kelp3d
-  use hdf5_utils
   implicit none
 
   type(space_angle_grid) grid

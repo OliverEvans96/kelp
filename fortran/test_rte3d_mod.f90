@@ -11,6 +11,8 @@ contains
     type(rte_mat) mat
     type(optical_properties) iops
 
+    character(len=21), parameter :: matfile = 'hdf5/kelp3d/mat.hdf5'
+
     write(*,*) 'Start'
     call gen_kelp(grid, rope, p_kelp)
     write(*,*) 'Test Domain:'
@@ -28,10 +30,10 @@ contains
     write(*,*) 'Solver Params'
     call set_solver_params(mat)
 
-    write(*,*) 'Solve'
-    call mat%solve()
+    write(*,*) 'Write'
+    call mat%to_hdf(matfile)
 
-    write(*,*) 'Kelp deinit'
+    write(*,*) ' deinit'
     call kelp3d_deinit(grid, rope, p_kelp)
     write(*,*) 'RTE3D deinit'
     call rte3d_deinit(mat, iops)

@@ -18,8 +18,8 @@ subroutine init_grid(grid)
   grid%z%maxval = 1.d1
   grid%z%spacing = 1.d0
 
-  grid%theta%num = 13
-  grid%phi%num = 13
+  grid%theta%num = 5
+  grid%phi%num = 5
 
   call grid%set_num_from_spacing()
   call grid%init()

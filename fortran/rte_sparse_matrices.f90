@@ -2,6 +2,7 @@ module rte_sparse_matrices
 use sag
 use kelp_context
 use mgmres
+use hdf5_utils
 implicit none
 
 type solver_params
@@ -41,6 +42,7 @@ type rte_mat
    procedure :: solve => mat_solve
    procedure :: ind => mat_ind
    procedure :: calculate_repeat_index => mat_calculate_repeat_index
+   procedure :: to_hdf => mat_to_hdf
    procedure attenuate
    procedure angular_integral
 
@@ -79,11 +81,6 @@ contains
     allocate(mat%rhs(n_total))
     allocate(mat%sol(n_total))
 
-    ! Expensive in terms of memory, but huge saver for CPU time
-    write(*,*) 'here'
-    !allocate(mat%index_map(n_total, n_total))
-    write(*,*) 'here1'
-
     call zeros(mat%rhs, n_total)
     call zeros(mat%sol, n_total)
 
@@ -121,6 +118,12 @@ contains
     mat%z_block_size = mat%y_block_size * ny
 
   end subroutine calculate_size
+
+  subroutine mat_to_hdf(mat,filename)
+    class(rte_mat) mat
+    character(len=*) filename
+    call write_coo(filename, mat%row, mat%col, mat%data, mat%nonzero)
+  end subroutine mat_to_hdf
 
   subroutine mat_solve(mat)
     class(rte_mat) mat

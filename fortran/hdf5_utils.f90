@@ -292,19 +292,39 @@ contains
 
 
   !- dset WRITE int
+  subroutine dset_write_1d_int(file_id, dsetname, data_dims, output, error)
+    integer(hid_t) :: file_id, dset_id, dspace_id
+    integer, parameter :: rank = 1
+    integer(hsize_t), dimension(rank) :: data_dims
+    character(len=*) :: dsetname
+    integer, dimension(:) :: output
+    integer error
+
+    call h5screate_simple_f(rank, data_dims, dspace_id, error)
+    ! Create dataset
+    call h5dcreate_f(file_id, dsetname, h5t_native_integer, dspace_id, dset_id, error)
+    call h5dwrite_f(dset_id, h5t_native_integer, output, data_dims, error)
+    call h5dclose_f(dset_id, error)
+    call h5sclose_f(dspace_id, error)
+  end subroutine dset_write_1d_int
 
 
   !- dset WRITE double
   subroutine dset_write_1d_double(file_id, dsetname, data_dims, input, error)
-    integer(hid_t) :: file_id, dset_id
-    integer(hsize_t), dimension(1) :: data_dims
+    integer(hid_t) :: file_id, dset_id, dspace_id
+    integer, parameter :: rank = 1
+    integer(hsize_t), dimension(rank) :: data_dims
     character(len=*) :: dsetname
     double precision, dimension(:) :: input
     integer error
 
-    call h5dopen_f(file_id, dsetname, dset_id, error)
+    ! Create dataspace
+    call h5screate_simple_f(rank, data_dims, dspace_id, error)
+    ! Create dataset
+    call h5dcreate_f(file_id, dsetname, h5t_native_double, dspace_id, dset_id, error)
     call h5dwrite_f(dset_id, h5t_native_integer, input, data_dims, error)
     call h5dclose_f(dset_id, error)
+    call h5sclose_f(dspace_id, error)
   end subroutine dset_write_1d_double
 
   subroutine dset_write_3d_double(file_id, dsetname, data_dims, input, error)
@@ -466,7 +486,6 @@ subroutine write_coo(filename, row, col, data, nnz)
   call h5fclose_f(file_id, error)
   call h5close_f(error)
 end subroutine write_coo
-
 
 subroutine read_info(filename, n, m, nnz)
   integer error
