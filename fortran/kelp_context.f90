@@ -41,6 +41,7 @@ end type depth_state
 
 type optical_properties
    integer num_vsf
+   type(space_angle_grid) grid
    double precision, dimension(:), allocatable :: vsf_angles, vsf_vals
    double precision abs_water, abs_kelp, scat_water, scat_kelp
    ! On x, y, z grid - including water & kelp.
@@ -104,6 +105,9 @@ contains
   subroutine iop_init(iops, grid)
     class(optical_properties) iops
     type(space_angle_grid) grid
+
+    iops%grid = grid
+
     allocate(iops%vsf(grid%theta%num, grid%phi%num, grid%theta%num, grid%phi%num))
     allocate(iops%abs_grid(grid%x%num, grid%y%num, grid%z%num))
     allocate(iops%scat_grid(grid%x%num, grid%y%num, grid%z%num))
@@ -137,13 +141,14 @@ contains
     tmp_2d_arr = read_array(filename, fmtstr, num_rows, num_cols, skiplines_in)
     iops%vsf_angles = tmp_2d_arr(:,1)
     iops%vsf_vals = tmp_2d_arr(:,2)
+
+    call iops%calc_vsf_on_grid()
   end subroutine load_vsf
 
   function eval_vsf(iops, theta)
     class(optical_properties) iops
     double precision theta
     double precision eval_vsf
-
     eval_vsf = interp(theta, iops%vsf_angles, iops%vsf_vals, iops%num_vsf)
   end function eval_vsf
 
@@ -255,12 +260,16 @@ contains
     diff = acos(alpha)
   end function angle_diff_3d
 
-  subroutine calc_vsf_on_grid(iops, grid)
+  subroutine calc_vsf_on_grid(iops)
     class(optical_properties) iops
     type(space_angle_grid) grid
     double precision th, ph, thp, php
     integer l, m, lp, mp
     integer ntheta, nphi
+    double precision angle_diff
+    double precision vsf_val
+
+    grid = iops%grid
 
     ntheta = grid%theta%num
     nphi = grid%phi%num
@@ -272,7 +281,7 @@ contains
           do lp=1, ntheta
              thp = grid%theta%vals(lp)
              do mp=1, nphi
-                ph = grid%phi%vals(mp)
+                php = grid%phi%vals(mp)
                 iops%vsf(l,m,lp,mp) = iops%eval_vsf(angle_diff_3d(th,ph,thp,php))
              end do
           end do

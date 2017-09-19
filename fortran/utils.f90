@@ -181,30 +181,39 @@ function interp(x0,xx,yy,nn)
     ! Slope of liine between (xx(ii),yy(ii)) and (xx(ii+1),yy(ii+1))
     double precision mm
 
-    ! Determine ii
-    do ii = 1, nn
-        if (xx(ii) > x0) then
-            ! We've now gone one index too far.
-            exit
-        end if
-    end do
-
-    ! Determine whether we're on the right endpoint
-    if(ii-1 < nn) then
-        ! If this is a legitimate interpolation, then
-        ! subtract since we went one index too far
-        ii = ii - 1
-
-        ! Calculate slope
-        mm = (yy(ii+1) - yy(ii)) / (xx(ii+1) - xx(ii))
-
-        ! Return interpolated value
-        interp = yy(ii) + mm * (x0 - xx(ii))
+    ! If out of bounds, then return endpoint value
+    if (x0 < xx(1)) then
+       interp = yy(1)
+    else if (x0 > xx(nn)) then
+       interp = yy(nn)
     else
-        ! If we're actually interpolating the right endpoint,
-        ! then just return it.
-        interp = yy(nn)
-    end if
+
+      ! Determine ii
+      do ii = 1, nn
+          if (xx(ii) > x0) then
+              ! We've now gone one index too far.
+              exit
+          end if
+      end do
+
+      ! Determine whether we're on the right endpoint
+      if(ii-1 < nn) then
+          ! If this is a legitimate interpolation, then
+          ! subtract since we went one index too far
+          ii = ii - 1
+
+          ! Calculate slope
+          mm = (yy(ii+1) - yy(ii)) / (xx(ii+1) - xx(ii))
+
+          ! Return interpolated value
+          interp = yy(ii) + mm * (x0 - xx(ii))
+      else
+          ! If we're actually interpolating the right endpoint,
+          ! then just return it.
+          interp = yy(nn)
+      end if
+
+   end if
 
 end function
 
