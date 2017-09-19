@@ -292,8 +292,7 @@ contains
   subroutine x_cd2(mat, indices)
     class(rte_mat) mat
     type(space_angle_grid) grid
-    double precision val
-    double precision sintheta, costheta, sinphi, cosphi, dx
+    double precision val, dx
     type(index_list) indices
     integer i, j, k, l, m
     i = indices%i
@@ -303,13 +302,9 @@ contains
     m = indices%m
     grid = mat%grid
 
-    sintheta = grid%theta%sin(k)
-    costheta = grid%theta%cos(k)
-    sinphi = grid%phi%sin(l)
-    cosphi = grid%phi%cos(l)
     dx = grid%x%spacing
 
-    val = sinphi * costheta / (2.d0 * dx)
+    val = grid%phi%sin(m) * grid%theta%cos(l) / (2.d0 * dx)
 
     call mat%set_ind(indices)
     call mat%assign(-val,i-1,j,k,l,m)
@@ -319,8 +314,7 @@ contains
   subroutine x_cd2_first(mat, indices)
     class(rte_mat) mat
     type(space_angle_grid) grid
-    double precision val
-    double precision sintheta, costheta, sinphi, cosphi, dx
+    double precision val, dx
     integer nx
     type(index_list) indices
     integer i, j, k, l, m
@@ -332,14 +326,10 @@ contains
     m = indices%m
     grid = mat%grid
 
-    sintheta = grid%theta%sin(k)
-    costheta = grid%theta%cos(k)
-    sinphi = grid%phi%sin(l)
-    cosphi = grid%phi%cos(l)
     dx = grid%x%spacing
     nx = grid%x%num
 
-    val = sinphi * costheta / (2.d0 * dx)
+    val = grid%phi%sin(m) * grid%theta%cos(l) / (2.d0 * dx)
 
     call mat%set_ind(indices)
     call mat%assign(-val,nx,j,k,l,m)
@@ -349,8 +339,7 @@ contains
   subroutine x_cd2_last(mat, indices)
     class(rte_mat) mat
     type(space_angle_grid) grid
-    double precision val
-    double precision sintheta, costheta, sinphi, cosphi, dx
+    double precision val, dx
     type(index_list) indices
     integer i, j, k, l, m
     i = indices%i
@@ -360,13 +349,9 @@ contains
     m = indices%m
     grid = mat%grid
 
-    sintheta = grid%theta%sin(k)
-    costheta = grid%theta%cos(k)
-    sinphi = grid%phi%sin(l)
-    cosphi = grid%phi%cos(l)
     dx = grid%x%spacing
 
-    val = sinphi * costheta / (2.d0 * dx)
+    val = grid%phi%sin(m) * grid%theta%cos(l) / (2.d0 * dx)
 
     call mat%set_ind(indices)
     call mat%assign(-val,i-1,j,k,l,m)
@@ -376,8 +361,7 @@ contains
   subroutine y_cd2(mat, indices)
     class(rte_mat) mat
     type(space_angle_grid) grid
-    double precision val
-    double precision sintheta, costheta, sinphi, cosphi, dy
+    double precision val, dy
     type(index_list) indices
     integer i, j, k, l, m
     i = indices%i
@@ -387,13 +371,9 @@ contains
     m = indices%m
     grid = mat%grid
 
-    sintheta = grid%theta%sin(k)
-    costheta = grid%theta%cos(k)
-    sinphi = grid%phi%sin(l)
-    cosphi = grid%phi%cos(l)
     dy = grid%y%spacing
 
-    val = sinphi * sintheta / (2.d0 * dy)
+    val = grid%phi%sin(m) * grid%theta%sin(l) / (2.d0 * dy)
 
     call mat%set_ind(indices)
     call mat%assign(-val,i,j-1,k,l,m)
@@ -403,8 +383,7 @@ contains
   subroutine y_cd2_first(mat, indices)
     class(rte_mat) mat
     type(space_angle_grid) grid
-    double precision val
-    double precision sintheta, costheta, sinphi, cosphi, dy
+    double precision val, dy
     integer ny
     type(index_list) indices
     integer i, j, k, l, m
@@ -415,14 +394,10 @@ contains
     m = indices%m
     grid = mat%grid
 
-    sintheta = grid%theta%sin(k)
-    costheta = grid%theta%cos(k)
-    sinphi = grid%phi%sin(l)
-    cosphi = grid%phi%cos(l)
     dy = grid%y%spacing
     ny = grid%y%num
 
-    val = sinphi * sintheta / (2.d0 * dy)
+    val = grid%phi%sin(m) * grid%theta%sin(l) / (2.d0 * dy)
 
     call mat%set_ind(indices)
     call mat%assign(-val,i,ny,k,l,m)
@@ -432,8 +407,7 @@ contains
   subroutine y_cd2_last(mat, indices)
     class(rte_mat) mat
     type(space_angle_grid) grid
-    double precision val
-    double precision sintheta, costheta, sinphi, cosphi, dy
+    double precision val, dy
     integer ny
     type(index_list) indices
     integer i, j, k, l, m
@@ -444,13 +418,9 @@ contains
     m = indices%m
     grid = mat%grid
 
-    sintheta = grid%theta%sin(k)
-    costheta = grid%theta%cos(k)
-    sinphi = grid%phi%sin(l)
-    cosphi = grid%phi%cos(l)
     dy = grid%y%spacing
 
-    val = sinphi * sintheta / (2.d0 * dy)
+    val = grid%phi%sin(m) * grid%theta%sin(l) / (2.d0 * dy)
 
     call mat%set_ind(indices)
     call mat%assign(-val,i,j-1,k,l,m)
@@ -460,8 +430,7 @@ contains
   subroutine z_cd2(mat, indices)
     class(rte_mat) mat
     type(space_angle_grid) grid
-    double precision val
-    double precision sintheta, costheta, sinphi, cosphi, dz
+    double precision val, dz
     type(index_list) indices
     integer i, j, k, l, m
     i = indices%i
@@ -471,13 +440,9 @@ contains
     m = indices%m
     grid = mat%grid
 
-    sintheta = grid%theta%sin(k)
-    costheta = grid%theta%cos(k)
-    sinphi = grid%phi%sin(l)
-    cosphi = grid%phi%cos(l)
     dz = grid%z%spacing
 
-    val = cosphi / (2.d0 * dz)
+    val = grid%phi%cos(m) / (2.d0 * dz)
 
     call mat%set_ind(indices)
     call mat%assign(-val,i,j,k-1,l,m)
@@ -491,8 +456,7 @@ contains
     ! in the angular loop.
     class(rte_mat) mat
     type(space_angle_grid) grid
-    double precision val, val1, val2, val3
-    double precision sintheta, costheta, sinphi, cosphi, dz
+    double precision val, val1, val2, val3, dz
     type(index_list) indices
     integer i, j, k, l, m
     i = indices%i
@@ -502,13 +466,9 @@ contains
     m = indices%m
     grid = mat%grid
 
-    sintheta = grid%theta%sin(k)
-    costheta = grid%theta%cos(k)
-    sinphi = grid%phi%sin(l)
-    cosphi = grid%phi%cos(l)
     dz = grid%z%spacing
 
-    val = cosphi / (2.d0 * dz)
+    val = grid%phi%cos(m) / (2.d0 * dz)
 
     val1 = -3.d0 * val
     val2 = 2.d0 * val
@@ -527,8 +487,7 @@ contains
     ! in the angular loop.
     class(rte_mat) mat
     type(space_angle_grid) grid
-    double precision val, val1, val2, val3
-    double precision sintheta, costheta, sinphi, cosphi, dz
+    double precision val, val1, val2, val3, dz
     type(index_list) indices
     integer i, j, k, l, m
     i = indices%i
@@ -538,13 +497,9 @@ contains
     m = indices%m
     grid = mat%grid
 
-    sintheta = grid%theta%sin(k)
-    costheta = grid%theta%cos(k)
-    sinphi = grid%phi%sin(l)
-    cosphi = grid%phi%cos(l)
     dz = grid%z%spacing
 
-    val = cosphi / (2.d0 * dz)
+    val = grid%phi%cos(m) / (2.d0 * dz)
 
     val1 = 3.d0 * val
     val2 = -2.d0 * val
@@ -594,7 +549,6 @@ contains
     class(rte_mat) mat
     type(space_angle_grid) grid
     double precision bc_val
-    double precision sintheta, costheta, sinphi, cosphi, dx
     type(index_list) indices
     integer i, j, k, l, m
     i = indices%i
@@ -604,12 +558,6 @@ contains
     m = indices%m
 
     grid = mat%grid
-
-    sintheta = grid%theta%sin(k)
-    costheta = grid%theta%cos(k)
-    sinphi = grid%phi%sin(l)
-    cosphi = grid%phi%cos(l)
-    dx = grid%x%spacing
 
     ! Constant light from above in all directions
     bc_val = 1.d0
@@ -623,7 +571,6 @@ contains
     class(rte_mat) mat
     type(space_angle_grid) grid
     double precision bc_val
-    double precision sintheta, costheta, sinphi, cosphi, dx
     type(index_list) indices
     integer i, j, k, l, m
     i = indices%i
@@ -633,12 +580,6 @@ contains
     m = indices%m
 
     grid = mat%grid
-
-    sintheta = grid%theta%sin(k)
-    costheta = grid%theta%cos(k)
-    sinphi = grid%phi%sin(l)
-    cosphi = grid%phi%cos(l)
-    dx = grid%x%spacing
 
     ! No light from below
     bc_val = 0.d0
