@@ -25,6 +25,6 @@ program pykelp3d
   call calculate_kelp_on_grid(grid, p_kelp, frond, rope, quadrature_degree)
   call hdf_write_kelp(kelpfile, p_kelp, grid)
 
-  call deinit(grid, rope, p_kelp)
+  call kelp3d_deinit(grid, rope, p_kelp)
 
 end program pykelp3d

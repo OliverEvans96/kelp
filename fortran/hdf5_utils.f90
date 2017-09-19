@@ -299,7 +299,7 @@ contains
     integer(hid_t) :: file_id, dset_id
     integer(hsize_t), dimension(1) :: data_dims
     character(len=*) :: dsetname
-    integer, dimension(:) :: input
+    double precision, dimension(:) :: input
     integer error
 
     call h5dopen_f(file_id, dsetname, dset_id, error)
@@ -442,6 +442,31 @@ subroutine read_coo(filename, row, col, data, nnz)
   call h5fclose_f(file_id, error)
   call h5close_f(error)
 end subroutine
+
+subroutine write_coo(filename, row, col, data, nnz)
+  integer error
+  integer n, m, nnz
+
+  integer, dimension(nnz) :: row, col
+  double precision, dimension(nnz) :: data
+
+  integer(hid_t), dimension(1) :: data_dims
+  integer(hid_t) :: file_id
+  character(len=*) :: filename
+
+  data_dims(1) = nnz
+
+  call h5open_f(error)
+  call h5fcreate_f(filename, h5f_acc_trunc_f, file_id, error)
+
+  call dset_write_1d_int(file_id, 'row', data_dims, row, error)
+  call dset_write_1d_int(file_id, 'col', data_dims, col, error)
+  call dset_write_1d_double(file_id, 'data', data_dims, data, error)
+
+  call h5fclose_f(file_id, error)
+  call h5close_f(error)
+end subroutine write_coo
+
 
 subroutine read_info(filename, n, m, nnz)
   integer error
