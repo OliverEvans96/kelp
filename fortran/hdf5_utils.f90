@@ -322,7 +322,7 @@ contains
     call h5screate_simple_f(rank, data_dims, dspace_id, error)
     ! Create dataset
     call h5dcreate_f(file_id, dsetname, h5t_native_double, dspace_id, dset_id, error)
-    call h5dwrite_f(dset_id, h5t_native_integer, input, data_dims, error)
+    call h5dwrite_f(dset_id, h5t_native_double, input, data_dims, error)
     call h5dclose_f(dset_id, error)
     call h5sclose_f(dspace_id, error)
   end subroutine dset_write_1d_double
@@ -334,7 +334,6 @@ contains
     character(len=*) :: dsetname
     double precision, dimension(:,:,:) :: input
     integer error
-    integer i
 
     ! Create dataspace
     call h5screate_simple_f(rank, data_dims, dspace_id, error)

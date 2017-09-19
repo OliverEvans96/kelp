@@ -167,8 +167,8 @@ contains
     class(rte_mat) mat
     type(index_list) indices
 
-    mat%repeat_index = mat%ent + mat%theta_block_size * (indices%l-1) &
-         + mat%phi_block_size * indices%m
+    mat%repeat_index = mat%ent + mat%grid%phi%num * (indices%l-1) &
+         + indices%m - 1
   end subroutine mat_calculate_repeat_index
 
   function mat_ind(mat, i, j, k, l, m) result(ind)
