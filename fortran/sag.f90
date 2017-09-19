@@ -121,6 +121,7 @@ contains
        angle%sin(i) = sin(root)
        angle%cos(i) = cos(root)
     end do
+
   end subroutine assign_legendre
 
   ! Integrate callable function over angle via Gauss-Legendre quadrature
@@ -270,6 +271,8 @@ contains
     call grid%y%assign_linspace()
     call grid%z%assign_linspace()
 
+    call grid%theta%set_bounds(0.d0, 2.d0*pi)
+    call grid%phi%set_bounds(0.d0, pi)
     call grid%theta%assign_legendre()
     call grid%phi%assign_legendre()
 
