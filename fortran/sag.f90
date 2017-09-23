@@ -35,6 +35,8 @@ type space_dim
    double precision minval, maxval, spacing
    double precision, dimension(:), allocatable :: vals
  contains
+   procedure :: integrate_points => space_integrate_points
+   procedure :: trapezoid_rule
    procedure :: set_bounds => space_set_bounds
    procedure :: set_num => space_set_num
    procedure :: set_spacing => space_set_spacing
@@ -129,6 +131,25 @@ contains
 
 
   !! SPACE !!
+
+  ! Integrate function given function values sampled at even grid points
+  function space_integrate_points(space, func_vals) result(integral)
+    class(angle_dim) :: space
+    double precision, dimension(space%num) :: func_vals
+    double precision integral
+
+    ! Encapsulate actual method for easy switching
+    integral = space%trapezoid_rule(func_vals)
+
+  end function space_integrate_points
+
+  function trapezoid_rule(space, func_vals) result(integral)
+    class(angle_dim) :: space
+    double precision, dimension(space%num) :: func_vals
+    double precision integral
+
+    integral = 0.5d0 * space%spacing * sum(func_vals)
+  end function
 
   subroutine space_set_bounds(space, minval, maxval)
     class(space_dim) :: space
@@ -237,7 +258,7 @@ contains
     call grid%z%set_num_from_spacing()
 
   end subroutine sag_set_num_from_spacing
-
+  
   subroutine sag_deinit(grid)
     class(space_angle_grid) :: grid
     call grid%x%deinit()
