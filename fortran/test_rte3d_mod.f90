@@ -28,10 +28,10 @@ contains
     write(*,*) 'Gen matrix'
     call gen_matrix(grid, mat, iops)
 
-    call light%init(mat)
-
     write(*,*) 'Solver Params'
     call set_solver_params(mat)
+
+    call light%init(mat)
 
     write(*,*) 'ent =', mat%ent, '/', mat%nonzero
 
