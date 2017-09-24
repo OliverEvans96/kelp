@@ -13,6 +13,8 @@ contains
     type(optical_properties) iops
 
     character(len=21), parameter :: matfile = 'hdf5/kelp3d/mat.hdf5'
+    character(len=23), parameter :: radfile = 'hdf5/kelp3d/rad.hdf5'
+    character(len=24), parameter :: irradfile = 'hdf5/kelp3d/irrad.hdf5'
 
     write(*,*) 'Start'
     call gen_kelp(grid, rope, p_kelp)
@@ -35,14 +37,17 @@ contains
 
     write(*,*) 'ent =', mat%ent, '/', mat%nonzero
 
-    write(*,*) 'Write'
+    write(*,*) 'Write mat'
     call mat%to_hdf(matfile)
 
     write(*,*) 'Radiance'
     call light%calculate_radiance()
-
+    
     write(*,*) 'Irradiance'
     call light%calculate_irradiance()
+
+    write(*,*) 'Write light'
+    call light%to_hdf(radfile, irradfile)
 
     write(*,*) ' deinit'
     call kelp3d_deinit(grid, rope, p_kelp)

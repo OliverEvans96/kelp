@@ -1,6 +1,7 @@
 module light_context
   use sag
   use rte_sparse_matrices
+  use hdf5
   implicit none
 
   type light_state
@@ -13,6 +14,7 @@ module light_context
      procedure :: calculate_radiance
      procedure :: calculate_irradiance
      procedure :: deinit => light_deinit
+     procedure :: to_hdf => light_to_hdf
   end type light_state
 
 contains
@@ -51,7 +53,7 @@ contains
     index = 1
 
     ! Traverse solution vector in order
-    ! to avoid calculating index
+    ! so as to avoid calculating index
     do k=1, nz
        do j=1, ny
           do i=1, nx
@@ -65,6 +67,15 @@ contains
        end do
     end do
   end subroutine calculate_radiance
+
+  subroutine light_to_hdf(light, radfile, irradfile)
+    class(light_state) light
+    character(len=*) radfile
+    character(len=*) irradfile
+
+    call hdf_write_radiance(radfile, light%radiance, light%grid)
+    call hdf_write_irradiance(irradfile, light%irradiance, light%grid)
+  end subroutine light_to_hdf
 
   subroutine calculate_irradiance(light)
     class(light_state) light
