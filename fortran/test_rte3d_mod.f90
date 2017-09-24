@@ -35,6 +35,9 @@ contains
     write(*,*) 'Write'
     call mat%to_hdf(matfile)
 
+    write(*,*) 'Solve'
+    call mat%solve()
+
     write(*,*) ' deinit'
     call kelp3d_deinit(grid, rope, p_kelp)
     write(*,*) 'RTE3D deinit'
