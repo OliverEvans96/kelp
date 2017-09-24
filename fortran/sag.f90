@@ -166,7 +166,7 @@ contains
 
   ! Integrate function given function values sampled at even grid points
   function space_integrate_points(space, func_vals) result(integral)
-    class(angle_dim) :: space
+    class(space_dim) :: space
     double precision, dimension(space%num) :: func_vals
     double precision integral
 
@@ -176,7 +176,7 @@ contains
   end function space_integrate_points
 
   function trapezoid_rule(space, func_vals) result(integral)
-    class(angle_dim) :: space
+    class(space_dim) :: space
     double precision, dimension(space%num) :: func_vals
     double precision integral
 

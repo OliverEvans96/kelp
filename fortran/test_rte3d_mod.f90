@@ -9,6 +9,7 @@ contains
     type(space_angle_grid) grid
     type(rope_state) rope
     type(rte_mat) mat
+    type(light_state) light
     type(optical_properties) iops
 
     character(len=21), parameter :: matfile = 'hdf5/kelp3d/mat.hdf5'
@@ -27,6 +28,8 @@ contains
     write(*,*) 'Gen matrix'
     call gen_matrix(grid, mat, iops)
 
+    call light%init(mat)
+
     write(*,*) 'Solver Params'
     call set_solver_params(mat)
 
@@ -35,10 +38,16 @@ contains
     write(*,*) 'Write'
     call mat%to_hdf(matfile)
 
+    write(*,*) 'Radiance'
+    call light%calculate_radiance()
+
+    write(*,*) 'Irradiance'
+    call light%calculate_irradiance()
+
     write(*,*) ' deinit'
     call kelp3d_deinit(grid, rope, p_kelp)
     write(*,*) 'RTE3D deinit'
-    call rte3d_deinit(mat, iops)
+    call rte3d_deinit(mat, iops, light)
 
   end subroutine run_test_rte3d
 
