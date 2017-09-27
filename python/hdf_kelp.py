@@ -46,4 +46,18 @@ def hdf_read_kelp(filename, kelp, grid):
         dset = file.require_dataset('p_kelp', nums[::-1], 'd')
         kelp.p_kelp = dset[...].T
 
+def hdf_read_radiance(radfile, light, grid):
+    nums = (grid.nx, grid.ny, grid.nz, grid.ntheta, grid.nphi)
 
+    with h5py.File(radfile) as file:
+        # Transpose indices since data is written in fortran order (column-major)
+        dset = file.require_dataset('radiance', nums[::-1], 'd')
+        light.radiance = dset[...].T
+
+def hdf_read_irradiance(radfile, light, grid):
+    nums = (grid.nx, grid.ny, grid.nz)
+
+    with h5py.File(radfile) as file:
+        # Transpose indices since data is written in fortran order (column-major)
+        dset = file.require_dataset('irradiance', nums[::-1], 'd')
+        light.irradiance = dset[...].T

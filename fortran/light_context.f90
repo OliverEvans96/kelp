@@ -68,15 +68,6 @@ contains
     end do
   end subroutine calculate_radiance
 
-  subroutine light_to_hdf(light, radfile, irradfile)
-    class(light_state) light
-    character(len=*) radfile
-    character(len=*) irradfile
-
-    call hdf_write_radiance(radfile, light%radiance, light%grid)
-    call hdf_write_irradiance(irradfile, light%irradiance, light%grid)
-  end subroutine light_to_hdf
-
   subroutine calculate_irradiance(light)
     class(light_state) light
     integer i, j, k
@@ -92,6 +83,15 @@ contains
     end do
 
   end subroutine calculate_irradiance
+
+  subroutine light_to_hdf(light, radfile, irradfile)
+    class(light_state) light
+    character(len=*) radfile
+    character(len=*) irradfile
+
+    call hdf_write_radiance(radfile, light%radiance, light%grid)
+    call hdf_write_irradiance(irradfile, light%irradiance, light%grid)
+  end subroutine light_to_hdf
 
   subroutine light_deinit(light)
     class(light_state) light

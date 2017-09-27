@@ -33,7 +33,10 @@ def calculate_kelp(grid, rope, frond, params):
         print(stderr)
 
 def read_all(kelp, grid):
-    kelpfile = '../hdf5/kelp3d/kelp.hdf5'  
+    kelpfile = '../hdf5/kelp3d/kelp.hdf5'
+    radfile = '../hdf5/kelp3d/rad.hdf5'
+    irradfile = '../hdf5/kelp3d/irrad.hdf5'
 
     hdf_read_kelp(kelpfile, kelp, grid)
-
+    hdf_read_rad(radfile, light, grid)
+    hdf_read_irrad(irradfile, light, grid)
