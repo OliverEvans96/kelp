@@ -5,6 +5,50 @@ import ipywidgets as ipw
 import traitlets as tr
 # # Widgets
 
+class HandDrawFigure(bq.Figure):
+    def __init__(self, traitful, trait_name, xvals=None, ylim=None, labels=None, color='blue'):
+        """
+        traitful: inherits from traitlets.HasTraits
+        trait_name: string - name of trait of traitful, 1d numpy array of y values
+        xvals: x coordinates of trait values, 1d numpy array
+        ylim: length-2 list or tuple of y bounds: [ymin, ymax]
+        labels: dict with keys: title, xlabel, ylabel
+        """
+        
+        self.traitful = traitful
+        yvals = getattr(traitful, trait_name)
+        
+        if xvals is None:
+            xvals = np.arange(len(getattr(traitful, trait_name)), dtype=float)
+        if ylim is None:
+            ylim = (yvals.min(), yvals.max())
+        if labels is None:
+            labels={}
+        if 'ylabel' not in labels.keys():
+            labels['ylabel'] = trait_name
+        if 'xlabel' not in labels.keys():
+            labels['xlabel'] = 'x'
+        if 'title' not in labels.keys():
+            labels['title'] = ''
+        
+        self.title = labels['title']
+
+        xscale = bq.LinearScale(min=xvals.min(), max=xvals.max())
+        yscale = bq.LinearScale(min=ylim[0], max=ylim[1])
+        xax = bq.Axis(scale=xscale, label=labels['xlabel'], grid_lines='none')
+        yax = bq.Axis(scale=yscale, label=labels['ylabel'], orientation='vertical', grid_lines='none')
+
+        line = bq.Lines(x=xvals, y=yvals, scales={'x': xscale, 'y': yscale}, 
+                                colors=[color], interpolation='cardinal')
+        handdraw = bqi.HandDraw(lines=line)
+        
+        def update_vals(change):
+            with out_area:
+                values[quant] = change['new']
+
+        link = tr.link((line, 'y'), (traitful, trait_name))
+        
+        super().__init__(marks=[line], axes=[xax, yax], interaction=handdraw)
 
 # Define variables over depth
 class RopeWidget(ipw.VBox):
@@ -20,90 +64,82 @@ class RopeWidget(ipw.VBox):
         self.rope = rope
         grid = rope.grid
 
-        z_quants = ['vw', 'theta_w_rad', 'L_mean', 'L_std']
+        z_quants = ['water_speeds', 'water_angles', 'frond_lengths', 'frond_stds']
         z_scale = bq.LinearScale(min=grid.zmin, max=grid.zmax)
         z_ax = bq.Axis(scale=z_scale, label='Depth (z)', grid_lines='none')
 
         mins = {
-            'vw': 0,
-            'theta_w_rad': 0,
-            'L_mean': 0,
-            'L_std': 0
+            'water_speeds': 0,
+            'water_angles': 0,
+            'frond_lengths': 0,
+            'frond_stds': 0
         }
 
         maxs = {
-            'vw': 10,
-            'theta_w_rad': 2*np.pi,
-            'L_mean': 1,
-            'L_std': 1
+            'water_speeds': 10,
+            'water_angles': 2*np.pi,
+            'frond_lengths': 1,
+            'frond_stds': 1
         }
 
         colors = {
-            'vw': 'red',
-            'theta_w_rad': 'green',
-            'L_mean': 'blue',
-            'L_std': 'yellow'
+            'water_speeds': 'red',
+            'water_angles': 'green',
+            'frond_lengths': 'blue',
+            'frond_stds': 'yellow'
         }
 
-        labels = {
-            'vw': 'Water current velocity',
-            'theta_w_rad': 'Water current angle',
-            'L_mean': 'Frond length mean',
-            'L_std': 'Frond length std. dev.'
+        ylabels = {
+            'water_speeds': 'Water current velocity',
+            'water_angles': 'Water current angle',
+            'frond_lengths': 'Frond length mean',
+            'frond_stds': 'Frond length std. dev.'
         }
 
 
         values = {}
-
-        values['L_mean'] = rope.frond_lengths
-        values['L_std'] = rope.frond_stds
-        values['vw'] = rope.water_speeds
-        values['theta_w_rad'] = rope.water_angles
-
-        ys = {}
-        lines = {}
-        handdraws = {}
-        yax = {}
         figs = {}
 
-        out_area = ipw.Output()
-
         for quant in z_quants:
-            ys[quant] = bq.LinearScale(min=mins[quant], max=maxs[quant])
-            lines[quant] = bq.Lines(x=grid.z, y=values[quant], scales={'x': z_scale, 'y': ys[quant]}, 
-                                    colors=[colors[quant]], interpolation='cardinal')
-            handdraws[quant] = bqi.HandDraw(lines=lines[quant])
-            yax[quant] = bq.Axis(scale=ys[quant], label=labels[quant], orientation='vertical', grid_lines='none')
-            figs[quant] = bq.Figure(marks=[lines[quant]], axes=[z_ax, yax[quant]], interaction=handdraws[quant])
-
-            # Update values on handdraw
-            # Define the function like this with default argument so that `quant` takes its
-            # value at definition time, not evaluation time
-            def update_vals(change, quant=quant):
-                with out_area:
-                    print()
-                    print(quant)
-                    values[quant] = change['new']
-                    print('Updated!')
-            lines[quant].observe(update_vals, names='y')
-
-        links = [
-            tr.link((lines['L_mean'], 'y'), (rope, 'frond_lengths')),
-            tr.link((lines['L_std'], 'y'), (rope, 'frond_stds')),
-            tr.link((lines['vw'], 'y'), (rope, 'water_speeds')),
-            tr.link((lines['theta_w_rad'], 'y'), (rope, 'water_angles'))
-        ]
-
-
+            values[quant] = getattr(rope, quant)
+            ylim = np.array([mins[quant], maxs[quant]], dtype=float)
+            labels = {'xlabel': 'z', 'ylabel': '', 'title': ylabels[quant]}
+            figs[quant] = HandDrawFigure(rope, quant, grid.z, ylim, labels, color=colors[quant])
 
         self.children = [
             title,
             ipw.HBox([
-                figs['vw'],
-                figs['theta_w_rad'],
+                figs['water_speeds'],
+                figs['water_angles'],
             ]),
             ipw.HBox([
-                figs['L_mean'],
-                figs['L_std']
+                figs['frond_lengths'],
+                figs['frond_stds']
             ])
         ]
+
+
+class IOPWidget(ipw.VBox):
+    iops = tr.Any()
+
+    def __init__(self):
+        aw_slider = ipw.FloatSlider(min=0,max=10, description='$a_w$')
+        bw_slider = ipw.FloatSlider(min=0,max=10, description='$a_w$')
+        ak_slider = ipw.FloatSlider(min=0,max=10, description='$a_k$')
+        bk_slider = ipw.FloatSlider(min=0,max=10, description='$b_k$')
+
+        self.children = [
+            aw_slider,
+            bw_slider,
+            ak_slider,
+            bk_slider
+        ]
+
+        links = [
+            tr.link((aw_slider, 'value'), (iops, 'a_water')),
+            tr.link((bw_slider, 'value'), (iops, 'a_water')),
+            tr.link((ak_slider, 'value'), (iops, 'a_kelp')),
+            tr.link((bk_slider, 'value'), (iops, 'b_kelp'))
+        ]
+
+
