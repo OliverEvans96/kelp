@@ -20,6 +20,8 @@ type rte_mat
    integer nonzero, n_total
    integer x_block_size, y_block_size, z_block_size, theta_block_size, phi_block_size
 
+   double precision, dimension(:,:,:,:), allocatable :: surface_vals
+
    ! A stored in coordinate form in row, col, data
    integer, dimension(:), allocatable :: row, col
    double precision, dimension(:), allocatable :: data
@@ -39,6 +41,7 @@ type rte_mat
    procedure :: assign_rhs => mat_assign_rhs
    !procedure :: store_index => mat_store_index
    !procedure :: find_index => mat_find_index
+   procedure :: initial_guess => mat_initial_guess
    procedure :: solve => mat_solve
    procedure :: ind => mat_ind
    procedure :: calculate_repeat_index => mat_calculate_repeat_index
@@ -75,6 +78,7 @@ contains
 
     n_total = mat%n_total
     nnz = mat%nonzero
+    allocate(mat%surface_vals(grid%x%num, grid%y%num, grid%theta%num, grid%phi%num))
     allocate(mat%row(nnz))
     allocate(mat%col(nnz))
     allocate(mat%data(nnz))
@@ -96,6 +100,7 @@ contains
     deallocate(mat%data)
     deallocate(mat%rhs)
     deallocate(mat%sol)
+    deallocate(mat%surface_vals)
   end subroutine mat_deinit
 
   subroutine calculate_size(mat)
@@ -125,6 +130,53 @@ contains
     call write_coo(filename, mat%row, mat%col, mat%data, mat%nonzero)
   end subroutine mat_to_hdf
 
+  subroutine mat_initial_guess(mat)
+    class(rte_mat) mat
+    integer i, j, k, l, m
+    double precision dz
+    double precision aa, bb, atten
+    integer index
+
+    ! Initial guess: Exponential decay downward using absorption coefficient
+
+    index = 1
+    dz = mat%grid%z%spacing
+
+    do k=1, mat%grid%z%num
+       do j=1, mat%grid%y%num
+          do i=1, mat%grid%x%num
+             ! Absorption coefficient
+             aa = mat%iops%abs_grid(i,j,k)
+             ! Scattering coefficient
+             bb = mat%iops%scat_grid(i,j,k)
+             ! Attenuation factor
+             atten = 1.d0 - aa * dz
+             ! Downwelling light
+             do m=1, mat%grid%phi%num / 2
+                do l=1, mat%grid%theta%num
+                   mat%sol(index) = mat%surface_vals(i,j,l,m)
+                   write(1,*) 'sol(', index, ') =', mat%sol(index)
+                   index = index + 1
+                   mat%surface_vals(i,j,l,m) = atten * mat%surface_vals(i,j,l,m)
+                end do
+             end do
+             ! Upwelling light
+             ! Still counting m from 1 since surface_vals is only defined up to nphi/2
+             ! However index has incremented to the correct position for downwelling light.
+             do m=1, mat%grid%phi%num / 2
+                do l=1, mat%grid%theta%num
+                   mat%sol(index) = mat%surface_vals(i,j,l,m)
+                   write(1,*) 'sol(', index, ') =', mat%sol(index)
+                   index = index + 1
+                   mat%surface_vals(i,j,l,m) = bb * atten * mat%surface_vals(i,j,l,m)
+                end do
+             end do
+          end do
+       end do
+    end do
+  end subroutine mat_initial_guess
+
+
   subroutine mat_solve(mat)
     class(rte_mat) mat
     type(solver_params) params
@@ -143,6 +195,7 @@ contains
     write(*,*) 'params%tol_rel =', params%tol_rel
     write(*,*) 'params%tol_abs =', params%tol_abs
 
+    call mat%initial_guess()
     call mgmres_st(mat%n_total, mat%nonzero, mat%row, mat%col, mat%data, &
          mat%sol, mat%rhs, params%maxiter_outer, params%maxiter_inner, &
          params%tol_abs, params%tol_rel)
@@ -560,7 +613,9 @@ contains
     grid = mat%grid
 
     ! Constant light from above in all directions
-    bc_val = 1.d0
+    bc_val = 1.d1
+
+    mat%surface_vals(i,j,l,m) = bc_val
 
     call mat%set_ind(indices)
     call mat%assign(1.d0,i,j,k,l,m)

@@ -27,6 +27,11 @@ contains
 
     write(*,*) 'IOPs'
     call set_iops(iops, grid, p_kelp)
+    write(*,*) 'ABS GRID'
+    write(*,*) iops%abs_grid(5,5,:)
+
+    call hdf_write_kelp('hdf5/kelp3d/abs_grid.hdf5', iops%abs_grid, grid)
+
     write(*,*) 'Gen matrix'
     call gen_matrix(grid, mat, iops)
 
@@ -42,7 +47,7 @@ contains
 
     write(*,*) 'Radiance'
     call light%calculate_radiance()
-    
+
     write(*,*) 'Irradiance'
     call light%calculate_irradiance()
 
@@ -70,11 +75,11 @@ contains
     vsf_file = 'data/vsf/bahama_vsf.txt'
     vsf_fmt = 'ES13.5'
 
-    iops%abs_kelp = 5
-    iops%scat_kelp = 5
+    iops%abs_kelp = 1.d0
+    iops%scat_kelp = 0.d0
 
-    iops%abs_water = 1
-    iops%scat_water = 1
+    iops%abs_water = .75d0
+    iops%scat_water = 0.d0
 
     call iops%load_vsf(vsf_file, vsf_fmt)
     call iops%calculate_coef_grids(p_kelp)
@@ -84,7 +89,7 @@ contains
   subroutine set_solver_params(mat)
     type(rte_mat) mat
 
-    mat%params%maxiter_outer = 10
+    mat%params%maxiter_outer = 50
     mat%params%maxiter_inner = 10
     mat%params%tol_abs = 1.d-3
     mat%params%tol_rel = 1.d-3
