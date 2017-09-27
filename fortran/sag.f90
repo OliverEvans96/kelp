@@ -282,7 +282,7 @@ contains
     class(space_angle_grid) grid
     double precision, dimension(:,:) :: func_vals
     double precision integral
-    double precision prefactor
+    double precision prefactor, weight
     integer lp, mp
 
     prefactor = grid%theta%prefactor * grid%phi%prefactor
@@ -290,9 +290,12 @@ contains
 
     do lp=1, grid%theta%num
        do mp=1, grid%phi%num
-          integral = integral + prefactor * func_vals(lp, mp)
+          weight = grid%theta%weights(lp) * grid%phi%weights(mp)
+          integral = integral + weight * func_vals(lp, mp)
        end do
     end do
+
+    integral = prefactor * integral
 
   end function sag_integrate_angle_2d
 
