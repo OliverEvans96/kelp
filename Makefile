@@ -79,7 +79,7 @@ pykelp3d: $(SRC)/pykelp3d.f90 $(INC)/prob.o $(INC)/fastgl.o $(INC)/sag.o $(INC)/
 pykelp3d_wrap: $(INC)/pykelp3d_wrap.o $(INC)/prob.o $(INC)/fastgl.o $(INC)/sag.o $(INC)/utils.o $(INC)/kelp3d.o $(INC)/kelp_context.o
 	f90wrap -m pykelp3d_wrap $(SRC)/pykelp3d_wrap.f90
 	f2py-f90wrap $(F2PYFLAGS) -c -m pykelp3d_wrap f90wrap_pykelp3d_wrap.f90 $^
-	rm f90wrap_pykelp3d_wrap.f90
+	rm f90wrap_pykelp3d_wrap.f90 .f2py_f2cmap
 	mv pykelp3d_wrap.cpython* $(F2PYDIR)
 	mv pykelp3d_wrap.py $(F2PYDIR)
 
