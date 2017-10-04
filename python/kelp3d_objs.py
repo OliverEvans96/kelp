@@ -1,6 +1,10 @@
 import traitlets as tr
 import numpy as np
 from numpy.polynomial.legendre import leggauss
+from scipy.integrate import simps
+import ipyvolume as ipv
+
+from fortran_wrappers.pykelp3d_wrap import f90wrap_py_gen_kelp as gen_kelp_f90
 
 class SpaceDim(tr.HasTraits):
     minval = tr.Float()
@@ -34,19 +38,35 @@ class SpaceDim(tr.HasTraits):
 
 class AngleDim(tr.HasTraits):
     num = tr.Int()
+    minval = tr.Float()
+    maxval = tr.Float()
     vals = tr.Any()
 
     def __init__(self, minval, maxval, num):
         super().__init__()
+        self.minval = minval
+        self.maxval = maxval
         self.num = num
-        self.assign_legendre()
+        self.update()
+        self.init_logic()
 
     def assign_legendre(self):
-        self.vals = leggauss(self.num)
+        self.vals = self.affine_transform(
+            vals=leggauss(self.num)[0],
+            oldmin=-1,
+            oldmax=1,
+            newmin=self.minval,
+            newmax=self.maxval
+        )
+
+    def affine_transform(self, vals, oldmin, oldmax, newmin, newmax):
+        return newmin + (newmin-newmax)/(oldmin-oldmax) * (vals-oldmin)
+
+    def update(self, *args):
+        self.assign_legendre()
 
     def init_logic(self):
-        self.observe(self.assign_linspace, names=['num'])
-
+        self.observe(self.update, names='num')
 
 class Grid(tr.HasTraits):
     x = tr.Any()
@@ -59,7 +79,7 @@ class Grid(tr.HasTraits):
         super().__init__()
         self.x = SpaceDim(-1, 1, 10)
         self.y = SpaceDim(-1, 1, 10)
-        self.z = SpaceDim(-1, 1, 10)
+        self.z = SpaceDim(0, 1, 10)
         self.theta = AngleDim(0, 2*np.pi, 10)
         self.phi = AngleDim(0, np.pi, 10)
 
@@ -108,9 +128,59 @@ class Params(tr.HasTraits):
 class Kelp(tr.HasTraits):
     p_kelp = tr.Any()
 
-    def __init__(self):
+    def __init__(self, grid, rope, frond, params):
         super().__init__()
-        pass
+        self.grid = grid
+        self.rope = rope
+        self.frond = frond
+        self.params = params
+
+        self.gen_kelp()
+
+    def volume_plot(self):
+        "Transform so that the new y is the old -z for IPyVolume."
+        return ipv.quickvolshow(np.swapaxes(self.p_kelp[:,:,::-1], 1, 2)) 
+
+    def gen_kelp(self):
+        # Grid
+        xmin = self.grid.x.minval
+        xmax = self.grid.x.maxval
+        nx = self.grid.x.num
+        ymin = self.grid.y.minval
+        ymax = self.grid.y.maxval
+        ny = self.grid.y.num
+        zmin = self.grid.z.minval
+        zmax = self.grid.z.maxval
+        nz = self.grid.z.num
+
+        # Rope
+        frond_lengths = self.rope.frond_lengths
+        frond_stds = self.rope.frond_stds
+        water_speeds = self.rope.water_speeds
+        water_angles = self.rope.water_angles
+
+        # Frond
+        fs = self.frond.fs
+        fr = self.frond.fr
+
+        # Params
+        quadrature_degree = self.params.quadrature_degree
+
+        # Kelp
+        self.p_kelp = np.asfortranarray(np.zeros([nx, ny, nz]))
+
+        # Call fortran
+        gen_kelp_f90(
+            xmin, xmax, nx,
+            ymin, ymax, ny,
+            zmax, nz,
+            frond_lengths,
+            frond_stds,
+            water_speeds,
+            water_angles,
+            fs, fr,
+            self.p_kelp
+        )
 
 class Light(tr.HasTraits):
     radiance = tr.Any()
@@ -130,7 +200,27 @@ class OpticalProperties(tr.HasTraits):
 
     def __init__(self, grid):
         super().__init__()
-        vsf = None
+        self.grid = grid
+        self.init_vals()
+
+    def init_vals(self):
+        self.a_kelp = 1
+        self.b_kelp = 1
+        self.a_water = 1
+        self.b_water = 1
+
+        z = self.grid.z.vals
+        self.set_vsf(np.exp(-z))
+
+    def set_vsf(self, vsf):
+        self.vsf = self.normalize(vsf)
+
+    def normalize(self, vsf):
+        norm = simps(x=self.grid.phi.vals, y=vsf)
+        try:
+            return vsf / norm
+        except ZeroDivisionError:
+            return vsf
 
 class BoundaryCondition(tr.HasTraits):
 
