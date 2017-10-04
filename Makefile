@@ -29,8 +29,11 @@ BASE=.
 BIN=$(BASE)/bin
 SRC=$(BASE)/fortran
 INC=$(BASE)/include
+PYDIR=$(BASE)/python
 # External modules
 EXT=$(SRC)/download
+# F2PY .so / .py directory
+F2PYDIR=$(PYDIR)/f2py
 
 # Fortran Compiler
 FC=gfortran
@@ -73,9 +76,12 @@ pykelp3d: $(SRC)/pykelp3d.f90 $(INC)/prob.o $(INC)/fastgl.o $(INC)/sag.o $(INC)/
 # F2PY #
 ########
 
-f2py_kelp3d: $(INC)/pykelp3d_wrap.o $(INC)/prob.o $(INC)/fastgl.o $(INC)/sag.o $(INC)/utils.o $(INC)/kelp3d.o $(INC)/kelp_context.o
+pykelp3d_wrap: $(INC)/pykelp3d_wrap.o $(INC)/prob.o $(INC)/fastgl.o $(INC)/sag.o $(INC)/utils.o $(INC)/kelp3d.o $(INC)/kelp_context.o
 	f90wrap -m pykelp3d_wrap $(SRC)/pykelp3d_wrap.f90
 	f2py-f90wrap $(F2PYFLAGS) -c -m pykelp3d_wrap f90wrap_pykelp3d_wrap.f90 $^
+	rm f90wrap_pykelp3d_wrap.f90
+	mv pykelp3d_wrap.cpython* $(F2PYDIR)
+	mv pykelp3d_wrap.py $(F2PYDIR)
 
 #########
 # Tests #
