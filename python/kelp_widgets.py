@@ -14,10 +14,10 @@ class HandDrawFigure(bq.Figure):
         ylim: length-2 list or tuple of y bounds: [ymin, ymax]
         labels: dict with keys: title, xlabel, ylabel
         """
-        
+
         self.traitful = traitful
         yvals = getattr(traitful, trait_name)
-        
+
         if xvals is None:
             xvals = np.arange(len(getattr(traitful, trait_name)), dtype=float)
         if ylim is None:
@@ -30,7 +30,7 @@ class HandDrawFigure(bq.Figure):
             labels['xlabel'] = 'x'
         if 'title' not in labels.keys():
             labels['title'] = ''
-        
+
         self.title = labels['title']
 
         xscale = bq.LinearScale(min=xvals.min(), max=xvals.max())
@@ -38,17 +38,106 @@ class HandDrawFigure(bq.Figure):
         xax = bq.Axis(scale=xscale, label=labels['xlabel'], grid_lines='none')
         yax = bq.Axis(scale=yscale, label=labels['ylabel'], orientation='vertical', grid_lines='none')
 
-        line = bq.Lines(x=xvals, y=yvals, scales={'x': xscale, 'y': yscale}, 
+        line = bq.Lines(x=xvals, y=yvals, scales={'x': xscale, 'y': yscale},
                                 colors=[color], interpolation='cardinal')
         handdraw = bqi.HandDraw(lines=line)
-        
+
         def update_vals(change):
             with out_area:
                 values[quant] = change['new']
 
         link = tr.link((line, 'y'), (traitful, trait_name))
-        
+
         super().__init__(marks=[line], axes=[xax, yax], interaction=handdraw)
+
+class GridWidget(ipw.VBox):
+    grid = tr.Any()
+
+    def __init__(self, grid):
+        super().__init__()
+        self.grid = grid
+        self.init_elements()
+        self.init_style()
+        self.init_layout()
+        self.init_values()
+        self.init_logic()
+
+
+    def init_elements(self):
+
+        self.title = ipw.HTML('<h3>Space/Angle Grid</h3>')
+
+        self.xwidth_slider = ipw.FloatSlider(min=1,max=10, description='x width')
+        self.ywidth_slider = ipw.FloatSlider(min=1,max=10, description='y width')
+        self.zdepth_slider = ipw.FloatSlider(min=1,max=10, description='z depth')
+        self.nx_spinner = ipw.BoundedIntText(min=1, max=1000, description='nx')
+        self.ny_spinner = ipw.BoundedIntText(min=1, max=1000, description='ny')
+        self.nz_spinner = ipw.BoundedIntText(min=1, max=1000, description='nz')
+        self.ntheta_spinner = ipw.BoundedIntText(min=1, max=1000, description='ntheta')
+        self.nphi_spinner = ipw.BoundedIntText(min=1, max=1000, description='nphi')
+
+    def init_layout(self):
+        self.children = [
+            self.title,
+            ipw.HBox([
+                ipw.VBox([
+                    self.nx_spinner,
+                    self.ny_spinner,
+                    self.nz_spinner,
+                    self.ntheta_spinner,
+                    self.nphi_spinner
+                ]),
+                ipw.VBox([
+                    self.xwidth_slider,
+                    self.ywidth_slider,
+                    self.zdepth_slider,
+                ])
+            ])
+        ]
+
+
+    def init_values(self):
+        self.nx_spinner.value = 10
+        self.ny_spinner.value = 10
+        self.nz_spinner.value = 10
+        self.ntheta_spinner.value = 10
+        self.nphi_spinner.value = 10
+        self.zdepth_slider.value = 10
+
+    def init_style(self):
+        self.nx_spinner.layout.width='150px'
+        self.ny_spinner.layout.width='150px'
+        self.nz_spinner.layout.width='150px'
+        self.ntheta_spinner.layout.width='150px'
+        self.nphi_spinner.layout.width='150px'
+
+    def init_logic(self):
+        tr.link(
+            (self.nx_spinner, 'value'),
+            (self.grid.x, 'num')),
+        tr.link(
+            (self.ny_spinner, 'value'),
+            (self.grid.y, 'num')),
+        tr.link(
+            (self.nz_spinner, 'value'),
+            (self.grid.z, 'num')),
+        tr.link(
+            (self.zdepth_slider, 'value'),
+            (self.grid.z, 'maxval'))
+
+        self.xwidth_slider.dim = self.grid.x
+        self.ywidth_slider.dim = self.grid.y
+        self.zdepth_slider.dim = self.grid.z
+
+        self.xwidth_slider.observe(self.set_width, names='value')
+        self.ywidth_slider.observe(self.set_width, names='value')
+        self.zdepth_slider.observe(self.set_width, names='value')
+
+    def set_width(self, change):
+        space_dim = change['owner'].dim
+        halfwidth = change['new'] / 2
+        space_dim.minval = -halfwidth
+        space_dim.maxval = halfwidth
 
 # Define variables over depth
 class RopeWidget(ipw.VBox):
@@ -122,7 +211,10 @@ class RopeWidget(ipw.VBox):
 class IOPWidget(ipw.VBox):
     iops = tr.Any()
 
-    def __init__(self):
+    def __init__(self, iops):
+        super().__init__()
+        self.iops = iops
+
         aw_slider = ipw.FloatSlider(min=0,max=10, description='$a_w$')
         bw_slider = ipw.FloatSlider(min=0,max=10, description='$a_w$')
         ak_slider = ipw.FloatSlider(min=0,max=10, description='$a_k$')
@@ -141,5 +233,3 @@ class IOPWidget(ipw.VBox):
             tr.link((ak_slider, 'value'), (iops, 'a_kelp')),
             tr.link((bk_slider, 'value'), (iops, 'b_kelp'))
         ]
-
-

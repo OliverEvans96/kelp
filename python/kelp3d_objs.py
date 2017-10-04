@@ -1,48 +1,67 @@
 import traitlets as tr
 import numpy as np
+from numpy.polynomial.legendre import leggauss
 
-def num_from_spacing(xmin, xmax, dx):
-    return int(np.floor((xmax - xmin) / dx))
-def spacing_from_num(xmin, xmax, nx):
-    return (xmax - xmin) / nx
+class SpaceDim(tr.HasTraits):
+    minval = tr.Float()
+    maxval = tr.Float()
+    num = tr.Int()
+    vals = tr.Any()
 
-class Grid(tr.HasTraits):
-    xmin = tr.Float()
-    xmax = tr.Float()
-    ymin = tr.Float()
-    ymax = tr.Float()
-    zmin = tr.Float()
-    zmax = tr.Float()
+    def __init__(self, minval, maxval, num):
+        super().__init__()
+        self.minval = minval
+        self.maxval = maxval
+        self.num = num
 
-    dx = tr.Float()
-    dy = tr.Float()
-    dz = tr.Float()
+        self.init_logic()
+        self.update()
 
-    nx = tr.Int()
-    ny = tr.Int()
-    nz = tr.Int()
+    # Deal only with num for simplicity
 
-    def __init__(self):
-        self.xmin, self.xmax, self.dx = -1, 1, 2.5e-2
-        self.ymin, self.ymax, self.dy = -1, 1, 2.5e-2
-        self.zmin, self.zmax, self.dz = 0, 10, 1
-        self.ntheta = 20
-        self.nphi = 10
-
-        self.num_from_spacing()
-        self.assign_linspace()
-
-
-    def num_from_spacing(self):
-        self.nx = num_from_spacing(self.xmin, self.xmax, self.dx)
-        self.ny = num_from_spacing(self.ymin, self.ymax, self.dy)
-        self.nz = num_from_spacing(self.zmin, self.zmax, self.dz)
+    def spacing_from_num(self):
+        self.spacing = (self.maxval - self.minval) / self.num
 
     def assign_linspace(self):
-        self.x = np.arange(self.xmin, self.xmax, self.dx)
-        self.y = np.arange(self.ymin, self.ymax, self.dy)
-        self.z = np.arange(self.zmin, self.zmax, self.dz)
+        self.vals = np.arange(self.minval, self.maxval, self.spacing)
 
+    def update(self, *args):
+        self.spacing_from_num()
+        self.assign_linspace()
+
+    def init_logic(self):
+        self.observe(self.update, names=['minval', 'maxval', 'num'])
+
+class AngleDim(tr.HasTraits):
+    num = tr.Int()
+    vals = tr.Any()
+
+    def __init__(self, minval, maxval, num):
+        super().__init__()
+        self.num = num
+        self.assign_legendre()
+
+    def assign_legendre(self):
+        self.vals = leggauss(self.num)
+
+    def init_logic(self):
+        self.observe(self.assign_linspace, names=['num'])
+
+
+class Grid(tr.HasTraits):
+    x = tr.Any()
+    y = tr.Any()
+    z = tr.Any()
+    theta = tr.Any()
+    phi = tr.Any()
+
+    def __init__(self):
+        super().__init__()
+        self.x = SpaceDim(-1, 1, 10)
+        self.y = SpaceDim(-1, 1, 10)
+        self.z = SpaceDim(-1, 1, 10)
+        self.theta = AngleDim(0, 2*np.pi, 10)
+        self.phi = AngleDim(0, np.pi, 10)
 
 class Rope(tr.HasTraits):
     frond_lengths = tr.Any()
@@ -53,6 +72,7 @@ class Rope(tr.HasTraits):
     grid = tr.Any()
 
     def __init__(self, grid):
+        super().__init__()
         self.grid = grid
 
         a = 2e-1
@@ -60,7 +80,7 @@ class Rope(tr.HasTraits):
         c = 5e-1
         d = np.pi / 4
 
-        z = grid.z
+        z = grid.z.vals
 
         #self.frond_lengths = np.exp(-a*z) * np.sin(z) ** 2
         self.frond_lengths = .5 * z**2 * np.exp(1-z)
@@ -74,6 +94,7 @@ class Frond(tr.HasTraits):
     fr = tr.Float()
 
     def __init__(self):
+        super().__init__()
         self.fs = .5
         self.fr = 2
 
@@ -81,28 +102,22 @@ class Params(tr.HasTraits):
     quadrature_degree = tr.Int()
 
     def __init__(self):
+        super().__init__()
         self.quadrature_degree = 5
 
 class Kelp(tr.HasTraits):
     p_kelp = tr.Any()
 
     def __init__(self):
+        super().__init__()
         pass
-
-class OpticalProperties(tr.HasTraits):
-    a_water = tr.Float()
-    b_water = tr.Float()
-    a_kelp = tr.Float()
-    b_kelp = tr.Float()
-
-    vsf = tr.Any()
-
 
 class Light(tr.HasTraits):
     radiance = tr.Any()
     irradiance = tr.Any()
 
     def __init__(self):
+        super().__init__()
         pass
 
 class OpticalProperties(tr.HasTraits):
@@ -111,12 +126,15 @@ class OpticalProperties(tr.HasTraits):
     a_water = tr.Float()
     b_water = tr.Float()
     grid = tr.Any()
+    vsf = tr.Any()
 
     def __init__(self, grid):
+        super().__init__()
         vsf = None
 
 class BoundaryCondition(tr.HasTraits):
 
     def __init__(self):
+        super().__init__()
         bc = None
         pass
