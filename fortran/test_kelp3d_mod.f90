@@ -157,13 +157,6 @@ subroutine gen_kelp(grid, rope, p_kelp)
   integer quadrature_degree
   double precision, dimension(:,:,:), allocatable :: p_kelp
 
-  type(angle_dim) theta
-  double precision thetamin, thetamax
-  integer ntheta
-  double precision pth
-  integer i
-  integer nz
-
   call init_grid(grid)
   call init_rope(rope, grid)
   call init_kelp(p_kelp, grid)

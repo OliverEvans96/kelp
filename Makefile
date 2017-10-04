@@ -56,6 +56,8 @@ CFLAGS=-c
 OFLAGS=-J$(INC) -I$(INC) $(CFLAGS) $(PFLAGS) -fPIC $(OPTFLAGS)
 # Binary files (executable)
 BFLAGS=-J$(INC) -I$(INC) $(PFLAGS) $(OPTFLAGS)
+# Flags for F2PY
+F2PYFLAGS=-L$(INC) -I$(INC) # $(PFLAGS) $(OPTFLAGS)
 
 
 ###############
@@ -66,6 +68,14 @@ all: test old
 
 pykelp3d: $(SRC)/pykelp3d.f90 $(INC)/prob.o $(INC)/fastgl.o $(INC)/sag.o $(INC)/utils.o $(INC)/kelp3d.o $(INC)/kelp_context.o $(INC)/hdf5_utils.o
 	$(H5FC) $(BFLAGS) $^ -o $@
+
+########
+# F2PY #
+########
+
+f2py_kelp3d: $(INC)/pykelp3d_wrap.o $(INC)/prob.o $(INC)/fastgl.o $(INC)/sag.o $(INC)/utils.o $(INC)/kelp3d.o $(INC)/kelp_context.o
+	f90wrap -m pykelp3d_wrap $(SRC)/pykelp3d_wrap.f90
+	f2py-f90wrap $(F2PYFLAGS) -c -m pykelp3d_wrap f90wrap_pykelp3d_wrap.f90 $^
 
 #########
 # Tests #
@@ -87,6 +97,7 @@ test_kelp3d: $(SRC)/test_kelp3d.f90 $(INC)/test_kelp3d_mod.o $(INC)/prob.o $(INC
 	$(H5FC) $(BFLAGS) $^ -o $(BIN)/$@
 test_rte3d: $(SRC)/test_rte3d.f90 $(INC)/rte_sparse_matrices.o $(INC)/test_rte3d_mod.o $(INC)/mgmres.o $(INC)/rte3d.o $(INC)/test_kelp3d_mod.o $(INC)/prob.o $(INC)/fastgl.o $(INC)/sag.o $(INC)/utils.o $(INC)/kelp3d.o $(INC)/kelp_context.o $(INC)/hdf5_utils.o $(INC)/light_context.o
 	$(H5FC) $(BFLAGS) $^ -o $(BIN)/$@
+
 ### Old tests
 old: test_interp test_rte2d test_vsf
 
@@ -119,8 +130,11 @@ $(INC)/rte_sparse_matrices.o: $(SRC)/rte_sparse_matrices.f90 $(INC)/sag.o $(INC)
 	$(H5FC) $(OFLAGS) $< -o $@
 $(INC)/rte3d.o: $(SRC)/rte3d.f90 $(INC)/kelp_context.o $(INC)/rte_sparse_matrices.o $(INC)/light_context.o
 	$(FC) $(OFLAGS) $< -o $@
-# Old
 
+$(INC)/pykelp3d_wrap.o: $(SRC)/pykelp3d_wrap.f90 $(INC)/prob.o $(INC)/fastgl.o $(INC)/sag.o $(INC)/utils.o $(INC)/kelp3d.o $(INC)/kelp_context.o
+	$(FC) $(OFLAGS) $< -o $@
+
+# Old
 $(INC)/rte_core.o: $(SRC)/rte_core.f90 $(INC)/utils.o
 	$(FC) $(OFLAGS) $< -o $@
 $(INC)/utils.o: $(SRC)/utils.f90

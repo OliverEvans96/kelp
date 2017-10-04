@@ -23,9 +23,11 @@ program pykelp3d
   call hdf_read_params(paramfile, quadrature_degree)
 
   allocate(p_kelp(grid%x%num, grid%y%num, grid%z%num))
+  call hdf_write_kelp(kelpfile, p_kelp, grid)
 
   call calculate_kelp_on_grid(grid, p_kelp, frond, rope, quadrature_degree)
-  call hdf_write_kelp(kelpfile, p_kelp, grid)
+
+  call light%init(mat)
 
   call light%calculate_radiance()
   call light%calculate_irradance()
