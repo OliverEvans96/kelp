@@ -341,7 +341,7 @@ class IOPWidget(ipw.VBox):
 
     def init_logic(self):
         tr.link((self.aw_slider, 'value'), (self.iops, 'a_water')),
-        tr.link((self.bw_slider, 'value'), (self.iops, 'a_water')),
+        tr.link((self.bw_slider, 'value'), (self.iops, 'b_water')),
         tr.link((self.ak_slider, 'value'), (self.iops, 'a_kelp')),
         tr.link((self.bk_slider, 'value'), (self.iops, 'b_kelp'))
         self.observe(self.set_iops_vsf, names='vsf_vals')
