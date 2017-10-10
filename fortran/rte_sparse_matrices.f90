@@ -2,7 +2,7 @@ module rte_sparse_matrices
 use sag
 use kelp_context
 use mgmres
-use hdf5_utils
+!use hdf5_utils
 implicit none
 
 type solver_params
@@ -45,7 +45,7 @@ type rte_mat
    procedure :: solve => mat_solve
    procedure :: ind => mat_ind
    procedure :: calculate_repeat_index => mat_calculate_repeat_index
-   procedure :: to_hdf => mat_to_hdf
+   !procedure :: to_hdf => mat_to_hdf
    procedure attenuate
    procedure angular_integral
 
@@ -124,11 +124,11 @@ contains
 
   end subroutine calculate_size
 
-  subroutine mat_to_hdf(mat,filename)
-    class(rte_mat) mat
-    character(len=*) filename
-    call write_coo(filename, mat%row, mat%col, mat%data, mat%nonzero)
-  end subroutine mat_to_hdf
+!  subroutine mat_to_hdf(mat,filename)
+!    class(rte_mat) mat
+!    character(len=*) filename
+!    call write_coo(filename, mat%row, mat%col, mat%data, mat%nonzero)
+!  end subroutine mat_to_hdf
 
   subroutine mat_initial_guess(mat)
     class(rte_mat) mat
@@ -194,6 +194,10 @@ contains
     write(*,*) 'params%maxiter_inner =', params%maxiter_inner
     write(*,*) 'params%tol_rel =', params%tol_rel
     write(*,*) 'params%tol_abs =', params%tol_abs
+    write(1,*) mat%row
+    write(2,*) mat%col
+    write(3,*) mat%data
+    write(4,*) mat%rhs
 
     call mat%initial_guess()
     call mgmres_st(mat%n_total, mat%nonzero, mat%row, mat%col, mat%data, &

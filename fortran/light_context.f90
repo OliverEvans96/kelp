@@ -1,7 +1,7 @@
 module light_context
   use sag
   use rte_sparse_matrices
-  use hdf5
+  !use hdf5
   implicit none
 
   type light_state
@@ -14,7 +14,7 @@ module light_context
      procedure :: calculate_radiance
      procedure :: calculate_irradiance
      procedure :: deinit => light_deinit
-     procedure :: to_hdf => light_to_hdf
+     !procedure :: to_hdf => light_to_hdf
   end type light_state
 
 contains
@@ -84,14 +84,14 @@ contains
 
   end subroutine calculate_irradiance
 
-  subroutine light_to_hdf(light, radfile, irradfile)
-    class(light_state) light
-    character(len=*) radfile
-    character(len=*) irradfile
-
-    call hdf_write_radiance(radfile, light%radiance, light%grid)
-    call hdf_write_irradiance(irradfile, light%irradiance, light%grid)
-  end subroutine light_to_hdf
+!  subroutine light_to_hdf(light, radfile, irradfile)
+!    class(light_state) light
+!    character(len=*) radfile
+!    character(len=*) irradfile
+!
+!    call hdf_write_radiance(radfile, light%radiance, light%grid)
+!    call hdf_write_irradiance(irradfile, light%irradiance, light%grid)
+!  end subroutine light_to_hdf
 
   subroutine light_deinit(light)
     class(light_state) light

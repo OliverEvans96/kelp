@@ -5,6 +5,7 @@ from scipy.integrate import simps
 import ipyvolume as ipv
 
 from fortran_wrappers.pykelp3d_wrap import f90wrap_py_gen_kelp as gen_kelp_f90
+from fortran_wrappers.pyrte3d_wrap import f90wrap_py_calculate_light_field as calculate_light_field_f90
 
 class SpaceDim(tr.HasTraits):
     minval = tr.Float()
@@ -103,7 +104,8 @@ class Rope(tr.HasTraits):
         z = grid.z.vals
 
         #self.frond_lengths = np.exp(-a*z) * np.sin(z) ** 2
-        self.frond_lengths = .5 * z**2 * np.exp(1-z)
+        #self.frond_lengths = .5 * z**2 * np.exp(1-z)
+        self.frond_lengths = 0 * z
         self.frond_stds = b * np.ones_like(z)
         self.water_speeds = c * np.ones_like(z)
         #self.water_angles = 2*np.pi / grid.zmax * z
@@ -120,10 +122,21 @@ class Frond(tr.HasTraits):
 
 class Params(tr.HasTraits):
     quadrature_degree = tr.Int()
+    maxiter_inner = tr.Int()
+    maxiter_outer = tr.Int()
+    tol_abs = tr.Float()
+    tol_rel = tr.Float()
 
     def __init__(self):
         super().__init__()
+        self.init_vals()
+
+    def init_vals(self):
         self.quadrature_degree = 5
+        self.maxiter_inner = 10
+        self.maxiter_outer = 10
+        self.tol_abs = 1e-3
+        self.tol_rel = 1e-3
 
 class Kelp(tr.HasTraits):
     p_kelp = tr.Any()
@@ -135,13 +148,11 @@ class Kelp(tr.HasTraits):
         self.frond = frond
         self.params = params
 
-        self.gen_kelp()
-
     def volume_plot(self):
         "Transform so that the new y is the old -z for IPyVolume."
         return ipv.quickvolshow(np.swapaxes(self.p_kelp[:,:,::-1], 1, 2)) 
 
-    def gen_kelp(self):
+    def gen_kelp(self, *args):
         # Grid
         xmin = self.grid.x.minval
         xmax = self.grid.x.maxval
@@ -186,9 +197,75 @@ class Light(tr.HasTraits):
     radiance = tr.Any()
     irradiance = tr.Any()
 
-    def __init__(self):
+    def __init__(self, kelp, iops, bc, params):
         super().__init__()
-        pass
+        self.kelp = kelp
+        self.grid = kelp.grid
+        self.iops = iops
+        self.bc = bc
+        self.params = params
+
+    def calculate_light_field(self, *args):
+        # Grid
+        xmin = self.grid.x.minval
+        xmax = self.grid.x.maxval
+        nx = self.grid.x.num
+        ymin = self.grid.y.minval
+        ymax = self.grid.y.maxval
+        ny = self.grid.y.num
+        zmin = self.grid.z.minval
+        zmax = self.grid.z.maxval
+        nz = self.grid.z.num
+        ntheta = self.grid.theta.num
+        nphi = self.grid.phi.num
+
+        # IOPs
+        num_vsf = self.iops.num_vsf
+        vsf_angles = self.iops.vsf_angles
+        vsf_vals = self.iops.vsf_vals
+        p_kelp = self.kelp.p_kelp
+        a_water = self.iops.a_water
+        a_kelp = self.iops.a_kelp
+        b_water = self.iops.b_water
+        b_kelp = self.iops.b_kelp
+
+        # Boundary Condition
+        theta_s = self.bc.theta_s
+        phi_s = self.bc.phi_s
+        max_rad = self.bc.max_rad
+        decay = self.bc.decay
+
+        # Params
+        tol_abs = self.params.tol_abs
+        tol_rel = self.params.tol_rel
+        maxiter_inner = self.params.maxiter_inner
+        maxiter_outer = self.params.maxiter_outer
+
+        # Kelp
+        p_kelp = self.kelp.p_kelp
+
+        # Light
+        self.radiance = np.asfortranarray(np.zeros([nx, ny, nz, ntheta, nphi]))
+        self.irradiance = np.asfortranarray(np.zeros([nx, ny, nz]))
+
+
+        # Call fortran
+        calculate_light_field_f90(
+            xmin, xmax, nx,
+            ymin, ymax, ny,
+            zmax, nz,
+            ntheta, nphi,
+            a_water, a_kelp, b_water, b_kelp,
+            num_vsf, vsf_angles, vsf_vals,
+            theta_s, phi_s, max_rad, decay,
+            tol_abs, tol_rel, maxiter_inner, maxiter_outer,
+            p_kelp, self.radiance, self.irradiance
+        )
+
+    def volume_plot(self):
+        "Transform so that the new y is the old -z for IPyVolume."
+        return ipv.quickvolshow(np.swapaxes(self.irradiance[:,:,::-1], 1, 2)) 
+
 
 class OpticalProperties(tr.HasTraits):
     a_kelp = tr.Float()
@@ -196,7 +273,9 @@ class OpticalProperties(tr.HasTraits):
     a_water = tr.Float()
     b_water = tr.Float()
     grid = tr.Any()
-    vsf = tr.Any()
+    num_vsf = tr.Int()
+    vsf_vals = tr.Any()
+    vsf_angles = tr.Any()
 
     def __init__(self, grid):
         super().__init__()
@@ -204,27 +283,71 @@ class OpticalProperties(tr.HasTraits):
         self.init_vals()
 
     def init_vals(self):
-        self.a_kelp = 1
+        self.a_kelp = 2
         self.b_kelp = 1
         self.a_water = 1
         self.b_water = 1
 
-        z = self.grid.z.vals
-        self.set_vsf(np.exp(-z))
+        self.num_vsf = 25
+        #self.vsf_angles = np.linspace(0, 2*np.pi, self.num_vsf)
+        self.vsf_angles = self.grid.theta.vals
+        self.set_vsf(np.exp(-self.vsf_angles))
 
-    def set_vsf(self, vsf):
-        self.vsf = self.normalize(vsf)
+    def set_vsf(self, vsf_vals):
+        self.vsf_vals = self.normalize(self.vsf_angles, vsf_vals)
 
-    def normalize(self, vsf):
-        norm = simps(x=self.grid.phi.vals, y=vsf)
+    def normalize(self, vsf_angles, vsf_vals):
+        norm = np.abs(simps(x=vsf_angles, y=vsf_vals))
         try:
-            return vsf / norm
+            return vsf_vals / norm
         except ZeroDivisionError:
-            return vsf
+            return vsf_vals
 
 class BoundaryCondition(tr.HasTraits):
+    "2D Angular Gaussian of light centered around sun position."
 
-    def __init__(self):
+    # Direction of light ray from sun
+    theta_s = tr.Float()
+    phi_s = tr.Float()
+
+    # Maximum intensity
+    max_rad = tr.Float()
+
+    # Exponential decay in other directions
+    decay = tr.Float()
+
+    grid = tr.Any()
+
+    def __init__(self, grid):
+        self.grid = grid
         super().__init__()
-        bc = None
-        pass
+        self.init_values()
+
+    def calc_rad(self, theta, phi):
+        delta = angle_diff(theta, phi, self.theta_s, self.phi_s)
+        return self.max_rad * np.exp(-decay * delta)
+
+    def angle_diff(self, theta1, phi1, theta2, phi2):
+        "Angle between vectors pointing in two directions"
+        return np.arccos(
+            np.sin(theta1)*np.sin(theta2)
+            * (np.sin(phi1)*np.sin(phi2) + np.cos(phi1)*np.cos(phi2))
+            + np.cos(theta1)*np.cos(theta2)
+        )
+
+    def create_surf_rad_grid(self):
+        theta_grid, phi_grid = np.meshgrid(
+            self.grid.theta.vals,
+            # Only take first half of phi vals (downwelling light)
+            self.grid.phi.vals[:self.grid.phi.num/2],
+            indexing='ij'
+        )
+        return calc_rad(theta_grid, phi_grid)
+
+    def init_values(self):
+        self.theta_s = 0
+        self.phi_s = 0
+        self.max_rad = 1
+        self.decay = 1
+
+

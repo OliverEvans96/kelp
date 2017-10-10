@@ -27,8 +27,6 @@ contains
 
     write(*,*) 'IOPs'
     call set_iops(iops, grid, p_kelp)
-    write(*,*) 'ABS GRID'
-    write(*,*) iops%abs_grid(5,5,:)
 
     call hdf_write_kelp('hdf5/kelp3d/abs_grid.hdf5', iops%abs_grid, grid)
 

@@ -33,7 +33,7 @@ PYDIR=$(BASE)/python
 # External modules
 EXT=$(SRC)/download
 # F2PY .so / .py directory
-F2PYDIR=$(PYDIR)/f2py
+F2PYDIR=$(PYDIR)/fortran_wrappers
 
 # Fortran Compiler
 FC=gfortran
@@ -82,6 +82,15 @@ pykelp3d_wrap: $(INC)/pykelp3d_wrap.o $(INC)/prob.o $(INC)/fastgl.o $(INC)/sag.o
 	rm f90wrap_pykelp3d_wrap.f90 .f2py_f2cmap
 	mv pykelp3d_wrap.cpython* $(F2PYDIR)
 	mv pykelp3d_wrap.py $(F2PYDIR)
+
+pyrte3d_wrap: $(INC)/pyrte3d_wrap.o $(INC)/prob.o $(INC)/fastgl.o $(INC)/sag.o $(INC)/utils.o $(INC)/kelp3d.o $(INC)/kelp_context.o $(INC)/mgmres.o $(INC)/rte_sparse_matrices.o $(INC)/light_context.o $(INC)/rte3d.o
+	f90wrap -m pyrte3d_wrap $(SRC)/pyrte3d_wrap.f90
+	f2py-f90wrap $(F2PYFLAGS) -c -m pyrte3d_wrap f90wrap_pyrte3d_wrap.f90 $^
+	rm f90wrap_pyrte3d_wrap.f90 .f2py_f2cmap
+	mv pyrte3d_wrap.cpython* $(F2PYDIR)
+	mv pyrte3d_wrap.py $(F2PYDIR)
+
+py_wrap: pykelp3d_wrap pyrte3d_wrap
 
 #########
 # Tests #
@@ -132,12 +141,14 @@ $(INC)/test_kelp3d_mod.o: $(SRC)/test_kelp3d_mod.f90 $(INC)/kelp3d.o $(INC)/hdf5
 	$(FC) $(OFLAGS) $< -o $@
 $(INC)/test_rte3d_mod.o: $(SRC)/test_rte3d_mod.f90 $(INC)/test_kelp3d_mod.o $(INC)/rte3d.o $(INC)/kelp3d.o $(INC)/hdf5_utils.o $(INC)/light_context.o
 	$(H5FC) $(OFLAGS) $< -o $@
-$(INC)/rte_sparse_matrices.o: $(SRC)/rte_sparse_matrices.f90 $(INC)/sag.o $(INC)/kelp_context.o $(INC)/mgmres.o $(INC)/hdf5_utils.o
-	$(H5FC) $(OFLAGS) $< -o $@
+$(INC)/rte_sparse_matrices.o: $(SRC)/rte_sparse_matrices.f90 $(INC)/sag.o $(INC)/kelp_context.o $(INC)/mgmres.o
+	$(FC) $(OFLAGS) $< -o $@
 $(INC)/rte3d.o: $(SRC)/rte3d.f90 $(INC)/kelp_context.o $(INC)/rte_sparse_matrices.o $(INC)/light_context.o
 	$(FC) $(OFLAGS) $< -o $@
 
 $(INC)/pykelp3d_wrap.o: $(SRC)/pykelp3d_wrap.f90 $(INC)/prob.o $(INC)/fastgl.o $(INC)/sag.o $(INC)/utils.o $(INC)/kelp3d.o $(INC)/kelp_context.o
+	$(FC) $(OFLAGS) $< -o $@
+$(INC)/pyrte3d_wrap.o: $(SRC)/pyrte3d_wrap.f90 $(INC)/prob.o $(INC)/fastgl.o $(INC)/sag.o $(INC)/utils.o $(INC)/rte3d.o $(INC)/light_context.o $(INC)/rte_sparse_matrices.o
 	$(FC) $(OFLAGS) $< -o $@
 
 # Old
@@ -159,6 +170,7 @@ $(INC)/prob.o: $(EXT)/prob.f90
 
 clean: rmo
 	rm -f $(INC)/*.mod $(INC)/*.o $(BIN)/*
+	rm -rf $(F2PYDIR)/*
 
 rmo: 
 	rm -f $(BASE)/*.o $(BASE)/*.mod
