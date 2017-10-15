@@ -60,6 +60,9 @@ class AngleDim(tr.HasTraits):
             newmax=self.maxval
         )
 
+    #def angular_integral(self):
+    #   pass
+
     def affine_transform(self, vals, oldmin, oldmax, newmin, newmax):
         return newmin + (newmin-newmax)/(oldmin-oldmax) * (vals-oldmin)
 
@@ -78,11 +81,11 @@ class Grid(tr.HasTraits):
 
     def __init__(self):
         super().__init__()
-        self.x = SpaceDim(-1, 1, 10)
-        self.y = SpaceDim(-1, 1, 10)
-        self.z = SpaceDim(0, 1, 10)
-        self.theta = AngleDim(0, 2*np.pi, 10)
-        self.phi = AngleDim(0, np.pi, 10)
+        self.x = SpaceDim(-1, 1, 6)
+        self.y = SpaceDim(-1, 1, 6)
+        self.z = SpaceDim(0, 1, 6)
+        self.theta = AngleDim(0, 2*np.pi, 6)
+        self.phi = AngleDim(0, np.pi, 6)
 
 class Rope(tr.HasTraits):
     frond_lengths = tr.Any()
@@ -96,16 +99,15 @@ class Rope(tr.HasTraits):
         super().__init__()
         self.grid = grid
 
-        a = 2e-1
-        b = 1e-1
-        c = 5e-1
-        d = np.pi / 4
+        a = 0 * 2e-1
+        b = 0 * 1e-1
+        c = 0 * 5e-1
+        d = 0 * np.pi / 4
 
         z = grid.z.vals
 
-        #self.frond_lengths = np.exp(-a*z) * np.sin(z) ** 2
+        self.frond_lengths = a * np.exp(-a*z) * np.sin(z) ** 2
         #self.frond_lengths = .5 * z**2 * np.exp(1-z)
-        self.frond_lengths = 0 * z
         self.frond_stds = b * np.ones_like(z)
         self.water_speeds = c * np.ones_like(z)
         #self.water_angles = 2*np.pi / grid.zmax * z
@@ -205,6 +207,18 @@ class Light(tr.HasTraits):
         self.bc = bc
         self.params = params
 
+        self.init_vals()
+
+    def init_vals(self):
+        nx = self.grid.x.num
+        ny = self.grid.y.num
+        nz = self.grid.z.num
+        ntheta = self.grid.theta.num
+        nphi = self.grid.phi.num
+
+        self.irradiance = np.asfortranarray(np.zeros([nx, ny, nz]))
+        self.radiance = np.asfortranarray(np.zeros([nx, ny, nz, ntheta, nphi]))
+
     def calculate_light_field(self, *args):
         # Grid
         xmin = self.grid.x.minval
@@ -243,11 +257,6 @@ class Light(tr.HasTraits):
 
         # Kelp
         p_kelp = self.kelp.p_kelp
-
-        # Light
-        self.radiance = np.asfortranarray(np.zeros([nx, ny, nz, ntheta, nphi]))
-        self.irradiance = np.asfortranarray(np.zeros([nx, ny, nz]))
-
 
         # Call fortran
         calculate_light_field_f90(
@@ -288,10 +297,15 @@ class OpticalProperties(tr.HasTraits):
         self.a_water = 1
         self.b_water = 1
 
-        self.num_vsf = 25
-        #self.vsf_angles = np.linspace(0, 2*np.pi, self.num_vsf)
-        self.vsf_angles = self.grid.theta.vals
+        self.num_vsf = self.grid.phi.num
+        self.vsf_angles = self.grid.phi.vals
         self.set_vsf(np.exp(-self.vsf_angles))
+
+    def init_logic(self):
+        tr.link(
+            (self, 'vsf_angles'),
+            (self.grid.theta, 'vals')
+        )
 
     def set_vsf(self, vsf_vals):
         self.vsf_vals = self.normalize(self.vsf_angles, vsf_vals)

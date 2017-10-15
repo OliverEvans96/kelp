@@ -198,12 +198,12 @@ class GridWidget(ipw.VBox):
 
 
     def init_values(self):
-        self.nx_spinner.value = 10
-        self.ny_spinner.value = 10
-        self.nz_spinner.value = 10
-        self.ntheta_spinner.value = 10
-        self.nphi_spinner.value = 10
-        self.zdepth_slider.value = 10
+        self.nx_spinner.value = self.grid.x.num
+        self.ny_spinner.value = self.grid.y.num
+        self.nz_spinner.value = self.grid.z.num
+        self.ntheta_spinner.value = self.grid.theta.num
+        self.nphi_spinner.value = self.grid.phi.num
+        self.zdepth_slider.value = self.grid.z.maxval
 
     def init_style(self):
         self.nx_spinner.layout.width='150px'
@@ -441,7 +441,7 @@ class IOPWidget(ipw.VBox):
 
         self.vsf_plot = HandDrawFigure(
             self, 'vsf_vals',
-            xdim=self.iops.grid.theta,
+            xdim=self.iops.grid.phi,
             labels={
                 'title': 'Volume Scattering Function',
                 'xlabel': 'theta',
@@ -726,3 +726,78 @@ class VolumePlotWidget(ipw.VBox):
         # Move x axis to end
         return np.transpose(vol_data[:,:,::-1], (1, 2, 0))
 
+class RadianceWidget(ipw.VBox):
+
+    l = tr.Integer()
+    m = tr.Integer()
+
+    def __init__(self, light):
+        super().__init__()
+
+        self.light = light
+
+        self.init_vals()
+        self.init_elements()
+        self.init_layout()
+        self.init_logic()
+        self.update_plot()
+
+    def init_vals(self):
+        # Theta and phi indices
+        self.ntheta, self.nphi = self.light.radiance.shape[-2:]
+        self.l = 0
+        self.m = 0
+
+    def init_elements(self):
+        self.controller, self.fig = ipv.quickvolshow(np.zeros([3,3,3])).children
+
+        self.theta_slider = ipw.IntSlider(
+            min=0,
+            max=self.ntheta-1,
+            description='theta'
+        )
+
+        self.phi_slider = ipw.IntSlider(
+            min=0,
+            max=self.nphi-1,
+            description='phi'
+        )
+
+        self.reset_button = ipw.Button(description='Reset Radiance')
+
+    def init_layout(self):
+        self.children = [
+            self.controller,
+            self.fig,
+            self.theta_slider,
+            self.phi_slider,
+            self.reset_button
+        ]
+
+    def init_logic(self):
+        self.light.observe(self.update_plot, names='radiance')
+        tr.link(
+            (self, 'l'),
+            (self.theta_slider, 'value')
+        )
+        tr.link(
+            (self, 'm'),
+            (self.phi_slider, 'value')
+        )
+        self.reset_button.on_click(self.reset_radiance)
+
+    def update_plot(self, *args):
+        new = self.vol_transform(
+            self.light.radiance[:,:,:,self.l, self.m]
+        )
+        self.fig.data_min = np.min(new)
+        self.fig.data_max = np.max(new)
+        sel.fig.volume_data = new
+
+    def vol_transform(self, vol_data):
+        "Transform 3D array for volume plot"
+        # Move x axis to end
+        return np.transpose(vol_data[:,:,::-1], (1, 2, 0))
+
+    def reset_radiance(self, *args):
+        self.light.radiance = np.zeros_like(self.light.radiance) #+ 1e-6

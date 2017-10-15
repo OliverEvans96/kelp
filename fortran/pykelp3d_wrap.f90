@@ -44,8 +44,6 @@ contains
     call grid%set_spacing_from_num()
     call grid%init()
 
-    write(*,*) 'X =', grid%x%vals
-
     ! INIT ROPE
     call rope%init(grid)
 
@@ -59,6 +57,9 @@ contains
 
     ! CALCULATE KELP
     call calculate_kelp_on_grid(grid, p_kelp, frond, rope, quadrature_degree)
+
+    call rope%deinit()
+    call grid%deinit()
 
   end subroutine py_gen_kelp
 

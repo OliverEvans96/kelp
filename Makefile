@@ -112,6 +112,8 @@ test_kelp3d: $(SRC)/test_kelp3d.f90 $(INC)/test_kelp3d_mod.o $(INC)/prob.o $(INC
 	$(H5FC) $(BFLAGS) $^ -o $(BIN)/$@
 test_rte3d: $(SRC)/test_rte3d.f90 $(INC)/rte_sparse_matrices.o $(INC)/test_rte3d_mod.o $(INC)/mgmres.o $(INC)/rte3d.o $(INC)/test_kelp3d_mod.o $(INC)/prob.o $(INC)/fastgl.o $(INC)/sag.o $(INC)/utils.o $(INC)/kelp3d.o $(INC)/kelp_context.o $(INC)/hdf5_utils.o $(INC)/light_context.o
 	$(H5FC) $(BFLAGS) $^ -o $(BIN)/$@
+test_pyrte3d_wrap: $(SRC)/test_pyrte3d_wrap.f90 $(INC)/pyrte3d_wrap.o $(INC)/rte_sparse_matrices.o $(INC)/mgmres.o $(INC)/rte3d.o $(INC)/test_kelp3d_mod.o $(INC)/prob.o $(INC)/fastgl.o $(INC)/sag.o $(INC)/utils.o $(INC)/kelp3d.o $(INC)/kelp_context.o $(INC)/hdf5_utils.o $(INC)/light_context.o
+	$(H5FC) $(BFLAGS) $^ -o $(BIN)/$@
 
 ### Old tests
 old: test_interp test_rte2d test_vsf
@@ -148,7 +150,7 @@ $(INC)/rte3d.o: $(SRC)/rte3d.f90 $(INC)/kelp_context.o $(INC)/rte_sparse_matrice
 
 $(INC)/pykelp3d_wrap.o: $(SRC)/pykelp3d_wrap.f90 $(INC)/prob.o $(INC)/fastgl.o $(INC)/sag.o $(INC)/utils.o $(INC)/kelp3d.o $(INC)/kelp_context.o
 	$(FC) $(OFLAGS) $< -o $@
-$(INC)/pyrte3d_wrap.o: $(SRC)/pyrte3d_wrap.f90 $(INC)/prob.o $(INC)/fastgl.o $(INC)/sag.o $(INC)/utils.o $(INC)/rte3d.o $(INC)/light_context.o $(INC)/rte_sparse_matrices.o
+$(INC)/pyrte3d_wrap.o: $(SRC)/pyrte3d_wrap.f90 $(INC)/prob.o $(INC)/fastgl.o $(INC)/sag.o $(INC)/utils.o $(INC)/rte3d.o $(INC)/kelp_context.o $(INC)/light_context.o $(INC)/rte_sparse_matrices.o
 	$(FC) $(OFLAGS) $< -o $@
 
 # Old

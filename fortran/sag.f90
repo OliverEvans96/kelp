@@ -288,6 +288,13 @@ contains
     prefactor = grid%theta%prefactor * grid%phi%prefactor
     integral = 0
 
+    write(*,*) '2D Integral'
+    write(*,*) 'Prefactor:', prefactor
+
+    write(*,*) 'Theta weights:', grid%theta%weights
+    write(*,*) 'Phi weights:', grid%phi%weights
+    write(*,*) ''
+
     do lp=1, grid%theta%num
        do mp=1, grid%phi%num
           weight = grid%theta%weights(lp) * grid%phi%weights(mp)

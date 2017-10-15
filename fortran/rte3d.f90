@@ -316,13 +316,12 @@ subroutine bottom_angle_loop(mat, indices, ddx, ddy)
 
 end subroutine bottom_angle_loop
 
-subroutine gen_matrix(grid, mat, iops)
+subroutine gen_matrix(mat)
   type(rte_mat) mat
-  type(space_angle_grid) grid
   type(optical_properties) iops
   type(index_list) indices
+  type(boundary_condition) bc
 
-  call mat%init(grid, iops)
   call indices%init()
 
   call surface_space_loop(mat, indices)

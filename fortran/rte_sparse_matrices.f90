@@ -41,6 +41,7 @@ type rte_mat
    procedure :: assign_rhs => mat_assign_rhs
    !procedure :: store_index => mat_store_index
    !procedure :: find_index => mat_find_index
+   procedure :: set_bc => mat_set_bc
    procedure :: initial_guess => mat_initial_guess
    procedure :: solve => mat_solve
    procedure :: ind => mat_ind
@@ -95,12 +96,19 @@ contains
 
   subroutine mat_deinit(mat)
     class(rte_mat) mat
+    write(*,*) 'md1'
     deallocate(mat%row)
+    write(*,*) 'md2'
     deallocate(mat%col)
+    write(*,*) 'md3'
     deallocate(mat%data)
+    write(*,*) 'md4'
     deallocate(mat%rhs)
+    write(*,*) 'md5'
     deallocate(mat%sol)
+    write(*,*) 'md6'
     deallocate(mat%surface_vals)
+    write(*,*) 'md7'
   end subroutine mat_deinit
 
   subroutine calculate_size(mat)
@@ -129,6 +137,30 @@ contains
 !    character(len=*) filename
 !    call write_coo(filename, mat%row, mat%col, mat%data, mat%nonzero)
 !  end subroutine mat_to_hdf
+
+  subroutine mat_set_bc(mat, bc, radiance)
+    class(rte_mat) mat
+    class(boundary_condition) bc
+    double precision theta, phi, rad_val
+    double precision, dimension(:,:,:,:,:) :: radiance
+    integer i, j, l, m
+
+    write(*,*) 'Set BC!!!'
+    do l=1, mat%grid%theta%num
+       theta = mat%grid%theta%vals(l)
+       do m=1, mat%grid%theta%num/2
+          phi = mat%grid%phi%vals(m)
+          do i=1, mat%grid%x%num
+            do j=1, mat%grid%y%num
+               rad_val = bc%bc_gaussian(theta, phi)
+               mat%surface_vals(i,j,l,m) = rad_val
+               radiance(i,j,1,l,m) = rad_val
+             end do
+          end do
+       end do
+    end do
+    write(*,*) 'Done Setting'
+  end subroutine mat_set_bc
 
   subroutine mat_initial_guess(mat)
     class(rte_mat) mat
@@ -199,7 +231,6 @@ contains
     write(3,*) mat%data
     write(4,*) mat%rhs
 
-    call mat%initial_guess()
     call mgmres_st(mat%n_total, mat%nonzero, mat%row, mat%col, mat%data, &
          mat%sol, mat%rhs, params%maxiter_outer, params%maxiter_inner, &
          params%tol_abs, params%tol_rel)
@@ -265,6 +296,14 @@ contains
 
     mat%row(mat%ent) = row_num
     mat%col(mat%ent) = col_num
+    if(isnan(data)) then
+       write(*,*) 'ISNAN'
+       write(*,*) 'row = ', row_num
+       write(*,*) 'col = ', col_num
+       write(*,*) 'mat_index =', mat%i, mat%j, mat%k, mat%l, mat%m
+       write(*,*) 'index =', i, j, k, l, m
+       write(*,*) 'entry =', mat%ent
+    endif
     mat%data(mat%ent) = data
 
     ! Remember where we stored information for this matrix element
@@ -616,14 +655,9 @@ contains
 
     grid = mat%grid
 
-    ! Constant light from above in all directions
-    bc_val = 1.d1
-
-    mat%surface_vals(i,j,l,m) = bc_val
-
     call mat%set_ind(indices)
     call mat%assign(1.d0,i,j,k,l,m)
-    call mat%assign_rhs(bc_val, i, j, k, l, m)
+    call mat%assign_rhs(mat%surface_vals(i,j,l,m), i, j, k, l, m)
   end subroutine z_surface_bc
 
   subroutine z_bottom_bc(mat, indices)

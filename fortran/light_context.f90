@@ -18,6 +18,7 @@ module light_context
   end type light_state
 
 contains
+
   subroutine light_init(light, mat)
     class(light_state) light
     type(rte_mat) mat
@@ -48,12 +49,32 @@ contains
     ntheta = light%grid%theta%num
     nphi = light%grid%phi%num
 
-    call light%mat%solve()
-
     index = 1
 
+    ! Set initial guess
     ! Traverse solution vector in order
     ! so as to avoid calculating index
+    do k=1, nz
+       do j=1, ny
+          do i=1, nx
+             do m=1, nphi
+                do l=1, ntheta
+                   light%mat%sol(index) = light%radiance(i,j,j,l,m)
+                   index = index + 1
+                end do
+             end do
+          end do
+       end do
+    end do
+
+    !call light%mat%initial_guess()
+
+    ! Solve (MGMRES)
+    call light%mat%solve()
+
+    ! index = 1
+
+    ! Extract solution
     do k=1, nz
        do j=1, ny
           do i=1, nx

@@ -57,7 +57,30 @@ type optical_properties
    procedure :: deinit => iop_deinit
 end type optical_properties
 
+type boundary_condition
+   double precision max_rad, decay, theta_s, phi_s
+ contains
+   procedure :: bc_gaussian
+end type boundary_condition
+
 contains
+
+  function bc_gaussian(bc, theta, phi)
+    class(boundary_condition) bc
+    double precision theta, phi, diff
+    double precision bc_gaussian
+    ! write(*,*) 'BC'
+    ! write(*,*) 'theta_s =', bc%theta_s
+    ! write(*,*) 'phi_s =', bc%phi_s
+    ! write(*,*) 'theta =', theta
+    ! write(*,*) 'phi =', phi
+    diff = angle_diff_3d(theta, phi, bc%theta_s, bc%phi_s)
+    ! write(*,*) 'diff =', diff
+    bc_gaussian = bc%max_rad * exp(-bc%decay * diff)
+    ! write(*,*) 'val = ', bc_gaussian
+    ! write(*,*)
+  end function bc_gaussian
+
   subroutine point_set_cart(point, x, y, z)
     class(point3d) :: point
     double precision x, y, z
@@ -108,6 +131,8 @@ contains
 
     iops%grid = grid
 
+    allocate(iops%vsf_angles(iops%num_vsf))
+    allocate(iops%vsf_vals(iops%num_vsf))
     allocate(iops%vsf(grid%theta%num, grid%phi%num, grid%theta%num, grid%phi%num))
     allocate(iops%abs_grid(grid%x%num, grid%y%num, grid%z%num))
     allocate(iops%scat_grid(grid%x%num, grid%y%num, grid%z%num))
@@ -136,8 +161,6 @@ contains
     skiplines_in = 1 ! Ignore comment on first line
 
     allocate(tmp_2d_arr(num_rows, num_cols))
-    allocate(iops%vsf_angles(iops%num_vsf))
-    allocate(iops%vsf_vals(iops%num_vsf))
 
     tmp_2d_arr = read_array(filename, fmtstr, num_rows, num_cols, skiplines_in)
     iops%vsf_angles = tmp_2d_arr(:,1)
@@ -252,11 +275,9 @@ contains
     !alpha = sin(theta)*sin(theta_prime)*cos(theta-theta_prime) + cos(phi)*cos(phi_prime)
 
     ! Slower, but more accurate
-    alpha = ( &
-      sin(phi)*cos(theta)*sin(phi_prime)*cos(theta_prime) &
-      + sin(phi)*sin(theta)*sin(phi_prime)*sin(theta_prime) &
-      + cos(phi)*cos(phi_prime) &
-    )
+    alpha = (sin(phi)*sin(phi_prime) &
+      * (cos(theta)*cos(theta_prime) + sin(theta)*sin(theta_prime)) &
+      + cos(phi)*cos(phi_prime))
 
     diff = acos(alpha)
   end function angle_diff_3d
