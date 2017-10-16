@@ -240,7 +240,7 @@ class Light(tr.HasTraits):
         )
 
     def reset_irradiance(self, *args):
-        self.radiance = np.asfortranarray(
+        self.irradiance = np.asfortranarray(
             np.zeros([
                 self.grid.x.num,
                 self.grid.y.num,
@@ -289,9 +289,9 @@ class Light(tr.HasTraits):
 
         np.savetxt('pyrad_in.txt', self.radiance.flatten())
 
-        if self.light.radiance.shape != (nx, ny, nz, ntheta, nphi):
+        if self.radiance.shape != (nx, ny, nz, ntheta, nphi):
             self.reset_radiance()
-        if self.light.irradiance.shape != (nx, ny, nz, ntheta, nphi):
+        if self.irradiance.shape != (nx, ny, nz, ntheta, nphi):
             self.reset_irradiance()
 
         # Call fortran

@@ -679,14 +679,14 @@ class VolumePlotWidget(ipw.VBox):
         ]
 
     def init_logic(self):
-        self.light.observe(
-            self.load_irradiance,
-            names='irradiance'
-        )
-        self.kelp.observe(
-            self.load_kelp,
-            names='p_kelp'
-        )
+        # self.light.observe(
+        #     self.load_irradiance,
+        #     names='irradiance'
+        # )
+        # self.kelp.observe(
+        #     self.load_kelp,
+        #     names='p_kelp'
+        # )
 
         self.calculate_kelp_button.on_click(
             self.calculate_kelp
@@ -729,11 +729,11 @@ class VolumePlotWidget(ipw.VBox):
 
     def calculate_kelp(self, *args):
         self.kelp.gen_kelp()
-        #self.load_kelp()
+        self.load_kelp()
 
     def calculate_light(self, *args):
         self.light.calculate_light_field()
-        #self.load_irradiance()
+        self.load_irradiance()
 
     def load_kelp(self, *args):
         self.update_vol_plot(
@@ -748,12 +748,10 @@ class VolumePlotWidget(ipw.VBox):
         )
 
     def update_vol_plot(self, fig, data):
-        with self.log_area:
-            new = self.vol_transform(data)
-            fig.data_min = np.min(new)
-            fig.data_max = np.max(new)
-            fig.volume_data = new
-
+        new = self.vol_transform(data)
+        fig.data_min = np.min(new)
+        fig.data_max = np.max(new)
+        fig.volume_data = new
 
     def vol_transform(self, vol_data):
         "Transform 3D array for volume plot"
