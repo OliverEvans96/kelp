@@ -7,7 +7,7 @@ import traitlets as tr
 import matplotlib.pyplot as plt
 
 class HandDrawFigure(bq.Figure):
-    def __init__(self, traitful, trait_name, xdim=None, ylim=None, labels=None, color='blue'):
+    def __init__(self, traitful, trait_name, xdim=None, ylim=None, labels=None, color='blue', link=True):
         """
         traitful: inherits from traitlets.HasTraits
         trait_name: string - name of trait of traitful, 1d numpy array of y values
@@ -25,6 +25,7 @@ class HandDrawFigure(bq.Figure):
         self.ylim = ylim
         self.labels = labels
         self.color = color
+        self.link = link
 
         self.init_vals()
         self.init_elements()
@@ -96,10 +97,11 @@ class HandDrawFigure(bq.Figure):
         )
 
     def init_logic(self):
-        tr.link(
-            (self.line, 'y'),
-            (self.traitful, self.trait_name)
-        )
+        if self.link:
+            tr.link(
+                (self.line, 'y'),
+                (self.traitful, self.trait_name)
+            )
         if self.xdim is not None:
             tr.link(
                 (self.xscale, 'min'),
@@ -113,6 +115,18 @@ class HandDrawFigure(bq.Figure):
                 (self.line, 'x'),
                 (self.xdim, 'vals')
             )
+
+            self.xdim.observe(self.refresh_vals, names='num')
+
+    def refresh_vals(self, *args):
+        old_len = len(self.line.y)
+        new_len = len(self.line.x)
+        if old_len != new_len:
+            new_array = np.resize(self.line.y, new_len)
+            if old_len < new_len:
+                new_array[old_len:] = 0
+
+            self.line.y = new_array
 
     def init_style(self):
         self.layout = ipw.Layout(height=u'300px')
@@ -448,7 +462,7 @@ class IOPWidget(ipw.VBox):
                 'xlabel': 'theta',
                 'ylabel': 'VSF'
             },
-            #ylim=[0,1]
+            ylim=[0,2],
         )
 
     def init_logic(self):
@@ -457,7 +471,6 @@ class IOPWidget(ipw.VBox):
         tr.link((self.iops, 'a_kelp'), (self.ak_slider, 'value'))
         tr.link((self.iops, 'b_kelp'), (self.bk_slider, 'value'))
         self.observe(self.set_iops_vsf, names='vsf_vals')
-        #self.iops.observe(self.set_widget_vsf, names='vsf')
 
     def init_vals(self):
         # This should be a copy, just to set the inital value
@@ -856,7 +869,7 @@ class RadianceWidget(ipw.VBox):
         self.theta_slider.observe(self.update_plot, names='value')
         self.phi_slider.observe(self.update_plot, names='value')
 
-        self.reset_button.on_click(self.reset_radiance)
+        self.reset_button.on_click(self.light.reset_radiance)
 
         self.update_button.on_click(self.set_stats)
         self.update_button.on_click(self.plot_heatmap)

@@ -96,19 +96,12 @@ contains
 
   subroutine mat_deinit(mat)
     class(rte_mat) mat
-    write(*,*) 'md1'
     deallocate(mat%row)
-    write(*,*) 'md2'
     deallocate(mat%col)
-    write(*,*) 'md3'
     deallocate(mat%data)
-    write(*,*) 'md4'
     deallocate(mat%rhs)
-    write(*,*) 'md5'
     deallocate(mat%sol)
-    write(*,*) 'md6'
     deallocate(mat%surface_vals)
-    write(*,*) 'md7'
   end subroutine mat_deinit
 
   subroutine calculate_size(mat)
@@ -226,10 +219,18 @@ contains
     write(*,*) 'params%maxiter_inner =', params%maxiter_inner
     write(*,*) 'params%tol_rel =', params%tol_rel
     write(*,*) 'params%tol_abs =', params%tol_abs
+    open(unit=1, file='row.txt')
+    open(unit=2, file='col.txt')
+    open(unit=3, file='data.txt')
+    open(unit=4, file='rhs.txt')
     write(1,*) mat%row
     write(2,*) mat%col
     write(3,*) mat%data
     write(4,*) mat%rhs
+    close(1)
+    close(2)
+    close(3)
+    close(4)
 
     call mgmres_st(mat%n_total, mat%nonzero, mat%row, mat%col, mat%data, &
          mat%sol, mat%rhs, params%maxiter_outer, params%maxiter_inner, &

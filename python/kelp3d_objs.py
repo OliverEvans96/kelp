@@ -225,9 +225,28 @@ class Light(tr.HasTraits):
         ntheta = self.grid.theta.num
         nphi = self.grid.phi.num
 
-        self.irradiance = np.asfortranarray(np.zeros([nx, ny, nz]))
-        self.radiance = np.asfortranarray(np.zeros([nx, ny, nz, ntheta, nphi]))
-        self.message = 'default'
+        self.reset_radiance()
+        self.reset_irradiance()
+
+    def reset_radiance(self, *args):
+        self.radiance = np.asfortranarray(
+            np.zeros([
+                self.grid.x.num,
+                self.grid.y.num,
+                self.grid.z.num,
+                self.grid.theta.num,
+                self.grid.phi.num,
+            ])
+        )
+
+    def reset_irradiance(self, *args):
+        self.radiance = np.asfortranarray(
+            np.zeros([
+                self.grid.x.num,
+                self.grid.y.num,
+                self.grid.z.num,
+            ])
+        )
 
     def calculate_light_field(self, *args):
         # Grid
@@ -269,7 +288,11 @@ class Light(tr.HasTraits):
         p_kelp = self.kelp.p_kelp
 
         np.savetxt('pyrad_in.txt', self.radiance.flatten())
-        print("message = {}".format(self.message))
+
+        if self.light.radiance.shape != (nx, ny, nz, ntheta, nphi):
+            self.reset_radiance()
+        if self.light.irradiance.shape != (nx, ny, nz, ntheta, nphi):
+            self.reset_irradiance()
 
         # Call fortran
         calculate_light_field_f90(
@@ -281,7 +304,7 @@ class Light(tr.HasTraits):
             num_vsf, vsf_angles, vsf_vals,
             theta_s, phi_s, max_rad, decay,
             tol_abs, tol_rel, maxiter_inner, maxiter_outer,
-            p_kelp, self.radiance, self.irradiance, self.message
+            p_kelp, self.radiance, self.irradiance
         )
         np.savetxt('pyrad_out.txt', self.radiance.flatten())
 
@@ -320,6 +343,11 @@ class OpticalProperties(tr.HasTraits):
         tr.link(
             (self, 'vsf_angles'),
             (self.grid.phi, 'vals')
+        )
+
+        tr.link(
+            (self, 'num_vsf'),
+            (self.grid.phi, 'num')
         )
 
     def set_vsf(self, vsf_vals):

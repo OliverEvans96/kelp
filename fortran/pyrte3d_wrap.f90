@@ -8,7 +8,7 @@ contains
        a_w, a_k, b_w, b_k, num_vsf, vsf_angles, vsf_vals, &
        theta_s, phi_s, max_rad, decay, &
        tol_abs, tol_rel, maxiter_inner, maxiter_outer, &
-       p_kelp, radiance, irradiance, message)
+       p_kelp, radiance, irradiance)
 
     integer nx, ny, nz, ntheta, nphi
     double precision xmin, xmax, ymin, ymax, zmax
@@ -21,7 +21,6 @@ contains
     double precision, dimension(nx, ny, nz) :: irradiance
     double precision tol_abs, tol_rel
     integer maxiter_inner, maxiter_outer
-    character(len=*) message
 
     type(space_angle_grid) grid
     type(rte_mat) mat
@@ -59,8 +58,6 @@ contains
     write(*,*) 'maxiter_inner =', maxiter_inner
     write(*,*) 'maxiter_outer =', maxiter_outer
     !write(*,*) 'p_kelp =', p_kelp
-    write(*,*) 'message = ', message
-    write(7,*) 'message = ', message
     write(7,*) radiance
     !write(*,*) 'irradiance =', irradiance
 
@@ -131,7 +128,7 @@ contains
 
     ! Solve system
     write(*,*) 'calculate radiance'
-    !call light%calculate_radiance()
+    call light%calculate_radiance()
     write(*,*) 'calculate irradiance'
     call light%calculate_irradiance()
 
