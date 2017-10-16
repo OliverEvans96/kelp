@@ -8,7 +8,7 @@ contains
        a_w, a_k, b_w, b_k, num_vsf, vsf_angles, vsf_vals, &
        theta_s, phi_s, max_rad, decay, &
        tol_abs, tol_rel, maxiter_inner, maxiter_outer, &
-       p_kelp, radiance, irradiance)
+       p_kelp, radiance, irradiance, message)
 
     integer nx, ny, nz, ntheta, nphi
     double precision xmin, xmax, ymin, ymax, zmax
@@ -21,12 +21,16 @@ contains
     double precision, dimension(nx, ny, nz) :: irradiance
     double precision tol_abs, tol_rel
     integer maxiter_inner, maxiter_outer
+    character(len=*) message
 
     type(space_angle_grid) grid
     type(rte_mat) mat
     type(optical_properties) iops
     type(light_state) light
     type(boundary_condition) bc
+
+    open(unit=7, file='frad_in.txt')
+    open(unit=8, file='frad_out.txt')
 
     ! Report arguments
     write(*,*) 'xmin =', xmin
@@ -55,7 +59,9 @@ contains
     write(*,*) 'maxiter_inner =', maxiter_inner
     write(*,*) 'maxiter_outer =', maxiter_outer
     !write(*,*) 'p_kelp =', p_kelp
-    !write(*,*) 'radiance =', radiance
+    write(*,*) 'message = ', message
+    write(7,*) 'message = ', message
+    write(7,*) radiance
     !write(*,*) 'irradiance =', irradiance
 
 
@@ -104,6 +110,7 @@ contains
     bc%theta_s = theta_s
     bc%phi_s = phi_s
 
+    write(*,*) 'mat init'
     call mat%init(grid, iops)
     call mat%set_bc(bc, radiance)
     call gen_matrix(mat)
@@ -118,20 +125,21 @@ contains
     ! Initialize & set initial guess
     write(*,*) 'Light init'
     call light%init(mat)
+
     write(*,*) 'set radiance'
     light%radiance = radiance
 
     ! Solve system
-    write(*,*) 'Skip calculations'
     write(*,*) 'calculate radiance'
-    call light%calculate_radiance()
+    !call light%calculate_radiance()
     write(*,*) 'calculate irradiance'
-    !call light%calculate_irradiance()
+    call light%calculate_irradiance()
 
     write(*,*) 'save radiance'
     radiance = light%radiance
     write(*,*) 'save irradiance'
     irradiance = light%irradiance
+
 
     write(*,*) 'deinit'
     write(*,*) 'ready'
@@ -142,6 +150,12 @@ contains
     call mat%deinit()
     write(*,*) 'c'
     call grid%deinit()
+
+    write(*,*) 'writing new radiance to file 8'
+    write(8,*) radiance
+
+    close(7)
+    close(8)
 
     write(*,*) 'done'
   end subroutine py_calculate_light_field

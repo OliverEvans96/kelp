@@ -150,6 +150,15 @@ class Kelp(tr.HasTraits):
         self.frond = frond
         self.params = params
 
+        self.init_vals()
+
+    def init_vals(self):
+        self.p_kelp = np.zeros([
+            self.grid.x.num,
+            self.grid.y.num,
+            self.grid.z.num
+        ])
+
     def volume_plot(self):
         "Transform so that the new y is the old -z for IPyVolume."
         return ipv.quickvolshow(np.swapaxes(self.p_kelp[:,:,::-1], 1, 2)) 
@@ -218,6 +227,7 @@ class Light(tr.HasTraits):
 
         self.irradiance = np.asfortranarray(np.zeros([nx, ny, nz]))
         self.radiance = np.asfortranarray(np.zeros([nx, ny, nz, ntheta, nphi]))
+        self.message = 'default'
 
     def calculate_light_field(self, *args):
         # Grid
@@ -258,6 +268,9 @@ class Light(tr.HasTraits):
         # Kelp
         p_kelp = self.kelp.p_kelp
 
+        np.savetxt('pyrad_in.txt', self.radiance.flatten())
+        print("message = {}".format(self.message))
+
         # Call fortran
         calculate_light_field_f90(
             xmin, xmax, nx,
@@ -268,8 +281,9 @@ class Light(tr.HasTraits):
             num_vsf, vsf_angles, vsf_vals,
             theta_s, phi_s, max_rad, decay,
             tol_abs, tol_rel, maxiter_inner, maxiter_outer,
-            p_kelp, self.radiance, self.irradiance
+            p_kelp, self.radiance, self.irradiance, self.message
         )
+        np.savetxt('pyrad_out.txt', self.radiance.flatten())
 
     def volume_plot(self):
         "Transform so that the new y is the old -z for IPyVolume."
@@ -290,6 +304,7 @@ class OpticalProperties(tr.HasTraits):
         super().__init__()
         self.grid = grid
         self.init_vals()
+        self.init_logic()
 
     def init_vals(self):
         self.a_kelp = 2
@@ -304,7 +319,7 @@ class OpticalProperties(tr.HasTraits):
     def init_logic(self):
         tr.link(
             (self, 'vsf_angles'),
-            (self.grid.theta, 'vals')
+            (self.grid.phi, 'vals')
         )
 
     def set_vsf(self, vsf_vals):

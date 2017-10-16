@@ -4,6 +4,7 @@ import bqplot.interacts as bqi
 import ipywidgets as ipw
 import ipyvolume as ipv
 import traitlets as tr
+import matplotlib.pyplot as plt
 
 class HandDrawFigure(bq.Figure):
     def __init__(self, traitful, trait_name, xdim=None, ylim=None, labels=None, color='blue'):
@@ -575,10 +576,11 @@ class VolumePlotWidget(ipw.VBox):
                 self.kelp.grid.x.maxval
             ]
 
+            # z-axis is flipped
             self.kelp_figure.ylabel = 'z'
             self.kelp_figure.ylim = [
-                self.kelp.grid.z.minval,
-                self.kelp.grid.z.maxval
+                self.kelp.grid.z.maxval,
+                self.kelp.grid.z.minval
             ]
 
             self.kelp_figure.zlabel = 'y'
@@ -590,6 +592,9 @@ class VolumePlotWidget(ipw.VBox):
 
         self.calculate_kelp_button = ipw.Button(
             description="Calculate Kelp"
+        )
+        self.load_kelp_button = ipw.Button(
+            description="Load Kelp"
         )
 
     def init_light_vis(self):
@@ -621,6 +626,9 @@ class VolumePlotWidget(ipw.VBox):
         self.calculate_light_button = ipw.Button(
             description='Calculate Light'
         )
+        self.load_light_button = ipw.Button(
+            description="Load Light"
+        )
 
     def init_control_panel(self):
         self.control_panel = ipw.VBox([
@@ -634,13 +642,19 @@ class VolumePlotWidget(ipw.VBox):
         self.kelp_vis = ipw.VBox([
             self.kelp_header,
             self.kelp_figure,
-            self.calculate_kelp_button
+            ipw.HBox([
+                self.calculate_kelp_button,
+                self.load_kelp_button
+            ])
         ])
 
         self.light_vis = ipw.VBox([
             self.light_header,
             self.light_figure,
-            self.calculate_light_button
+            ipw.HBox([
+                self.calculate_light_button,
+                self.load_light_button
+            ])
         ])
 
         self.children = [
@@ -652,20 +666,27 @@ class VolumePlotWidget(ipw.VBox):
         ]
 
     def init_logic(self):
-        # self.light.observe(
-        #     self.load_irradiance,
-        #     names='irradiance'
-        # )
-        # self.kelp.observe(
-        #     self.load_kelp,
-        #     names='p_kelp'
-        # )
+        self.light.observe(
+            self.load_irradiance,
+            names='irradiance'
+        )
+        self.kelp.observe(
+            self.load_kelp,
+            names='p_kelp'
+        )
 
         self.calculate_kelp_button.on_click(
             self.calculate_kelp
         )
         self.calculate_light_button.on_click(
             self.calculate_light
+        )
+
+        self.load_kelp_button.on_click(
+            self.load_kelp
+        )
+        self.load_light_button.on_click(
+            self.load_irradiance
         )
 
         self.link_figures(
@@ -695,11 +716,11 @@ class VolumePlotWidget(ipw.VBox):
 
     def calculate_kelp(self, *args):
         self.kelp.gen_kelp()
-        self.load_kelp()
+        #self.load_kelp()
 
     def calculate_light(self, *args):
         self.light.calculate_light_field()
-        self.load_irradiance()
+        #self.load_irradiance()
 
     def load_kelp(self, *args):
         self.update_vol_plot(
@@ -738,6 +759,7 @@ class RadianceWidget(ipw.VBox):
 
         self.init_vals()
         self.init_elements()
+        self.init_style()
         self.init_layout()
         self.init_logic()
         self.update_plot()
@@ -749,33 +771,79 @@ class RadianceWidget(ipw.VBox):
         self.m = 0
 
     def init_elements(self):
+        self.log_widget = ipw.Output()
+
         self.controller, self.fig = ipv.quickvolshow(np.zeros([3,3,3])).children
 
         self.theta_slider = ipw.IntSlider(
             min=0,
             max=self.ntheta-1,
-            description='theta'
+            description='theta',
+            #continuous_update=False
         )
 
         self.phi_slider = ipw.IntSlider(
             min=0,
             max=self.nphi-1,
-            description='phi'
+            description='phi',
+            #continuous_update=False
         )
 
         self.reset_button = ipw.Button(description='Reset Radiance')
+        self.update_button = ipw.Button(description='Update Plots')
+
+        self.heatmap = HeatMapWidget(
+            #x=self.light.grid.theta.vals,
+            #y=self.light.grid.phi.vals,
+            x=np.arange(self.light.grid.theta.num),
+            y=np.arange(self.light.grid.phi.num),
+            labels=dict(
+                x='theta',
+                y='phi'
+            )
+        )
+
+        self.stats = ipw.HTML()
+
+    def init_style(self):
+            self.fig.xlabel = 'x'
+            self.fig.xlim = [
+                self.light.grid.x.minval,
+                self.light.grid.x.maxval
+            ]
+
+            # z-axis is flipped
+            self.fig.ylabel = 'z'
+            self.fig.ylim = [
+                self.light.grid.z.maxval,
+                self.light.grid.z.minval
+            ]
+
+            self.fig.zlabel = 'y'
+            self.fig.zlim = [
+                self.light.grid.y.minval,
+                self.light.grid.y.maxval
+            ]
 
     def init_layout(self):
         self.children = [
-            self.controller,
-            self.fig,
-            self.theta_slider,
-            self.phi_slider,
-            self.reset_button
+            ipw.HBox([
+                ipw.VBox([
+                    #self.controller,
+                    self.fig,
+                    self.update_button,
+                    self.theta_slider,
+                    self.phi_slider,
+                ]),
+                ipw.VBox([
+                    self.heatmap,
+                    self.reset_button,
+                    self.stats
+                ])
+            ])
         ]
 
     def init_logic(self):
-        self.light.observe(self.update_plot, names='radiance')
         tr.link(
             (self, 'l'),
             (self.theta_slider, 'value')
@@ -784,15 +852,29 @@ class RadianceWidget(ipw.VBox):
             (self, 'm'),
             (self.phi_slider, 'value')
         )
+
+        self.theta_slider.observe(self.update_plot, names='value')
+        self.phi_slider.observe(self.update_plot, names='value')
+
         self.reset_button.on_click(self.reset_radiance)
 
+        self.update_button.on_click(self.set_stats)
+        self.update_button.on_click(self.plot_heatmap)
+        self.update_button.on_click(self.update_plot)
+
+        self.light.observe(self.set_stats, names='radiance')
+        self.light.observe(self.plot_heatmap, names='radiance')
+        self.light.observe(self.update_plot, names='radiance')
+
     def update_plot(self, *args):
-        new = self.vol_transform(
-            self.light.radiance[:,:,:,self.l, self.m]
-        )
-        self.fig.data_min = np.min(new)
-        self.fig.data_max = np.max(new)
-        sel.fig.volume_data = new
+        with self.log_widget:
+            print("Updating: l={}, m={}".format(self.l, self.m))
+            new = self.vol_transform(
+                self.light.radiance[:,:,:,self.l, self.m]
+            )
+            self.fig.data_min = np.min(self.light.radiance)
+            self.fig.data_max = np.max(self.light.radiance)
+            self.fig.volume_data = new
 
     def vol_transform(self, vol_data):
         "Transform 3D array for volume plot"
@@ -800,4 +882,101 @@ class RadianceWidget(ipw.VBox):
         return np.transpose(vol_data[:,:,::-1], (1, 2, 0))
 
     def reset_radiance(self, *args):
-        self.light.radiance = np.zeros_like(self.light.radiance) #+ 1e-6
+        with self.log_widget:
+            print("Resetting")
+            self.light.radiance = np.zeros_like(self.light.radiance) #+ 1e-6
+
+    def plot_heatmap(self, *args):
+        with self.log_widget:
+            print("Heatmap")
+            self.heatmap_vals = np.sum(np.abs(self.light.radiance), axis=(0,1,2)).T
+            self.heatmap.set_color(self.heatmap_vals)
+
+    def set_stats(self, *args):
+        with self.log_widget:
+            print("Set stats")
+            self.stats.value = """<b>Radiance Statistics</b>
+            <p>
+            <tt>
+            min &nbsp= {:.3e}
+            <br>
+            max &nbsp= {:.3e}
+            <br>
+            mean = {:.3e}
+            <br>
+            std &nbsp= {:.3e}
+            </tt>
+            </p>
+            """.format(
+                np.min(self.light.radiance),
+                np.max(self.light.radiance),
+                np.mean(self.light.radiance),
+                np.std(self.light.radiance),
+            )
+
+class HeatMapWidget(bq.Figure):
+    def __init__(self, x, y, z=None, labels=None):
+        "x & y are 1D, z is 2D, with meshgrid (don't set indexing=ij)"
+        self.x = x
+        self.y = y
+        self.z = z
+        self.labels = labels
+
+        self.init_vals()
+        self.init_plot()
+        self.init_layout()
+        self.init_logic()
+
+    def init_vals(self):
+        if self.z is None:
+            self.z = np.zeros([len(self.x), len(self.y)])
+
+        if self.labels is None:
+            self.labels = dict(
+                x='',
+                y=''
+            )
+
+    def init_plot(self):
+        self.xscale = bq.LinearScale()
+        self.yscale = bq.LinearScale()
+        self.zscale = bq.ColorScale(scheme='Reds')
+        self.heat = bq.HeatMap(
+            x=self.x,
+            y=self.y,
+            color=self.z,
+            scales=dict(
+                x=self.xscale,
+                y=self.yscale,
+                color=self.zscale
+            )
+        )
+        self.xax = bq.Axis(
+            scale=self.xscale,
+            label=self.labels['x']
+        )
+        self.yax = bq.Axis(
+            scale=self.yscale,
+            label=self.labels['y'],
+            orientation='vertical'
+        )
+        self.zax = bq.Axis(scale=self.zscale)
+
+        super().__init__(
+            marks=[self.heat],
+            axes=[self.xax, self.yax, self.zax],
+        )
+
+    def set_color(self, z):
+        self.z = z
+        self.heat.color = z
+
+    def init_layout(self):
+        self.layout = ipw.Layout(
+            width='500px',
+            height='500px'
+        )
+
+    def init_logic(self):
+        pass
+

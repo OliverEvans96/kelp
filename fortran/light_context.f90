@@ -94,11 +94,16 @@ contains
     integer i, j, k
     integer nx, ny, nz
 
+    nx = light%grid%x%num
+    ny = light%grid%y%num
+    nz = light%grid%z%num
+
     do i=1, nx
        do j=1, ny
           do k=1, nz
              light%irradiance(i,j,k) = light%grid%integrate_angle_2d( &
                   light%radiance(i,j,k,:,:))
+             write(*,*) 'irrad ', i, j, k, '=', light%irradiance(i,j,k)
           end do
        end do
     end do

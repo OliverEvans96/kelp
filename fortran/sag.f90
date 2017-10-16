@@ -288,12 +288,11 @@ contains
     prefactor = grid%theta%prefactor * grid%phi%prefactor
     integral = 0
 
-    write(*,*) '2D Integral'
-    write(*,*) 'Prefactor:', prefactor
+    !write(*,*) '2D Integral'
+    !write(*,*) 'Prefactor:', prefactor
 
-    write(*,*) 'Theta weights:', grid%theta%weights
-    write(*,*) 'Phi weights:', grid%phi%weights
-    write(*,*) ''
+    !write(*,*) 'Theta weights:', grid%theta%weights
+    !write(*,*) 'Phi weights:', grid%phi%weights
 
     do lp=1, grid%theta%num
        do mp=1, grid%phi%num
@@ -301,6 +300,9 @@ contains
           integral = integral + weight * func_vals(lp, mp)
        end do
     end do
+
+    !write(*,*) 'Integral =', integral
+    !write(*,*) ''
 
     integral = prefactor * integral
 

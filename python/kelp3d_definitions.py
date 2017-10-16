@@ -2,9 +2,12 @@ import numpy as np
 import ipyvolume as ipv
 import matplotlib.pyplot as plt
 import IPython
+import warnings
 
 from kelp3d_objs import *
 from kelp_widgets import *
+
+warnings.filterwarnings('ignore', category=RuntimeWarning)
 
 def init_objects():
     global grid, rope, frond, params, iops, kelp, bc, light
@@ -18,7 +21,7 @@ def init_objects():
     light = Light(kelp, iops, bc, params)
 
 def init_widgets():
-    global fw, rw, iw, bcw, gw, pw, vpw, rw
+    global fw, rw, iw, bcw, gw, pw, vpw, radw
     fw = FrondWidget(frond)
     rw = RopeWidget(rope)
     iw = IOPWidget(iops)
@@ -26,7 +29,7 @@ def init_widgets():
     gw = GridWidget(grid)
     pw = ParamWidget(params)
     vpw = VolumePlotWidget(kelp, light)
-    rw = RadianceWidget(light)
+    radw = RadianceWidget(light)
 
 def stats(arr):
     print("min: {}".format(np.nanmin(arr)))
