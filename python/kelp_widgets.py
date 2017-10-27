@@ -449,9 +449,9 @@ class IOPWidget(ipw.VBox):
 
     def init_elements(self):
         self.title = ipw.HTML("<h3>Optical Properties</h3>")
-        self.aw_slider = ipw.FloatSlider(min=0,max=10, description='$a_w$')
+        self.aw_slider = ipw.FloatSlider(min=0,max=10000, description='$a_w$')
         self.bw_slider = ipw.FloatSlider(min=0,max=10, description='$b_w$')
-        self.ak_slider = ipw.FloatSlider(min=0,max=10, description='$a_k$')
+        self.ak_slider = ipw.FloatSlider(min=0,max=10000, description='$a_k$')
         self.bk_slider = ipw.FloatSlider(min=0,max=10, description='$b_k$')
 
         self.vsf_plot = HandDrawFigure(
@@ -991,3 +991,154 @@ class HeatMapWidget(bq.Figure):
     def init_logic(self):
         pass
 
+class VolumeCutWidget(ipw.VBox):
+    def __init__(self, func_3d):
+        self.func_3d = func_3d
+
+        # Very important! If you don't
+        # call VBox's constructor, your
+        # widget won't be registered and
+        # it won't render!
+        super().__init__()
+
+        self.init_vals()
+        self.init_elements()
+        self.init_layout()
+        self.init_logic()
+
+        self.update_plots()
+
+
+    def init_vals(self):
+        # linspaces
+        self.x = linspace(0, 1, 101)
+        self.y = linspace(0, 1, 101)
+        self.z = linspace(0, 1, 101)
+
+        # Volume meshgrids
+        self.vX, self.vY, self.vZ = meshgrid(
+            self.x,
+            self.y,
+            self.z
+        )
+
+        # Color meshgrids
+        self.cX, self.cY = meshgrid(
+            self.x,
+            self.z
+        )
+
+    def init_elements(self):
+        self.title = ipw.HTML("<h3>Volume Cut Widget</h3>")
+        self.ipv_fig = ipv.figure()
+        self.init_bq_fig()
+        self.z_plane_slider = ipw.FloatSlider(
+            min=self.z.min(),
+            max=self.z.max(),
+            value=.5,
+            description='z plane'
+        )
+        self.a_slider = ipw.FloatSlider(
+            min=0,
+            max=2,
+            value=1,
+            description='$a$',
+            continuous_update=False
+        )
+        self.b_slider = ipw.FloatSlider(
+            min=0,
+            max=2,
+            value=1,
+            description='$b$',
+            continuous_update=False
+        )
+
+        self.init_plane(self.z_plane_slider.value)
+
+    def init_bq_fig(self):
+        self.bq_xscale = bq.LinearScale()
+        self.bq_yscale = bq.LinearScale()
+        self.bq_colorscale = bq.ColorScale(min=-1, max=1)
+        self.bq_xax = bq.Axis(scale=self.bq_xscale)
+        self.bq_yax = bq.Axis(scale=self.bq_yscale, orientation='vertical')
+        self.bq_colorax = bq.ColorAxis(scale=self.bq_colorscale)
+        self.bq_heat = bq.HeatMap(
+            x=self.x,
+            y=self.z,
+            color=zeros_like(self.cY),
+            scales={
+                'x': self.bq_xscale,
+                'y': self.bq_yscale,
+                'color': self.bq_colorscale
+            }
+
+        )
+        self.bq_fig = bq.Figure(
+            marks=[self.bq_heat],
+            axes=[
+                self.bq_xax,
+                self.bq_yax,
+                self.bq_colorax
+            ]
+        )
+
+    def init_layout(self):
+        self.children = [
+            self.title,
+            ipw.HBox([
+                self.ipv_fig,
+                self.bq_fig
+            ]),
+            self.z_plane_slider,
+            self.a_slider,
+            self.b_slider
+        ]
+
+    def init_logic(self):
+        self.z_plane_slider.observe(self.update_bq_plot, names='value')
+        self.a_slider.observe(self.update_plots, names='value')
+        self.b_slider.observe(self.update_plots, names='value')
+
+    def update_volume_plot(self):
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            F = self.func_3d(
+                self.vX,
+                self.vY,
+                self.vZ,
+                self.a_slider.value,
+                self.b_slider.value
+            )
+
+            # For whatever reason, we have to rearrange the dimensions
+            # for the plot axes to be correct.
+            # See numpy.rollaxis, numpy.meshgrid for more information.
+            ipv.volshow(
+                rollaxis(F, 2)
+            )
+
+    def update_bq_plot(self, *args):
+        self.move_plane(self.z_plane_slider.value)
+
+        # Determine which data values to take
+        z_index = argmin(abs(self.z_plane_slider.value - self.z))
+
+        # Update bqplot heatmap
+        self.bq_heat.color = self.ipv_fig.volume_data[:,:, z_index]
+
+    def update_plots(self, *args):
+        self.update_volume_plot()
+        self.update_bq_plot()
+
+    def init_plane(self, z):
+        "Plot plane for the first time. From ipw.plot_trisurf.__doc__"
+        ipv.plot_trisurf(
+            [0,0,1,1],
+            [0,1,0,1],
+            [z,z,z,z],
+            triangles=[[0, 2, 3], [0, 3, 1]],
+        )
+
+    def move_plane(self, z):
+        "Move plane once it has already been rendered."
+        self.ipv_fig.meshes[0].z = [z,z,z,z]

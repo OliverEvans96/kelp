@@ -285,10 +285,10 @@ contains
     mat%m = indices%m
   end subroutine mat_set_ind
 
-  subroutine mat_assign(mat, data, i, j, k, l, m)
+  subroutine mat_assign(mat, val, i, j, k, l, m)
     ! It's assumed that this is the only time this entry is defined
     class(rte_mat) mat
-    double precision data
+    double precision val
     integer i, j, k, l, m
     integer row_num, col_num
 
@@ -297,7 +297,7 @@ contains
 
     mat%row(mat%ent) = row_num
     mat%col(mat%ent) = col_num
-    if(isnan(data)) then
+    if(isnan(val)) then
        write(*,*) 'ISNAN'
        write(*,*) 'row = ', row_num
        write(*,*) 'col = ', col_num
@@ -305,7 +305,7 @@ contains
        write(*,*) 'index =', i, j, k, l, m
        write(*,*) 'entry =', mat%ent
     endif
-    mat%data(mat%ent) = data
+    mat%data(mat%ent) = val
 
     ! Remember where we stored information for this matrix element
     !call mat%store_index(row_num, col_num)

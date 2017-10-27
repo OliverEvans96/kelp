@@ -72,7 +72,7 @@ contains
     ! Solve (MGMRES)
     call light%mat%solve()
 
-    ! index = 1
+    index = 1
 
     ! Extract solution
     do k=1, nz

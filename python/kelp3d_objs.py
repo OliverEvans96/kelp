@@ -236,7 +236,7 @@ class Light(tr.HasTraits):
                 self.grid.z.num,
                 self.grid.theta.num,
                 self.grid.phi.num,
-            ])
+            ]) + 1e-6
         )
 
     def reset_irradiance(self, *args):
@@ -245,7 +245,7 @@ class Light(tr.HasTraits):
                 self.grid.x.num,
                 self.grid.y.num,
                 self.grid.z.num,
-            ])
+            ]) + 1e-6
         )
 
     def calculate_light_field(self, *args):
