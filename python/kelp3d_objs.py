@@ -81,11 +81,11 @@ class Grid(tr.HasTraits):
 
     def __init__(self):
         super().__init__()
-        self.x = SpaceDim(-1, 1, 6)
-        self.y = SpaceDim(-1, 1, 6)
-        self.z = SpaceDim(0, 1, 6)
-        self.theta = AngleDim(0, 2*np.pi, 6)
-        self.phi = AngleDim(0, np.pi, 6)
+        self.x = SpaceDim(-1, 1, 4)
+        self.y = SpaceDim(-1, 1, 4)
+        self.z = SpaceDim(0, 1, 4)
+        self.theta = AngleDim(0, 2*np.pi, 4)
+        self.phi = AngleDim(0, np.pi, 4)
 
 class Rope(tr.HasTraits):
     frond_lengths = tr.Any()
@@ -135,10 +135,10 @@ class Params(tr.HasTraits):
 
     def init_vals(self):
         self.quadrature_degree = 5
-        self.maxiter_inner = 10
-        self.maxiter_outer = 10
-        self.tol_abs = 1e-3
-        self.tol_rel = 1e-3
+        self.maxiter_inner = 50
+        self.maxiter_outer = 50
+        self.tol_abs = 1e-6
+        self.tol_rel = 1e-6
 
 class Kelp(tr.HasTraits):
     p_kelp = tr.Any()
@@ -330,10 +330,10 @@ class OpticalProperties(tr.HasTraits):
         self.init_logic()
 
     def init_vals(self):
-        self.a_kelp = 2
-        self.b_kelp = 1
-        self.a_water = 1
-        self.b_water = 1
+        self.a_kelp = 0*2
+        self.b_kelp = 0*1
+        self.a_water = 0*1
+        self.b_water = 0*1
 
         self.num_vsf = self.grid.phi.num
         self.vsf_angles = self.grid.phi.vals

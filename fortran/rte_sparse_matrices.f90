@@ -305,6 +305,11 @@ contains
        write(*,*) 'index =', i, j, k, l, m
        write(*,*) 'entry =', mat%ent
     endif
+
+    if(i.eq.mat%i .and. j.eq.mat%j .and. k.eq.mat%j .and. l.eq.mat%l .and. m.eq.mat%m) then
+       write(*,*) 'diag: ', val
+    endif
+
     mat%data(mat%ent) = val
 
     ! Remember where we stored information for this matrix element
@@ -568,7 +573,7 @@ contains
     val = grid%phi%cos(m) / (2.d0 * dz)
 
     val1 = -3.d0 * val
-    val2 = 2.d0 * val
+    val2 = 4.d0 * val
     val3 = -val
 
     call mat%set_ind(indices)
@@ -599,7 +604,7 @@ contains
     val = grid%phi%cos(m) / (2.d0 * dz)
 
     val1 = 3.d0 * val
-    val2 = -2.d0 * val
+    val2 = -4.d0 * val
     val3 = val
 
     call mat%set_ind(indices)
@@ -618,6 +623,8 @@ contains
     double precision prefactor
     type(index_list) indices
     integer i, j, k, l, m
+    double precision bb
+
     i = indices%i
     j = indices%j
     k = indices%k
@@ -629,13 +636,15 @@ contains
     prefactor = grid%theta%prefactor * grid%phi%prefactor
     call mat%set_ind(indices)
 
+    bb = iops%scat_grid(i, j, k)
+
     ! Store entry number of element at i,j,k,l,m
     ! to allow other functions to add to it
     call mat%calculate_repeat_index(indices)
 
     do lp=1, grid%theta%num
        do mp=1, grid%phi%num
-          val = prefactor * iops%vsf(l,m,lp,mp)
+          val = bb * prefactor * iops%vsf(l,m,lp,mp)
           call mat%assign(val, i, j, k, lp, mp)
        end do
     end do
