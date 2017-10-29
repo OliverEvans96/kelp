@@ -187,7 +187,7 @@ contains
              end do
              ! Upwelling light
              ! Still counting m from 1 since surface_vals is only defined up to nphi/2
-             ! However index has incremented to the correct position for downwelling light.
+             ! However index has incremented to the correct position for upwelling light.
              do m=1, mat%grid%phi%num / 2
                 do l=1, mat%grid%theta%num
                    mat%sol(index) = mat%surface_vals(i,j,l,m)
@@ -306,9 +306,9 @@ contains
        write(*,*) 'entry =', mat%ent
     endif
 
-    if(i.eq.mat%i .and. j.eq.mat%j .and. k.eq.mat%j .and. l.eq.mat%l .and. m.eq.mat%m) then
-       write(*,*) 'diag: ', val
-    endif
+    ! if(i.eq.mat%i .and. j.eq.mat%j .and. k.eq.mat%j .and. l.eq.mat%l .and. m.eq.mat%m) then
+    !    write(*,*) 'diag: ', val
+    ! endif
 
     mat%data(mat%ent) = val
 
@@ -644,7 +644,7 @@ contains
 
     do lp=1, grid%theta%num
        do mp=1, grid%phi%num
-          val = bb * prefactor * iops%vsf(l,m,lp,mp)
+          val = - bb * prefactor * iops%vsf(l,m,lp,mp)
           call mat%assign(val, i, j, k, lp, mp)
        end do
     end do

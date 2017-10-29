@@ -51,7 +51,7 @@ contains
 
     index = 1
 
-    ! Set initial guess
+    ! Set initial guess from provided radiance
     ! Traverse solution vector in order
     ! so as to avoid calculating index
     do k=1, nz
@@ -103,7 +103,7 @@ contains
           do k=1, nz
              light%irradiance(i,j,k) = light%grid%integrate_angle_2d( &
                   light%radiance(i,j,k,:,:))
-             write(*,*) 'irrad ', i, j, k, '=', light%irradiance(i,j,k)
+             !write(*,*) 'irrad ', i, j, k, '=', light%irradiance(i,j,k)
           end do
        end do
     end do
