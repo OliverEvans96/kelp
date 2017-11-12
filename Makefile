@@ -147,6 +147,8 @@ $(INC)/rte_sparse_matrices.o: $(SRC)/rte_sparse_matrices.f90 $(INC)/sag.o $(INC)
 	$(FC) $(OFLAGS) $< -o $@
 $(INC)/rte3d.o: $(SRC)/rte3d.f90 $(INC)/kelp_context.o $(INC)/rte_sparse_matrices.o $(INC)/light_context.o
 	$(FC) $(OFLAGS) $< -o $@
+$(INC)/asymptotics.o: $(SRC)/asymptotics.f90 $(INC)/rte3d.o $(INC)/kelp_context.o $(INC)/rte_sparse_matrices.o $(INC)/light_context.o
+	$(FC) $(OFLAGS) $< -o $@
 
 $(INC)/pykelp3d_wrap.o: $(SRC)/pykelp3d_wrap.f90 $(INC)/prob.o $(INC)/fastgl.o $(INC)/sag.o $(INC)/utils.o $(INC)/kelp3d.o $(INC)/kelp_context.o
 	$(FC) $(OFLAGS) $< -o $@

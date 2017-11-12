@@ -80,7 +80,7 @@ contains
   subroutine bc_init(bc, grid, theta_s, phi_s, decay, max_rad)
     class(boundary_condition) bc
     type(space_angle_grid) grid
-    double precision theta_s, decay, max_rad
+    double precision theta_s, phi_s, decay, max_rad
     integer l, m
     integer ntheta, nphi
     double precision theta, phi

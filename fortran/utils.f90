@@ -143,6 +143,7 @@ function bnd2arr(xmin,xmax,imax)
 end function
 
 function mod1(i, n)
+  implicit none
   integer i, n, m
   integer mod1
 
@@ -218,6 +219,7 @@ end function
 
 ! Bilinear interpolation on evenly spaced 2D grid
 function bilinear_array(x, y, nx, ny, x_vals, y_vals, z_vals)
+  implicit none
   double precision x, y
   integer nx, ny
   double precision, dimension(:) :: x_vals, y_vals
@@ -227,6 +229,8 @@ function bilinear_array(x, y, nx, ny, x_vals, y_vals, z_vals)
   integer i0, j0, i1, j1
   double precision x0, x1, y0, y1
   double precision z00, z10, z01, z11
+
+  double precision bilinear_array
 
   xmin = x_vals(1)
   ymin = y_vals(1)
@@ -244,12 +248,12 @@ function bilinear_array(x, y, nx, ny, x_vals, y_vals, z_vals)
   y0 = y_vals(j0)
   y1 = y_vals(j1)
 
-  z00 = z_vals(i0,j0,kp)
-  z10 = z_vals(i1,j0,kp)
-  z01 = z_vals(i0,j1,kp)
-  z11 = z_vals(i1,j1,kp)
+  z00 = z_vals(i0,j0)
+  z10 = z_vals(i1,j0)
+  z01 = z_vals(i0,j1)
+  z11 = z_vals(i1,j1)
 
-  bilinear_array = bilinear(xp, yp, x0, y0, x1, y1, a00, a01, a10, a11)
+  bilinear_array = bilinear(x, y, x0, y0, x1, y1, z00, z01, z10, z11)
 end function bilinear_array
 
 ! Bilinear interpolation of a function of two variables
@@ -257,6 +261,7 @@ end function bilinear_array
 ! Weight each point by the area of the sub-rectangle involving
 ! the point (x,y) and the point diagonally across the rectangle
 function bilinear(x, y, x0, y0, x1, y1, z00, z01, z10, z11)
+  implicit none
   double precision x, y
   double precision x0, y0, x1, y1, z00, z01, z10, z11
   double precision a, b, c, d
@@ -452,6 +457,7 @@ subroutine print_int_array(arr,nn,mm,fmtstr_in)
   write(*,*) ' '
 
 end subroutine print_int_array
+
 subroutine print_array(arr,nn,mm,fmtstr_in)
     implicit none
 
@@ -551,6 +557,7 @@ subroutine write_array(arr,nn,mm,filename,fmtstr_in)
 end subroutine
 
 subroutine zeros(x, n)
+  implicit none
   integer n, i
   double precision, dimension(n) :: x
 
