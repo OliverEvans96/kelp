@@ -156,7 +156,6 @@ function mod1(i, n)
 
 end function mod1
 
-
 ! Interpolate single point from 1D data
 function interp(x0,xx,yy,nn)
     implicit none
@@ -217,7 +216,62 @@ function interp(x0,xx,yy,nn)
 
 end function
 
+! Bilinear interpolation on evenly spaced 2D grid
+function bilinear_array(x, y, nx, ny, x_vals, y_vals, z_vals)
+  double precision x, y
+  integer nx, ny
+  double precision, dimension(:) :: x_vals, y_vals
+  double precision, dimension(:,:) :: z_vals
+
+  double precision dx, dy, xmin, ymin
+  integer i0, j0, i1, j1
+  double precision x0, x1, y0, y1
+  double precision z00, z10, z01, z11
+
+  xmin = x_vals(1)
+  ymin = y_vals(1)
+  dx = x_vals(2) - x_vals(1)
+  dy = y_vals(2) - y_vals(1)
+
+  ! Add 1 for one-indexing
+  i0 = int(floor((x-xmin)/dx))+1
+  j0 = int(floor((y-ymin)/dy))+1
+  i1 = i0 + 1
+  j1 = j0 + 1
+
+  x0 = x_vals(i0)
+  x1 = x_vals(i1)
+  y0 = y_vals(j0)
+  y1 = y_vals(j1)
+
+  z00 = z_vals(i0,j0,kp)
+  z10 = z_vals(i1,j0,kp)
+  z01 = z_vals(i0,j1,kp)
+  z11 = z_vals(i1,j1,kp)
+
+  bilinear_array = bilinear(xp, yp, x0, y0, x1, y1, a00, a01, a10, a11)
+end function bilinear_array
+
+! Bilinear interpolation of a function of two variables
+! over a rectangle of points.
+! Weight each point by the area of the sub-rectangle involving
+! the point (x,y) and the point diagonally across the rectangle
+function bilinear(x, y, x0, y0, x1, y1, z00, z01, z10, z11)
+  double precision x, y
+  double precision x0, y0, x1, y1, z00, z01, z10, z11
+  double precision a, b, c, d
+  double precision bilinear
+
+  a = (x-x0)*(y-y0)
+  b = (x1-x)*(y-y0)
+  c = (x-x0)*(y1-y)
+  d = (x1-x)*(y1-y)
+
+  bilinear = (a*z11 + b*z01 + c*z10 + d*z00) / (a + b + c + d)
+end function bilinear
+
 ! Integrate using left endpoint rule
+! Assuming the right endpoint is not included in arr
 function lep_rule(arr,dx,nn)
     implicit none
 
@@ -239,7 +293,7 @@ function lep_rule(arr,dx,nn)
     integer ii
 
     ! Set output to zero
-    lep_rule = 0
+    lep_rule = 0.0d0
 
     ! Accumulate integral
     do ii = 1, nn
@@ -248,6 +302,21 @@ function lep_rule(arr,dx,nn)
 
 end function
 
+! Integrate using trapezoid rule
+! Assuming both endpoints are included in arr
+function trap_rule(arr, dx, nn)
+  implicit none
+  double precision, dimension(nn) :: arr
+  double precision dx
+  integer ii, nn
+  double precision trap_rule
+
+  trap_rule = 0.0d0
+
+  do ii=1, nn-1
+     trap_rule = trap_rule + 0.5d0 / dx * (arr(ii) + arr(ii+1))
+  end do
+end function trap_rule
 
 ! Normalize 1D array and return integral w/ left endpoint rule
 function normalize(arr,dx,nn)
