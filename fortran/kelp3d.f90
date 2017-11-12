@@ -58,8 +58,9 @@ subroutine calculate_kelp_on_grid(grid, p_kelp, frond, rope, quadrature_degree)
       do j=1, ny
         y = grid%y%vals(j)
         call point%set_cart(x, y, z)
-        p_kelp(i, j, k) = prob_kelp(point, frond, depth, quadrature_degree)
-      end do
+        p_kelp(i, j, k) = kelp_proportion(point, frond, grid, depth, quadrature_degree)
+        !p_kelp(i, j, k) = prob_kelp(point, frond, depth, quadrature_degree)
+     end do
     end do
   end do
 end subroutine calculate_kelp_on_grid
@@ -74,7 +75,7 @@ subroutine shading_region_limits(theta_low_lim, theta_high_lim, point, frond)
 end subroutine shading_region_limits
 
 function prob_kelp(point, frond, depth, quadrature_degree)
-! P_s(theta_p, r_p)
+! P_s(theta_p, r_p) - This is the proportion of the population of this depth layer which can be found in this Cartesian grid cell.
   type(point3d), intent(in) :: point
   type(frond_shape), intent(in) :: frond
   type(depth_state), intent(in) :: depth
@@ -85,6 +86,28 @@ function prob_kelp(point, frond, depth, quadrature_degree)
   call shading_region_limits(theta_low_lim, theta_high_lim, point, frond)
   prob_kelp = integrate_ps(theta_low_lim, theta_high_lim, quadrature_degree, point, frond, depth)
 end function prob_kelp
+
+function kelp_proportion(point, frond, grid, depth, quadrature_degree)
+  ! This is the proportion of the volume of the Cartesian grid cell occupied by kelp
+  type(point3d), intent(in) :: point
+  type(frond_shape), intent(in) :: frond
+  type(depth_state), intent(in) :: depth
+  type(space_angle_grid), intent(in) :: grid
+  integer, intent(in) :: quadrature_degree
+  double precision p_k, n, t, dz
+  double precision kelp_proportion
+
+  n = depth%num_fronds
+  dz = grid%z%spacing
+  t = frond%ft
+  !write(*,*) 'KELP PROPORTION'
+  !write(*,*) 'n=', n
+  !write(*,*) 'dz=', dz
+  !write(*,*) 't=', t
+  !write(*,*) 'coef=', n*t/dz
+  p_k = prob_kelp(point, frond, depth, quadrature_degree)
+  kelp_proportion = n*t/dz * p_k
+end function kelp_proportion
 
 function integrate_ps(theta_low_lim, theta_high_lim, quadrature_degree, point, frond, depth) result(integral)
   type(point3d), intent(in) :: point

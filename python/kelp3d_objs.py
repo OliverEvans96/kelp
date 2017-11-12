@@ -80,16 +80,19 @@ class Grid(tr.HasTraits):
     phi = tr.Any()
 
     def __init__(self):
+        ns = 8
+        na = 8
         super().__init__()
-        self.x = SpaceDim(-1, 1, 4)
-        self.y = SpaceDim(-1, 1, 4)
-        self.z = SpaceDim(0, 1, 4)
-        self.theta = AngleDim(0, 2*np.pi, 4)
-        self.phi = AngleDim(0, np.pi, 4)
+        self.x = SpaceDim(-5, 5, ns)
+        self.y = SpaceDim(-5, 5, ns)
+        self.z = SpaceDim(0, 10, ns)
+        self.theta = AngleDim(0, 2*np.pi, na)
+        self.phi = AngleDim(0, np.pi, int(np.floor(na/2)))
 
 class Rope(tr.HasTraits):
     frond_lengths = tr.Any()
     frond_stds = tr.Any()
+    num_fronds = tr.Any()
     water_speeds = tr.Any()
     water_angles = tr.Any()
 
@@ -103,12 +106,14 @@ class Rope(tr.HasTraits):
         b = 0 * 1e-1
         c = 0 * 5e-1
         d = 0 * np.pi / 4
+        n = 1000 * grid.z.spacing
 
         z = grid.z.vals
 
         self.frond_lengths = a * np.exp(-a*z) * np.sin(z) ** 2
         #self.frond_lengths = .5 * z**2 * np.exp(1-z)
         self.frond_stds = b * np.ones_like(z)
+        self.num_fronds = n * np.ones_like(z)
         self.water_speeds = c * np.ones_like(z)
         #self.water_angles = 2*np.pi / grid.zmax * z
         self.water_angles = d * np.ones_like(z)
@@ -116,11 +121,13 @@ class Rope(tr.HasTraits):
 class Frond(tr.HasTraits):
     fs = tr.Float()
     fr = tr.Float()
+    ft = tr.Float()
 
     def __init__(self):
         super().__init__()
         self.fs = .5
         self.fr = 2
+        self.fr = .00015
 
 class Params(tr.HasTraits):
     quadrature_degree = tr.Int()
@@ -178,12 +185,14 @@ class Kelp(tr.HasTraits):
         # Rope
         frond_lengths = self.rope.frond_lengths
         frond_stds = self.rope.frond_stds
+        num_fronds = self.rope.num_fronds
         water_speeds = self.rope.water_speeds
         water_angles = self.rope.water_angles
 
         # Frond
         fs = self.frond.fs
         fr = self.frond.fr
+        ft = self.frond.ft
 
         # Params
         quadrature_degree = self.params.quadrature_degree
@@ -198,9 +207,10 @@ class Kelp(tr.HasTraits):
             zmax, nz,
             frond_lengths,
             frond_stds,
+            num_fronds,
             water_speeds,
             water_angles,
-            fs, fr,
+            fs, fr, ft,
             self.p_kelp
         )
 
@@ -290,8 +300,10 @@ class Light(tr.HasTraits):
         np.savetxt('pyrad_in.txt', self.radiance.flatten())
 
         if self.radiance.shape != (nx, ny, nz, ntheta, nphi):
+            print("RESETTING RADIANCE")
             self.reset_radiance()
-        if self.irradiance.shape != (nx, ny, nz, ntheta, nphi):
+        if self.irradiance.shape != (nx, ny, nz):
+            print("RESETTING IRRADIANCE")
             self.reset_irradiance()
 
         # Call fortran

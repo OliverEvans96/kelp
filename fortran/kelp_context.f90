@@ -14,7 +14,7 @@ type point3d
 end type point3d
 
 type frond_shape
-  double precision fs, fr, tan_alpha, alpha
+  double precision fs, fr, tan_alpha, alpha, ft
 contains
   procedure :: set_shape => frond_set_shape
   procedure :: calculate_angles => frond_calculate_angles
@@ -22,14 +22,14 @@ end type frond_shape
 
 type rope_state
    integer nz
-   double precision, dimension(:), allocatable :: frond_lengths, frond_stds, water_speeds, water_angles
+   double precision, dimension(:), allocatable :: frond_lengths, frond_stds, num_fronds, water_speeds, water_angles
 contains
     procedure :: init => rope_init
     procedure :: deinit => rope_deinit
 end type rope_state
 
 type depth_state
-   double precision frond_length, frond_std, water_speeds, water_angles, depth
+   double precision frond_length, frond_std, num_fronds, water_speeds, water_angles, depth
    integer depth_layer
 contains
    procedure :: set_depth
@@ -59,8 +59,12 @@ end type optical_properties
 
 type boundary_condition
    double precision max_rad, decay, theta_s, phi_s
+   type(space_angle_grid) grid
+   double precision, dimension(:,:), allocatable :: bc_grid
  contains
    procedure :: bc_gaussian
+   procedure :: init => bc_init
+   procedure :: deinit => bc_deinit
 end type boundary_condition
 
 contains
@@ -69,17 +73,41 @@ contains
     class(boundary_condition) bc
     double precision theta, phi, diff
     double precision bc_gaussian
-    ! write(*,*) 'BC'
-    ! write(*,*) 'theta_s =', bc%theta_s
-    ! write(*,*) 'phi_s =', bc%phi_s
-    ! write(*,*) 'theta =', theta
-    ! write(*,*) 'phi =', phi
     diff = angle_diff_3d(theta, phi, bc%theta_s, bc%phi_s)
-    ! write(*,*) 'diff =', diff
     bc_gaussian = bc%max_rad * exp(-bc%decay * diff)
-    ! write(*,*) 'val = ', bc_gaussian
-    ! write(*,*)
   end function bc_gaussian
+
+  subroutine bc_init(bc, grid, theta_s, phi_s, decay, max_rad)
+    class(boundary_condition) bc
+    type(space_angle_grid) grid
+    double precision theta_s, decay, max_rad
+    integer l, m
+    integer ntheta, nphi
+    double precision theta, phi
+
+    ntheta = grid%theta%num
+    nphi = grid%phi%num
+
+    allocate(bc%bc_grid(ntheta, nphi))
+
+    bc%theta_s = theta_s
+    bc%phi_s = phi_s
+    bc%decay = decay
+    bc%max_rad = max_rad
+
+    do l=1, grid%theta%num
+       theta = grid%theta%vals(l)
+       do m=1, grid%phi%num
+          phi = grid%phi%vals(m)
+          bc%bc_grid(l, m) = bc%bc_gaussian(theta, phi)
+       end do
+    end do
+  end subroutine bc_init
+
+  subroutine bc_deinit(bc)
+    class(boundary_condition) bc
+    deallocate(bc%bc_grid)
+    end subroutine
 
   subroutine point_set_cart(point, x, y, z)
     class(point3d) :: point
@@ -111,11 +139,12 @@ contains
     point%theta = atan2(point%y, point%x)
   end subroutine cartesian_to_polar
 
-  subroutine frond_set_shape(frond, fs, fr)
+  subroutine frond_set_shape(frond, fs, fr, ft)
     class(frond_shape) frond
-    double precision fs, fr
+    double precision fs, fr, ft
     frond%fs = fs
     frond%fr = fr
+    frond%ft = ft
     call frond%calculate_angles()
   end subroutine frond_set_shape
 
@@ -186,14 +215,16 @@ contains
     allocate(rope%frond_stds(rope%nz))
     allocate(rope%water_speeds(rope%nz))
     allocate(rope%water_angles(rope%nz))
+    allocate(rope%num_fronds(rope%nz))
   end subroutine rope_init
-  
+
   subroutine rope_deinit(rope)
     class(rope_state) rope
     deallocate(rope%frond_lengths)
     deallocate(rope%frond_stds)
     deallocate(rope%water_speeds)
     deallocate(rope%water_angles)
+    deallocate(rope%num_fronds)
   end subroutine rope_deinit
 
   subroutine set_depth(depth, rope, grid, depth_layer)
@@ -206,6 +237,7 @@ contains
     depth%frond_std = rope%frond_stds(depth_layer)
     depth%water_speeds = rope%water_speeds(depth_layer)
     depth%water_angles = rope%water_angles(depth_layer)
+    depth%num_fronds = rope%num_fronds(depth_layer)
     depth%depth_layer = depth_layer
     depth%depth = grid%z%vals(depth_layer)
   end subroutine set_depth

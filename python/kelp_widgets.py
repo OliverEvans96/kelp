@@ -218,6 +218,8 @@ class GridWidget(ipw.VBox):
         self.nz_spinner.value = self.grid.z.num
         self.ntheta_spinner.value = self.grid.theta.num
         self.nphi_spinner.value = self.grid.phi.num
+        self.xwidth_slider.value = self.grid.x.maxval
+        self.ywidth_slider.value = self.grid.y.maxval
         self.zdepth_slider.value = self.grid.z.maxval
 
     def init_style(self):
@@ -274,7 +276,7 @@ class RopeWidget(ipw.VBox):
         self.rope = rope
         grid = rope.grid
 
-        z_quants = ['water_speeds', 'water_angles', 'frond_lengths', 'frond_stds']
+        z_quants = ['water_speeds', 'water_angles', 'frond_lengths', 'frond_stds', 'num_fronds']
         z_scale = bq.LinearScale(min=grid.z.minval, max=grid.z.maxval)
         z_ax = bq.Axis(scale=z_scale, label='Depth (z)', grid_lines='none')
 
@@ -282,28 +284,32 @@ class RopeWidget(ipw.VBox):
             'water_speeds': 0,
             'water_angles': 0,
             'frond_lengths': 0,
-            'frond_stds': 0
+            'frond_stds': 0,
+            'num_fronds': 0,
         }
 
         maxs = {
-            'water_speeds': 10,
+            'water_speeds': 50,
             'water_angles': 2*np.pi,
-            'frond_lengths': 1,
-            'frond_stds': 1
+            'frond_lengths': 2,
+            'frond_stds': .5,
+            'num_fronds': 5000
         }
 
         colors = {
             'water_speeds': 'red',
             'water_angles': 'green',
             'frond_lengths': 'blue',
-            'frond_stds': 'yellow'
+            'frond_stds': 'yellow',
+            'num_fronds': 'purple'
         }
 
         ylabels = {
             'water_speeds': 'Water current velocity',
             'water_angles': 'Water current angle',
             'frond_lengths': 'Frond length mean',
-            'frond_stds': 'Frond length std. dev.'
+            'frond_stds': 'Frond length std. dev.',
+            'num_fronds': 'Number of fronds'
         }
 
 
@@ -325,6 +331,9 @@ class RopeWidget(ipw.VBox):
             ipw.HBox([
                 figs['frond_lengths'],
                 figs['frond_stds']
+            ]),
+            ipw.HBox([
+                figs['num_fronds']
             ])
         ]
 
@@ -356,7 +365,7 @@ class BCWidget(ipw.VBox):
         )
         self.max_rad_slider = ipw.FloatSlider(
             min=0,
-            max=10,
+            max=100,
             value = self.bc.max_rad,
             description = r'$L_{max}$'
         )
@@ -519,16 +528,24 @@ class FrondWidget(ipw.VBox):
             max=5,
             description='$f_s$'
         )
+        self.ft_slider = ipw.FloatSlider(
+            min=0,
+            max=.0005,
+            step=.00005,
+            description='$f_t$'
+        )
 
     def init_vals(self):
         self.fr_slider.value = self.frond.fr
         self.fs_slider.value = self.frond.fs
+        self.ft_slider.value = self.frond.ft
 
     def init_layout(self):
         self.children = [
             self.title,
             self.fr_slider,
-            self.fs_slider
+            self.fs_slider,
+            self.ft_slider
         ]
 
     def init_logic(self):
@@ -539,6 +556,10 @@ class FrondWidget(ipw.VBox):
         tr.link(
             (self.fs_slider, 'value'),
             (self.frond, 'fs')
+        )
+        tr.link(
+            (self.ft_slider, 'value'),
+            (self.frond, 'ft')
         )
 
 
@@ -722,7 +743,8 @@ class VolumePlotWidget(ipw.VBox):
         ]
 
     def link_trait(self, t1, t2, trait_name):
-        return tr.link(
+        #return tr.link(
+        return ipw.jslink(
             (t1, trait_name),
             (t2, trait_name)
         )
@@ -742,10 +764,11 @@ class VolumePlotWidget(ipw.VBox):
         )
 
     def load_irradiance(self, *args):
-        self.update_vol_plot(
-            self.light_figure,
-            self.light.irradiance
-        )
+        with self.log_area:
+            self.update_vol_plot(
+                self.light_figure,
+                self.light.irradiance
+            )
 
     def update_vol_plot(self, fig, data):
         new = self.vol_transform(data)

@@ -3,14 +3,15 @@ module pykelp3d_wrap
   implicit none
 
 contains
-  subroutine py_gen_kelp(xmin, xmax, nx, ymin, ymax, ny, zmax, nz, frond_lengths, frond_stds, &
-    water_speeds, water_angles, fs, fr, p_kelp)
+  subroutine py_gen_kelp(xmin, xmax, nx, ymin, ymax, ny, zmax, nz, &
+      frond_lengths, frond_stds, num_fronds, water_speeds, water_angles, &
+      fs, fr, ft, p_kelp)
 
     integer nx, ny, nz
     double precision xmin, xmax, ymin, ymax, zmax
     double precision, dimension(nz) :: frond_lengths, frond_stds, &
-        water_speeds, water_angles
-    double precision fs, fr
+        water_speeds, water_angles, num_fronds
+    double precision fs, fr, ft
     double precision, dimension(nx, ny, nz) :: p_kelp
     integer quadrature_degree
 
@@ -23,6 +24,9 @@ contains
     ! if(.not. present(quadrature_degree)) then
     !    quadrature_degree = 5
     ! endif
+
+    write(*,*) 'PYGEN'
+    write(*,*) 'num_fronds =', num_fronds
 
     ! INIT GRID
     grid%x%minval = xmin
@@ -49,11 +53,12 @@ contains
 
     rope%frond_lengths = frond_lengths
     rope%frond_stds = frond_stds
+    rope%num_fronds = num_fronds
     rope%water_speeds = water_speeds
     rope%water_angles = water_angles
 
     ! INIT FROND
-    call frond%set_shape(fs, fr)
+    call frond%set_shape(fs, fr, ft)
 
     ! CALCULATE KELP
     call calculate_kelp_on_grid(grid, p_kelp, frond, rope, quadrature_degree)

@@ -167,7 +167,7 @@ contains
     index = 1
     dz = mat%grid%z%spacing
 
-    do k=1, mat%grid%z%num
+    do k=2, mat%grid%z%num
        do j=1, mat%grid%y%num
           do i=1, mat%grid%x%num
              ! Absorption coefficient
@@ -179,10 +179,8 @@ contains
              ! Downwelling light
              do m=1, mat%grid%phi%num / 2
                 do l=1, mat%grid%theta%num
-                   mat%sol(index) = mat%surface_vals(i,j,l,m)
-                   write(1,*) 'sol(', index, ') =', mat%sol(index)
+                   mat%sol(index) = atten * mat%surface_vals(i,j,l,m)
                    index = index + 1
-                   mat%surface_vals(i,j,l,m) = atten * mat%surface_vals(i,j,l,m)
                 end do
              end do
              ! Upwelling light
@@ -190,10 +188,8 @@ contains
              ! However index has incremented to the correct position for upwelling light.
              do m=1, mat%grid%phi%num / 2
                 do l=1, mat%grid%theta%num
-                   mat%sol(index) = mat%surface_vals(i,j,l,m)
-                   write(1,*) 'sol(', index, ') =', mat%sol(index)
+                   mat%sol(index) = atten * mat%surface_vals(i,j,l,m)
                    index = index + 1
-                   mat%surface_vals(i,j,l,m) = bb * atten * mat%surface_vals(i,j,l,m)
                 end do
              end do
           end do
