@@ -136,6 +136,8 @@ class Params(tr.HasTraits):
     maxiter_outer = tr.Int()
     tol_abs = tr.Float()
     tol_rel = tr.Float()
+    num_scatters = tr.Int()
+    gmres_flag = tr.Bool()
 
     def __init__(self):
         super().__init__()
@@ -147,6 +149,8 @@ class Params(tr.HasTraits):
         self.maxiter_outer = 50
         self.tol_abs = 1e-6
         self.tol_rel = 1e-6
+        self.num_scatters = 0
+        self.gmres_flag = False
 
 class Kelp(tr.HasTraits):
     p_kelp = tr.Any()

@@ -459,6 +459,8 @@ class ParamWidget(ipw.VBox):
         tr.link((self.maxiter_outer_slider, 'value'), (self.params, 'maxiter_outer'))
         tr.link((self.tol_abs_picker, 'value'), (self.params, 'tol_abs'))
         tr.link((self.tol_rel_picker, 'value'), (self.params, 'tol_rel'))
+        tr.link((self.num_scatters_spinner, 'value'), (self.params, 'num_scatters'))
+        tr.link((self.gmres_checkbox, 'value'), (self.params, 'gmres_flag'))
 
 
 class IOPWidget(ipw.VBox):
