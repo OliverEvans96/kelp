@@ -5,7 +5,8 @@ from scipy.integrate import simps
 import ipyvolume as ipv
 
 from fortran_wrappers.pykelp3d_wrap import f90wrap_py_gen_kelp as gen_kelp_f90
-from fortran_wrappers.pyrte3d_wrap import f90wrap_py_calculate_light_field as calculate_light_field_f90
+#from fortran_wrappers.pyrte3d_wrap import f90wrap_py_calculate_light_field as calculate_light_field_f90
+from fortran_wrappers.pyasymptotics_wrap import f90wrap_py_calculate_asymptotic_light_field as calculate_asymptotic_light_field_f90
 
 class SpaceDim(tr.HasTraits):
     minval = tr.Float()
@@ -297,6 +298,11 @@ class Light(tr.HasTraits):
         # Kelp
         p_kelp = self.kelp.p_kelp
 
+        # Asymptotics
+        num_scatters = self.params.num_scatters
+        gmres_flag = self.params.gmres_flag
+
+
         np.savetxt('pyrad_in.txt', self.radiance.flatten())
 
         if self.radiance.shape != (nx, ny, nz, ntheta, nphi):
@@ -307,7 +313,9 @@ class Light(tr.HasTraits):
             self.reset_irradiance()
 
         # Call fortran
-        calculate_light_field_f90(
+
+        # Asymptotics + GMRES (optional)
+        calculate_asymptotic_light_field_f90(
             xmin, xmax, nx,
             ymin, ymax, ny,
             zmax, nz,
@@ -316,8 +324,22 @@ class Light(tr.HasTraits):
             num_vsf, vsf_angles, vsf_vals,
             theta_s, phi_s, max_rad, decay,
             tol_abs, tol_rel, maxiter_inner, maxiter_outer,
-            p_kelp, self.radiance, self.irradiance
+            p_kelp, self.radiance, self.irradiance,
+            num_scatters, gmres_flag
         )
+
+        # GMRES (no asymptotics)
+        # calculate_light_field_f90(
+        #     xmin, xmax, nx,
+        #     ymin, ymax, ny,
+        #     zmax, nz,
+        #     ntheta, nphi,
+        #     a_water, a_kelp, b_water, b_kelp,
+        #     num_vsf, vsf_angles, vsf_vals,
+        #     theta_s, phi_s, max_rad, decay,
+        #     tol_abs, tol_rel, maxiter_inner, maxiter_outer,
+        #     p_kelp, self.radiance, self.irradiance
+        # )
         np.savetxt('pyrad_out.txt', self.radiance.flatten())
 
     def volume_plot(self):

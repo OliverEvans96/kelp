@@ -90,7 +90,14 @@ pyrte3d_wrap: $(INC)/pyrte3d_wrap.o $(INC)/prob.o $(INC)/fastgl.o $(INC)/sag.o $
 	mv pyrte3d_wrap.cpython* $(F2PYDIR)
 	mv pyrte3d_wrap.py $(F2PYDIR)
 
-py_wrap: pykelp3d_wrap pyrte3d_wrap
+pyasymptotics_wrap: $(INC)/pyasymptotics_wrap.o $(INC)/prob.o $(INC)/fastgl.o $(INC)/sag.o $(INC)/utils.o $(INC)/kelp3d.o $(INC)/kelp_context.o $(INC)/mgmres.o $(INC)/rte_sparse_matrices.o $(INC)/light_context.o $(INC)/rte3d.o $(INC)/asymptotics.o
+	f90wrap -m pyasymptotics_wrap $(SRC)/pyasymptotics_wrap.f90
+	f2py-f90wrap $(F2PYFLAGS) -c -m pyasymptotics_wrap f90wrap_pyasymptotics_wrap.f90 $^
+	rm f90wrap_pyasymptotics_wrap.f90 .f2py_f2cmap
+	mv pyasymptotics_wrap.cpython* $(F2PYDIR)
+	mv pyasymptotics_wrap.py $(F2PYDIR)
+
+py_wrap: pykelp3d_wrap pyrte3d_wrap pyasymptotics_wrap
 
 #########
 # Tests #
@@ -153,6 +160,8 @@ $(INC)/asymptotics.o: $(SRC)/asymptotics.f90 $(INC)/rte3d.o $(INC)/kelp_context.
 $(INC)/pykelp3d_wrap.o: $(SRC)/pykelp3d_wrap.f90 $(INC)/prob.o $(INC)/fastgl.o $(INC)/sag.o $(INC)/utils.o $(INC)/kelp3d.o $(INC)/kelp_context.o
 	$(FC) $(OFLAGS) $< -o $@
 $(INC)/pyrte3d_wrap.o: $(SRC)/pyrte3d_wrap.f90 $(INC)/prob.o $(INC)/fastgl.o $(INC)/sag.o $(INC)/utils.o $(INC)/rte3d.o $(INC)/kelp_context.o $(INC)/light_context.o $(INC)/rte_sparse_matrices.o
+	$(FC) $(OFLAGS) $< -o $@
+$(INC)/pyasymptotics_wrap.o: $(SRC)/pyasymptotics_wrap.f90 $(INC)/prob.o $(INC)/fastgl.o $(INC)/sag.o $(INC)/utils.o $(INC)/rte3d.o $(INC)/kelp_context.o $(INC)/light_context.o $(INC)/rte_sparse_matrices.o $(INC)/asymptotics.o
 	$(FC) $(OFLAGS) $< -o $@
 
 # Old

@@ -428,13 +428,30 @@ class ParamWidget(ipw.VBox):
             description = 'Tol_Rel'
         )
 
+        self.num_scatters_spinner = ipw.BoundedIntText(
+            description='# of scatters',
+            min=0,
+            max=10
+        )
+        self.gmres_checkbox = ipw.Checkbox(
+            description='Full RTE w/ GMRES'
+        )
+
     def init_layout(self):
         self.children = [
             self.title,
-            self.maxiter_inner_slider,
-            self.maxiter_outer_slider,
-            self.tol_abs_picker,
-            self.tol_rel_picker
+            ipw.HBox([
+                ipw.VBox([
+                    self.maxiter_inner_slider,
+                    self.maxiter_outer_slider,
+                    self.tol_abs_picker,
+                    self.tol_rel_picker
+                ]),
+                ipw.VBox([
+                    self.num_scatters_spinner,
+                    self.gmres_checkbox
+                ])
+            ])
         ]
 
     def init_logic(self):
