@@ -11,19 +11,35 @@ module asymptotics
     integer i, j, k, l, m
     type(index_list) indices
     double precision surface_val
+    double precision percent_remaining
 
+    ! Downwelling light
     do l=1, grid%theta%num
        indices%l = l
-       do m=1, grid%phi%num
+       do m=1, grid%phi%num/2
           indices%m = m
           surface_val = bc%bc_grid(indices%l,indices%m)
+          !write(*,*)
+          !write(*,*) 'SV ', indices%l, indices%m, '=', surface_val
           do i=1, grid%x%num
              indices%i = i
              do j=1, grid%y%num
                 indices%j = j
                 do k=1, grid%z%num
                    indices%k = k
-                   radiance(i,j,k,l,m) = surface_val * absorb_along_path(grid, bc, iops, indices, 1)
+                   percent_remaining = absorb_along_path(grid, bc, iops, indices, 1)
+                   radiance(i,j,k,l,m) = surface_val * percent_remaining
+                end do
+             end do
+          end do
+       end do
+
+       ! No upwelling light before scattering
+       do m=grid%phi%num/2+1, grid%phi%num
+          do i=1, grid%x%num
+             do j=1, grid%y%num
+                do k=1, grid%z%num
+                   radiance(i,j,k,l,m) = 0
                 end do
              end do
           end do
@@ -56,6 +72,7 @@ module asymptotics
     bb = iops%scat_water
 
     ! Reset radiance
+    write(*,*) 'Before Scattering'
     call calculate_light_before_scattering(grid, bc, iops, radiance)
 
     if (num_scatters .gt. 0) then
@@ -65,6 +82,7 @@ module asymptotics
       rad_postscatter = radiance
 
       do n=1, num_scatters
+         write(*,*) 'Apply scatter #', n
          rad_prescatter = rad_postscatter
          call scatter(grid, bc, iops, rad_prescatter, rad_postscatter)
          radiance = radiance + bb**n * rad_postscatter
@@ -232,13 +250,6 @@ module asymptotics
 
        abs_coef_along_path(kp) = bilinear_array_periodic(x_mod, y_mod, nx, ny, grid%x%vals, grid%y%vals, iops%abs_grid(:,:,kp))
 
-       if(abs(abs_coef_along_path(kp)) .gt. 1.0d-6) then
-          write(*,*) 'kp =', kp
-          write(*,*) 'xp, x_mod =', xp, x_mod
-          write(*,*) 'yp, y_mod =', yp, y_mod
-          write(*,*) 'ACAP =', abs_coef_along_path(kp)
-          write(*,*)
-       end if
     end do
 
     dpath = grid%z%spacing / cos(phi)

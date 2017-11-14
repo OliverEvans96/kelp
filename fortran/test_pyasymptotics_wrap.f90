@@ -37,7 +37,7 @@ allocate(p_kelp(nx, ny, nz))
 allocate(radiance(nx, ny, nz, ntheta, nphi))
 allocate(irradiance(nx, ny, nz))
 
-a_w = 0
+a_w = 1
 a_k = 0
 b_w = 0
 b_k = 0
@@ -80,6 +80,8 @@ call py_calculate_asymptotic_light_field( &
      theta_s, phi_s, max_rad, decay, &
      tol_abs, tol_rel, maxiter_inner, maxiter_outer, &
      p_kelp, radiance, irradiance, num_scatters, gmres_flag)
+
+write(*,*) 'radiance =', radiance
 
 deallocate(vsf_angles)
 deallocate(vsf_vals)

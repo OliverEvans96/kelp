@@ -77,7 +77,7 @@ contains
     if(gmres_flag) then
 
       ! INIT MAT
-       write(*,*) 'GMRES Mat'
+      write(*,*) 'GMRES Mat'
       ! Set boundary condition
       call mat%init(grid, iops)
       call mat%set_bc(bc, radiance)
