@@ -98,8 +98,8 @@ contains
     integer(hid_t) :: file_id
     character(len=*) :: filename
     integer(hsize_t), dimension(1) :: data_dims
-    double precision, dimension(2) :: frond_arr
-    double precision fs, fr
+    double precision, dimension(3) :: frond_arr
+    double precision fs, fr, ft
 
     call h5open_f(error)
     call h5fopen_f(filename, h5f_acc_rdwr_f, file_id, error)
@@ -109,8 +109,9 @@ contains
     call dset_read_1d_double(file_id, 'frond_arr', data_dims, frond_arr, error)
     fs = frond_arr(1)
     fr = frond_arr(2)
+    ft = frond_arr(3)
 
-    call frond%set_shape(fs, fr)
+    call frond%set_shape(fs, fr, ft)
 
     call h5fclose_f(file_id, error)
     call h5close_f(error)

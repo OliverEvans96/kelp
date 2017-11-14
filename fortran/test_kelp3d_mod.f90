@@ -76,10 +76,11 @@ end subroutine init_kelp
 
 subroutine init_frond(frond)
   type(frond_shape) frond
-  double precision fs, fr
+  double precision fs, fr, ft
   fs = .5d0
   fr = 2.d0
-  call frond%set_shape(fs, fr)
+  ft = 0.1d0
+  call frond%set_shape(fs, fr, ft)
 end subroutine
 
 subroutine init_params(quadrature_degree)
