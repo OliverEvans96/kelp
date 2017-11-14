@@ -89,6 +89,7 @@ contains
 
       ! Initialize & set initial guess
       write(*,*) 'Light'
+      call light%init(mat)
       light%radiance = radiance
 
       ! Solve system

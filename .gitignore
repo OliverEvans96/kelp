@@ -7,4 +7,9 @@ olemodel/*
 *.mod
 .*.swp
 gmon.out
+vgcore.*
+data.txt
+row.txt
+col.txt
+rhs.txt
 

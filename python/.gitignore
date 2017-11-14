@@ -1,2 +1,6 @@
 __pycache__/*
 .\#*
+data.txt
+row.txt
+col.txt
+rhs.txt

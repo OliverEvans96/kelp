@@ -25,9 +25,6 @@ contains
     !    quadrature_degree = 5
     ! endif
 
-    write(*,*) 'PYGEN'
-    write(*,*) 'num_fronds =', num_fronds
-
     ! INIT GRID
     grid%x%minval = xmin
     grid%x%maxval = xmax
