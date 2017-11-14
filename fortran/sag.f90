@@ -56,6 +56,7 @@ end type space_dim
 type space_angle_grid !(sag)
   type(space_dim) :: x, y, z
   type(angle_dim) :: theta, phi
+  double precision, dimension(:,:), allocatable :: x_factor, y_factor
 contains
   procedure :: set_bounds => sag_set_bounds
   procedure :: set_num => sag_set_num
@@ -64,6 +65,7 @@ contains
   procedure :: deinit => sag_deinit
   procedure :: set_num_from_spacing => sag_set_num_from_spacing
   procedure :: set_spacing_from_num => sag_set_spacing_from_num
+  procedure :: calculate_factors => sag_calculate_factors
 end type space_angle_grid
 
 contains
@@ -277,7 +279,35 @@ contains
     call grid%theta%assign_legendre()
     call grid%phi%assign_legendre()
 
+    call grid%calculate_factors()
+
   end subroutine sag_init
+
+  subroutine sag_calculate_factors(grid)
+    ! Factors by which depth difference is multiplied
+    ! in order to calculate distance traveled in the
+    ! (x, y) direction along a ray in the (theta, phi)
+    ! direction
+    class(space_angle_grid) :: grid
+    integer l, m
+    double precision theta, phi
+    integer ntheta, nphi
+
+    ntheta = grid%theta%num
+    nphi = grid%phi%num
+
+    allocate(grid%x_factor(ntheta, nphi))
+    allocate(grid%y_factor(ntheta, nphi))
+
+    do l=1, ntheta
+       theta = grid%theta%vals(l)
+       do m=1, nphi
+          phi = grid%phi%vals(m)
+          grid%x_factor(l, m) = abs(tan(phi) * sin(theta))
+          grid%y_factor(l, m) = abs(tan(phi) * cos(theta))
+       end do
+    end do
+  end subroutine sag_calculate_factors
 
   function sag_integrate_angle_2d(grid, func_vals) result(integral)
     class(space_angle_grid) grid
@@ -331,6 +361,9 @@ contains
     call grid%z%deinit()
     call grid%theta%deinit()
     call grid%phi%deinit()
+
+    deallocate(grid%x_factor)
+    deallocate(grid%y_factor)
   end subroutine sag_deinit
 
   ! Affine shift on x from [xmin, xmax] to [ymin, ymax]

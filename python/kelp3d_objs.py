@@ -81,8 +81,8 @@ class Grid(tr.HasTraits):
     phi = tr.Any()
 
     def __init__(self):
-        ns = 12
-        na = 12
+        ns = 20
+        na = 20
         super().__init__()
         self.x = SpaceDim(-5, 5, ns)
         self.y = SpaceDim(-5, 5, ns)
@@ -307,7 +307,7 @@ class Light(tr.HasTraits):
         gmres_flag = self.params.gmres_flag
 
 
-        np.savetxt('pyrad_in.txt', self.radiance.flatten())
+        #np.savetxt('pyrad_in.txt', self.radiance.flatten())
 
         if self.radiance.shape != (nx, ny, nz, ntheta, nphi):
             print("RESETTING RADIANCE")
@@ -344,7 +344,7 @@ class Light(tr.HasTraits):
         #     tol_abs, tol_rel, maxiter_inner, maxiter_outer,
         #     p_kelp, self.radiance, self.irradiance
         # )
-        np.savetxt('pyrad_out.txt', self.radiance.flatten())
+        #np.savetxt('pyrad_out.txt', self.radiance.flatten())
 
     def volume_plot(self):
         "Transform so that the new y is the old -z for IPyVolume."
@@ -369,9 +369,9 @@ class OpticalProperties(tr.HasTraits):
 
     def init_vals(self):
         self.a_kelp = 1000
-        self.b_kelp = 0*1
+        self.b_kelp = 1
         self.a_water = .25
-        self.b_water = 0*1
+        self.b_water = 1
 
         self.num_vsf = self.grid.phi.num
         self.vsf_angles = self.grid.phi.vals

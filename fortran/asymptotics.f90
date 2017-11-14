@@ -19,8 +19,6 @@ module asymptotics
        do m=1, grid%phi%num/2
           indices%m = m
           surface_val = bc%bc_grid(indices%l,indices%m)
-          !write(*,*)
-          !write(*,*) 'SV ', indices%l, indices%m, '=', surface_val
           do i=1, grid%x%num
              indices%i = i
              do j=1, grid%y%num
@@ -90,7 +88,7 @@ module asymptotics
 
       deallocate(rad_prescatter)
       deallocate(rad_postscatter)
-   endif
+   end if
 
   end subroutine calculate_light_with_scattering
 
@@ -104,23 +102,74 @@ module asymptotics
     integer i, j, k, l, m, kp
     type(index_list) indices
     double precision surface_val
-    double precision phi
     double precision dpath
     double precision, dimension(:,:,:,:,:), allocatable :: source
 
     double precision, dimension(:), allocatable :: integrand
+    double precision path_source
+
+    double precision xmin, xmax, ymin, ymax
+    integer nx, ny, nz, ntheta, nphi
+    double precision x, y, z, theta, phi
+
+    nx = grid%x%num
+    ny = grid%y%num
+    nz = grid%z%num
+    ntheta = grid%theta%num
+    nphi = grid%phi%num
+
+    xmin = grid%x%minval
+    xmax = grid%x%maxval
+    ymin = grid%y%minval
+    ymax = grid%y%maxval
 
     ! Allocate largest that will be needed.
     ! Most cases will only use a subset of the array.
-    allocate(source(grid%x%num, grid%y%num, grid%z%num, grid%theta%num, grid%phi%num))
-    allocate(integrand(grid%z%num))
+    allocate(source(nx, ny, nz, ntheta, nphi))
+    allocate(integrand(nz))
 
     call calculate_source(grid, iops, rad_prescatter, source)
 
-    do m=1, grid%phi%num
+    ! Downwelling (project ray to surface)
+    do m=1, nphi / 2
        indices%m = m
        phi = grid%phi%vals(m)
-       dpath = grid%z%spacing / cos(phi)
+       dpath = grid%z%spacing / grid%phi%cos(m)
+       do l=1, ntheta
+          indices%l = l
+          do i=1, nx
+             indices%i = i
+             x = grid%x%vals(i)
+             do j=1, ny
+                indices%j = j
+                y = grid%y%vals(j)
+                do k=1, nz
+                   indices%k = k
+                   z = grid%z%vals(k)
+                   do kp = 1, k
+                      path_source = interpolate_ray_at_depth(&
+                           x, y, z, kp, nx, ny, nz, xmin, xmax,&
+                           ymin, ymax, grid%x%vals, grid%y%vals,&
+                           grid%z%vals, grid%x_factor(l,m),&
+                           grid%y_factor(l,m), source(:,:,:,l,m))
+
+                      integrand(kp) = path_source * absorb_along_path(&
+                           grid, bc, iops, indices, kp)
+                   end do
+                   rad_postscatter(i,j,k,l,m) = trap_rule(&
+                        integrand, dpath, k)
+                end do
+             end do
+          end do
+       end do
+    end do
+
+    ! Upwelling (ray project to bottom)
+    do m=grid%phi%num/2 + 1, grid%phi%num
+       indices%m = m
+       phi = grid%phi%vals(m)
+       ! Minus sign since cos(phi) < 0 for upwelling
+       dpath = - grid%z%spacing / grid%phi%cos(m)
 
        do i=1, grid%x%num
           indices%i = i
@@ -130,16 +179,14 @@ module asymptotics
                 indices%k = k
                 do l=1, grid%theta%num
                    indices%l = l
-                      do kp = 1, k
-                         integrand(kp) = source(i,j,k,l,m) * absorb_along_path(grid, bc, iops, indices, kp)
-                      end do
-
-                      rad_postscatter(i,j,k,l,m) = trap_rule(integrand, dpath, k)
-
+                   do kp = grid%z%num, k, -1
+                      integrand(kp) = source(i,j,k,l,m) * absorb_along_path(grid, bc, iops, indices, kp)
                    end do
+                   rad_postscatter(i,j,k,l,m) = trap_rule(integrand, dpath, grid%z%num-k+1)
                 end do
              end do
           end do
+       end do
     end do
 
     deallocate(source)
@@ -202,13 +249,21 @@ module asymptotics
 
   end subroutine calculate_scatter_integral
 
+  ! Calculate the percent of radiance remaining after passing
+  ! through depth layers beginning with kmin, and ending before k.
+  ! Path may be downwelling or upwelling.
+  ! Absorption is applied at the end of the path, but not the beginning
+  ! This is so as not to double absorb upon scattering.
+  ! Also, scattering does not occur at the surface for downwelling light
+  ! (BC is specified once and for all)
+  ! i.e., radiance from nth scattering also considers nth absorption.
   function absorb_along_path(grid, bc, iops, indices, kmin)
     type(space_angle_grid) grid
     type(boundary_condition) bc
     type(optical_properties) iops
     type(index_list) indices
     double precision x, y, z, theta, phi
-    integer nx, ny
+    integer nx, ny, nz
     double precision xmin, xmax, ymin, ymax
     double precision x_mod, y_mod
 
@@ -223,9 +278,11 @@ module asymptotics
 
     ! Depth at which to begin integration
     integer kmin
+    integer path_length, direction, index
 
     nx = grid%x%num
     ny = grid%y%num
+    nz = grid%z%num
 
     xmin = grid%x%minval
     xmax = grid%x%maxval
@@ -238,26 +295,36 @@ module asymptotics
     theta = grid%theta%vals(indices%l)
     phi = grid%phi%vals(indices%m)
 
-    allocate(abs_coef_along_path(indices%k))
+    ! Number of coefficients to integrate over
+    path_length = abs(indices%k - kmin)
 
-    do kp=kmin, indices%k
-       zp = grid%z%vals(kp)
-       xp = x + zp * tan(phi) * cos(theta)
-       yp = y + zp * tan(phi) * sin(theta)
+    ! Whether the ray is moving up or down
+    ! 1 for down, -1 for up, 0 for neither
+    direction = sgn_int(indices%k-kmin)
 
-       x_mod = shift_mod(xp, xmin, xmax)
-       y_mod = shift_mod(yp, ymin, ymax)
+    allocate(abs_coef_along_path(path_length))
 
-       abs_coef_along_path(kp) = bilinear_array_periodic(x_mod, y_mod, nx, ny, grid%x%vals, grid%y%vals, iops%abs_grid(:,:,kp))
+    total_abs = 0
 
-    end do
+    index = 0
+    if(direction .ne. 0) then
+       do kp=kmin + direction, indices%k, direction
+         index = index + 1
+         abs_coef_along_path(index) = interpolate_ray_at_depth(&
+              x, y, z, kp, nx, ny, nz, xmin, xmax, ymin, ymax,&
+              grid%x%vals, grid%y%vals, grid%z%vals,&
+              grid%x_factor(indices%l, indices%m),&
+              grid%y_factor(indices%l, indices%m),&
+              iops%abs_grid)
+       end do
+    end if
 
-    dpath = grid%z%spacing / cos(phi)
-    total_abs = trap_rule(abs_coef_along_path, dpath, indices%k)
-
-    deallocate(abs_coef_along_path)
+    dpath = grid%z%spacing / abs(grid%phi%cos(indices%m))
+    total_abs = trap_rule(abs_coef_along_path, dpath, path_length)
 
     absorb_along_path = exp(-total_abs)
+
+    deallocate(abs_coef_along_path)
 
   end function absorb_along_path
 end module asymptotics

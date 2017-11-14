@@ -26,6 +26,7 @@
 
 ! General utilities which might be useful in other settings
 module utils
+implicit none
 
 ! Constants
 double precision, parameter :: pi = 4.D0 * datan(1.D0)
@@ -157,6 +158,13 @@ function mod1(i, n)
 
 end function mod1
 
+function sgn_int(x)
+  integer x, sgn_int
+  ! Standard signum function
+  sgn_int = sign(1,x) 
+  if(x .eq. 0.) sgn_int = 0 
+end function sgn_int
+
 function sgn(x)
   double precision x, sgn
   ! Standard signum function
@@ -227,8 +235,8 @@ end function
 ! Calculate unshifted position of periodic image
 ! Assuming xmin, xmax are extreme attainable values of x
 function shift_mod(x, xmin, xmax)
-  double precision x, xmin, xmax, arr_mod
-  double precision mod_part
+  double precision x, xmin, xmax
+  double precision mod_part, shift_mod
   mod_part = mod(x-xmin, xmax-xmin)
   if(mod_part .ge. 0) then
      ! In this case, mod_part is distance between image & lower bound
@@ -239,15 +247,48 @@ function shift_mod(x, xmin, xmax)
   endif
 end function shift_mod
 
+! Given a point (x, y, z) and a direction (theta, phi) such that
+! x_factor = abs(tan(phi) * cos(theta)),
+! y_factor = abs(tan(phi) * sin(theta)),
+! Project a ray to the depth layer kp and interpolate fun_vals
+! at the unshifted periodic image of the projection.
+function interpolate_ray_at_depth(x, y, z, kp, nx, ny, nz,&
+     xmin, xmax, ymin, ymax, x_vals, y_vals, z_vals,&
+     x_factor, y_factor, fun_vals)
+  double precision x, y, z
+  double precision xp, yp, zp
+  integer nx, ny, nz, kp
+  double precision xmin, xmax, ymin, ymax
+  double precision, dimension(nx) :: x_vals
+  double precision, dimension(ny) :: y_vals
+  double precision, dimension(nz) :: z_vals
+  double precision, dimension(:,:,:) :: fun_vals
+  double precision x_factor, y_factor
+  double precision z_diff, x_mod, y_mod
+  double precision interpolate_ray_at_depth
+  logical debug_flag
+
+  zp = z_vals(kp)
+  z_diff = zp - z
+  xp = x + z_diff * x_factor
+  yp = y + z_diff * y_factor
+
+  x_mod = shift_mod(xp, xmin, xmax)
+  y_mod = shift_mod(yp, ymin, ymax)
+
+  interpolate_ray_at_depth = bilinear_array_periodic(x_mod, y_mod, nx, ny, x_vals, y_vals, fun_vals(:,:,kp))
+
+end function interpolate_ray_at_depth
+
 ! Bilinear interpolation on evenly spaced 2D grid
 ! Assume upper endpoint is not included and is identical
 ! to the lower endpoint, which is included.
-function bilinear_array_periodic(x, y, nx, ny, x_vals, y_vals, z_vals)
+function bilinear_array_periodic(x, y, nx, ny, x_vals, y_vals, fun_vals)
   implicit none
   double precision x, y
   integer nx, ny
   double precision, dimension(:) :: x_vals, y_vals
-  double precision, dimension(:,:) :: z_vals
+  double precision, dimension(:,:) :: fun_vals
 
   double precision dx, dy, xmin, ymin
   integer i0, j0, i1, j1
@@ -285,63 +326,22 @@ function bilinear_array_periodic(x, y, nx, ny, x_vals, y_vals, z_vals)
      y1 = y_vals(ny) + dy
   endif
 
-  z00 = z_vals(i0,j0)
-  z10 = z_vals(i1,j0)
-  z01 = z_vals(i0,j1)
-  z11 = z_vals(i1,j1)
-
-  ! if(x .eq. 0.12354363) then
-  !    write(*,*) 'x>0'
-  ! endif
-  ! if(y .eq. 0.12354363) then
-  !    write(*,*) 'y>0'
-  ! endif
-  !
-  ! if(x0 .eq. 0.12354363) then
-  !    write(*,*) 'x0>0'
-  ! endif
-  ! if(y0 .eq. 0.12354363) then
-  !    write(*,*) 'y0>0'
-  ! endif
-  ! if(z00 .eq. 0.12354363) then
-  !    write(*,*) 'z00>0'
-  ! endif
-  ! if(z01 .eq. 0.12354363) then
-  !    write(*,*) 'z01>0'
-  ! endif
-  ! if(z10 .eq. 0.12354363) then
-  !    write(*,*) 'z10>0'
-  ! endif
-  ! if(z11 .eq. 0.12354363) then
-  !    write(*,*) 'z11>0'
-  ! endif
-
+  z00 = fun_vals(i0,j0)
+  z10 = fun_vals(i1,j0)
+  z01 = fun_vals(i0,j1)
+  z11 = fun_vals(i1,j1)
 
   bilinear_array_periodic = bilinear(x, y, x0, y0, x1, y1, z00, z01, z10, z11)
-  if (bilinear_array_periodic .lt. 1.0d-6) then
-    write(*,*) 'BAP'
-    write(*,*) 'x_vals =', x_vals
-    write(*,*) 'y_vals =', y_vals
-    write(*,*) 'x =', x
-    write(*,*) 'y =', y
-    write(*,*) 'i0, nx =', i0, nx
-    write(*,*) 'j0, nx =', j0, nx
-    write(*,*) 'x0 =', x0
-    write(*,*) 'y0 =', y0
-    write(*,*) 'x1 =', x1
-    write(*,*) 'y1 =', y1
-    write(*,*) 'BAP =', bilinear_array_periodic
-  endif
 end function bilinear_array_periodic
 
 ! Bilinear interpolation on evenly spaced 2D grid
 ! Assume upper and lower endpoints are included
-function bilinear_array(x, y, nx, ny, x_vals, y_vals, z_vals)
+function bilinear_array(x, y, nx, ny, x_vals, y_vals, fun_vals)
   implicit none
   double precision x, y
   integer nx, ny
   double precision, dimension(:) :: x_vals, y_vals
-  double precision, dimension(:,:) :: z_vals
+  double precision, dimension(:,:) :: fun_vals
 
   double precision dx, dy, xmin, ymin
   integer i0, j0, i1, j1
@@ -382,10 +382,10 @@ function bilinear_array(x, y, nx, ny, x_vals, y_vals, z_vals)
   y0 = y_vals(j0)
   y1 = y_vals(j1)
 
-  z00 = z_vals(i0,j0)
-  z10 = z_vals(i1,j0)
-  z01 = z_vals(i0,j1)
-  z11 = z_vals(i1,j1)
+  z00 = fun_vals(i0,j0)
+  z10 = fun_vals(i1,j0)
+  z01 = fun_vals(i0,j1)
+  z11 = fun_vals(i1,j1)
 
   bilinear_array = bilinear(x, y, x0, y0, x1, y1, z00, z01, z10, z11)
 end function bilinear_array
@@ -455,14 +455,6 @@ function trap_rule(arr, dx, nn)
   do ii=1, nn-1
      trap_rule = trap_rule + 0.5d0 / dx * (arr(ii) + arr(ii+1))
   end do
-  
-  if(minval(arr) .lt. 1d-1) then
-     write(*,*) 'acap =', arr
-     write(*,*) 'dpath =', dx
-     write(*,*) 'k =', nn
-     write(*,*) 'trap_rule =', trap_rule
-     write(*,*)
-  endif
 
 end function trap_rule
 

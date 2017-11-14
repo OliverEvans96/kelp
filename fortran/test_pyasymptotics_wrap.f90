@@ -57,7 +57,7 @@ tol_rel = 1.d-3
 maxiter_inner = 10
 maxiter_outer = 10
 
-num_scatters = 0
+num_scatters = 3
 gmres_flag = .false.
 
 do i=1, nx
@@ -81,14 +81,13 @@ call py_calculate_asymptotic_light_field( &
      tol_abs, tol_rel, maxiter_inner, maxiter_outer, &
      p_kelp, radiance, irradiance, num_scatters, gmres_flag)
 
-write(*,*) 'radiance =', radiance
+!write(*,*) 'radiance =', radiance
 
 deallocate(vsf_angles)
 deallocate(vsf_vals)
 deallocate(p_kelp)
 deallocate(radiance)
 deallocate(irradiance)
-
 
 end program test_pyasymptotics_wrap
 
