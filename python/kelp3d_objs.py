@@ -81,8 +81,8 @@ class Grid(tr.HasTraits):
     phi = tr.Any()
 
     def __init__(self):
-        ns = 8
-        na = 8
+        ns = 12
+        na = 12
         super().__init__()
         self.x = SpaceDim(-5, 5, ns)
         self.y = SpaceDim(-5, 5, ns)
@@ -104,20 +104,20 @@ class Rope(tr.HasTraits):
         self.grid = grid
 
         a = 0 * 2e-1
-        b = 0 * 1e-1
-        c = 0 * 5e-1
+        b = 5e-1
+        c = 5e-1
         d = 0 * np.pi / 4
         n = 1000 * grid.z.spacing
 
         z = grid.z.vals
 
-        self.frond_lengths = a * np.exp(-a*z) * np.sin(z) ** 2
-        #self.frond_lengths = .5 * z**2 * np.exp(1-z)
+        #self.frond_lengths = a * np.exp(-a*z) * np.sin(z) ** 2
+        self.frond_lengths = 2 * z**2 * np.exp(1-z)
         self.frond_stds = b * np.ones_like(z)
         self.num_fronds = n * np.ones_like(z)
         self.water_speeds = c * np.ones_like(z)
-        #self.water_angles = 2*np.pi / grid.zmax * z
-        self.water_angles = d * np.ones_like(z)
+        #self.water_angles = d * np.ones_like(z)
+        self.water_angles = 2*np.pi / grid.z.maxval * z
 
 class Frond(tr.HasTraits):
     fs = tr.Float()
@@ -128,7 +128,7 @@ class Frond(tr.HasTraits):
         super().__init__()
         self.fs = .5
         self.fr = 2
-        self.fr = .00015
+        self.ft = .0015
 
 class Params(tr.HasTraits):
     quadrature_degree = tr.Int()
@@ -368,9 +368,9 @@ class OpticalProperties(tr.HasTraits):
         self.init_logic()
 
     def init_vals(self):
-        self.a_kelp = 0*2
+        self.a_kelp = 1000
         self.b_kelp = 0*1
-        self.a_water = 0*1
+        self.a_water = .25
         self.b_water = 0*1
 
         self.num_vsf = self.grid.phi.num
@@ -443,6 +443,6 @@ class BoundaryCondition(tr.HasTraits):
         self.theta_s = 0
         self.phi_s = 0
         self.max_rad = 1
-        self.decay = 1
+        self.decay = 10
 
 

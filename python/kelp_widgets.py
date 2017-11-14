@@ -291,7 +291,7 @@ class RopeWidget(ipw.VBox):
         maxs = {
             'water_speeds': 50,
             'water_angles': 2*np.pi,
-            'frond_lengths': 2,
+            'frond_lengths': 3,
             'frond_stds': .5,
             'num_fronds': 5000
         }
@@ -549,7 +549,7 @@ class FrondWidget(ipw.VBox):
         )
         self.ft_slider = ipw.FloatSlider(
             min=0,
-            max=.0005,
+            max=.005,
             step=.00005,
             description='$f_t$'
         )
