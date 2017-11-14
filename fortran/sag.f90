@@ -213,6 +213,7 @@ contains
     do i=1, space%num
        space%vals(i) = space%minval + dble(i-1) * space%spacing
     end do
+
   end subroutine assign_linspace
 
   subroutine set_spacing_from_num(space)

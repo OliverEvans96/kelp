@@ -191,6 +191,8 @@ module asymptotics
     type(index_list) indices
     double precision x, y, z, theta, phi
     integer nx, ny
+    double precision xmin, xmax, ymin, ymax
+    double precision x_mod, y_mod
 
     double precision, dimension(:), allocatable :: abs_coef_along_path
     double precision dpath, total_abs, absorb_along_path
@@ -207,6 +209,11 @@ module asymptotics
     nx = grid%x%num
     ny = grid%y%num
 
+    xmin = grid%x%minval
+    xmax = grid%x%maxval
+    ymin = grid%y%minval
+    ymax = grid%y%maxval
+
     x = grid%x%vals(indices%i)
     y = grid%y%vals(indices%j)
     z = grid%z%vals(indices%k)
@@ -220,7 +227,18 @@ module asymptotics
        xp = x + zp * tan(phi) * cos(theta)
        yp = y + zp * tan(phi) * sin(theta)
 
-       abs_coef_along_path(kp) = bilinear_array(xp, yp, nx, ny, grid%x%vals, grid%y%vals, iops%abs_grid(:,:,kp))
+       x_mod = shift_mod(xp, xmin, xmax)
+       y_mod = shift_mod(yp, ymin, ymax)
+
+       abs_coef_along_path(kp) = bilinear_array_periodic(x_mod, y_mod, nx, ny, grid%x%vals, grid%y%vals, iops%abs_grid(:,:,kp))
+
+       if(abs(abs_coef_along_path(kp)) .gt. 1.0d-6) then
+          write(*,*) 'kp =', kp
+          write(*,*) 'xp, x_mod =', xp, x_mod
+          write(*,*) 'yp, y_mod =', yp, y_mod
+          write(*,*) 'ACAP =', abs_coef_along_path(kp)
+          write(*,*)
+       end if
     end do
 
     dpath = grid%z%spacing / cos(phi)

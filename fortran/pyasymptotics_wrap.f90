@@ -32,6 +32,7 @@ contains
     type(boundary_condition) bc
 
     ! INIT GRID
+    write(*,*) 'Grid'
     grid%x%minval = xmin
     grid%x%maxval = xmax
     grid%x%num = nx
@@ -40,6 +41,7 @@ contains
     grid%y%maxval = ymax
     grid%y%num = ny
 
+    grid%z%minval = 0.d0
     grid%z%maxval = zmax
     grid%z%num = nz
 
@@ -50,6 +52,7 @@ contains
     call grid%init()
 
     ! INIT IOPS
+    write(*,*) 'IOPs'
     iops%abs_kelp = a_k
     iops%scat_kelp = b_k
     iops%abs_water = a_w
@@ -63,14 +66,19 @@ contains
     call iops%calc_vsf_on_grid()
     call iops%calculate_coef_grids(p_kelp)
 
-    call calculate_light_with_scattering(grid, bc, iops, light%radiance, num_scatters)
+    write(*,*) 'BC'
+    call bc%init(grid, theta_s, phi_s, decay, max_rad)
+
+    write(*,*) 'Scatter'
+    call calculate_light_with_scattering(grid, bc, iops, radiance, num_scatters)
+
+    !! I THINK WE CAN DO WITHOUT COPYING RADIANCE !!
 
     if(gmres_flag) then
 
       ! INIT MAT
+       write(*,*) 'GMRES Mat'
       ! Set boundary condition
-      call bc%init(grid, theta_s, phi_s, decay, max_rad)
-
       call mat%init(grid, iops)
       call mat%set_bc(bc, radiance)
       call gen_matrix(mat)
@@ -80,23 +88,32 @@ contains
       mat%params%tol_rel = tol_rel
 
       ! Initialize & set initial guess
-      call light%init(mat)
+      write(*,*) 'Light'
+      light%radiance = radiance
 
       ! Solve system
+      write(*,*) 'Calculate Radiance'
       call light%calculate_radiance()
-   endif
 
+      call mat%deinit()
+    else
+       call light%init_grid(grid)
+       light%radiance = radiance
+    endif
+
+    write(*,*) 'Irrad'
     call light%calculate_irradiance()
 
     radiance = light%radiance
     irradiance = light%irradiance
 
+    write(*,*) 'deinit'
     call bc%deinit()
     call iops%deinit()
     call light%deinit()
-    call mat%deinit()
     call grid%deinit()
 
+    write(*,*) 'done'
   end subroutine py_calculate_asymptotic_light_field
 
 end module pyasymptotics_wrap

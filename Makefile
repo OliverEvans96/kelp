@@ -121,6 +121,10 @@ test_rte3d: $(SRC)/test_rte3d.f90 $(INC)/rte_sparse_matrices.o $(INC)/test_rte3d
 	$(H5FC) $(BFLAGS) $^ -o $(BIN)/$@
 test_pyrte3d_wrap: $(SRC)/test_pyrte3d_wrap.f90 $(INC)/pyrte3d_wrap.o $(INC)/rte_sparse_matrices.o $(INC)/mgmres.o $(INC)/rte3d.o $(INC)/test_kelp3d_mod.o $(INC)/prob.o $(INC)/fastgl.o $(INC)/sag.o $(INC)/utils.o $(INC)/kelp3d.o $(INC)/kelp_context.o $(INC)/hdf5_utils.o $(INC)/light_context.o
 	$(H5FC) $(BFLAGS) $^ -o $(BIN)/$@
+	rm $@.o
+test_pyasymptotics_wrap: $(SRC)/test_pyasymptotics_wrap.f90 $(INC)/pyasymptotics_wrap.o $(INC)/asymptotics.o $(INC)/rte_sparse_matrices.o $(INC)/mgmres.o $(INC)/rte3d.o $(INC)/test_kelp3d_mod.o $(INC)/prob.o $(INC)/fastgl.o $(INC)/sag.o $(INC)/utils.o $(INC)/kelp3d.o $(INC)/kelp_context.o $(INC)/hdf5_utils.o $(INC)/light_context.o
+	$(H5FC) $(BFLAGS) $^ -o $(BIN)/$@
+	rm $@.o
 
 ### Old tests
 old: test_interp test_rte2d test_vsf

@@ -217,7 +217,118 @@ function interp(x0,xx,yy,nn)
 
 end function
 
+! Calculate unshifted position of periodic image
+! Assuming xmin, xmax are extreme attainable values of x
+function shift_mod(x, xmin, xmax)
+  double precision x, xmin, xmax, arr_mod
+  double precision mod_part
+  mod_part = mod(x-xmin, xmax-xmin)
+  if(mod_part .ge. 0) then
+     ! In this case, mod_part is distance between image & lower bound
+     shift_mod = xmin + mod_part
+  else
+     ! In this case, mod_part is distance between image & upper bound
+     shift_mod = xmax + mod_part
+  endif
+end function shift_mod
+
 ! Bilinear interpolation on evenly spaced 2D grid
+! Assume upper endpoint is not included and is identical
+! to the lower endpoint, which is included.
+function bilinear_array_periodic(x, y, nx, ny, x_vals, y_vals, z_vals)
+  implicit none
+  double precision x, y
+  integer nx, ny
+  double precision, dimension(:) :: x_vals, y_vals
+  double precision, dimension(:,:) :: z_vals
+
+  double precision dx, dy, xmin, ymin
+  integer i0, j0, i1, j1
+  double precision x0, x1, y0, y1
+  double precision z00, z10, z01, z11
+
+  double precision bilinear_array_periodic
+
+  xmin = x_vals(1)
+  ymin = y_vals(1)
+  dx = x_vals(2) - x_vals(1)
+  dy = y_vals(2) - y_vals(1)
+
+  ! Add 1 for one-indexing
+  i0 = int(floor((x-xmin)/dx))+1
+  j0 = int(floor((y-ymin)/dy))+1
+
+  x0 = x_vals(i0)
+  y0 = y_vals(j0)
+
+  ! Periodic wrap
+  if(i0 .lt. nx) then
+     i1 = i0 + 1
+     x1 = x_vals(i1)
+  else
+     i1 = 1
+     x1 = x_vals(nx) + dx
+  endif
+
+  if(j0 .lt. ny) then
+     j1 = j0 + 1
+     y1 = y_vals(j1)
+  else
+     j1 = 1
+     y1 = y_vals(ny) + dy
+  endif
+
+  z00 = z_vals(i0,j0)
+  z10 = z_vals(i1,j0)
+  z01 = z_vals(i0,j1)
+  z11 = z_vals(i1,j1)
+
+  ! if(x .eq. 0.12354363) then
+  !    write(*,*) 'x>0'
+  ! endif
+  ! if(y .eq. 0.12354363) then
+  !    write(*,*) 'y>0'
+  ! endif
+  !
+  ! if(x0 .eq. 0.12354363) then
+  !    write(*,*) 'x0>0'
+  ! endif
+  ! if(y0 .eq. 0.12354363) then
+  !    write(*,*) 'y0>0'
+  ! endif
+  ! if(z00 .eq. 0.12354363) then
+  !    write(*,*) 'z00>0'
+  ! endif
+  ! if(z01 .eq. 0.12354363) then
+  !    write(*,*) 'z01>0'
+  ! endif
+  ! if(z10 .eq. 0.12354363) then
+  !    write(*,*) 'z10>0'
+  ! endif
+  ! if(z11 .eq. 0.12354363) then
+  !    write(*,*) 'z11>0'
+  ! endif
+
+
+  bilinear_array_periodic = bilinear(x, y, x0, y0, x1, y1, z00, z01, z10, z11)
+  !if (abs(bilinear_array_periodic) .gt. 1.0d-6) then
+  !  write(*,*) 'BAP'
+  !  write(*,*) 'x_vals =', x_vals
+  !  write(*,*) 'y_vals =', y_vals
+  !  write(*,*) 'x =', x
+  !  write(*,*) 'y =', y
+  !  write(*,*) 'i0, nx =', i0, nx
+  !  write(*,*) 'j0, nx =', j0, nx
+  !  write(*,*) 'x0 =', x0
+  !  write(*,*) 'y0 =', y0
+  !  write(*,*) 'x1 =', x1
+  !  write(*,*) 'y1 =', y1
+  !  write(*,*) 'BAP =', bilinear_array_periodic
+  !endif
+end function bilinear_array_periodic
+
+! Bilinear interpolation on evenly spaced 2D grid
+! Assume upper and lower endpoints are included
 function bilinear_array(x, y, nx, ny, x_vals, y_vals, z_vals)
   implicit none
   double precision x, y
@@ -243,6 +354,22 @@ function bilinear_array(x, y, nx, ny, x_vals, y_vals, z_vals)
   i1 = i0 + 1
   j1 = j0 + 1
 
+  ! Bounds checking
+  ! if(i0 .lt. 1) then
+  !    i0 = 1
+  !    i1 = 1
+  ! else if(i1 .gt. nx) then
+  !    i0 = nx
+  !    i1 = nx
+  ! endif
+  ! if(j0 .lt. 1) then
+  !    j0 = 1
+  !    j1 = 1
+  ! else if(j1 .gt. ny) then
+  !    j0 = ny
+  !    j1 = ny
+  ! endif
+
   x0 = x_vals(i0)
   x1 = x_vals(i1)
   y0 = y_vals(j0)
@@ -256,7 +383,7 @@ function bilinear_array(x, y, nx, ny, x_vals, y_vals, z_vals)
   bilinear_array = bilinear(x, y, x0, y0, x1, y1, z00, z01, z10, z11)
 end function bilinear_array
 
-! Bilinear interpolation of a function of two variables
+! ilinear interpolation of a function of two variables
 ! over a rectangle of points.
 ! Weight each point by the area of the sub-rectangle involving
 ! the point (x,y) and the point diagonally across the rectangle
@@ -321,6 +448,7 @@ function trap_rule(arr, dx, nn)
   do ii=1, nn-1
      trap_rule = trap_rule + 0.5d0 / dx * (arr(ii) + arr(ii+1))
   end do
+
 end function trap_rule
 
 ! Normalize 1D array and return integral w/ left endpoint rule

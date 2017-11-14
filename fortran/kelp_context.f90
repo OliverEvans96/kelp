@@ -173,8 +173,6 @@ contains
 
     iops%abs_grid = (iops%abs_kelp - iops%abs_water) * p_kelp + iops%abs_water
     iops%scat_grid = (iops%scat_kelp - iops%scat_water) * p_kelp + iops%scat_water
-    write(*,*) 'ABS_GRID(5,5,:) = ', iops%abs_grid(5,5,:)
-
   end subroutine calculate_coef_grids
 
 

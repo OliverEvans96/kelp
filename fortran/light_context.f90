@@ -11,6 +11,7 @@ module light_context
      type(rte_mat) :: mat
    contains
      procedure :: init => light_init
+     procedure :: init_grid => light_init_grid
      procedure :: calculate_radiance
      procedure :: calculate_irradiance
      procedure :: deinit => light_deinit
@@ -36,6 +37,23 @@ contains
     allocate(light%irradiance(nx, ny, nz))
     allocate(light%radiance(nx, ny, nz, ntheta, nphi))
   end subroutine light_init
+
+  subroutine light_init_grid(light, grid)
+    class(light_state) light
+    type(space_angle_grid) grid
+    integer nx, ny, nz, ntheta, nphi
+
+    light%grid = grid
+
+    nx = light%grid%x%num
+    ny = light%grid%y%num
+    nz = light%grid%z%num
+    ntheta = light%grid%theta%num
+    nphi = light%grid%phi%num
+
+    allocate(light%irradiance(nx, ny, nz))
+    allocate(light%radiance(nx, ny, nz, ntheta, nphi))
+  end subroutine light_init_grid
 
   subroutine calculate_radiance(light)
     class(light_state) light
@@ -103,7 +121,6 @@ contains
           do k=1, nz
              light%irradiance(i,j,k) = light%grid%integrate_angle_2d( &
                   light%radiance(i,j,k,:,:))
-             !write(*,*) 'irrad ', i, j, k, '=', light%irradiance(i,j,k)
           end do
        end do
     end do
