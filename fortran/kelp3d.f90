@@ -197,12 +197,5 @@ function angular_sign(theta_prime)
   angular_sign = sgn(pi/2.d0 - theta_prime)
 end function angular_sign
 
-function sgn(x)
-  double precision x, sgn
-! Standard signum function
-  sgn = sign(1.d0,x) 
-  if(x .eq. 0.) sgn = 0 
-end function sgn
-
 end module kelp3d
 

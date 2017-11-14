@@ -157,6 +157,13 @@ function mod1(i, n)
 
 end function mod1
 
+function sgn(x)
+  double precision x, sgn
+  ! Standard signum function
+  sgn = sign(1.d0,x) 
+  if(x .eq. 0.) sgn = 0 
+end function sgn
+
 ! Interpolate single point from 1D data
 function interp(x0,xx,yy,nn)
     implicit none
@@ -311,20 +318,20 @@ function bilinear_array_periodic(x, y, nx, ny, x_vals, y_vals, z_vals)
 
 
   bilinear_array_periodic = bilinear(x, y, x0, y0, x1, y1, z00, z01, z10, z11)
-  !if (abs(bilinear_array_periodic) .gt. 1.0d-6) then
-  !  write(*,*) 'BAP'
-  !  write(*,*) 'x_vals =', x_vals
-  !  write(*,*) 'y_vals =', y_vals
-  !  write(*,*) 'x =', x
-  !  write(*,*) 'y =', y
-  !  write(*,*) 'i0, nx =', i0, nx
-  !  write(*,*) 'j0, nx =', j0, nx
-  !  write(*,*) 'x0 =', x0
-  !  write(*,*) 'y0 =', y0
-  !  write(*,*) 'x1 =', x1
-  !  write(*,*) 'y1 =', y1
-  !  write(*,*) 'BAP =', bilinear_array_periodic
-  !endif
+  if (bilinear_array_periodic .lt. 1.0d-6) then
+    write(*,*) 'BAP'
+    write(*,*) 'x_vals =', x_vals
+    write(*,*) 'y_vals =', y_vals
+    write(*,*) 'x =', x
+    write(*,*) 'y =', y
+    write(*,*) 'i0, nx =', i0, nx
+    write(*,*) 'j0, nx =', j0, nx
+    write(*,*) 'x0 =', x0
+    write(*,*) 'y0 =', y0
+    write(*,*) 'x1 =', x1
+    write(*,*) 'y1 =', y1
+    write(*,*) 'BAP =', bilinear_array_periodic
+  endif
 end function bilinear_array_periodic
 
 ! Bilinear interpolation on evenly spaced 2D grid
@@ -448,6 +455,14 @@ function trap_rule(arr, dx, nn)
   do ii=1, nn-1
      trap_rule = trap_rule + 0.5d0 / dx * (arr(ii) + arr(ii+1))
   end do
+  
+  if(minval(arr) .lt. 1d-1) then
+     write(*,*) 'acap =', arr
+     write(*,*) 'dpath =', dx
+     write(*,*) 'k =', nn
+     write(*,*) 'trap_rule =', trap_rule
+     write(*,*)
+  endif
 
 end function trap_rule
 
