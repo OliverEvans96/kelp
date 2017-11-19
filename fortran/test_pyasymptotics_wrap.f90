@@ -58,7 +58,7 @@ maxiter_inner = 10
 maxiter_outer = 10
 
 num_scatters = 3
-gmres_flag = .true.
+gmres_flag = .false.
 
 do i=1, nx
    do j=1, ny

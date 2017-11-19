@@ -3,48 +3,6 @@ module asymptotics
   implicit none
   contains
 
-  subroutine calculate_light_before_scattering(grid, bc, iops, radiance)
-    type(space_angle_grid) grid
-    type(boundary_condition) bc
-    type(optical_properties) iops
-    double precision, dimension(:,:,:,:,:) :: radiance
-    integer i, j, k, l, m
-    type(index_list) indices
-    double precision surface_val
-    double precision percent_remaining
-
-    ! Downwelling light
-    do l=1, grid%theta%num
-       indices%l = l
-       do m=1, grid%phi%num/2
-          indices%m = m
-          surface_val = bc%bc_grid(indices%l,indices%m)
-          do i=1, grid%x%num
-             indices%i = i
-             do j=1, grid%y%num
-                indices%j = j
-                do k=1, grid%z%num
-                   indices%k = k
-                   percent_remaining = absorb_along_path(grid, bc, iops, indices, 1)
-                   radiance(i,j,k,l,m) = surface_val * percent_remaining
-                end do
-             end do
-          end do
-       end do
-
-       ! No upwelling light before scattering
-       do m=grid%phi%num/2+1, grid%phi%num
-          do i=1, grid%x%num
-             do j=1, grid%y%num
-                do k=1, grid%z%num
-                   radiance(i,j,k,l,m) = 0
-                end do
-             end do
-          end do
-       end do
-    end do
-  end subroutine calculate_light_before_scattering
-
   subroutine calculate_light_with_scattering(grid, bc, iops, radiance, num_scatters)
     type(space_angle_grid) grid
     type(boundary_condition) bc
@@ -92,6 +50,47 @@ module asymptotics
 
   end subroutine calculate_light_with_scattering
 
+  subroutine calculate_light_before_scattering(grid, bc, iops, radiance)
+    type(space_angle_grid) grid
+    type(boundary_condition) bc
+    type(optical_properties) iops
+    double precision, dimension(:,:,:,:,:) :: radiance
+    integer i, j, k, l, m
+    type(index_list) indices
+    double precision surface_val
+    double precision percent_remaining
+
+    ! Downwelling light
+    do l=1, grid%theta%num
+       indices%l = l
+       do m=1, grid%phi%num/2
+          indices%m = m
+          surface_val = bc%bc_grid(indices%l,indices%m)
+          do i=1, grid%x%num
+             indices%i = i
+             do j=1, grid%y%num
+                indices%j = j
+                do k=1, grid%z%num
+                   indices%k = k
+                   percent_remaining = absorb_along_path(grid, bc, iops, indices, 1)
+                   radiance(i,j,k,l,m) = surface_val * percent_remaining
+                end do
+             end do
+          end do
+       end do
+
+       ! No upwelling light before scattering
+       do m=grid%phi%num/2+1, grid%phi%num
+          do i=1, grid%x%num
+             do j=1, grid%y%num
+                do k=1, grid%z%num
+                   radiance(i,j,k,l,m) = 0
+                end do
+             end do
+          end do
+       end do
+    end do
+  end subroutine calculate_light_before_scattering
 
   ! Perform one scattering event
   subroutine scatter(grid, bc, iops, rad_prescatter, rad_postscatter)
@@ -118,76 +117,13 @@ module asymptotics
     ntheta = grid%theta%num
     nphi = grid%phi%num
 
-    xmin = grid%x%minval
-    xmax = grid%x%maxval
-    ymin = grid%y%minval
-    ymax = grid%y%maxval
-
     ! Allocate largest that will be needed.
     ! Most cases will only use a subset of the array.
     allocate(source(nx, ny, nz, ntheta, nphi))
     allocate(integrand(nz))
 
     call calculate_source(grid, iops, rad_prescatter, source)
-
-    ! Downwelling (project ray to surface)
-    do m=1, nphi / 2
-       indices%m = m
-       phi = grid%phi%vals(m)
-       dpath = grid%z%spacing / grid%phi%cos(m)
-       do l=1, ntheta
-          indices%l = l
-          do i=1, nx
-             indices%i = i
-             x = grid%x%vals(i)
-             do j=1, ny
-                indices%j = j
-                y = grid%y%vals(j)
-                do k=1, nz
-                   indices%k = k
-                   z = grid%z%vals(k)
-                   do kp = 1, k
-                      path_source = interpolate_ray_at_depth(&
-                           x, y, z, kp, nx, ny, nz, xmin, xmax,&
-                           ymin, ymax, grid%x%vals, grid%y%vals,&
-                           grid%z%vals, grid%x_factor(l,m),&
-                           grid%y_factor(l,m), source(:,:,:,l,m))
-
-                      integrand(kp) = path_source * absorb_along_path(&
-                           grid, bc, iops, indices, kp)
-                   end do
-                   rad_postscatter(i,j,k,l,m) = trap_rule(&
-                        integrand, dpath, k)
-                end do
-             end do
-          end do
-       end do
-    end do
-
-    ! Upwelling (ray project to bottom)
-    do m=grid%phi%num/2 + 1, grid%phi%num
-       indices%m = m
-       phi = grid%phi%vals(m)
-       ! Minus sign since cos(phi) < 0 for upwelling
-       dpath = - grid%z%spacing / grid%phi%cos(m)
-
-       do i=1, grid%x%num
-          indices%i = i
-          do j=1, grid%y%num
-             indices%j = j
-             do k=1, grid%z%num
-                indices%k = k
-                do l=1, grid%theta%num
-                   indices%l = l
-                   do kp = grid%z%num, k, -1
-                      integrand(kp) = source(i,j,k,l,m) * absorb_along_path(grid, bc, iops, indices, kp)
-                   end do
-                   rad_postscatter(i,j,k,l,m) = trap_rule(integrand, dpath, grid%z%num-k+1)
-                end do
-             end do
-          end do
-       end do
-    end do
+    call calculate_effects_of_source(grid, iops, indices, source, rad_postscatter, integrand)
 
     deallocate(source)
     deallocate(integrand)
@@ -248,6 +184,145 @@ module asymptotics
     deallocate(integrand)
 
   end subroutine calculate_scatter_integral
+
+  subroutine calculate_effects_of_source(grid, iops, indices, source, rad_postscatter, integrand)
+    type(space_angle_grid) grid
+    type(boundary_condition) bc
+    type(optical_properties) iops
+    double precision, dimension(:,:,:,:,:) :: rad_postscatter
+    integer i, j, k, l, m, kp
+    type(index_list) indices
+    double precision dpath
+    double precision, dimension(:,:,:,:,:), allocatable :: source
+
+    double precision, dimension(:), allocatable :: integrand
+    double precision path_source
+
+    integer nx, ny, nz, ntheta, nphi
+    double precision x, y, z, theta, phi
+
+    integer kp_start, kp_stop, direction
+
+    nx = grid%x%num
+    ny = grid%y%num
+    nz = grid%z%num
+    ntheta = grid%theta%num
+    nphi = grid%phi%num
+
+    ! Downwelling (project ray to surface)
+    kp_start = 1
+    direction = 1
+    do m=1, nphi / 2
+       indices%m = m
+       phi = grid%phi%vals(m)
+       dpath = grid%z%spacing / grid%phi%cos(m)
+       do l=1, ntheta
+          indices%l = l
+          do i=1, nx
+             indices%i = i
+             x = grid%x%vals(i)
+             do j=1, ny
+                indices%j = j
+                y = grid%y%vals(j)
+                do k=1, nz
+                   indices%k = k
+                   kp_stop = k
+                   call integrate_free_paths(&
+                        x, y, k, dpath, source, grid, iops,&
+                        indices, rad_postscatter, integrand,&
+                        kp_start, kp_stop, direction)
+                end do
+             end do
+          end do
+       end do
+    end do
+
+    ! Upwelling (ray project to bottom)
+    kp_start = nz
+    direction = -1
+    do m=grid%phi%num/2 + 1, grid%phi%num
+       indices%m = m
+       phi = grid%phi%vals(m)
+       ! Minus sign since cos(phi) < 0 for upwelling
+       dpath = - grid%z%spacing / grid%phi%cos(m)
+       do l=1, grid%theta%num
+          indices%l = l
+          do i=1, grid%x%num
+             indices%i = i
+             x = grid%x%vals(i)
+             do j=1, grid%y%num
+                indices%j = j
+                y = grid%y%vals(j)
+                do k=1, grid%z%num
+                   indices%k = k
+                   kp_stop = k
+                   call integrate_free_paths(&
+                        x, y, k, dpath, source, grid, iops,&
+                        indices, rad_postscatter, integrand,&
+                        kp_start, kp_stop, direction)
+                end do
+             end do
+          end do
+       end do
+    end do
+  end subroutine calculate_effects_of_source
+
+  subroutine integrate_free_paths(x, y, k, dpath, source,&
+       grid, iops, indices, rad_postscatter, integrand,&
+       kp_start, kp_stop, direction)
+    type(space_angle_grid) grid
+    type(boundary_condition) bc
+    type(optical_properties) iops
+    double precision, dimension(:,:,:,:,:) :: rad_postscatter
+    integer i, j, k, l, m, kp
+    type(index_list) indices
+    double precision dpath
+    double precision, dimension(:,:,:,:,:), allocatable :: source
+
+    double precision, dimension(:), allocatable :: integrand
+    double precision path_source
+
+    double precision xmin, xmax, ymin, ymax
+    integer nx, ny, nz, ntheta, nphi
+    double precision x, y, z, theta, phi
+
+    integer kp_start, kp_stop, direction
+    integer path_length
+
+    nx = grid%x%num
+    ny = grid%y%num
+    nz = grid%z%num
+    ntheta = grid%theta%num
+    nphi = grid%phi%num
+
+    xmin = grid%x%minval
+    xmax = grid%x%maxval
+    ymin = grid%y%minval
+    ymax = grid%y%maxval
+
+    i = indices%i
+    j = indices%j
+    k = indices%k
+    l = indices%l
+    m = indices%m
+
+    path_length = abs(kp_stop - kp_start) + 1
+
+    z = grid%z%vals(k)
+    ! Downwelling: kp_start = 1, kp_stop = k, direction = 1
+    ! Upwelling: kp_start = nz, kp_stop = k, direction = -1
+    do kp = kp_start, kp_stop, direction
+       path_source = interpolate_ray_at_depth(&
+            x, y, z, kp, nx, ny, nz, xmin, xmax,&
+            ymin, ymax, grid%x%vals, grid%y%vals,&
+            grid%z%vals, grid%x_factor(l,m),&
+            grid%y_factor(l,m), source(:,:,:,l,m))
+
+       integrand(kp) = path_source * absorb_along_path(&
+            grid, bc, iops, indices, kp)
+    end do
+    rad_postscatter(i,j,k,l,m) = trap_rule(integrand, dpath, k)
+  end subroutine integrate_free_paths
 
   ! Calculate the percent of radiance remaining after passing
   ! through depth layers beginning with kmin, and ending before k.
