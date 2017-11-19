@@ -247,39 +247,6 @@ function shift_mod(x, xmin, xmax)
   endif
 end function shift_mod
 
-! Given a point (x, y, z) and a direction (theta, phi) such that
-! x_factor = abs(tan(phi) * cos(theta)),
-! y_factor = abs(tan(phi) * sin(theta)),
-! Project a ray to the depth layer kp and interpolate fun_vals
-! at the unshifted periodic image of the projection.
-function interpolate_ray_at_depth(x, y, z, kp, nx, ny, nz,&
-     xmin, xmax, ymin, ymax, x_vals, y_vals, z_vals,&
-     x_factor, y_factor, fun_vals)
-  double precision x, y, z
-  double precision xp, yp, zp
-  integer nx, ny, nz, kp
-  double precision xmin, xmax, ymin, ymax
-  double precision, dimension(nx) :: x_vals
-  double precision, dimension(ny) :: y_vals
-  double precision, dimension(nz) :: z_vals
-  double precision, dimension(:,:,:) :: fun_vals
-  double precision x_factor, y_factor
-  double precision z_diff, x_mod, y_mod
-  double precision interpolate_ray_at_depth
-  logical debug_flag
-
-  zp = z_vals(kp)
-  z_diff = zp - z
-  xp = x + z_diff * x_factor
-  yp = y + z_diff * y_factor
-
-  x_mod = shift_mod(xp, xmin, xmax)
-  y_mod = shift_mod(yp, ymin, ymax)
-
-  interpolate_ray_at_depth = bilinear_array_periodic(x_mod, y_mod, nx, ny, x_vals, y_vals, fun_vals(:,:,kp))
-
-end function interpolate_ray_at_depth
-
 ! Bilinear interpolation on evenly spaced 2D grid
 ! Assume upper endpoint is not included and is identical
 ! to the lower endpoint, which is included.
