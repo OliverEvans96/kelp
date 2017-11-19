@@ -60,9 +60,9 @@ module asymptotics
     ! Downwelling light
    do m=1, grid%phi%num/2
       indices%m = m
-      surface_val = bc%bc_grid(indices%l,indices%m)
       do l=1, grid%theta%num
          indices%l = l
+         surface_val = bc%bc_grid(indices%l,indices%m)
          do i=1, grid%x%num
             indices%i = i
             do j=1, grid%y%num
