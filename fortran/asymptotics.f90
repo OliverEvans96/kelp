@@ -58,26 +58,30 @@ module asymptotics
     double precision percent_remaining
 
     ! Downwelling light
-    do l=1, grid%theta%num
-       indices%l = l
-       do m=1, grid%phi%num/2
-          indices%m = m
-          surface_val = bc%bc_grid(indices%l,indices%m)
-          do i=1, grid%x%num
-             indices%i = i
-             do j=1, grid%y%num
-                indices%j = j
-                do k=1, grid%z%num
-                   indices%k = k
-                   percent_remaining = absorb_along_path(grid, bc, iops, indices, 1)
-                   radiance(i,j,k,l,m) = surface_val * percent_remaining
+   do m=1, grid%phi%num/2
+      indices%m = m
+      surface_val = bc%bc_grid(indices%l,indices%m)
+      do l=1, grid%theta%num
+         indices%l = l
+         do i=1, grid%x%num
+            indices%i = i
+            do j=1, grid%y%num
+               indices%j = j
+               do k=1, grid%z%num
+                  indices%k = k
+                  percent_remaining = absorb_along_path(grid, bc, iops, indices, 1)
+                  radiance(i,j,k,l,m) = surface_val * percent_remaining
                 end do
              end do
           end do
        end do
+    end do
 
-       ! No upwelling light before scattering
-       do m=grid%phi%num/2+1, grid%phi%num
+    ! No upwelling light before scattering
+    do m=grid%phi%num/2+1, grid%phi%num
+       indices%m = m
+       do l=1, grid%theta%num
+          indices%l = l
           do i=1, grid%x%num
              do j=1, grid%y%num
                 do k=1, grid%z%num
@@ -99,9 +103,9 @@ module asymptotics
     type(index_list) indices
     double precision surface_val
     double precision dpath
-    double precision, dimension(:,:,:,:,:), allocatable :: source
-
-    double precision, dimension(:), allocatable :: integrand
+    double precision, dimension(:,:,:,:,:), allocatable :: source, scatter_integral
+    double precision, dimension(:,:), allocatable :: scatter_integrand
+    double precision, dimension(:), allocatable :: path_integrand
     double precision path_source
 
     double precision xmin, xmax, ymin, ymax
@@ -114,25 +118,32 @@ module asymptotics
     ntheta = grid%theta%num
     nphi = grid%phi%num
 
+    allocate(source(nx, ny, nz, ntheta, nphi))
+    allocate(scatter_integral(nx, ny, nz, ntheta, nphi))
+    allocate(scatter_integrand(ntheta, nphi))
     ! Allocate largest that will be needed.
     ! Most cases will only use a subset of the array.
-    allocate(source(nx, ny, nz, ntheta, nphi))
-    allocate(integrand(nz))
+    allocate(path_integrand(nz))
 
-    call calculate_source(grid, iops, rad_scatter, source)
-    call calculate_effects_of_source(grid, iops, indices, source, rad_scatter, integrand)
+    call calculate_source(grid, iops, rad_scatter, source, scatter_integral, scatter_integrand)
+    call calculate_effects_of_source(grid, iops, indices, source, rad_scatter, path_integrand)
 
     deallocate(source)
-    deallocate(integrand)
+    deallocate(scatter_integral)
+    deallocate(scatter_integrand)
+    deallocate(path_integrand)
   end subroutine scatter
 
   ! Calculate source from no-scatter or previous scattering layer
-  subroutine calculate_source(grid, iops, rad_scatter, source)
+  subroutine calculate_source(grid, iops, rad_scatter, source, scatter_integral, scatter_integrand)
     type(space_angle_grid) grid
     type(optical_properties) iops
     double precision, dimension(:,:,:,:,:) :: rad_scatter, source
-    double precision, dimension(:,:,:,:,:), allocatable :: scatter_integral
+    double precision, dimension(:,:,:,:,:) :: scatter_integral
+    double precision, dimension(:,:) :: scatter_integrand
+    type(index_list) indices
     integer nx, ny, nz, ntheta, nphi
+    integer i, j, k, l, m
 
     nx = grid%x%num
     ny = grid%y%num
@@ -140,48 +151,54 @@ module asymptotics
     ntheta = grid%theta%num
     nphi = grid%phi%num
 
-    allocate(scatter_integral(nx, ny, nz, ntheta, nphi))
-
-    call calculate_scatter_integral(grid, iops, rad_scatter, scatter_integral)
-    source = -rad_scatter + scatter_integral
-
-  end subroutine calculate_source
-
-  subroutine calculate_scatter_integral(grid, iops, rad_scatter, scatter_integral)
-    type(space_angle_grid) grid
-    type(optical_properties) iops
-    double precision, dimension(:,:,:,:,:) :: rad_scatter, scatter_integral
-
-    double precision, dimension(:,:), allocatable :: integrand
-    double precision angle_diff
-
-    integer i, j, k, l, m
-    integer lp, mp
-
-    allocate(integrand(grid%theta%num, grid%phi%num))
-
-    do i=1, grid%x%num
-       do j=1, grid%y%num
-          do l=1, grid%z%num
-             do k=1, grid%theta%num
-                do m=1, grid%phi%num
-                   do lp=1, grid%theta%num
-                      do mp=1, grid%phi%num
-                         integrand(lp, mp) = iops%vsf(l,m,lp,mp) * rad_scatter(i,j,k,lp,mp)
-                      end do
-                   end do
-
-                   scatter_integral(i,j,k,l,m) = grid%integrate_angle_2d(integrand)
+    do i=1, nx
+       indices%i = i
+       do j=1, ny
+          indices%j = j
+          do k=1, nz
+             indices%k = k
+             do l=1, ntheta
+                indices%l = l
+                do m=1, nphi
+                   indices%m = m
+                   call calculate_scatter_integral(&
+                        grid, iops, rad_scatter,&
+                        scatter_integral,&
+                        scatter_integrand, indices)
                 end do
              end do
           end do
        end do
     end do
 
-    deallocate(integrand)
+    source = -rad_scatter + scatter_integral
+  end subroutine calculate_source
+
+  subroutine calculate_scatter_integral(grid, iops, rad_scatter, scatter_integral, scatter_integrand, indices)
+    type(space_angle_grid) grid
+    type(optical_properties) iops
+    double precision, dimension(:,:,:,:,:) :: rad_scatter, scatter_integral
+    double precision, dimension(:,:) :: scatter_integrand
+    type(index_list) indices
+    integer i, j, k, l, m
+    integer lp, mp
+
+    i = indices%i
+    j = indices%j
+    k = indices%k
+    l = indices%l
+    m = indices%m
+
+    do lp=1, grid%theta%num
+       do mp=1, grid%phi%num
+          scatter_integrand(lp, mp) = iops%vsf(l,m,lp,mp) * rad_scatter(i,j,k,lp,mp)
+       end do
+    end do
+
+    scatter_integral(i,j,k,l,m) = grid%integrate_angle_2d(scatter_integrand)
   end subroutine calculate_scatter_integral
 
-  subroutine calculate_effects_of_source(grid, iops, indices, source, rad_scatter, integrand)
+  subroutine calculate_effects_of_source(grid, iops, indices, source, rad_scatter, path_integrand)
     type(space_angle_grid) grid
     type(boundary_condition) bc
     type(optical_properties) iops
@@ -191,7 +208,7 @@ module asymptotics
     double precision dpath
     double precision, dimension(:,:,:,:,:), allocatable :: source
 
-    double precision, dimension(:), allocatable :: integrand
+    double precision, dimension(:), allocatable :: path_integrand
     double precision path_source
 
     integer nx, ny, nz, ntheta, nphi
@@ -225,7 +242,7 @@ module asymptotics
                    kp_stop = k
                    call integrate_free_paths(&
                         x, y, k, dpath, source, grid, iops,&
-                        indices, rad_scatter, integrand,&
+                        indices, rad_scatter, path_integrand,&
                         kp_start, kp_stop, direction)
                 end do
              end do
@@ -254,7 +271,7 @@ module asymptotics
                    kp_stop = k
                    call integrate_free_paths(&
                         x, y, k, dpath, source, grid, iops,&
-                        indices, rad_scatter, integrand,&
+                        indices, rad_scatter, path_integrand,&
                         kp_start, kp_stop, direction)
                 end do
              end do
@@ -264,7 +281,7 @@ module asymptotics
   end subroutine calculate_effects_of_source
 
   subroutine integrate_free_paths(x, y, k, dpath, source,&
-       grid, iops, indices, rad_scatter, integrand,&
+       grid, iops, indices, rad_scatter, path_integrand,&
        kp_start, kp_stop, direction)
     type(space_angle_grid) grid
     type(boundary_condition) bc
@@ -275,7 +292,7 @@ module asymptotics
     double precision dpath
     double precision, dimension(:,:,:,:,:), allocatable :: source
 
-    double precision, dimension(:), allocatable :: integrand
+    double precision, dimension(:), allocatable :: path_integrand
     double precision path_source
 
     double precision xmin, xmax, ymin, ymax
@@ -314,10 +331,10 @@ module asymptotics
             grid%z%vals, grid%x_factor(l,m),&
             grid%y_factor(l,m), source(:,:,:,l,m))
 
-       integrand(kp) = path_source * absorb_along_path(&
+       path_integrand(kp) = path_source * absorb_along_path(&
             grid, bc, iops, indices, kp)
     end do
-    rad_scatter(i,j,k,l,m) = trap_rule(integrand, dpath, k)
+    rad_scatter(i,j,k,l,m) = trap_rule(path_integrand, dpath, k)
   end subroutine integrate_free_paths
 
   ! Calculate the percent of radiance remaining after passing
