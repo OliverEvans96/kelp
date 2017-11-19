@@ -303,8 +303,8 @@ contains
        theta = grid%theta%vals(l)
        do m=1, nphi
           phi = grid%phi%vals(m)
-          grid%x_factor(l, m) = abs(tan(phi) * sin(theta))
-          grid%y_factor(l, m) = abs(tan(phi) * cos(theta))
+          grid%x_factor(l, m) = tan(phi) * cos(theta)
+          grid%y_factor(l, m) = tan(phi) * sin(theta)
        end do
     end do
   end subroutine sag_calculate_factors
