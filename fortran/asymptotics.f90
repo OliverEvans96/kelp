@@ -100,17 +100,11 @@ module asymptotics
     type(optical_properties) iops
     double precision, dimension(:,:,:,:,:) :: rad_scatter
     integer i, j, k, l, m, kp
-    type(index_list) indices
-    double precision surface_val
-    double precision dpath
     double precision, dimension(:,:,:,:,:), allocatable :: source, scatter_integral
     double precision, dimension(:,:), allocatable :: scatter_integrand
     double precision, dimension(:), allocatable :: path_integrand
     double precision path_source
-
-    double precision xmin, xmax, ymin, ymax
     integer nx, ny, nz, ntheta, nphi
-    double precision x, y, z, theta, phi
 
     nx = grid%x%num
     ny = grid%y%num
@@ -126,7 +120,7 @@ module asymptotics
     allocate(path_integrand(nz))
 
     call calculate_source(grid, iops, rad_scatter, source, scatter_integral, scatter_integrand)
-    call calculate_effects_of_source(grid, iops, indices, source, rad_scatter, path_integrand)
+    call calculate_effects_of_source(grid, iops, source, rad_scatter, path_integrand)
 
     deallocate(source)
     deallocate(scatter_integral)
@@ -198,7 +192,7 @@ module asymptotics
     scatter_integral(i,j,k,l,m) = grid%integrate_angle_2d(scatter_integrand)
   end subroutine calculate_scatter_integral
 
-  subroutine calculate_effects_of_source(grid, iops, indices, source, rad_scatter, path_integrand)
+  subroutine calculate_effects_of_source(grid, iops, source, rad_scatter, path_integrand)
     type(space_angle_grid) grid
     type(boundary_condition) bc
     type(optical_properties) iops
@@ -237,7 +231,9 @@ module asymptotics
              do j=1, ny
                 indices%j = j
                 y = grid%y%vals(j)
-                do k=1, nz
+                ! k=1 is already determined by surface BC
+                ! Although k=1 would just be a no-op
+                do k=2, nz
                    indices%k = k
                    kp_stop = k
                    call integrate_free_paths(&
@@ -266,7 +262,9 @@ module asymptotics
              do j=1, grid%y%num
                 indices%j = j
                 y = grid%y%vals(j)
-                do k=1, grid%z%num
+                ! k=nz is already determined by bottom BC
+                ! Although k=nz would just be a no-op
+                do k=1, grid%z%num-1
                    indices%k = k
                    kp_stop = k
                    call integrate_free_paths(&
@@ -322,6 +320,7 @@ module asymptotics
     path_length = abs(kp_stop - kp_start) + 1
 
     z = grid%z%vals(k)
+
     ! Downwelling: kp_start = 1, kp_stop = k, direction = 1
     ! Upwelling: kp_start = nz, kp_stop = k, direction = -1
     do kp = kp_start, kp_stop, direction
@@ -330,11 +329,10 @@ module asymptotics
             ymin, ymax, grid%x%vals, grid%y%vals,&
             grid%z%vals, grid%x_factor(l,m),&
             grid%y_factor(l,m), source(:,:,:,l,m))
-
        path_integrand(kp) = path_source * absorb_along_path(&
             grid, bc, iops, indices, kp)
     end do
-    rad_scatter(i,j,k,l,m) = trap_rule(path_integrand, dpath, k)
+    rad_scatter(i,j,k,l,m) = trap_rule(path_integrand, dpath, path_length)
   end subroutine integrate_free_paths
 
   ! Given a point (x, y, z) and a direction (theta, phi) such that
