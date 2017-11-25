@@ -95,13 +95,26 @@ contains
     bc%decay = decay
     bc%max_rad = max_rad
 
-    do l=1, grid%theta%num
-       theta = grid%theta%vals(l)
-       do m=1, grid%phi%num
-          phi = grid%phi%vals(m)
+    ! m south pole
+    l=1
+    m=1
+    theta = grid%theta%vals(l)
+    phi = grid%phi%vals(m)
+    bc%bc_grid(l, m) = bc%bc_gaussian(theta, phi)
+    ! m interior
+    do m=2, grid%phi%num-1
+       phi = grid%phi%vals(m)
+       do l=1, grid%theta%num
+          theta = grid%theta%vals(l)
           bc%bc_grid(l, m) = bc%bc_gaussian(theta, phi)
        end do
     end do
+    ! m north pole
+    l = 1
+    m = nphi
+    theta = grid%theta%vals(l)
+    phi = grid%phi%vals(m)
+    bc%bc_grid(l, m) = bc%bc_gaussian(theta, phi)
   end subroutine bc_init
 
   subroutine bc_deinit(bc)
@@ -327,19 +340,85 @@ contains
     ntheta = grid%theta%num
     nphi = grid%phi%num
 
-    do l=1, ntheta
-       th = grid%theta%vals(l)
-       do m=1, nphi
-          ph = grid%phi%vals(m)
-          do lp=1, ntheta
-             thp = grid%theta%vals(lp)
-             do mp=1, nphi
-                php = grid%phi%vals(mp)
+    ! m south pole
+    l=1
+    m=1
+    th = grid%theta%vals(l)
+    ph = grid%phi%vals(m)
+    ! mp south pole
+    lp = 1
+    mp = 1
+    thp = grid%theta%vals(lp)
+    php = grid%phi%vals(mp)
+    iops%vsf(l,m,lp,mp) = iops%eval_vsf(angle_diff_3d(th,ph,thp,php))
+    ! mp interior
+    do mp=2, nphi-1
+       php = grid%phi%vals(mp)
+       do lp=1, ntheta
+          thp = grid%theta%vals(lp)
+          iops%vsf(l,m,lp,mp) = iops%eval_vsf(angle_diff_3d(th,ph,thp,php))
+       end do
+    end do
+    ! mp north pole
+    lp = 1
+    mp = nphi
+    thp = grid%theta%vals(lp)
+    php = grid%phi%vals(mp)
+    iops%vsf(l,m,lp,mp) = iops%eval_vsf(angle_diff_3d(th,ph,thp,php))
+
+    ! m interior
+    do m=2, nphi-1
+       ph = grid%phi%vals(m)
+       do l=1, ntheta
+          th = grid%theta%vals(l)
+          ! mp south pole
+          lp = 1
+          mp = 1
+          thp = grid%theta%vals(lp)
+          php = grid%phi%vals(mp)
+          iops%vsf(l,m,lp,mp) = iops%eval_vsf(angle_diff_3d(th,ph,thp,php))
+          ! mp interior
+          do mp=2, nphi-1
+             php = grid%phi%vals(mp)
+             do lp=1, ntheta
+                thp = grid%theta%vals(lp)
                 iops%vsf(l,m,lp,mp) = iops%eval_vsf(angle_diff_3d(th,ph,thp,php))
              end do
           end do
+          ! mp north pole
+          lp = 1
+          mp = nphi
+          thp = grid%theta%vals(lp)
+          php = grid%phi%vals(mp)
+          iops%vsf(l,m,lp,mp) = iops%eval_vsf(angle_diff_3d(th,ph,thp,php))
        end do
     end do
+
+    ! m north pole
+    l = 1
+    m = nphi
+    th = grid%theta%vals(l)
+    ph = grid%phi%vals(m)
+    ! mp south pole
+    lp = 1
+    mp = 1
+    thp = grid%theta%vals(lp)
+    php = grid%phi%vals(mp)
+    iops%vsf(l,m,lp,mp) = iops%eval_vsf(angle_diff_3d(th,ph,thp,php))
+    ! mp interior
+    do mp=2, nphi-1
+       php = grid%phi%vals(mp)
+       do lp=1, ntheta
+          thp = grid%theta%vals(lp)
+          iops%vsf(l,m,lp,mp) = iops%eval_vsf(angle_diff_3d(th,ph,thp,php))
+       end do
+    end do
+    ! mp north pole
+    lp = 1
+    mp = nphi
+    thp = grid%theta%vals(lp)
+    php = grid%phi%vals(mp)
+    iops%vsf(l,m,lp,mp) = iops%eval_vsf(angle_diff_3d(th,ph,thp,php))
   end subroutine calc_vsf_on_grid
 
   subroutine iop_deinit(iops)

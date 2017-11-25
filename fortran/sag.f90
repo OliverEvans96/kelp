@@ -24,19 +24,6 @@ type index_list
    procedure :: print => index_list_print
 end type index_list
 
-type angle_dim
-   integer num
-   double precision minval, maxval, prefactor
-   double precision, dimension(:), allocatable :: vals, weights, sin, cos
- contains
-   procedure :: set_bounds => angle_set_bounds
-   procedure :: set_num => angle_set_num
-   procedure :: deinit => angle_deinit
-   procedure :: integrate_points => angle_integrate_points
-   procedure :: integrate_func => angle_integrate_func
-   procedure :: assign_legendre
-end type angle_dim
-
 type space_dim
    integer num
    double precision minval, maxval, spacing
@@ -53,6 +40,13 @@ type space_dim
    procedure :: assign_linspace
 end type space_dim
 
+type, extends(space_dim) :: angle_dim
+   double precision, dimension(:), allocatable :: sin, cos, half_cos, half_cos_sum
+ contains
+   procedure :: calculate_trig => angle_calculate_trig
+   procedure :: deinit_trig => angle_deinit_trig
+end type angle_dim
+
 type space_angle_grid !(sag)
   type(space_dim) :: x, y, z
   type(angle_dim) :: theta, phi
@@ -66,6 +60,8 @@ contains
   procedure :: set_num_from_spacing => sag_set_num_from_spacing
   procedure :: set_spacing_from_num => sag_set_spacing_from_num
   procedure :: calculate_factors => sag_calculate_factors
+  procedure :: integrate_pole_ray
+  procedure :: integrate_interior_ray
 end type space_angle_grid
 
 contains
@@ -84,85 +80,6 @@ contains
 
     write(*,*) 'i, j, k, l, m =', indices%i, indices%j, indices%k, indices%l, indices%m
   end subroutine index_list_print
-
-  subroutine angle_set_bounds(angle, minval, maxval)
-    class(angle_dim) :: angle
-    double precision minval, maxval
-    angle%minval = minval
-    angle%maxval = maxval
-  end subroutine angle_set_bounds
-
-  subroutine angle_set_num(angle, num)
-    class(angle_dim) :: angle
-    integer num
-    angle%num = num
-  end subroutine angle_set_num
-
-  ! To calculate \int_{xmin}^{xmax} f(x) dx :
-  ! int = prefactor * sum(weights * f(roots))
-  subroutine assign_legendre(angle)
-    class(angle_dim) :: angle
-    double precision root, weight, theta
-    integer i
-    ! glpair produces both x and theta, where x=cos(theta). We'll throw out theta.
-
-    allocate(angle%vals(angle%num))
-    allocate(angle%weights(angle%num))
-    allocate(angle%sin(angle%num))
-    allocate(angle%cos(angle%num))
-
-    ! Prefactor for integration
-    ! From change of variables
-    angle%prefactor = (angle%maxval - angle%minval) / 2.d0
-
-    do i = 1, angle%num
-       call glpair(angle%num, i, theta, weight, root)
-       call affine_transform(root, -1.d0, 1.d0, angle%minval, angle%maxval)
-       angle%vals(i) = root
-       angle%weights(i) = weight
-       angle%sin(i) = sin(root)
-       angle%cos(i) = cos(root)
-    end do
-
-  end subroutine assign_legendre
-
-  ! Integrate callable function over angle via Gauss-Legendre quadrature
-
-  function angle_integrate_func(angle, func_callable) result(integral)
-    class(angle_dim) :: angle
-    double precision, external :: func_callable
-    double precision, dimension(:), allocatable :: func_vals
-    double precision integral
-    integer i
-
-    allocate(func_vals(angle%num))
-
-    do i=1, angle%num
-       func_vals(i) = func_callable(angle%vals(i))
-    end do
-
-    integral = angle%integrate_points(func_vals)
-
-    deallocate(func_vals)
-  end function angle_integrate_func
-
-  ! Integrate function given function values sampled at legendre theta values
-  function angle_integrate_points(angle, func_vals) result(integral)
-    class(angle_dim) :: angle
-    double precision, dimension(angle%num) :: func_vals
-    double precision integral
-
-    integral = angle%prefactor * sum(angle%weights * func_vals)
-  end function angle_integrate_points
-
-  subroutine angle_deinit(angle)
-    class(angle_dim) :: angle
-    deallocate(angle%vals)
-    deallocate(angle%weights)
-    deallocate(angle%sin)
-    deallocate(angle%cos)
-  end subroutine angle_deinit
-
 
   !! SPACE !!
 
@@ -211,7 +128,6 @@ contains
     allocate(space%vals(space%num))
 
     space%spacing = spacing_from_num(space%minval, space%maxval, space%num)
-
     do i=1, space%num
        space%vals(i) = space%minval + dble(i-1) * space%spacing
     end do
@@ -232,6 +148,41 @@ contains
     class(space_dim) :: space
     deallocate(space%vals)
   end subroutine space_deinit
+
+
+  !! ANGLE !!
+
+  subroutine angle_calculate_trig(angle)
+    class(angle_dim) :: angle
+    integer i
+
+    allocate(angle%sin(angle%num))
+    allocate(angle%cos(angle%num))
+    allocate(angle%half_cos(angle%num-1))
+    allocate(angle%half_cos_sum(2:angle%num-1))
+
+    do i=1, angle%num
+       angle%sin(i) = sin(angle%vals(i))
+       angle%cos(i) = cos(angle%vals(i))
+    end do
+
+    do i=1, angle%num-1
+       angle%half_cos(i) = cos(angle%vals(i)+angle%spacing/2)
+    end do
+
+    do i=2, angle%num-1
+       angle%half_cos_sum(i) = angle%half_cos(i-1) + angle%half_cos(i)
+    end do
+  end subroutine angle_calculate_trig
+
+  subroutine angle_deinit_trig(angle)
+    class(angle_dim) angle
+    deallocate(angle%sin)
+    deallocate(angle%cos)
+    deallocate(angle%half_cos)
+    deallocate(angle%half_cos_sum)
+  end subroutine angle_deinit_trig
+
 
   !! SAG !!
 
@@ -270,14 +221,20 @@ contains
   subroutine sag_init(grid)
     class(space_angle_grid) :: grid
 
+    write(*,*) 'Assigning x linspace'
     call grid%x%assign_linspace()
+    write(*,*) 'Assigning y linspace'
     call grid%y%assign_linspace()
+    write(*,*) 'Assigning z linspace'
     call grid%z%assign_linspace()
 
     call grid%theta%set_bounds(0.d0, 2.d0*pi)
     call grid%phi%set_bounds(0.d0, pi)
-    call grid%theta%assign_legendre()
-    call grid%phi%assign_legendre()
+    call grid%theta%assign_linspace()
+    call grid%phi%assign_linspace()
+
+    call grid%theta%calculate_trig()
+    call grid%phi%calculate_trig()
 
     call grid%calculate_factors()
 
@@ -310,34 +267,61 @@ contains
   end subroutine sag_calculate_factors
 
   function sag_integrate_angle_2d(grid, func_vals) result(integral)
+    ! Integrate a function over the unit sphere,
+    ! assuming that function values are constant over cells
+    ! in the uniform rectangular 2d angular grid
     class(space_angle_grid) grid
     double precision, dimension(:,:) :: func_vals
     double precision integral
-    double precision prefactor, weight
-    integer lp, mp
+    integer l, m, nphi, ntheta
+    double precision dtheta, phi_slice
 
-    prefactor = grid%theta%prefactor * grid%phi%prefactor
-    integral = 0
+    nphi = grid%phi%num
+    ntheta = grid%theta%num
+    dtheta = grid%theta%spacing
 
-    !write(*,*) '2D Integral'
-    !write(*,*) 'Prefactor:', prefactor
+    ! No theta dependence at poles
+    integral = (1-grid%phi%half_cos(1)) &
+         * (func_vals(1,1) + func_vals(1,nphi))
 
-    !write(*,*) 'Theta weights:', grid%theta%weights
-    !write(*,*) 'Phi weights:', grid%phi%weights
-
-    do lp=1, grid%theta%num
-       do mp=1, grid%phi%num
-          weight = grid%theta%weights(lp) * grid%phi%weights(mp)
-          integral = integral + weight * func_vals(lp, mp)
+    ! Loop over interior
+    do m=2, nphi-1
+       phi_slice = 0
+       do l=1, ntheta
+          phi_slice = phi_slice + func_vals(l, m)
        end do
+       integral = integral + phi_slice * grid%phi%half_cos_sum(m)
     end do
-
-    !write(*,*) 'Integral =', integral
-    !write(*,*) ''
-
-    integral = prefactor * integral
-
   end function sag_integrate_angle_2d
+
+  function integrate_pole_ray(grid, m, func_val) result(integral)
+    ! Integrate a function over a singular interior spherical rectangle
+    ! m is the phi index of the pole
+    ! (must be either 1 or nphi)
+    class(space_angle_grid) grid
+    double precision func_val
+    double precision integral
+    integer m
+    double precision dtheta
+
+    dtheta = grid%theta%spacing
+
+    ! No theta dependence at poles
+    integral = (1-grid%phi%half_cos(1)) * func_val
+  end function integrate_pole_ray
+
+  function integrate_interior_ray(grid, l, m, func_val) result(integral)
+    ! Integrate a function over a singular interior spherical rectangle
+    ! l, m are the theta and phi indices respectively
+    ! of the rectangle.
+    class(space_angle_grid) grid
+    double precision func_val
+    double precision integral
+    integer l, m
+    double precision dtheta
+
+    integral = func_val * grid%phi%half_cos_sum(m)
+  end function integrate_interior_ray
 
   subroutine sag_set_spacing_from_num(grid)
     class(space_angle_grid) :: grid
@@ -353,7 +337,7 @@ contains
     call grid%z%set_num_from_spacing()
 
   end subroutine sag_set_num_from_spacing
-  
+
   subroutine sag_deinit(grid)
     class(space_angle_grid) :: grid
     call grid%x%deinit()
@@ -361,6 +345,8 @@ contains
     call grid%z%deinit()
     call grid%theta%deinit()
     call grid%phi%deinit()
+    call grid%theta%deinit_trig()
+    call grid%phi%deinit_trig()
 
     deallocate(grid%x_factor)
     deallocate(grid%y_factor)

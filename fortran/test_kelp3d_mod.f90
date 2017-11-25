@@ -33,7 +33,7 @@ subroutine init_rope(rope, grid)
   double precision, dimension(:), allocatable :: z, ones
   integer nz
   double precision zmax
-  double precision a, b, c
+  double precision a, b, c, d
 
   integer i
 
@@ -52,10 +52,12 @@ subroutine init_rope(rope, grid)
   a = 2.d-1
   b = 1.d-1
   c = 5.d-1
+  d = 5.d-1
   rope%frond_lengths = exp(-a*z) * sin(z) ** 2
   rope%frond_stds = b * ones
   rope%water_speeds = c * ones
   rope%water_angles = 2*pi / z(nz) * z
+  rope%num_fronds = d * ones
 
   deallocate(z)
   deallocate(ones)
@@ -138,7 +140,7 @@ subroutine test_vm_dist(grid, rope, p_kelp, theta)
 
   call theta%set_bounds(thetamin, thetamax)
   call theta%set_num(ntheta)
-  call theta%assign_legendre()
+  call theta%assign_linspace()
 
   call depth%set_depth(rope, grid, 1)
 

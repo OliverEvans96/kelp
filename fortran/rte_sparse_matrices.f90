@@ -610,16 +610,18 @@ contains
   end subroutine z_bd2
 
   subroutine angular_integral(mat, indices)
+    ! Store coefficients of numerical integral of
+    ! radiance * VSF for each angular cell
     class(rte_mat) mat
     type(space_angle_grid) grid
     type(optical_properties) iops
     ! Primed integration variables
     integer lp, mp
     double precision val
-    double precision prefactor
     type(index_list) indices
     integer i, j, k, l, m
     double precision bb
+    double precision dtheta
 
     i = indices%i
     j = indices%j
@@ -629,7 +631,8 @@ contains
     grid = mat%grid
     iops = mat%iops
 
-    prefactor = grid%theta%prefactor * grid%phi%prefactor
+    dtheta = grid%theta%spacing
+
     call mat%set_ind(indices)
 
     bb = iops%scat_grid(i, j, k)
@@ -638,9 +641,17 @@ contains
     ! to allow other functions to add to it
     call mat%calculate_repeat_index(indices)
 
+    !!! HMMMMMMM... THIS WILL CHANGE THE NUMBER OF NONZERO
+    !!! ENTRIES IN THE MATRIX, WHICH IS NOT A FUN THING.
+    !!! I'M NOT GOING TO DO THIS RIGHT NOW, SO RTE_MAT IS
+    !!! BROKEN UNTIL FURTHER NOTICE
+
+    write(*,*) "RTE SPARSE MATRICES IS BROKEN. VERY SAD."
+
     do lp=1, grid%theta%num
-       do mp=1, grid%phi%num
-          val = - bb * prefactor * iops%vsf(l,m,lp,mp)
+       do mp=2, grid%phi%num-1
+          val = - bb * dtheta * grid%phi%half_cos_sum(mp) &
+               * iops%vsf(l,m,lp,mp)
           call mat%assign(val, i, j, k, lp, mp)
        end do
     end do

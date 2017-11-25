@@ -1,11 +1,12 @@
 program pykelp3d
   use kelp3d
+  use hdf5
   implicit none
 
   type(space_angle_grid) grid
   type(rope_state) rope
   type(frond_shape) frond
-  type(light_state) light
+  ! type(light_state) light
   integer quadrature_degree
   double precision, dimension(:,:,:), allocatable :: p_kelp
 
@@ -27,14 +28,14 @@ program pykelp3d
 
   call calculate_kelp_on_grid(grid, p_kelp, frond, rope, quadrature_degree)
 
-  call light%init(mat)
+  ! call light%init(mat)
 
-  call light%calculate_radiance()
-  call light%calculate_irradance()
+  ! call light%calculate_radiance()
+  ! call light%calculate_irradance()
 
-  call hdf_write_rad(radfile, light%radiance, grid)
-  call hdf_write_irrad(irradfile, light%irradiance, grid)
+  ! call hdf_write_rad(radfile, light%radiance, grid)
+  ! call hdf_write_irrad(irradfile, light%irradiance, grid)
 
-  call kelp3d_deinit(grid, rope, p_kelp)
+  ! call kelp3d_deinit(grid, rope, p_kelp)
 
 end program pykelp3d

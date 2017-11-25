@@ -34,6 +34,7 @@ contains
     grid%y%maxval = ymax
     grid%y%num = ny
 
+    grid%z%minval = 0.d0
     grid%z%maxval = zmax
     grid%z%num = nz
 

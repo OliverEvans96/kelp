@@ -58,19 +58,38 @@ module asymptotics
     double precision percent_remaining
 
     ! Downwelling light
-   do m=1, grid%phi%num/2
-      indices%m = m
-      do l=1, grid%theta%num
-         indices%l = l
-         surface_val = bc%bc_grid(indices%l,indices%m)
-         do i=1, grid%x%num
-            indices%i = i
-            do j=1, grid%y%num
-               indices%j = j
-               do k=1, grid%z%num
-                  indices%k = k
-                  percent_remaining = absorb_along_path(grid, bc, iops, indices, 1)
-                  radiance(i,j,k,l,m) = surface_val * percent_remaining
+    ! m south pole
+    l = 1
+    indices%l = 1
+    m = 1
+    indices%m = 1
+    surface_val = bc%bc_grid(indices%l,indices%m)
+    do i=1, grid%x%num
+       indices%i = i
+       do j=1, grid%y%num
+          indices%j = j
+          do k=1, grid%z%num
+             indices%k = k
+             percent_remaining = absorb_along_path(grid, bc, iops, indices, 1)
+             radiance(i,j,k,l,m) = surface_val * percent_remaining
+          end do
+       end do
+    end do
+
+    ! m interior
+    do m=2, grid%phi%num/2
+        indices%m = m
+        do l=1, grid%theta%num
+           indices%l = l
+           surface_val = bc%bc_grid(indices%l,indices%m)
+           do i=1, grid%x%num
+              indices%i = i
+              do j=1, grid%y%num
+                 indices%j = j
+                 do k=1, grid%z%num
+                    indices%k = k
+                    percent_remaining = absorb_along_path(grid, bc, iops, indices, 1)
+                    radiance(i,j,k,l,m) = surface_val * percent_remaining
                 end do
              end do
           end do
@@ -78,7 +97,7 @@ module asymptotics
     end do
 
     ! No upwelling light before scattering
-    do m=grid%phi%num/2+1, grid%phi%num
+    do m=grid%phi%num/2+1, grid%phi%num-1
        indices%m = m
        do l=1, grid%theta%num
           indices%l = l
@@ -88,6 +107,24 @@ module asymptotics
                    radiance(i,j,k,l,m) = 0
                 end do
              end do
+          end do
+       end do
+    end do
+
+    ! m north pole
+    indices%l = 1
+    l = 1
+    indices%m = grid%phi%num
+    m = grid%phi%num
+    surface_val = bc%bc_grid(indices%l,indices%m)
+    do i=1, grid%x%num
+       indices%i = i
+       do j=1, grid%y%num
+          indices%j = j
+          do k=1, grid%z%num
+             indices%k = k
+             percent_remaining = absorb_along_path(grid, bc, iops, indices, 1)
+             radiance(i,j,k,l,m) = surface_val * percent_remaining
           end do
        end do
     end do
@@ -151,16 +188,31 @@ module asymptotics
           indices%j = j
           do k=1, nz
              indices%k = k
-             do l=1, ntheta
-                indices%l = l
-                do m=1, nphi
-                   indices%m = m
-                   call calculate_scatter_integral(&
+             ! m south pole
+             indices%l = 1
+             indices%m = 1
+             call calculate_pole_scatter_integral(&
+                  grid, iops, rad_scatter,&
+                  scatter_integral,&
+                  scatter_integrand, indices)
+             ! m interior
+             do m=2, nphi-1
+                 indices%m = m
+                 do l=1, ntheta
+                   indices%l = l
+                   call calculate_interior_scatter_integral(&
                         grid, iops, rad_scatter,&
                         scatter_integral,&
                         scatter_integrand, indices)
                 end do
              end do
+             ! m north pole
+             indices%l = 1
+             indices%m = nphi
+             call calculate_pole_scatter_integral(&
+                  grid, iops, rad_scatter,&
+                  scatter_integral,&
+                  scatter_integrand, indices)
           end do
        end do
     end do
@@ -168,7 +220,7 @@ module asymptotics
     source = -rad_scatter + scatter_integral
   end subroutine calculate_source
 
-  subroutine calculate_scatter_integral(grid, iops, rad_scatter, scatter_integral, scatter_integrand, indices)
+  subroutine calculate_interior_scatter_integral(grid, iops, rad_scatter, scatter_integral, scatter_integrand, indices)
     type(space_angle_grid) grid
     type(optical_properties) iops
     double precision, dimension(:,:,:,:,:) :: rad_scatter, scatter_integral
@@ -183,14 +235,62 @@ module asymptotics
     l = indices%l
     m = indices%m
 
-    do lp=1, grid%theta%num
-       do mp=1, grid%phi%num
+    ! mp south pole
+    lp = 1
+    mp = 1
+    scatter_integrand(lp, mp) = iops%vsf(l,m,lp,mp) * rad_scatter(i,j,k,lp,mp)
+    ! mp interior
+    do mp=2, grid%phi%num-1
+       do lp=1, grid%theta%num
           scatter_integrand(lp, mp) = iops%vsf(l,m,lp,mp) * rad_scatter(i,j,k,lp,mp)
        end do
     end do
+    ! mp north pole
+    lp = 1
+    mp = grid%phi%num
+    scatter_integrand(lp, mp) = iops%vsf(l,m,lp,mp) * rad_scatter(i,j,k,lp,mp)
 
-    scatter_integral(i,j,k,l,m) = grid%integrate_angle_2d(scatter_integrand)
-  end subroutine calculate_scatter_integral
+    ! Current angle should not be taken into account for
+    ! scattering integral, so we subtract it off.
+    scatter_integral(i,j,k,l,m) = grid%integrate_angle_2d(scatter_integrand) &
+         - grid%integrate_interior_ray(l, m, scatter_integrand(l,m))
+  end subroutine calculate_interior_scatter_integral
+
+  subroutine calculate_pole_scatter_integral(grid, iops, rad_scatter, scatter_integral, scatter_integrand, indices)
+    type(space_angle_grid) grid
+    type(optical_properties) iops
+    double precision, dimension(:,:,:,:,:) :: rad_scatter, scatter_integral
+    double precision, dimension(:,:) :: scatter_integrand
+    type(index_list) indices
+    integer i, j, k, l, m
+    integer lp, mp
+
+    i = indices%i
+    j = indices%j
+    k = indices%k
+    l = indices%l
+    m = indices%m
+
+    ! mp south pole
+    lp = 1
+    mp = 1
+    scatter_integrand(lp,mp) = iops%vsf(l,m,lp,mp) * rad_scatter(i,j,k,lp,mp)
+    ! mp interior
+    do mp=2, grid%phi%num-1
+      do lp=1, grid%theta%num
+         scatter_integrand(lp, mp) = iops%vsf(l,m,lp,mp) * rad_scatter(i,j,k,lp,mp)
+       end do
+    end do
+    ! mp north pole
+    lp = 1
+    mp = grid%phi%num
+    scatter_integrand(lp,mp) = iops%vsf(l,m,lp,mp) * rad_scatter(i,j,k,lp,mp)
+
+    ! Current angle should not be taken into account for
+    ! scattering integral, so we subtract it off.
+    scatter_integral(i,j,k,l,m) = grid%integrate_angle_2d(scatter_integrand) &
+         - grid%integrate_pole_ray(m, scatter_integrand(1,m))
+  end subroutine calculate_pole_scatter_integral
 
   subroutine calculate_effects_of_source(grid, iops, source, rad_scatter, path_integrand)
     type(space_angle_grid) grid
@@ -219,7 +319,36 @@ module asymptotics
     ! Downwelling (project ray to surface)
     kp_start = 1
     direction = 1
-    do m=1, nphi / 2
+
+    ! m south pole
+    l = 1
+    indices%l = 1
+    m = 1
+    indices%m = 1
+    theta = grid%theta%vals(l)
+    phi = grid%phi%vals(m)
+    dpath = grid%z%spacing / grid%phi%cos(m)
+    do i=1, nx
+       indices%i = i
+       x = grid%x%vals(i)
+       do j=1, ny
+          indices%j = j
+          y = grid%y%vals(j)
+          ! k=1 is already determined by surface BC
+          ! Although k=1 would just be a no-op
+          do k=2, nz
+             indices%k = k
+             kp_stop = k
+             call integrate_free_paths(&
+                  x, y, k, dpath, source, grid, iops,&
+                  indices, rad_scatter, path_integrand,&
+                  kp_start, kp_stop, direction)
+          end do
+       end do
+    end do
+
+    ! m interior
+    do m=2, nphi / 2
        indices%m = m
        phi = grid%phi%vals(m)
        dpath = grid%z%spacing / grid%phi%cos(m)
@@ -246,10 +375,11 @@ module asymptotics
        end do
     end do
 
+
     ! Upwelling (ray project to bottom)
     kp_start = nz
     direction = -1
-    do m=grid%phi%num/2 + 1, grid%phi%num
+    do m=grid%phi%num/2 + 1, nphi-1
        indices%m = m
        phi = grid%phi%vals(m)
        ! Minus sign since cos(phi) < 0 for upwelling
@@ -276,6 +406,34 @@ module asymptotics
           end do
        end do
     end do
+
+    ! m north pole
+    indices%l = 1
+    l = 1
+    indices%m = nphi
+    m = nphi
+    theta = grid%theta%vals(l)
+    phi = grid%phi%vals(m)
+    dpath = grid%z%spacing / grid%phi%cos(m)
+    do i=1, nx
+       indices%i = i
+       x = grid%x%vals(i)
+       do j=1, ny
+          indices%j = j
+          y = grid%y%vals(j)
+          ! k=1 is already determined by surface BC
+          ! Although k=1 would just be a no-op
+          do k=2, nz
+             indices%k = k
+             kp_stop = k
+             call integrate_free_paths(&
+                  x, y, k, dpath, source, grid, iops,&
+                  indices, rad_scatter, path_integrand,&
+                  kp_start, kp_stop, direction)
+          end do
+       end do
+    end do
+
   end subroutine calculate_effects_of_source
 
   subroutine integrate_free_paths(x, y, k, dpath, source,&

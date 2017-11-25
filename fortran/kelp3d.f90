@@ -122,7 +122,7 @@ function integrate_ps(theta_low_lim, theta_high_lim, quadrature_degree, point, f
   type(angle_dim) :: theta_f
   call theta_f%set_bounds(theta_low_lim, theta_high_lim)
   call theta_f%set_num(quadrature_degree)
-  call theta_f%assign_legendre()
+  call theta_f%assign_linspace()
 
   allocate(integrand_vals(theta_f%num))
 
@@ -130,7 +130,7 @@ function integrate_ps(theta_low_lim, theta_high_lim, quadrature_degree, point, f
     integrand_vals(i) = ps_integrand(theta_f%vals(i), point, frond, depth)
   end do
 
-  integral = theta_f%integrate_points(integrand_vals)
+  integral = theta_f%trapezoid_rule(integrand_vals)
 
   deallocate(integrand_vals)
   call theta_f%deinit()

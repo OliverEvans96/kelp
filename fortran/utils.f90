@@ -241,10 +241,11 @@ function shift_mod(x, xmin, xmax)
   if(mod_part .ge. 0) then
      ! In this case, mod_part is distance between image & lower bound
      shift_mod = xmin + mod_part
-  else
+  else 
      ! In this case, mod_part is distance between image & upper bound
      shift_mod = xmax + mod_part
-  endif
+  end if
+
 end function shift_mod
 
 ! Bilinear interpolation on evenly spaced 2D grid
@@ -272,6 +273,14 @@ function bilinear_array_periodic(x, y, nx, ny, x_vals, y_vals, fun_vals)
   ! Add 1 for one-indexing
   i0 = int(floor((x-xmin)/dx))+1
   j0 = int(floor((y-ymin)/dy))+1
+
+  ! Can happen due to rounding error
+  if(i0 .eq. nx + 1) then
+     i0 = 1
+  end if
+  if(j0 .eq. ny + 1) then
+     j0 = 1
+  end if
 
   x0 = x_vals(i0)
   y0 = y_vals(j0)
