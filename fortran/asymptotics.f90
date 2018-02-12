@@ -58,6 +58,7 @@ module asymptotics
     double precision percent_remaining
 
     ! Downwelling light
+    !$OMP PARALLEL DO PRIVATE(l,i,j,k,indices,percent_remaining)
    do m=1, grid%phi%num/2
       indices%m = m
       do l=1, grid%theta%num
@@ -76,12 +77,12 @@ module asymptotics
           end do
        end do
     end do
+    !$OMP END PARALLEL DO
 
     ! No upwelling light before scattering
+    !$OMP PARALLEL DO PRIVATE(l,i,j,k)
     do m=grid%phi%num/2+1, grid%phi%num
-       indices%m = m
        do l=1, grid%theta%num
-          indices%l = l
           do i=1, grid%x%num
              do j=1, grid%y%num
                 do k=1, grid%z%num
@@ -91,6 +92,7 @@ module asymptotics
           end do
        end do
     end do
+    !$OMP END PARALLEL DO
   end subroutine calculate_light_before_scattering
 
   ! Perform one scattering event
@@ -145,8 +147,10 @@ module asymptotics
     ntheta = grid%theta%num
     nphi = grid%phi%num
 
+    !$OMP PARALLEL DO
     do i=1, nx
        indices%i = i
+       !$OMP PARALLEL DO
        do j=1, ny
           indices%j = j
           do k=1, nz
@@ -163,7 +167,9 @@ module asymptotics
              end do
           end do
        end do
+       !$OMP END PARALLEL DO
     end do
+    !$OMP END PARALLEL DO
 
     source = -rad_scatter + scatter_integral
   end subroutine calculate_source

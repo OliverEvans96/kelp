@@ -15,6 +15,7 @@ subroutine interior_space_loop(mat, indices)
   grid = mat%grid
 
   ! z interior
+  !$OMP PARALLEL DO
   do k=2 , grid%z%num - 1
      indices%k = k
      write(*,*) 'k =', indices%k, '/', grid%z%num
@@ -25,29 +26,35 @@ subroutine interior_space_loop(mat, indices)
        call interior_angle_loop(mat, indices, wrap_x_cd2_first, wrap_y_cd2_first)
 
        ! y interior
+       !$OMP PARALLEL DO
        do j=2, grid%y%num - 1
        indices%j = j
            call interior_angle_loop(mat, indices, wrap_x_cd2_first, wrap_y_cd2)
        end do
+       !$OMP END PARALLEL DO
        ! y last
        indices%j=grid%y%num
        call interior_angle_loop(mat, indices, wrap_x_cd2_first, wrap_y_cd2_last)
 
      ! x interior
+     !$OMP PARALLEL DO
      do i=2, grid%x%num - 1
      indices%i = i
         ! y first
         indices%j=1
         call interior_angle_loop(mat, indices, wrap_x_cd2, wrap_y_cd2_first)
         ! y interior
+        !$OMP PARALLEL DO
         do j=2, grid%y%num - 1
         indices%j = j
            call interior_angle_loop(mat, indices, wrap_x_cd2, wrap_y_cd2)
         end do
+        !$OMP END PARALLEL DO
         ! y last
         indices%j=grid%y%num
            call interior_angle_loop(mat, indices, wrap_x_cd2, wrap_y_cd2_last)
      end do
+     !$OMP END PARALLEL DO
 
      ! x last
      indices%i=grid%x%num
@@ -55,15 +62,18 @@ subroutine interior_space_loop(mat, indices)
        indices%j=1
           call interior_angle_loop(mat, indices, wrap_x_cd2_last, wrap_y_cd2_first)
        ! y interior
+       !$OMP PARALLEL DO
        do j=2, grid%y%num - 1
           indices%j = j
           call interior_angle_loop(mat, indices, wrap_x_cd2_last, wrap_y_cd2)
        end do
+       !$OMP END PARALLEL DO
        ! y last
        indices%j=grid%y%num
           call interior_angle_loop(mat, indices, wrap_x_cd2_last, wrap_y_cd2_last)
 
   end do
+  !$OMP END PARALLEL DO
 
 end subroutine
 
@@ -85,29 +95,35 @@ subroutine surface_space_loop(mat, indices)
         indices%j=1
            call surface_angle_loop(mat, indices, wrap_x_cd2_first, wrap_y_cd2_first)
         ! y interior
+        !$OMP PARALLEL DO
         do j=2, grid%y%num - 1
            indices%j = j
            call surface_angle_loop(mat, indices, wrap_x_cd2_first, wrap_y_cd2)
         end do
+        !$OMP END PARALLEL DO
         ! y last
         indices%j=grid%y%num
            call surface_angle_loop(mat, indices, wrap_x_cd2_first, wrap_y_cd2_last)
 
      ! x interior
+     !$OMP PARALLEL DO
      do i=2, grid%x%num - 1
      indices%i = i
         ! y first
         indices%j=1
            call surface_angle_loop(mat, indices, wrap_x_cd2, wrap_y_cd2_first)
         ! y interior
+        !$OMP PARALLEL DO
         do j=2, grid%y%num - 1
         indices%j = j
            call surface_angle_loop(mat, indices, wrap_x_cd2, wrap_y_cd2)
         end do
+        !$OMP END PARALLEL DO
         ! y last
         indices%j=grid%y%num
            call surface_angle_loop(mat, indices, wrap_x_cd2, wrap_y_cd2_last)
      end do
+     !$OMP END PARALLEL DO
 
      ! x last
      indices%i=grid%x%num
@@ -115,10 +131,12 @@ subroutine surface_space_loop(mat, indices)
        indices%j=1
        call surface_angle_loop(mat, indices, wrap_x_cd2_last, wrap_y_cd2_first)
        ! y surface
+       !$OMP PARALLEL DO
        do j=2, grid%y%num - 1
        indices%j = j
           call surface_angle_loop(mat, indices, wrap_x_cd2_last, wrap_y_cd2)
        end do
+       !$OMP END PARALLEL DO
        ! y last
        indices%j=grid%y%num
        call surface_angle_loop(mat, indices, wrap_x_cd2_last, wrap_y_cd2_last)
@@ -142,29 +160,35 @@ subroutine bottom_space_loop(mat, indices)
        indices%j=1
           call bottom_angle_loop(mat, indices, wrap_x_cd2_first, wrap_y_cd2_first)
        ! y interior
+       !$OMP PARALLEL DO
        do j=2, grid%y%num - 1
           indices%j = j
           call bottom_angle_loop(mat, indices, wrap_x_cd2_first, wrap_y_cd2)
        end do
+       !$OMP END PARALLEL DO
        ! y last
        indices%j=grid%y%num
           call bottom_angle_loop(mat, indices, wrap_x_cd2_first, wrap_y_cd2_last)
 
      ! x interior
+     !$OMP PARALLEL DO
      do i=2, grid%x%num - 1
      indices%i = i
         ! y first
         indices%j=1
            call bottom_angle_loop(mat, indices, wrap_x_cd2, wrap_y_cd2_first)
         ! y bottom
+        !$OMP PARALLEL DO
         do j=2, grid%y%num - 1
            indices%j = j
            call bottom_angle_loop(mat, indices, wrap_x_cd2, wrap_y_cd2)
         end do
+        !$OMP END PARALLEL DO
         ! y last
         indices%j=grid%y%num
            call bottom_angle_loop(mat, indices, wrap_x_cd2, wrap_y_cd2_last)
      end do
+     !$OMP END PARALLEL DO
 
      ! x last
      indices%i=grid%x%num
@@ -172,10 +196,12 @@ subroutine bottom_space_loop(mat, indices)
        indices%j=1
        call bottom_angle_loop(mat, indices, wrap_x_cd2_last, wrap_y_cd2_first)
        ! y interior
+       !$OMP PARALLEL DO
        do j=2, grid%y%num - 1
           indices%j = j
           call bottom_angle_loop(mat, indices, wrap_x_cd2_last, wrap_y_cd2)
        end do
+       !$OMP END PARALLEL DO
        ! y last
        indices%j=grid%y%num
           call bottom_angle_loop(mat, indices, wrap_x_cd2_last, wrap_y_cd2_last)

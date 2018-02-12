@@ -45,7 +45,10 @@ H5FC=h5fc
 # (Should replace CFLAGS in OFLAGS)
 # Compile & run normally,
 # Then call gprof `executable`
-PFLAGS=-g -O0
+PFLAGS= #-g -O0
+
+# Open MP
+OMPFLAGS=-fopenmp
 
 # Optimize performance
 #https://stackoverflow.com/questions/42386065/inlining-functions-in-fortran
@@ -56,11 +59,11 @@ CFLAGS=-c
 
 # Fortran Compilation flags
 # Object files (.o)
-OFLAGS=-J$(INC) -I$(INC) $(CFLAGS) $(PFLAGS) -fPIC $(OPTFLAGS)
+OFLAGS=-J$(INC) -I$(INC) $(CFLAGS) $(PFLAGS) -fPIC $(OPTFLAGS) #$(OMPFLAGS)
 # Binary files (executable)
-BFLAGS=-J$(INC) -I$(INC) $(PFLAGS) $(OPTFLAGS)
+BFLAGS=-J$(INC) -I$(INC) $(PFLAGS) $(OPTFLAGS) #$(OMPFLAGS)
 # Flags for F2PY
-F2PYFLAGS=-L$(INC) -I$(INC) # $(PFLAGS) $(OPTFLAGS)
+F2PYFLAGS=-L$(INC) -I$(INC) # $(PFLAGS) $(OPTFLAGS) #$(OMPFLAGS)
 
 
 ###############
@@ -69,7 +72,7 @@ F2PYFLAGS=-L$(INC) -I$(INC) # $(PFLAGS) $(OPTFLAGS)
 
 all: test old
 
-pykelp3d: $(SRC)/pykelp3d.f90 $(INC)/prob.o $(INC)/fastgl.o $(INC)/sag.o $(INC)/utils.o $(INC)/kelp3d.o $(INC)/kelp_context.o $(INC)/hdf5_utils.o
+pykelp3d: $(SRC)/pykelp3d.f90 $(INC)/prob.o $(INC)/fastgl.o $(INC)/sag.o $(INC)/utils.o $(INC)/kelp3d.o $(INC)/kelp_context.o #$(INC)/hdf5_utils.o
 	$(H5FC) $(BFLAGS) $^ -o $@
 
 ########
@@ -115,16 +118,16 @@ test_gmres: $(SRC)/test_gmres.f90 $(INC)/mgmres.o $(INC)/utils.o $(INC)/hdf5_uti
 	$(H5FC) $(BFLAGS) $^ -o $(BIN)/$@
 $(INC)/test_prob: $(SRC)/test_prob.f90 $(INC)/prob.o $(INC)/prob.o
 	$(FC) $(BFLAGS) $^ -o $(BIN)/$@
-test_kelp3d: $(SRC)/test_kelp3d.f90 $(INC)/test_kelp3d_mod.o $(INC)/prob.o $(INC)/fastgl.o $(INC)/sag.o $(INC)/utils.o $(INC)/kelp3d.o $(INC)/kelp_context.o $(INC)/hdf5_utils.o
-	$(H5FC) $(BFLAGS) $^ -o $(BIN)/$@
-test_rte3d: $(SRC)/test_rte3d.f90 $(INC)/rte_sparse_matrices.o $(INC)/test_rte3d_mod.o $(INC)/mgmres.o $(INC)/rte3d.o $(INC)/test_kelp3d_mod.o $(INC)/prob.o $(INC)/fastgl.o $(INC)/sag.o $(INC)/utils.o $(INC)/kelp3d.o $(INC)/kelp_context.o $(INC)/hdf5_utils.o $(INC)/light_context.o
-	$(H5FC) $(BFLAGS) $^ -o $(BIN)/$@
-test_pyrte3d_wrap: $(SRC)/test_pyrte3d_wrap.f90 $(INC)/pyrte3d_wrap.o $(INC)/rte_sparse_matrices.o $(INC)/mgmres.o $(INC)/rte3d.o $(INC)/test_kelp3d_mod.o $(INC)/prob.o $(INC)/fastgl.o $(INC)/sag.o $(INC)/utils.o $(INC)/kelp3d.o $(INC)/kelp_context.o $(INC)/hdf5_utils.o $(INC)/light_context.o
-	$(H5FC) $(BFLAGS) $^ -o $(BIN)/$@
+test_kelp3d: $(SRC)/test_kelp3d.f90 $(INC)/test_kelp3d_mod.o $(INC)/prob.o $(INC)/fastgl.o $(INC)/sag.o $(INC)/utils.o $(INC)/kelp3d.o $(INC)/kelp_context.o #$(INC)/hdf5_utils.o
+	$(FC) $(BFLAGS) $^ -o $(BIN)/$@
+test_rte3d: $(SRC)/test_rte3d.f90 $(INC)/rte_sparse_matrices.o $(INC)/test_rte3d_mod.o $(INC)/mgmres.o $(INC)/rte3d.o $(INC)/test_kelp3d_mod.o $(INC)/prob.o $(INC)/fastgl.o $(INC)/sag.o $(INC)/utils.o $(INC)/kelp3d.o $(INC)/kelp_context.o $(INC)/light_context.o #$(INC)/hdf5_utils.o
+	$(FC) $(BFLAGS) $^ -o $(BIN)/$@
+test_pyrte3d_wrap: $(SRC)/test_pyrte3d_wrap.f90 $(INC)/pyrte3d_wrap.o $(INC)/rte_sparse_matrices.o $(INC)/mgmres.o $(INC)/rte3d.o $(INC)/test_kelp3d_mod.o $(INC)/prob.o $(INC)/fastgl.o $(INC)/sag.o $(INC)/utils.o $(INC)/kelp3d.o $(INC)/kelp_context.o $(INC)/light_context.o #$(INC)/hdf5_utils.o
+	$(FC) $(BFLAGS) $^ -o $(BIN)/$@
 	rm $@.o
-test_pyasymptotics_wrap: $(SRC)/test_pyasymptotics_wrap.f90 $(INC)/pyasymptotics_wrap.o $(INC)/asymptotics.o $(INC)/rte_sparse_matrices.o $(INC)/mgmres.o $(INC)/rte3d.o $(INC)/test_kelp3d_mod.o $(INC)/prob.o $(INC)/fastgl.o $(INC)/sag.o $(INC)/utils.o $(INC)/kelp3d.o $(INC)/kelp_context.o $(INC)/hdf5_utils.o $(INC)/light_context.o
-	$(H5FC) $(BFLAGS) $^ -o $(BIN)/$@
-	rm $@.o
+test_pyasymptotics_wrap: $(SRC)/test_pyasymptotics_wrap.f90 $(INC)/pyasymptotics_wrap.o $(INC)/asymptotics.o $(INC)/rte_sparse_matrices.o $(INC)/mgmres.o $(INC)/rte3d.o $(INC)/test_kelp3d_mod.o $(INC)/prob.o $(INC)/fastgl.o $(INC)/sag.o $(INC)/utils.o $(INC)/kelp3d.o $(INC)/kelp_context.o $(INC)/light_context.o #$(INC)/hdf5_utils.o
+	$(FC) $(BFLAGS) $^ -o $(BIN)/$@
+	#rm $@.o
 
 ### Old tests
 old: test_interp test_rte2d test_vsf
@@ -147,13 +150,13 @@ $(INC)/hdf5_utils.o: $(SRC)/hdf5_utils.f90 $(INC)/utils.o $(INC)/kelp_context.o
 $(INC)/kelp_context.o: $(SRC)/kelp_context.f90 $(INC)/sag.o $(INC)/prob.o
 	$(FC) $(OFLAGS) $< -o $@
 $(INC)/light_context.o: $(SRC)/light_context.f90 $(INC)/sag.o $(INC)/rte_sparse_matrices.o $(INC)/utils.o
-	$(H5FC) $(OFLAGS) $< -o $@
+	$(FC) $(OFLAGS) $< -o $@
 $(INC)/kelp3d.o: $(SRC)/kelp3d.f90 $(INC)/kelp_context.o
 	$(FC) $(OFLAGS) $< -o $@
-$(INC)/test_kelp3d_mod.o: $(SRC)/test_kelp3d_mod.f90 $(INC)/kelp3d.o $(INC)/hdf5_utils.o
+$(INC)/test_kelp3d_mod.o: $(SRC)/test_kelp3d_mod.f90 $(INC)/kelp3d.o #$(INC)/hdf5_utils.o
 	$(FC) $(OFLAGS) $< -o $@
-$(INC)/test_rte3d_mod.o: $(SRC)/test_rte3d_mod.f90 $(INC)/test_kelp3d_mod.o $(INC)/rte3d.o $(INC)/kelp3d.o $(INC)/hdf5_utils.o $(INC)/light_context.o
-	$(H5FC) $(OFLAGS) $< -o $@
+$(INC)/test_rte3d_mod.o: $(SRC)/test_rte3d_mod.f90 $(INC)/test_kelp3d_mod.o $(INC)/rte3d.o $(INC)/kelp3d.o $(INC)/light_context.o #$(INC)/hdf5_utils.o
+	$(FC) $(OFLAGS) $< -o $@
 $(INC)/rte_sparse_matrices.o: $(SRC)/rte_sparse_matrices.f90 $(INC)/sag.o $(INC)/kelp_context.o $(INC)/mgmres.o
 	$(FC) $(OFLAGS) $< -o $@
 $(INC)/rte3d.o: $(SRC)/rte3d.f90 $(INC)/kelp_context.o $(INC)/rte_sparse_matrices.o $(INC)/light_context.o
@@ -189,7 +192,7 @@ clean: rmo
 	rm -f $(INC)/*.mod $(INC)/*.o $(BIN)/*
 	rm -rf $(F2PYDIR)/*
 
-rmo: 
+rmo:
 	rm -f $(BASE)/*.o $(BASE)/*.mod
 
 ls:

@@ -13,7 +13,7 @@ contains
     type(optical_properties) iops
 
     character(len=21), parameter :: matfile = 'hdf5/kelp3d/mat.hdf5'
-    character(len=23), parameter :: radfile = 'hdf5/kelp3d/rad.hdf5'
+    !character(len=23), parameter :: radfile = 'hdf5/kelp3d/rad.hdf5'
     character(len=24), parameter :: irradfile = 'hdf5/kelp3d/irrad.hdf5'
 
     write(*,*) 'Start'
@@ -28,10 +28,12 @@ contains
     write(*,*) 'IOPs'
     call set_iops(iops, grid, p_kelp)
 
-    call hdf_write_kelp('hdf5/kelp3d/abs_grid.hdf5', iops%abs_grid, grid)
+    !call hdf_write_kelp('hdf5/kelp3d/abs_grid.hdf5', iops%abs_grid, grid)
 
     write(*,*) 'Gen matrix'
-    call gen_matrix(grid, mat, iops)
+    !call gen_matrix(grid, mat, iops)
+    call mat%init(grid, iops)
+    call gen_matrix(mat)
 
     write(*,*) 'Solver Params'
     call set_solver_params(mat)
@@ -40,8 +42,8 @@ contains
 
     write(*,*) 'ent =', mat%ent, '/', mat%nonzero
 
-    write(*,*) 'Write mat'
-    call mat%to_hdf(matfile)
+    !write(*,*) 'Write mat'
+    !call mat%to_hdf(matfile)
 
     write(*,*) 'Radiance'
     call light%calculate_radiance()
@@ -49,8 +51,8 @@ contains
     write(*,*) 'Irradiance'
     call light%calculate_irradiance()
 
-    write(*,*) 'Write light'
-    call light%to_hdf(radfile, irradfile)
+    !write(*,*) 'Write light'
+    !call light%to_hdf(radfile, irradfile)
 
     write(*,*) ' deinit'
     call kelp3d_deinit(grid, rope, p_kelp)

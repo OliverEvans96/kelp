@@ -1,6 +1,6 @@
 module test_kelp3d_mod
   use kelp3d
-  use hdf5_utils
+  !use hdf5_utils
   implicit none
 contains
 
@@ -166,7 +166,7 @@ subroutine gen_kelp(grid, rope, p_kelp)
 
   call calculate_memory_usage(grid)
   call calculate_kelp_on_grid(grid, p_kelp, frond, rope, quadrature_degree)
-  call hdf_write_kelp('hdf5/kelp3d/p_kelp.hdf5', p_kelp, grid)
+  !call hdf_write_kelp('hdf5/kelp3d/p_kelp.hdf5', p_kelp, grid)
 end subroutine gen_kelp
 
 end module test_kelp3d_mod
