@@ -89,7 +89,8 @@ subroutine von_mises_pdf ( x, a, b, pdf )
   end if
 
   return
-end
+end subroutine von_mises_pdf
+
 
 subroutine normal_01_cdf ( x, cdf )
 
@@ -188,7 +189,8 @@ subroutine normal_01_cdf ( x, cdf )
   end if
 
   return
-end
+end subroutine normal_01_cdf
+
 
 subroutine normal_cdf ( x, a, b, cdf )
 
@@ -230,7 +232,8 @@ subroutine normal_cdf ( x, a, b, cdf )
   call normal_01_cdf ( y, cdf )
 
   return
-end
+end subroutine normal_cdf
+
 
 function bessel_i0 ( arg )
 
@@ -423,4 +426,6 @@ function bessel_i0 ( arg )
   bessel_i0 = value
 
   return
-end
+end function bessel_i0
+
+end module
