@@ -1,4 +1,4 @@
-module light_interface
+module light_interface_module
   use rte3d
   use kelp3d
   use asymptotics
@@ -295,4 +295,4 @@ contains
 
   end subroutine calculate_length_dist_from_superinds
 
-end module light_interface
+end module light_interface_module
