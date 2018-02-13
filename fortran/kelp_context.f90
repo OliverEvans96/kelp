@@ -322,6 +322,7 @@ contains
     double precision angle_diff
     double precision vsf_val
 
+
     grid = iops%grid
 
     ntheta = grid%theta%num

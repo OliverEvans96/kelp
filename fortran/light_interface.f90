@@ -147,9 +147,6 @@ contains
     call grid%set_spacing_from_num()
     call grid%init()
 
-    ! INIT ROPE
-    call rope%init(grid)
-
     ! Calculate kelp distribution
     call calculate_length_dist_from_superinds( &
     nz, &
@@ -173,10 +170,6 @@ contains
     ! CALCULATE KELP
     quadrature_degree = 5
     call calculate_kelp_on_grid(grid, p_kelp, frond, rope, quadrature_degree)
-
-    call rope%deinit()
-    call grid%deinit()
-
     ! INIT IOPS
     write(*,*) 'IOPs'
     iops%abs_kelp = abs_kelp
@@ -185,6 +178,8 @@ contains
     iops%scat_water = scat_water
     iops%num_vsf = num_vsf
 
+
+    write(*,*) 'iop init'
     call iops%init(grid)
     !iops%vsf_angles = vsf_angles
     !iops%vsf_vals = vsf_vals
@@ -209,11 +204,6 @@ contains
     write(*,*) 'Irrad'
     call light%calculate_irradiance()
 
-    write(*,*) 'deinit'
-    call bc%deinit()
-    call iops%deinit()
-    call light%deinit()
-    call grid%deinit()
 
     ! Calculate average irradiances
     do k=1, nz
@@ -224,12 +214,19 @@ contains
        post_kelp_irrad(k) = sum(light%irradiance(:,:,k)) / nx / ny
     end do
 
-    write(*,*) 'done'
+    write(*,*) 'deinit'
+    call bc%deinit()
+    call iops%deinit()
+    call light%deinit()
+    call rope%deinit()
+    call grid%deinit()
 
     deallocate(pop_length_means)
     deallocate(pop_length_stds)
     deallocate(num_fronds)
     deallocate(p_kelp)
+
+    write(*,*) 'done'
   end subroutine full_light_calculations
 
   subroutine calculate_length_dist_from_superinds( &
