@@ -42,6 +42,7 @@ contains
     post_kelp_irrad)
 
     ! OPTICAL PROPERTIES
+    integer, intent(in) :: nx, ny, nz, ntheta, nphi
     ! Absorption and scattering coefficients
     double precision, intent(in) :: abs_kelp
     double precision, intent(in) :: abs_water
@@ -60,9 +61,9 @@ contains
     ! Number of Superindividuals in each depth level
     integer, intent(in) :: num_si
     ! si_area(i,j) = area of superindividual j at depth i
-    double precision, dimension(num_depth_levels, num_si), intent(in) :: si_area
+    double precision, dimension(nz, num_si), intent(in) :: si_area
     ! si_ind(i,j) = number of inidividuals represented by superindividual j at depth i
-    integer, dimension(num_depth_levels, num_si), intent(in) :: si_ind
+    integer, dimension(nz, num_si), intent(in) :: si_ind
     ! Thickness of each frond
     double precision, intent(in) :: frond_thickness
     ! Ratio of length to width (0,infty)
@@ -71,28 +72,23 @@ contains
     double precision, intent(in) :: frond_shape_ratio
 
     ! WATER CURRENT
-    double precision, dimension(num_depth_levels) :: current_speeds
-    double precision, dimension(num_depth_levels) :: current_angles
+    double precision, dimension(nz) :: current_speeds
+    double precision, dimension(nz) :: current_angles
 
     ! SPACING
     double precision, intent(in) :: rope_spacing
     double precision, intent(in) :: depth_spacing
-    integer, intent(in) :: num_depth_levels
-
     ! SOLVER PARAMETERS
-    double precision, intent(in) :: spatial_res
-    double precision, intent(in) :: angular_res
     integer, intent(in) :: num_scatters
 
     ! LIGHT WITHOUT KELP
-    double precision, dimension(num_depth_levels) :: pre_kelp_irrad
+    double precision, dimension(nz) :: pre_kelp_irrad
 
     ! FINAL RESULT
-    double precision, dimension(num_depth_levels) :: post_kelp_irrad
+    double precision, dimension(nz) :: post_kelp_irrad
 
     !-------------!
 
-    integer nx, ny, nz, ntheta, nphi
     double precision xmin, xmax, ymin, ymax, zmin, zmax
     character(len=7), parameter :: fmtstr = '(13.4E)'
     !double precision, dimension(num_vsf) :: vsf_angles, vsf_vals
@@ -115,11 +111,9 @@ contains
 
     double precision, dimension(:,:,:), allocatable :: p_kelp
 
-    nz = num_depth_levels
-
-    allocate(pop_length_means(num_depth_levels))
-    allocate(pop_length_stds(num_depth_levels))
-    allocate(num_fronds(num_depth_levels))
+    allocate(pop_length_means(nz))
+    allocate(pop_length_stds(nz))
+    allocate(num_fronds(nz))
     allocate(p_kelp(nx, ny, nz))
 
     xmin = -rope_spacing/2
@@ -129,7 +123,7 @@ contains
     ymax = rope_spacing/2
 
     zmin = 0.d0
-    zmax = num_depth_levels * depth_spacing
+    zmax = nz * depth_spacing
 
     ! INIT GRID
     write(*,*) 'Grid'
@@ -156,7 +150,7 @@ contains
 
     ! Calculate kelp distribution
     call calculate_length_dist_from_superinds( &
-    num_depth_levels, &
+    nz, &
     num_si, &
     si_area, &
     si_ind, &
@@ -220,11 +214,11 @@ contains
     call grid%deinit()
 
     ! Calculate average irradiances
-    do k=1, num_depth_levels
+    do k=1, nz
        post_kelp_irrad(k) = pre_kelp_irrad(k)
     end do
 
-    do k=1, num_depth_levels
+    do k=1, nz
        post_kelp_irrad(k) = sum(light%irradiance(:,:,k)) / nx / ny
     end do
 
@@ -237,7 +231,7 @@ contains
   end subroutine full_light_calculations
 
   subroutine calculate_length_dist_from_superinds( &
-    num_depth_levels, &
+    nz, &
     num_si, &
     si_area, &
     si_ind, &
@@ -247,20 +241,20 @@ contains
     pop_length_stds)
 
     ! Number of depth levels
-    integer, intent(in) :: num_depth_levels
+    integer, intent(in) :: nz
     ! Number of Superindividuals in each depth level
     integer, intent(in) :: num_si
     ! si_area(i,j) = area of superindividual j at depth i
-    double precision, dimension(num_depth_levels, num_si), intent(in) :: si_area
+    double precision, dimension(nz, num_si), intent(in) :: si_area
     ! si_area(i,j) = number of inidividuals represented by superindividual j at depth i
-    integer, dimension(num_depth_levels, num_si), intent(in) :: si_ind
+    integer, dimension(nz, num_si), intent(in) :: si_ind
     double precision, intent(in) :: frond_aspect_ratio
 
-    integer, dimension(num_depth_levels), intent(out) :: num_fronds
+    integer, dimension(nz), intent(out) :: num_fronds
     ! Population mean area at each depth level
-    double precision, dimension(num_depth_levels), intent(out) :: pop_length_means
+    double precision, dimension(nz), intent(out) :: pop_length_means
     ! Population area standard deviation at each depth level
-    double precision, dimension(num_depth_levels), intent(out) :: pop_length_stds
+    double precision, dimension(nz), intent(out) :: pop_length_stds
 
     !---------------!
 
@@ -272,7 +266,7 @@ contains
 
     ! PROBABLY NEED EXPLICIT ALLOCATE STATEMENTS HERE
 
-    do k=1, num_depth_levels
+    do k=1, nz
        mean_num = 0.d0
        std_num = 0.d0
        num_fronds(k) = 0
