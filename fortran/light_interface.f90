@@ -105,7 +105,7 @@ contains
 
     double precision, dimension(:), allocatable :: pop_length_means, pop_length_stds
     ! Number of fronds in each depth layer
-    integer, dimension(:), allocatable :: num_fronds
+    double precision, dimension(:), allocatable :: num_fronds
 
     integer k
 
@@ -250,7 +250,7 @@ contains
     integer, dimension(nz, num_si), intent(in) :: si_ind
     double precision, intent(in) :: frond_aspect_ratio
 
-    integer, dimension(nz), intent(out) :: num_fronds
+    double precision, dimension(nz), intent(out) :: num_fronds
     ! Population mean area at each depth level
     double precision, dimension(nz), intent(out) :: pop_length_means
     ! Population area standard deviation at each depth level
@@ -277,13 +277,13 @@ contains
           num_fronds(k) = num_fronds(k) + si_ind(k,i)
        end do
 
-       pop_length_means(k) = mean_num / dble(num_fronds(k))
+       pop_length_means(k) = mean_num / num_fronds(k)
 
        do i=1, num_si
           std_num = std_num + (si_length(i) - pop_length_means(k))**2
        end do
 
-       pop_length_stds(k) = std_num / dble(num_fronds(k) - 1)
+       pop_length_stds(k) = std_num / (num_fronds(k) - 1)
 
     end do
 
