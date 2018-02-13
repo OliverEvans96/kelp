@@ -1,5 +1,6 @@
 module light_interface
   use rte3d
+  use kelp3d
   use asymptotics
   implicit none
 
