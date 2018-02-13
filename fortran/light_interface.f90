@@ -41,6 +41,8 @@ contains
     ! FINAL RESULT   &
     post_kelp_irrad)
 
+    implicit none
+
     ! OPTICAL PROPERTIES
     integer, intent(in) :: nx, ny, nz, ntheta, nphi
     ! Absorption and scattering coefficients
@@ -90,7 +92,7 @@ contains
     !-------------!
 
     double precision xmin, xmax, ymin, ymax, zmin, zmax
-    character(len=7), parameter :: fmtstr = '(13.4E)'
+    character(len=5), parameter :: fmtstr = '13.4E'
     !double precision, dimension(num_vsf) :: vsf_angles, vsf_vals
     double precision max_rad, decay
     integer quadrature_degree
@@ -239,6 +241,8 @@ contains
     num_fronds, &
     pop_length_means, &
     pop_length_stds)
+
+    implicit none
 
     ! Number of depth levels
     integer, intent(in) :: nz
