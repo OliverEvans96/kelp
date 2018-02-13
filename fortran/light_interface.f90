@@ -118,6 +118,33 @@ contains
     allocate(num_fronds(nz))
     allocate(p_kelp(nx, ny, nz))
 
+    write(*,*) 'abs_kelp = ', abs_kelp
+    write(*,*) 'abs_water = ', abs_water
+    write(*,*) 'scat_kelp = ', scat_kelp
+    write(*,*) 'scat_water = ', scat_water
+    write(*,*) 'num_vsf = ', num_vsf
+    write(*,*) 'vsf_file = ', vsf_file
+    write(*,*) 'solar_zenith = ', solar_zenith
+    write(*,*) 'solar_azimuthal = ', solar_azimuthal
+    write(*,*) 'num_si = ', num_si
+    write(*,*) 'si_area = ', si_area
+    write(*,*) 'si_ind = ', si_ind
+    write(*,*) 'frond_thickness = ', frond_thickness
+    write(*,*) 'frond_aspect_ratio = ', frond_aspect_ratio
+    write(*,*) 'frond_shape_ratio = ', frond_shape_ratio
+    write(*,*) 'current_speeds = ', current_speeds
+    write(*,*) 'current_angles = ', current_angles
+    write(*,*) 'rope_spacing = ', rope_spacing
+    write(*,*) 'depth_spacing = ', depth_spacing
+    write(*,*) 'nx = ', nx
+    write(*,*) 'ny = ', ny
+    write(*,*) 'nz = ', nz
+    write(*,*) 'ntheta = ', ntheta
+    write(*,*) 'nphi = ', nphi
+    write(*,*) 'num_scatters = ', num_scatters
+    write(*,*) 'pre_kelp_irrad = ', pre_kelp_irrad
+    write(*,*) 'post_kelp_irrad = ', post_kelp_irrad
+
     xmin = -rope_spacing/2
     xmax = rope_spacing/2
 
@@ -147,6 +174,7 @@ contains
     call grid%set_spacing_from_num()
     call grid%init()
 
+    write(*,*) 'Calculate Length dist'
     ! Calculate kelp distribution
     call calculate_length_dist_from_superinds( &
     nz, &
@@ -158,14 +186,20 @@ contains
     pop_length_means, &
     pop_length_stds)
 
+    write(*,*) 'rope'
+
     rope%frond_lengths = pop_length_means
     rope%frond_stds = pop_length_stds
     rope%num_fronds = num_fronds
     rope%water_speeds = current_speeds
     rope%water_angles = current_angles
 
+    write(*,*) 'frond'
+
     ! INIT FROND
     call frond%set_shape(frond_shape_ratio, frond_aspect_ratio, frond_thickness)
+
+    write(*,*) 'kelp'
 
     ! CALCULATE KELP
     quadrature_degree = 5
