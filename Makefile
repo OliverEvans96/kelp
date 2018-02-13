@@ -171,6 +171,12 @@ $(INC)/pyrte3d_wrap.o: $(SRC)/pyrte3d_wrap.f90 $(INC)/prob.o $(INC)/fastgl.o $(I
 $(INC)/pyasymptotics_wrap.o: $(SRC)/pyasymptotics_wrap.f90 $(INC)/prob.o $(INC)/fastgl.o $(INC)/sag.o $(INC)/utils.o $(INC)/rte3d.o $(INC)/kelp_context.o $(INC)/light_context.o $(INC)/rte_sparse_matrices.o $(INC)/asymptotics.o
 	$(FC) $(OFLAGS) $< -o $@
 
+#########
+# FINAL #
+#########
+$(INC)/light_interface.o: $(SRC)/light_interface.f90 $(INC)/pyasymptotics_wrap.o $(INC)/asymptotics.o $(INC)/rte_sparse_matrices.o $(INC)/mgmres.o $(INC)/rte3d.o $(INC)/test_kelp3d_mod.o $(INC)/prob.o $(INC)/fastgl.o $(INC)/sag.o $(INC)/utils.o $(INC)/kelp3d.o $(INC)/kelp_context.o $(INC)/light_context.o #$(INC)/hdf5_utils.o
+	$(FC) $(OFLAGS) $< -o $@
+
 # Old
 $(INC)/rte_core.o: $(SRC)/rte_core.f90 $(INC)/utils.o
 	$(FC) $(OFLAGS) $< -o $@
