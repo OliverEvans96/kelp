@@ -29,10 +29,12 @@ contains
     ! SPACING        &
     rope_spacing,    &
     depth_spacing,   &
-    num_depth_levels, &
     ! SOLVER PARAMETERS
-    spatial_res,     &
-    angular_res,     &
+    nx, &
+    ny, &
+    nz, &
+    ntheta, &
+    nphi, &
     num_scatters,    &
     ! LIGHT WITHOUT KELP
     pre_kelp_irrad,  &
@@ -112,6 +114,8 @@ contains
     integer k
 
     double precision, dimension(:,:,:), allocatable :: p_kelp
+
+    nz = num_depth_levels
 
     allocate(pop_length_means(num_depth_levels))
     allocate(pop_length_stds(num_depth_levels))
