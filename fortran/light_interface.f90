@@ -92,7 +92,7 @@ contains
     !-------------!
 
     double precision xmin, xmax, ymin, ymax, zmin, zmax
-    character(len=5), parameter :: fmtstr = '13.4E'
+    character(len=5), parameter :: fmtstr = 'E13.4'
     !double precision, dimension(num_vsf) :: vsf_angles, vsf_vals
     double precision max_rad, decay
     integer quadrature_degree
