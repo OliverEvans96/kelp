@@ -41,7 +41,8 @@ contains
     grid%theta%num = nums(4)
     grid%phi%num = nums(5)
 
-    call grid%set_spacing_from_num()
+    ! COMMENTING THIS LINE DEFINITELY BREAKS THINGS
+    !call grid%set_spacing_from_num()
     call grid%init()
   end subroutine hdf_read_grid
 

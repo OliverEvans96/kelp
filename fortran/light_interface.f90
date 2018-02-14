@@ -7,39 +7,40 @@ module light_interface_module
 contains
   subroutine full_light_calculations( &
     ! OPTICAL PROPERTIES
-    abs_kelp,        &
-    abs_water,       &
-    scat_kelp,      &
-    scat_water,      &
-    num_vsf,         &
-    vsf_file,        &
-    ! SUNLIGHT       &
-    solar_zenith,    &
+    abs_kelp, &
+    scat_kelp, &
+    abs_water, &
+    scat_water, &
+    num_vsf, &
+    vsf_file, &
+    ! SUNLIGHT
+    solar_zenith, &
     solar_azimuthal, &
-    ! KELP           &
-    num_si,          &
-    si_area,         &
-    si_ind,          &
+    surface_irrad, &
+    ! BACKGROUND ATTENUATION
+    background_atten, &
+    ! KELP &
+    num_si, &
+    si_area, &
+    si_ind, &
     frond_thickness, &
-    frond_aspect_ratio,    &
-    frond_shape_ratio,     &
-    ! WATER CURRENT  &
-    current_speeds,  &
-    current_angles,   &
-    ! SPACING        &
-    rope_spacing,    &
-    depth_spacing,   &
+    frond_aspect_ratio, &
+    frond_shape_ratio, &
+    ! WATER CURRENT
+    current_speeds, &
+    current_angles, &
+    ! SPACING
+    rope_spacing, &
+    depth_spacing, &
     ! SOLVER PARAMETERS
     nx, &
     ny, &
     nz, &
     ntheta, &
     nphi, &
-    num_scatters,    &
-    ! LIGHT WITHOUT KELP
-    pre_kelp_irrad,  &
-    ! FINAL RESULT   &
-    post_kelp_irrad)
+    num_scatters, &
+    ! FINAL RESULT
+    irrad)
 
     implicit none
 
@@ -47,9 +48,9 @@ contains
     integer, intent(in) :: nx, ny, nz, ntheta, nphi
     ! Absorption and scattering coefficients
     double precision, intent(in) :: abs_kelp
-    double precision, intent(in) :: abs_water
     double precision, intent(in) :: scat_kelp
-    double precision, intent(in) :: scat_water
+    double precision, dimension(nz), intent(in) :: abs_water
+    double precision, dimension(nz), intent(in) :: scat_water
     ! Volume scattering function
     integer, intent(in) :: num_vsf
     character(len=*) :: vsf_file
@@ -57,7 +58,12 @@ contains
     !double precision, dimension(num_vsf), intent(int) :: vsf_vals
 
     ! SUNLIGHT
-    double precision, intent(in) :: solar_zenith, solar_azimuthal
+    double precision, intent(in) :: solar_zenith
+    double precision, intent(in) :: solar_azimuthal
+    double precision, intent(in) :: surface_irrad
+
+    ! BACKGROUND ATTENUATION
+    double precision, dimension(nz), intent(in) :: background_atten
 
     ! KELP
     ! Number of Superindividuals in each depth level
@@ -74,20 +80,17 @@ contains
     double precision, intent(in) :: frond_shape_ratio
 
     ! WATER CURRENT
-    double precision, dimension(nz) :: current_speeds
-    double precision, dimension(nz) :: current_angles
+    double precision, dimension(nz), intent(in) :: current_speeds
+    double precision, dimension(nz), intent(in) :: current_angles
 
     ! SPACING
     double precision, intent(in) :: rope_spacing
-    double precision, intent(in) :: depth_spacing
+    double precision, dimension(nz), intent(in) :: depth_spacing
     ! SOLVER PARAMETERS
     integer, intent(in) :: num_scatters
 
-    ! LIGHT WITHOUT KELP
-    double precision, dimension(nz) :: pre_kelp_irrad
-
     ! FINAL RESULT
-    double precision, dimension(nz) :: post_kelp_irrad
+    double precision, dimension(nz), intent(out) :: irrad
 
     !-------------!
 
@@ -113,8 +116,6 @@ contains
 
     double precision, dimension(:,:,:), allocatable :: p_kelp
 
-    write(*,*) 'pre_kelp_irrad = ', pre_kelp_irrad
-
     allocate(pop_length_means(nz))
     allocate(pop_length_stds(nz))
     allocate(num_fronds(nz))
@@ -127,7 +128,7 @@ contains
     ymax = rope_spacing/2
 
     zmin = 0.d0
-    zmax = nz * depth_spacing
+    zmax = sum(depth_spacing)
 
     ! INIT GRID
     !write(*,*) 'Grid'
@@ -146,8 +147,9 @@ contains
     grid%theta%num = ntheta
     grid%phi%num = nphi
 
-    call grid%set_spacing_from_num()
     call grid%init()
+    !call grid%set_uniform_spacing_from_num()
+    call grid%z%set_spacing_array(depth_spacing)
 
     call rope%init(grid)
 
@@ -195,10 +197,10 @@ contains
 
     !write(*,*) 'BC'
     max_rad = 1 ! Doesn't matter because we'll rescale
-    decay = 1 ! Does matter, but maybe not much.
+    decay = 1 ! Does matter, but maybe not much. Determines drop-off from angle
     call bc%init(grid, solar_zenith, solar_azimuthal, decay, max_rad)
     ! Rescale surface radiance to match surface irradiance
-    bc%bc_grid = bc%bc_grid * pre_kelp_irrad(1) / grid%integrate_angle_2d(bc%bc_grid)
+    bc%bc_grid = bc%bc_grid * surface_irrad / grid%integrate_angle_2d(bc%bc_grid)
 
     call light%init_grid(grid)
 
@@ -208,14 +210,9 @@ contains
     !write(*,*) 'Irrad'
     call light%calculate_irradiance()
 
-
-    ! Calculate average irradiances
+    ! Calculate average irradiance
     do k=1, nz
-       post_kelp_irrad(k) = pre_kelp_irrad(k)
-    end do
-
-    do k=1, nz
-       post_kelp_irrad(k) = sum(light%irradiance(:,:,k)) / nx / ny
+       irrad(k) = sum(light%irradiance(:,:,k)) / nx / ny
     end do
 
     !write(*,*) 'deinit'
@@ -230,7 +227,9 @@ contains
     deallocate(num_fronds)
     deallocate(p_kelp)
 
-    write(*,*) 'post_kelp_irrad = ', post_kelp_irrad
+    write(*,*) 'abs_water = ', abs_water
+    write(*,*) 'scat_water = ', scat_water
+    write(*,*) 'irrad = ', irrad
 
     !write(*,*) 'done'
   end subroutine full_light_calculations
@@ -270,8 +269,6 @@ contains
     double precision mean_num, std_num
     ! Convert area to length
     double precision, dimension(num_si) :: si_length
-
-    ! PROBABLY NEED EXPLICIT ALLOCATE STATEMENTS HERE
 
     do k=1, nz
        mean_num = 0.d0

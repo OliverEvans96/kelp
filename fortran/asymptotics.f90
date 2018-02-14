@@ -24,9 +24,7 @@ module asymptotics
     nphi = grid%phi%num
 
     ! Scattering coefficient
-    ! Assumed to be uniform over space
-    bb = iops%scat_water
-
+    ! Allowed to vary over depth
     ! Reset radiance
     !write(*,*) 'Before Scattering'
     call calculate_light_before_scattering(grid, bc, iops, radiance)
@@ -39,7 +37,10 @@ module asymptotics
       do n=1, num_scatters
          write(*,*) 'scatter #', n
          call scatter(grid, bc, iops, rad_scatter)
-         radiance = radiance + bb**n * rad_scatter
+         do k=1, nz
+            bb = iops%scat_water(k)
+            radiance(:,:,k,:,:) = radiance(:,:,k,:,:) + bb**n * rad_scatter(:,:,k,:,:)
+         end do
       end do
 
       deallocate(rad_scatter)
@@ -228,20 +229,20 @@ module asymptotics
     do m=1, nphi / 2
        indices%m = m
        phi = grid%phi%vals(m)
-       dpath = grid%z%spacing / grid%phi%cos(m)
-       do l=1, ntheta
-          indices%l = l
-          do i=1, nx
-             indices%i = i
-             x = grid%x%vals(i)
-             do j=1, ny
-                indices%j = j
-                y = grid%y%vals(j)
-                ! k=1 is already determined by surface BC
-                ! Although k=1 would just be a no-op
-                do k=2, nz
-                   indices%k = k
-                   kp_stop = k
+       ! k=1 is already determined by surface BC
+       ! Although k=1 would just be a no-op
+       do k=2, nz
+          indices%k = k
+          kp_stop = k
+          dpath = grid%z%spacing(k) / grid%phi%cos(m)
+          do l=1, ntheta
+              indices%l = l
+              do i=1, nx
+                indices%i = i
+                x = grid%x%vals(i)
+                do j=1, ny
+                   indices%j = j
+                   y = grid%y%vals(j)
                    call integrate_free_paths(&
                         x, y, k, dpath, source, grid, iops,&
                         indices, rad_scatter, path_integrand,&
@@ -258,21 +259,21 @@ module asymptotics
     do m=grid%phi%num/2 + 1, grid%phi%num
        indices%m = m
        phi = grid%phi%vals(m)
-       ! Minus sign since cos(phi) < 0 for upwelling
-       dpath = - grid%z%spacing / grid%phi%cos(m)
-       do l=1, grid%theta%num
-          indices%l = l
-          do i=1, grid%x%num
-             indices%i = i
-             x = grid%x%vals(i)
-             do j=1, grid%y%num
-                indices%j = j
-                y = grid%y%vals(j)
-                ! k=nz is already determined by bottom BC
-                ! Although k=nz would just be a no-op
-                do k=1, grid%z%num-1
-                   indices%k = k
-                   kp_stop = k
+       ! k=nz is already determined by bottom BC
+       ! Although k=nz would just be a no-op
+       do k=1, grid%z%num-1
+          indices%k = k
+          kp_stop = k
+          ! Minus sign since cos(phi) < 0 for upwelling
+          dpath = - grid%z%spacing(k) / grid%phi%cos(m)
+          do l=1, grid%theta%num
+              indices%l = l
+              do i=1, grid%x%num
+                indices%i = i
+                x = grid%x%vals(i)
+                do j=1, grid%y%num
+                    indices%j = j
+                    y = grid%y%vals(j)
                    call integrate_free_paths(&
                         x, y, k, dpath, source, grid, iops,&
                         indices, rad_scatter, path_integrand,&
@@ -444,7 +445,7 @@ module asymptotics
        end do
     end if
 
-    dpath = grid%z%spacing / abs(grid%phi%cos(indices%m))
+    dpath = grid%z%spacing(indices%k) / abs(grid%phi%cos(indices%m))
     total_abs = trap_rule(abs_coef_along_path, dpath, path_length)
 
     absorb_along_path = exp(-total_abs)

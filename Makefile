@@ -106,7 +106,7 @@ py_wrap: pykelp3d_wrap pyrte3d_wrap pyasymptotics_wrap
 # Tests #
 #########
 
-test: test_context test_gl test_grid test_gmres test_prob test_kelp_3d
+test: test_context test_gl test_grid test_gmres #test_prob test_kelp_3d
 
 test_context: $(SRC)/test_context.f90 $(INC)/prob.o $(INC)/utils.o $(INC)/kelp_context.o
 	$(FC) $(BFLAGS) $^ -o $(BIN)/$@

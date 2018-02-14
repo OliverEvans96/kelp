@@ -10,7 +10,7 @@ implicit none
 
 ! To use:
 ! call grid%set_bounds(...)
-! call grid%set_num(...) (or set_spacing)
+! call grid%set_num(...) (or set_uniform_spacing)
 ! call grid%init()
 ! ...
 ! call grid%deinit()
@@ -39,16 +39,17 @@ end type angle_dim
 
 type space_dim
    integer num
-   double precision minval, maxval, spacing
-   double precision, dimension(:), allocatable :: vals
+   double precision minval, maxval
+   double precision, dimension(:), allocatable :: vals, spacing
  contains
    procedure :: integrate_points => space_integrate_points
    procedure :: trapezoid_rule
    procedure :: set_bounds => space_set_bounds
    procedure :: set_num => space_set_num
-   procedure :: set_spacing => space_set_spacing
-   procedure :: set_num_from_spacing
-   procedure :: set_spacing_from_num
+   procedure :: set_uniform_spacing => space_set_uniform_spacing
+   !procedure :: set_num_from_spacing
+   procedure :: set_uniform_spacing_from_num
+   procedure :: set_spacing_array => space_set_spacing_array
    procedure :: deinit => space_deinit
    procedure :: assign_linspace
 end type space_dim
@@ -63,8 +64,8 @@ contains
   procedure :: integrate_angle_2d => sag_integrate_angle_2d
   procedure :: init => sag_init
   procedure :: deinit => sag_deinit
-  procedure :: set_num_from_spacing => sag_set_num_from_spacing
-  procedure :: set_spacing_from_num => sag_set_spacing_from_num
+  !procedure :: set_num_from_spacing => sag_set_num_from_spacing
+  procedure :: set_uniform_spacing_from_num => sag_set_uniform_spacing_from_num
   procedure :: calculate_factors => sag_calculate_factors
 end type space_angle_grid
 
@@ -182,7 +183,7 @@ contains
     double precision, dimension(space%num) :: func_vals
     double precision integral
 
-    integral = 0.5d0 * space%spacing * sum(func_vals)
+    integral = 0.5d0 * sum(func_vals * space%spacing)
   end function
 
   subroutine space_set_bounds(space, minval, maxval)
@@ -198,39 +199,59 @@ contains
     space%num = num
   end subroutine space_set_num
 
-  subroutine space_set_spacing(space, spacing)
+  subroutine space_set_uniform_spacing(space, spacing)
     class(space_dim) :: space
-    integer spacing
+    double precision spacing
+    integer k
+    do k=1, space%num
+      space%spacing(k) = spacing
+   end do
+  end subroutine space_set_uniform_spacing
+
+  subroutine space_set_spacing_array(space, spacing)
+    class(space_dim) :: space
+    double precision, dimension(space%num) :: spacing
     space%spacing = spacing
-  end subroutine space_set_spacing
+  end subroutine space_set_spacing_array
 
   subroutine assign_linspace(space)
     class(space_dim) :: space
+    double precision spacing
     integer i
 
     allocate(space%vals(space%num))
+    allocate(space%spacing(space%num))
 
-    space%spacing = spacing_from_num(space%minval, space%maxval, space%num)
+    spacing = spacing_from_num(space%minval, space%maxval, space%num)
+    call space%set_uniform_spacing(spacing)
 
     do i=1, space%num
-       space%vals(i) = space%minval + dble(i-1) * space%spacing
+       space%vals(i) = space%minval + dble(i-1) * space%spacing(i)
     end do
 
   end subroutine assign_linspace
 
-  subroutine set_spacing_from_num(space)
+  subroutine set_uniform_spacing_from_num(space)
+    ! Create evenly spaced grid (linspace)
     class(space_dim) :: space
-    space%spacing = spacing_from_num(space%minval, space%maxval, space%num)
-  end subroutine set_spacing_from_num
+    integer k
+    double precision spacing
 
-  subroutine set_num_from_spacing(space)
-    class(space_dim) :: space
-    space%num = num_from_spacing(space%minval, space%maxval, space%spacing)
-  end subroutine set_num_from_spacing
+    spacing = spacing_from_num(space%minval, space%maxval, space%num)
+    call space%set_uniform_spacing(spacing)
+
+  end subroutine set_uniform_spacing_from_num
+
+ !  subroutine set_num_from_spacing(space)
+ !    class(space_dim) :: space
+ !    !space%num = num_from_spacing(space%minval, space%maxval, space%spacing)
+
+ !  end subroutine set_num_from_spacing
 
   subroutine space_deinit(space)
     class(space_dim) :: space
     deallocate(space%vals)
+    deallocate(space%spacing)
   end subroutine space_deinit
 
   !! SAG !!
@@ -249,13 +270,13 @@ contains
     call grid%phi%set_bounds(phimin, phimax)
   end subroutine sag_set_bounds
 
-  subroutine sag_set_spacing(grid, dx, dy, dz)
+  subroutine sag_set_uniform_spacing(grid, dx, dy, dz)
     class(space_angle_grid) :: grid
     double precision dx, dy, dz
-    grid%x%spacing = dx
-    grid%y%spacing = dy
-    grid%z%spacing = dz
-  end subroutine sag_set_spacing
+    call grid%x%set_uniform_spacing(dx)
+    call grid%y%set_uniform_spacing(dy)
+    call grid%z%set_uniform_spacing(dz)
+  end subroutine sag_set_uniform_spacing
 
   subroutine sag_set_num(grid, nx, ny, nz, ntheta, nphi)
     class(space_angle_grid) :: grid
@@ -339,20 +360,20 @@ contains
 
   end function sag_integrate_angle_2d
 
-  subroutine sag_set_spacing_from_num(grid)
+  subroutine sag_set_uniform_spacing_from_num(grid)
     class(space_angle_grid) :: grid
-    call grid%x%set_spacing_from_num()
-    call grid%y%set_spacing_from_num()
-    call grid%z%set_spacing_from_num()
-  end subroutine sag_set_spacing_from_num
+    call grid%x%set_uniform_spacing_from_num()
+    call grid%y%set_uniform_spacing_from_num()
+    call grid%z%set_uniform_spacing_from_num()
+  end subroutine sag_set_uniform_spacing_from_num
 
-  subroutine sag_set_num_from_spacing(grid)
-    class(space_angle_grid) :: grid
-    call grid%x%set_num_from_spacing()
-    call grid%y%set_num_from_spacing()
-    call grid%z%set_num_from_spacing()
+  ! subroutine sag_set_num_from_spacing(grid)
+  !   class(space_angle_grid) :: grid
+  !   call grid%x%set_num_from_spacing()
+  !   call grid%y%set_num_from_spacing()
+  !   call grid%z%set_num_from_spacing()
 
-  end subroutine sag_set_num_from_spacing
+  ! end subroutine sag_set_num_from_spacing
   
   subroutine sag_deinit(grid)
     class(space_angle_grid) :: grid

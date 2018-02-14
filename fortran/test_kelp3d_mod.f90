@@ -22,7 +22,8 @@ subroutine init_grid(grid)
   grid%theta%num = 10
   grid%phi%num = 10
 
-  call grid%set_num_from_spacing()
+  ! COMMENTING THIS BREAKS THINGS
+  !call grid%set_num_from_spacing()
   call grid%init()
 
 end subroutine init_grid

@@ -98,7 +98,7 @@ function kelp_proportion(point, frond, grid, depth, quadrature_degree)
   double precision kelp_proportion
 
   n = depth%num_fronds
-  dz = grid%z%spacing
+  dz = grid%z%spacing(depth%depth_layer)
   t = frond%ft
   !write(*,*) 'KELP PROPORTION'
   !write(*,*) 'n=', n

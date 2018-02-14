@@ -138,7 +138,7 @@ contains
     double precision, dimension(:,:,:,:,:) :: radiance
     integer i, j, l, m
 
-    write(*,*) 'Set BC!!!'
+    !write(*,*) 'Set BC!!!'
     do l=1, mat%grid%theta%num
        theta = mat%grid%theta%vals(l)
        do m=1, mat%grid%theta%num/2
@@ -152,7 +152,7 @@ contains
           end do
        end do
     end do
-    write(*,*) 'Done Setting'
+    !write(*,*) 'Done Setting'
   end subroutine mat_set_bc
 
   subroutine mat_initial_guess(mat)
@@ -165,9 +165,9 @@ contains
     ! Initial guess: Exponential decay downward using absorption coefficient
 
     index = 1
-    dz = mat%grid%z%spacing
 
     do k=2, mat%grid%z%num
+       dz = mat%grid%z%spacing(k)
        do j=1, mat%grid%y%num
           do i=1, mat%grid%x%num
              ! Absorption coefficient
@@ -400,7 +400,7 @@ contains
     m = indices%m
     grid = mat%grid
 
-    dx = grid%x%spacing
+    dx = grid%x%spacing(indices%k)
 
     val = grid%phi%sin(m) * grid%theta%cos(l) / (2.d0 * dx)
 
@@ -408,7 +408,7 @@ contains
     call mat%assign(-val,i-1,j,k,l,m)
     call mat%assign(val,i+1,j,k,l,m)
   end subroutine x_cd2
-  
+
   subroutine x_cd2_first(mat, indices)
     class(rte_mat) mat
     type(space_angle_grid) grid
@@ -424,7 +424,7 @@ contains
     m = indices%m
     grid = mat%grid
 
-    dx = grid%x%spacing
+    dx = grid%x%spacing(indices%k)
     nx = grid%x%num
 
     val = grid%phi%sin(m) * grid%theta%cos(l) / (2.d0 * dx)
@@ -433,7 +433,7 @@ contains
     call mat%assign(-val,nx,j,k,l,m)
     call mat%assign(val,i+1,j,k,l,m)
   end subroutine x_cd2_first
-  
+
   subroutine x_cd2_last(mat, indices)
     class(rte_mat) mat
     type(space_angle_grid) grid
@@ -447,7 +447,7 @@ contains
     m = indices%m
     grid = mat%grid
 
-    dx = grid%x%spacing
+    dx = grid%x%spacing(indices%k)
 
     val = grid%phi%sin(m) * grid%theta%cos(l) / (2.d0 * dx)
 
@@ -455,7 +455,7 @@ contains
     call mat%assign(-val,i-1,j,k,l,m)
     call mat%assign(val,1,j,k,l,m)
   end subroutine x_cd2_last
-  
+
   subroutine y_cd2(mat, indices)
     class(rte_mat) mat
     type(space_angle_grid) grid
@@ -469,7 +469,7 @@ contains
     m = indices%m
     grid = mat%grid
 
-    dy = grid%y%spacing
+    dy = grid%y%spacing(indices%k)
 
     val = grid%phi%sin(m) * grid%theta%sin(l) / (2.d0 * dy)
 
@@ -477,7 +477,7 @@ contains
     call mat%assign(-val,i,j-1,k,l,m)
     call mat%assign(val,i,j+1,k,l,m)
   end subroutine y_cd2
-  
+
   subroutine y_cd2_first(mat, indices)
     class(rte_mat) mat
     type(space_angle_grid) grid
@@ -492,7 +492,7 @@ contains
     m = indices%m
     grid = mat%grid
 
-    dy = grid%y%spacing
+    dy = grid%y%spacing(indices%k)
     ny = grid%y%num
 
     val = grid%phi%sin(m) * grid%theta%sin(l) / (2.d0 * dy)
@@ -516,7 +516,7 @@ contains
     m = indices%m
     grid = mat%grid
 
-    dy = grid%y%spacing
+    dy = grid%y%spacing(indices%k)
 
     val = grid%phi%sin(m) * grid%theta%sin(l) / (2.d0 * dy)
 
@@ -538,7 +538,7 @@ contains
     m = indices%m
     grid = mat%grid
 
-    dz = grid%z%spacing
+    dz = grid%z%spacing(indices%k)
 
     val = grid%phi%cos(m) / (2.d0 * dz)
 
@@ -546,7 +546,7 @@ contains
     call mat%assign(-val,i,j,k-1,l,m)
     call mat%assign(val,i,j,k+1,l,m)
   end subroutine z_cd2
-  
+
   subroutine z_fd2(mat, indices)
     ! Has to be called after angular_integral
     ! Because they both write to the same matrix entry
@@ -564,7 +564,7 @@ contains
     m = indices%m
     grid = mat%grid
 
-    dz = grid%z%spacing
+    dz = grid%z%spacing(indices%k)
 
     val = grid%phi%cos(m) / (2.d0 * dz)
 
@@ -595,7 +595,7 @@ contains
     m = indices%m
     grid = mat%grid
 
-    dz = grid%z%spacing
+    dz = grid%z%spacing(indices%k)
 
     val = grid%phi%cos(m) / (2.d0 * dz)
 
@@ -695,7 +695,7 @@ contains
     type(index_list) indices
     call mat%x_cd2(indices)
   end subroutine wrap_x_cd2
-  
+
   subroutine wrap_x_cd2_last(mat, indices)
     type(rte_mat) mat
     type(index_list) indices
@@ -733,4 +733,3 @@ contains
   end subroutine wrap_z_cd2
 
 end module rte_sparse_matrices
-
