@@ -147,6 +147,8 @@ contains
     call grid%set_spacing_from_num()
     call grid%init()
 
+    call rope%init(grid)
+
     ! Calculate kelp distribution
     call calculate_length_dist_from_superinds( &
     nz, &
