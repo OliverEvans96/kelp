@@ -487,8 +487,8 @@ function read_array(filename,fmtstr,nn,mm,skiplines_in)
     write(finfmt,'(A,I1,A,A)') '(', mm, fmtstr, ')'
 
     ! Print message
-    write(*,*) 'Reading data from "', trim(filename), '"'
-    write(*,*) 'using format "', trim(finfmt), '"'
+    !write(*,*) 'Reading data from "', trim(filename), '"'
+    !write(*,*) 'using format "', trim(finfmt), '"'
 
     ! Open file
     open(unit=un, file=trim(filename), status='old', form='formatted')

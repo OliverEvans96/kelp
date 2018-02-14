@@ -28,7 +28,7 @@ module asymptotics
     bb = iops%scat_water
 
     ! Reset radiance
-    write(*,*) 'Before Scattering'
+    !write(*,*) 'Before Scattering'
     call calculate_light_before_scattering(grid, bc, iops, radiance)
 
     if (num_scatters .gt. 0) then
@@ -37,7 +37,7 @@ module asymptotics
       rad_scatter = radiance
 
       do n=1, num_scatters
-         write(*,*) 'Apply scatter #', n
+         write(*,*) 'scatter #', n
          call scatter(grid, bc, iops, rad_scatter)
          radiance = radiance + bb**n * rad_scatter
       end do

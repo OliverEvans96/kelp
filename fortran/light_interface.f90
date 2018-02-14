@@ -113,6 +113,8 @@ contains
 
     double precision, dimension(:,:,:), allocatable :: p_kelp
 
+    write(*,*) 'pre_kelp_irrad = ', pre_kelp_irrad
+
     allocate(pop_length_means(nz))
     allocate(pop_length_stds(nz))
     allocate(num_fronds(nz))
@@ -128,7 +130,7 @@ contains
     zmax = nz * depth_spacing
 
     ! INIT GRID
-    write(*,*) 'Grid'
+    !write(*,*) 'Grid'
     grid%x%minval = xmin
     grid%x%maxval = xmax
     grid%x%num = nx
@@ -173,7 +175,7 @@ contains
     quadrature_degree = 5
     call calculate_kelp_on_grid(grid, p_kelp, frond, rope, quadrature_degree)
     ! INIT IOPS
-    write(*,*) 'IOPs'
+    !write(*,*) 'IOPs'
     iops%abs_kelp = abs_kelp
     iops%scat_kelp = scat_kelp
     iops%abs_water = abs_water
@@ -181,7 +183,7 @@ contains
     iops%num_vsf = num_vsf
 
 
-    write(*,*) 'iop init'
+    !write(*,*) 'iop init'
     call iops%init(grid)
     !iops%vsf_angles = vsf_angles
     !iops%vsf_vals = vsf_vals
@@ -191,7 +193,7 @@ contains
     !call iops%calc_vsf_on_grid()
     call iops%calculate_coef_grids(p_kelp)
 
-    write(*,*) 'BC'
+    !write(*,*) 'BC'
     max_rad = 1 ! Doesn't matter because we'll rescale
     decay = 1 ! Does matter, but maybe not much.
     call bc%init(grid, solar_zenith, solar_azimuthal, decay, max_rad)
@@ -200,10 +202,10 @@ contains
 
     call light%init_grid(grid)
 
-    write(*,*) 'Scatter'
+    !write(*,*) 'Scatter'
     call calculate_light_with_scattering(grid, bc, iops, light%radiance, num_scatters)
 
-    write(*,*) 'Irrad'
+    !write(*,*) 'Irrad'
     call light%calculate_irradiance()
 
 
@@ -216,7 +218,7 @@ contains
        post_kelp_irrad(k) = sum(light%irradiance(:,:,k)) / nx / ny
     end do
 
-    write(*,*) 'deinit'
+    !write(*,*) 'deinit'
     call bc%deinit()
     call iops%deinit()
     call light%deinit()
@@ -228,7 +230,9 @@ contains
     deallocate(num_fronds)
     deallocate(p_kelp)
 
-    write(*,*) 'done'
+    write(*,*) 'post_kelp_irrad = ', post_kelp_irrad
+
+    !write(*,*) 'done'
   end subroutine full_light_calculations
 
   subroutine calculate_length_dist_from_superinds( &
