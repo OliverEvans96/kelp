@@ -39,6 +39,9 @@ program test_light_interface
     solar_azimuthal = 0.d0
     num_si = 10
 
+    rope_spacing = 10.d0
+    depth_spacing = 1.d0
+
     nx = 10
     ny = 10
     nz = 10
