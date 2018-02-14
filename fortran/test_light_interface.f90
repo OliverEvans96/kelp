@@ -33,7 +33,7 @@ program test_light_interface
     abs_water = 0.d0
     scat_kelp = 0.d0
     scat_water = 0.d0
-    num_vsf = 0
+    num_vsf = 55
     vsf_file = '/home/oliver/academic/research/kelp/data/vsf/nuc_vsf.txt'
     solar_zenith = 0.d0
     solar_azimuthal = 0.d0
