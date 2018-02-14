@@ -17,8 +17,6 @@ contains
     solar_zenith, &
     solar_azimuthal, &
     surface_irrad, &
-    ! BACKGROUND ATTENUATION
-    background_atten, &
     ! KELP &
     num_si, &
     si_area, &
@@ -61,9 +59,6 @@ contains
     double precision, intent(in) :: solar_zenith
     double precision, intent(in) :: solar_azimuthal
     double precision, intent(in) :: surface_irrad
-
-    ! BACKGROUND ATTENUATION
-    double precision, dimension(nz), intent(in) :: background_atten
 
     ! KELP
     ! Number of Superindividuals in each depth level

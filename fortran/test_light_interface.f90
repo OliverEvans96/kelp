@@ -11,7 +11,6 @@ program test_light_interface
     double precision solar_zenith
     double precision solar_azimuthal
     double precision surface_irrad
-    double precision, dimension(:), allocatable :: background_atten
     integer num_si
     double precision, dimension(:), allocatable ::  si_area
     integer, dimension(:), allocatable ::  si_ind
@@ -50,11 +49,10 @@ program test_light_interface
     nz = 10
     ntheta = 10
     nphi = 10
-    num_scatters = 3
+    num_scatters = 0
 
     allocate(abs_water(nz))
     allocate(scat_water(nz))
-    allocate(background_atten(nz))
     allocate(si_area(nz))
     allocate(si_ind(nz))
     allocate(current_speeds(nz))
@@ -89,8 +87,6 @@ program test_light_interface
          solar_zenith, &
          solar_azimuthal, &
          surface_irrad, &
-         ! BACKGROUND ATTENUATION
-         background_atten, &
          ! KELP &
          num_si, &
          si_area, &
@@ -116,7 +112,6 @@ program test_light_interface
 
   deallocate(abs_water)
   deallocate(scat_water)
-  deallocate(background_atten)
   deallocate(si_area)
   deallocate(si_ind)
   deallocate(current_speeds)
