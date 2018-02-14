@@ -111,6 +111,8 @@ contains
 
     double precision, dimension(:,:,:), allocatable :: p_kelp
 
+    write(*,*) 'Light calculation'
+
     allocate(pop_length_means(nz))
     allocate(pop_length_stds(nz))
     allocate(num_fronds(nz))
