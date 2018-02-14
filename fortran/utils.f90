@@ -1,7 +1,7 @@
 ! File Name: utils.f90
 ! Description: General utilities which might be useful in other settings
 ! Created: Wed Jan 04, 2017 | 06:24pm EST
-! Last Modified: Thu Jan 19, 2017 | 04:03pm EST
+! Last Modified: Tue Feb 13, 2018 | 04:01pm PST
 
 !-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-
 !                           GNU GPL LICENSE                            !
@@ -264,10 +264,18 @@ function bilinear_array_periodic(x, y, nx, ny, x_vals, y_vals, fun_vals)
 
   double precision bilinear_array_periodic
 
+
+  write(*,*) 'bilinear_array_periodic'
+
+  write(*,*) 'x_vals = ', x_vals
+  write(*,*) 'y_vals = ', y_vals
+
   xmin = x_vals(1)
   ymin = y_vals(1)
   dx = x_vals(2) - x_vals(1)
   dy = y_vals(2) - y_vals(1)
+
+  write(*,*) 'a'
 
   ! Add 1 for one-indexing
   i0 = int(floor((x-xmin)/dx))+1
@@ -278,27 +286,37 @@ function bilinear_array_periodic(x, y, nx, ny, x_vals, y_vals, fun_vals)
 
   ! Periodic wrap
   if(i0 .lt. nx) then
+      write(*,*) 'a'
      i1 = i0 + 1
      x1 = x_vals(i1)
   else
+      write(*,*) 'b'
      i1 = 1
      x1 = x_vals(nx) + dx
   endif
 
   if(j0 .lt. ny) then
+      write(*,*) 'c'
      j1 = j0 + 1
      y1 = y_vals(j1)
   else
+      write(*,*) 'd'
      j1 = 1
      y1 = y_vals(ny) + dy
   endif
+
+  write(*,*) 'e'
 
   z00 = fun_vals(i0,j0)
   z10 = fun_vals(i1,j0)
   z01 = fun_vals(i0,j1)
   z11 = fun_vals(i1,j1)
 
+  write(*,*) 'f'
+
   bilinear_array_periodic = bilinear(x, y, x0, y0, x1, y1, z00, z01, z10, z11)
+
+  write(*,*) 'g'
 end function bilinear_array_periodic
 
 ! Bilinear interpolation on evenly spaced 2D grid

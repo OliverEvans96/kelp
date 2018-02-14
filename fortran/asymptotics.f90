@@ -57,30 +57,39 @@ module asymptotics
     double precision surface_val
     double precision percent_remaining
 
+    write(*,*) 'calc_light'
     ! Downwelling light
-    !$OMP PARALLEL DO PRIVATE(l,i,j,k,indices,percent_remaining)
+    !  !$OMP PARALLEL DO PRIVATE(l,i,j,k,indices,percent_remaining)
    do m=1, grid%phi%num/2
       indices%m = m
+      write(*,*) 'm = ', m
       do l=1, grid%theta%num
          indices%l = l
+          write(*,*) 'l = ', l
          surface_val = bc%bc_grid(indices%l,indices%m)
          do i=1, grid%x%num
             indices%i = i
+            write(*,*) 'l = ', l
             do j=1, grid%y%num
                indices%j = j
+               write(*,*) 'j = ', j
                do k=1, grid%z%num
+                  write(*,*) 'k = ', k
                   indices%k = k
+                  write(*,*) '1'
                   percent_remaining = absorb_along_path(grid, bc, iops, indices, 1)
+                  write(*,*) '2'
                   radiance(i,j,k,l,m) = surface_val * percent_remaining
+                  write(*,*) '3'
                 end do
              end do
           end do
        end do
     end do
-    !$OMP END PARALLEL DO
+    ! !$OMP END PARALLEL DO
 
     ! No upwelling light before scattering
-    !$OMP PARALLEL DO PRIVATE(l,i,j,k)
+    ! !$OMP PARALLEL DO PRIVATE(l,i,j,k)
     do m=grid%phi%num/2+1, grid%phi%num
        do l=1, grid%theta%num
           do i=1, grid%x%num
@@ -92,7 +101,7 @@ module asymptotics
           end do
        end do
     end do
-    !$OMP END PARALLEL DO
+    ! !$OMP END PARALLEL DO
   end subroutine calculate_light_before_scattering
 
   ! Perform one scattering event
@@ -362,6 +371,11 @@ module asymptotics
     double precision interpolate_ray_at_depth
     logical debug_flag
 
+    write(*,*) 'interpolate_ray_at_depth'
+    write(*,*) 'x_vals = ', x_vals
+    write(*,*) 'y_vals = ', y_vals
+    write(*,*) 'z_vals = ', z_vals
+
     zp = z_vals(kp)
     z_diff = zp - z
     xp = x + z_diff * x_factor
@@ -370,8 +384,10 @@ module asymptotics
     x_mod = shift_mod(xp, xmin, xmax)
     y_mod = shift_mod(yp, ymin, ymax)
 
+    write(*,*) '1'
     interpolate_ray_at_depth = bilinear_array_periodic(x_mod, y_mod, nx, ny, x_vals, y_vals, fun_vals(:,:,kp))
 
+    write(*,*) '2'
   end function interpolate_ray_at_depth
 
   ! Calculate the percent of radiance remaining after passing
@@ -405,6 +421,13 @@ module asymptotics
     integer kmin
     integer path_length, direction, index
 
+    write(*,*) 'absorb_along_path'
+    write(*,*) 'grid%x%vals = ', grid%x%vals
+    write(*,*) 'grid%y%vals = ', grid%y%vals
+    write(*,*) 'grid%z%vals = ', grid%z%vals
+
+    write(*,*) 'a'
+
     nx = grid%x%num
     ny = grid%y%num
     nz = grid%z%num
@@ -414,26 +437,37 @@ module asymptotics
     ymin = grid%y%minval
     ymax = grid%y%maxval
 
+    write(*,*) 'b'
     x = grid%x%vals(indices%i)
     y = grid%y%vals(indices%j)
     z = grid%z%vals(indices%k)
     theta = grid%theta%vals(indices%l)
     phi = grid%phi%vals(indices%m)
 
+    write(*,*) 'c'
+
     ! Number of coefficients to integrate over
     path_length = abs(indices%k - kmin)
+
+    write(*,*) 'd'
 
     ! Whether the ray is moving up or down
     ! 1 for down, -1 for up, 0 for neither
     direction = sgn_int(indices%k-kmin)
 
+    write(*,*) 'e'
+
     allocate(abs_coef_along_path(path_length))
+
+    write(*,*) 'f'
 
     total_abs = 0
 
     index = 0
     if(direction .ne. 0) then
+       write(*,*) 'd != 0'
        do kp=kmin + direction, indices%k, direction
+         write(*,*) 'kp = ', kp
          index = index + 1
          abs_coef_along_path(index) = interpolate_ray_at_depth(&
               x, y, z, kp, nx, ny, nz, xmin, xmax, ymin, ymax,&
@@ -441,15 +475,24 @@ module asymptotics
               grid%x_factor(indices%l, indices%m),&
               grid%y_factor(indices%l, indices%m),&
               iops%abs_grid)
+         write(*,*) 'after kp'
        end do
     end if
+
+    write(*,*) 'g'
 
     dpath = grid%z%spacing / abs(grid%phi%cos(indices%m))
     total_abs = trap_rule(abs_coef_along_path, dpath, path_length)
 
+    write(*,*) 'h'
+
     absorb_along_path = exp(-total_abs)
 
+    write(*,*) 'i'
+
     deallocate(abs_coef_along_path)
+
+    write(*,*) 'j'
 
   end function absorb_along_path
 end module asymptotics

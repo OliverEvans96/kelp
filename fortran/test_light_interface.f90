@@ -5,7 +5,7 @@ program test_light_interface
     double precision scat_kelp
     double precision scat_water
     integer num_vsf
-    character(len=56) vsf_file
+    character(len=99) vsf_file
     double precision solar_zenith
     double precision solar_azimuthal
     integer num_si
@@ -34,7 +34,7 @@ program test_light_interface
     scat_kelp = 0.d0
     scat_water = 0.d0
     num_vsf = 0
-    vsf_file = '/home/oliver/academic/research/kelp/data/vsf/nuc_vsf.txt'
+    vsf_file = '/global/u2/o/oevans/kelp/data/vsf/nuc_vsf.txt'
     solar_zenith = 0.d0
     solar_azimuthal = 0.d0
     num_si = 10
@@ -68,7 +68,7 @@ program test_light_interface
        scat_kelp,      &
        scat_water,      &
        num_vsf,         &
-       vsf_file,        &
+       trim(vsf_file),        &
                                 ! SUNLIGHT       &
        solar_zenith,    &
        solar_azimuthal, &
