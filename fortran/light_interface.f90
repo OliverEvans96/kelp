@@ -85,7 +85,7 @@ contains
     integer, intent(in) :: num_scatters
 
     ! FINAL RESULT
-    double precision, dimension(nz), intent(out) :: irrad
+    real, dimension(nz), intent(out) :: irrad
 
     !-------------!
 
@@ -207,7 +207,7 @@ contains
 
     ! Calculate average irradiance
     do k=1, nz
-       irrad(k) = sum(light%irradiance(:,:,k)) / nx / ny
+       irrad(k) = real(sum(light%irradiance(:,:,k)) / nx / ny)
     end do
 
     !write(*,*) 'deinit'

@@ -27,7 +27,7 @@ program test_light_interface
     integer ntheta
     integer nphi
     integer num_scatters
-    double precision, dimension(:), allocatable ::  irrad
+    real, dimension(:), allocatable ::  irrad
 
     integer k
 
