@@ -42,7 +42,7 @@ contains
     grid%theta%num = 10
     grid%phi%num = 10
 
-    call grid%set_spacing_from_num()
+    call grid%set_uniform_spacing_from_num()
     call grid%init()
 
     ! INIT ROPE
