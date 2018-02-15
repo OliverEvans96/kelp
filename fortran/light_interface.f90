@@ -66,7 +66,7 @@ contains
     ! si_area(i,j) = area of superindividual j at depth i
     double precision, dimension(nz, num_si), intent(in) :: si_area
     ! si_ind(i,j) = number of inidividuals represented by superindividual j at depth i
-    integer, dimension(nz, num_si), intent(in) :: si_ind
+    double precision, dimension(nz, num_si), intent(in) :: si_ind
     ! Thickness of each frond
     double precision, intent(in) :: frond_thickness
     ! Ratio of length to width (0,infty)
@@ -174,16 +174,16 @@ contains
     quadrature_degree = 5
     call calculate_kelp_on_grid(grid, p_kelp, frond, rope, quadrature_degree)
     ! INIT IOPS
+    iops%num_vsf = num_vsf
+    call iops%init(grid)
     !write(*,*) 'IOPs'
     iops%abs_kelp = abs_kelp
     iops%scat_kelp = scat_kelp
     iops%abs_water = abs_water
     iops%scat_water = scat_water
-    iops%num_vsf = num_vsf
 
 
     !write(*,*) 'iop init'
-    call iops%init(grid)
     !iops%vsf_angles = vsf_angles
     !iops%vsf_vals = vsf_vals
     call iops%load_vsf(vsf_file, fmtstr)
@@ -250,7 +250,7 @@ contains
     ! si_area(i,j) = area of superindividual j at depth i
     double precision, dimension(nz, num_si), intent(in) :: si_area
     ! si_area(i,j) = number of inidividuals represented by superindividual j at depth i
-    integer, dimension(nz, num_si), intent(in) :: si_ind
+    double precision, dimension(nz, num_si), intent(in) :: si_ind
     double precision, intent(in) :: frond_aspect_ratio
 
     double precision, dimension(nz), intent(out) :: num_fronds
