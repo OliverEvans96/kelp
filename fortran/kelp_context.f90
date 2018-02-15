@@ -162,8 +162,9 @@ contains
     iops%grid = grid
 
     ! Assume that these are preallocated and passed to function
-    !allocate(iops%abs_water(grid%z%num))
-    !allocate(iops%scat_water(grid%z%num))
+    ! Nevermind, don't assume this.
+    allocate(iops%abs_water(grid%z%num))
+    allocate(iops%scat_water(grid%z%num))
 
     ! Assume that these must be allocated here
     allocate(iops%vsf_angles(iops%num_vsf))
@@ -360,6 +361,8 @@ contains
     deallocate(iops%vsf_angles)
     deallocate(iops%vsf_vals)
     deallocate(iops%vsf)
+    deallocate(iops%abs_water)
+    deallocate(iops%kelp_water)
     deallocate(iops%abs_grid)
     deallocate(iops%scat_grid)
   end subroutine iop_deinit
