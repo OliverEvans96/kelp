@@ -362,7 +362,7 @@ contains
     deallocate(iops%vsf_vals)
     deallocate(iops%vsf)
     deallocate(iops%abs_water)
-    deallocate(iops%kelp_water)
+    deallocate(iops%scat_water)
     deallocate(iops%abs_grid)
     deallocate(iops%scat_grid)
   end subroutine iop_deinit
