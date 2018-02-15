@@ -13,7 +13,7 @@ program test_light_interface
     double precision surface_irrad
     integer num_si
     double precision, dimension(:), allocatable ::  si_area
-    integer, dimension(:), allocatable ::  si_ind
+    double precision, dimension(:), allocatable ::  si_ind
     double precision frond_thickness
     double precision frond_aspect_ratio
     double precision frond_shape_ratio
@@ -27,12 +27,13 @@ program test_light_interface
     integer ntheta
     integer nphi
     integer num_scatters
-    real, dimension(:), allocatable ::  irrad
+    real, dimension(:,:), allocatable :: available_light
+    real, dimension(:), allocatable ::  avg_irrad
 
     integer k
 
-    abs_kelp = 0.d0
-    scat_kelp = 0.d0
+    abs_kelp = 1.d0
+    scat_kelp = 0.1d0
 
     num_vsf = 55
     vsf_file = '/home/oliver/academic/research/kelp/data/vsf/nuc_vsf.txt'
@@ -57,12 +58,13 @@ program test_light_interface
     allocate(si_ind(nz))
     allocate(current_speeds(nz))
     allocate(current_angles(nz))
-    allocate(irrad(nz))
+    allocate(available_light(nz, num_si))
+    allocate(avg_irrad(nz))
     allocate(depth_spacing(nz))
 
     do k=1, nz
        abs_water(k) = 1.d0
-       scat_water(k) = 1.d0
+       scat_water(k) = 0.1d0
 
        si_area(k) = 0.d0
        si_ind(k) = 0.d0
@@ -70,7 +72,7 @@ program test_light_interface
        current_speeds(k) = 0.d0
        current_angles(k) = 0.d0
 
-       irrad(k) = 0.d0
+       avg_irrad(k) = 0.d0
 
        depth_spacing(k) = 1.d0
     end do
@@ -107,8 +109,9 @@ program test_light_interface
          ntheta, &
          nphi, &
          num_scatters, &
-         ! FINAL RESULT
-         irrad)
+         ! FINAL RESULTS
+         available_light, &
+         avg_irrad)
 
   deallocate(abs_water)
   deallocate(scat_water)
@@ -116,7 +119,8 @@ program test_light_interface
   deallocate(si_ind)
   deallocate(current_speeds)
   deallocate(current_angles)
-  deallocate(irrad)
+  deallocate(available_light)
+  deallocate(avg_irrad)
   deallocate(depth_spacing)
 
 

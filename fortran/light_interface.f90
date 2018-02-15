@@ -37,8 +37,9 @@ contains
     ntheta, &
     nphi, &
     num_scatters, &
-    ! FINAL RESULT
-    irrad)
+    ! FINAL RESULTS
+    available_light, &
+    avg_irrad)
 
     implicit none
 
@@ -85,7 +86,8 @@ contains
     integer, intent(in) :: num_scatters
 
     ! FINAL RESULT
-    real, dimension(nz), intent(out) :: irrad
+    real, dimension(nz, num_si), intent(out) :: available_light
+    real, dimension(nz), intent(out) :: avg_irrad
 
     !-------------!
 
@@ -207,10 +209,9 @@ contains
     !write(*,*) 'Irrad'
     call light%calculate_irradiance()
 
-    ! Calculate average irradiance
-    do k=1, nz
-       irrad(k) = real(sum(light%irradiance(:,:,k)) / nx / ny)
-    end do
+    ! Calculate output variables
+    call calculate_average_irradiance(grid, light, avg_irrad)
+    call calculate_available_light(grid, num_si, si_area, si_ind, available_light, avg_irrad)
 
     !write(*,*) 'deinit'
     call bc%deinit()
@@ -226,7 +227,8 @@ contains
 
     write(*,*) 'abs_water = ', abs_water
     write(*,*) 'scat_water = ', scat_water
-    write(*,*) 'irrad = ', irrad
+    write(*,*) 'avg_irrad = ', avg_irrad
+    !write(*,*) 'available_light = ', available_light
 
     !write(*,*) 'done'
   end subroutine full_light_calculations
@@ -289,5 +291,38 @@ contains
     end do
 
   end subroutine calculate_length_dist_from_superinds
+
+  subroutine calculate_average_irradiance(grid, light, avg_irrad)
+    type(space_angle_grid) grid
+    type(light_state) light
+    real, dimension(grid%z%num) :: avg_irrad
+    integer k, nx, ny, nz
+
+    nx = grid%x%num
+    ny = grid%y%num
+    nz = grid%z%num
+
+    do k=1, nz
+       avg_irrad(k) = real(sum(light%irradiance(:,:,k)) / nx / ny)
+    end do
+  end subroutine calculate_average_irradiance
+
+  subroutine calculate_available_light(grid, num_si, si_area, si_ind, available_light, avg_irrad)
+    type(space_angle_grid) grid
+    integer num_si
+    double precision, dimension(grid%z%num, num_si) :: si_area, si_ind
+    real, dimension(grid%z%num, num_si) :: available_light
+    real, dimension(grid%z%num) :: avg_irrad
+
+    integer k, n
+
+    ! THIS IS NOT CORRECT YET
+    do k=1, grid%z%num
+       do n=1, num_si
+          available_light(k, n) = avg_irrad(k)
+       end do
+    end do
+
+  end subroutine calculate_available_light
 
 end module light_interface_module

@@ -34,11 +34,13 @@ module asymptotics
 
       rad_scatter = radiance
 
+      ! For now, just use first entry from scattering array everywhere
+      bb = iops%scat_water(1)
+
       do n=1, num_scatters
          write(*,*) 'scatter #', n
          call scatter(grid, bc, iops, rad_scatter)
          do k=1, nz
-            bb = iops%scat_water(k)
             radiance(:,:,k,:,:) = radiance(:,:,k,:,:) + bb**n * rad_scatter(:,:,k,:,:)
          end do
       end do
