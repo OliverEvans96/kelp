@@ -50,7 +50,7 @@ program test_light_interface
     nz = 10
     ntheta = 10
     nphi = 10
-    num_scatters = 0
+    num_scatters = 2
 
     allocate(abs_water(nz))
     allocate(scat_water(nz))

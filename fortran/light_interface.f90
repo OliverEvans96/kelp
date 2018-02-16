@@ -109,7 +109,7 @@ contains
     ! Number of fronds in each depth layer
     double precision, dimension(:), allocatable :: num_fronds
 
-    integer k
+    integer i, j, k
 
     double precision, dimension(:,:,:), allocatable :: p_kelp
 
@@ -195,11 +195,16 @@ contains
     call iops%calculate_coef_grids(p_kelp)
 
     !write(*,*) 'BC'
-    max_rad = 1 ! Doesn't matter because we'll rescale
-    decay = 1 ! Does matter, but maybe not much. Determines drop-off from angle
+    max_rad = 1.d0 ! Doesn't matter because we'll rescale
+    decay = 1.d0 ! Does matter, but maybe not much. Determines drop-off from angle
     call bc%init(grid, solar_zenith, solar_azimuthal, decay, max_rad)
     ! Rescale surface radiance to match surface irradiance
     bc%bc_grid = bc%bc_grid * surface_irrad / grid%integrate_angle_2d(bc%bc_grid)
+
+    write(*,*) 'bc'
+    do i=1, grid%y%num
+        write(*,'(10F15.3)') bc%bc_grid(i,:)
+    end do
 
     call light%init_grid(grid)
 
@@ -211,7 +216,11 @@ contains
 
     ! Calculate output variables
     call calculate_average_irradiance(grid, light, avg_irrad)
-    call calculate_available_light(grid, num_si, si_area, si_ind, available_light, avg_irrad)
+    call calculate_available_light(grid, p_kelp, num_si, si_area, si_ind, available_light, avg_irrad)
+
+    !write(*,*) 'vsf_angles = ', iops%vsf_angles
+    !write(*,*) 'vsf_vals = ', iops%vsf_vals
+    !write(*,*) 'vsf norm  = ', grid%integrate_angle_2d(iops%vsf(1,1,:,:))
 
     !write(*,*) 'deinit'
     call bc%deinit()
@@ -295,7 +304,7 @@ contains
   subroutine calculate_average_irradiance(grid, light, avg_irrad)
     type(space_angle_grid) grid
     type(light_state) light
-    real, dimension(grid%z%num) :: avg_irrad
+    real, dimension(:) :: avg_irrad
     integer k, nx, ny, nz
 
     nx = grid%x%num
@@ -307,14 +316,15 @@ contains
     end do
   end subroutine calculate_average_irradiance
 
-  subroutine calculate_available_light(grid, num_si, si_area, si_ind, available_light, avg_irrad)
+  subroutine calculate_available_light(grid, p_kelp, num_si, si_area, si_ind, available_light, avg_irrad)
     type(space_angle_grid) grid
+    double precision, dimension(:,:,:) :: p_kelp
     integer num_si
-    double precision, dimension(grid%z%num, num_si) :: si_area, si_ind
-    real, dimension(grid%z%num, num_si) :: available_light
-    real, dimension(grid%z%num) :: avg_irrad
+    double precision, dimension(:,:) :: si_area, si_ind
+    real, dimension(:,:) :: available_light
+    real, dimension(:) :: avg_irrad
 
-    integer k, n
+    integer i, j, k, n
 
     ! THIS IS NOT CORRECT YET
     do k=1, grid%z%num
