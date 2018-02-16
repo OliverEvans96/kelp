@@ -16,7 +16,7 @@ contains
     ! SUNLIGHT
     solar_zenith, &
     solar_azimuthal, &
-    surface_irrad, &
+    surface_irrad, & ! Photon units
     ! KELP &
     num_si, &
     si_area, &
@@ -38,8 +38,8 @@ contains
     nphi, &
     num_scatters, &
     ! FINAL RESULTS
-    available_light, &
-    avg_irrad)
+    available_light, & ! Photon units
+    avg_irrad) ! Photon units
 
     implicit none
 
@@ -184,6 +184,9 @@ contains
     iops%abs_water = abs_water
     iops%scat_water = scat_water
 
+
+    ! Convert photons to watts
+    call convert_photons_to_watts(surface_irrad)
 
     !write(*,*) 'iop init'
     !iops%vsf_angles = vsf_angles
@@ -352,4 +355,10 @@ contains
     watts = 4.2 * watts
   end subroutine convert_watts_to_photons_2d
 
+  subroutine convert_photons_to_watts(photons)
+    double precision photons
+    ! From Mobley Light & Water p.36
+    ! Convert from microeinsteins
+    photons = photons / 4.2d0
+  end subroutine convert_photons_to_watts
 end module light_interface_module
