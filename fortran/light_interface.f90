@@ -201,10 +201,10 @@ contains
     ! Rescale surface radiance to match surface irradiance
     bc%bc_grid = bc%bc_grid * surface_irrad / grid%integrate_angle_2d(bc%bc_grid)
 
-    write(*,*) 'bc'
-    do i=1, grid%y%num
-        write(*,'(10F15.3)') bc%bc_grid(i,:)
-    end do
+    ! write(*,*) 'bc'
+    ! do i=1, grid%y%num
+    !     write(*,'(10F15.3)') bc%bc_grid(i,:)
+    ! end do
 
     call light%init_grid(grid)
 
@@ -351,6 +351,5 @@ contains
     ! Convert to microeinsteins
     watts = 4.2 * watts
   end subroutine convert_watts_to_photons_2d
-
 
 end module light_interface_module
