@@ -65,9 +65,9 @@ contains
     ! Number of Superindividuals in each depth level
     integer, intent(in) :: num_si
     ! si_area(i,j) = area of superindividual j at depth i
-    double precision, dimension(nz, num_si), intent(in) :: si_area
+    double precision, dimension(num_si, nz), intent(in) :: si_area
     ! si_ind(i,j) = number of inidividuals represented by superindividual j at depth i
-    double precision, dimension(nz, num_si), intent(in) :: si_ind
+    double precision, dimension(num_si, nz), intent(in) :: si_ind
     ! Thickness of each frond
     double precision, intent(in) :: frond_thickness
     ! Ratio of length to width (0,infty)
@@ -86,7 +86,7 @@ contains
     integer, intent(in) :: num_scatters
 
     ! FINAL RESULT
-    real, dimension(nz, num_si), intent(out) :: available_light
+    real, dimension(num_si, nz), intent(out) :: available_light
     real, dimension(nz), intent(out) :: avg_irrad
 
     !-------------!
@@ -259,9 +259,9 @@ contains
     ! Number of Superindividuals in each depth level
     integer, intent(in) :: num_si
     ! si_area(i,j) = area of superindividual j at depth i
-    double precision, dimension(nz, num_si), intent(in) :: si_area
+    double precision, dimension(num_si, nz), intent(in) :: si_area
     ! si_area(i,j) = number of inidividuals represented by superindividual j at depth i
-    double precision, dimension(nz, num_si), intent(in) :: si_ind
+    double precision, dimension(num_si, nz), intent(in) :: si_ind
     double precision, intent(in) :: frond_aspect_ratio
 
     double precision, dimension(nz), intent(out) :: num_fronds
@@ -284,9 +284,9 @@ contains
        num_fronds(k) = 0
 
        do i=1, num_si
-          si_length(i) = sqrt(2*frond_aspect_ratio*si_area(k,i))
+          si_length(i) = sqrt(2*frond_aspect_ratio*si_area(i,k))
           mean_num = mean_num + si_length(i)
-          num_fronds(k) = num_fronds(k) + si_ind(k,i)
+          num_fronds(k) = num_fronds(k) + si_ind(i,k)
        end do
 
        pop_length_means(k) = mean_num / num_fronds(k)
@@ -329,7 +329,7 @@ contains
     ! THIS IS NOT CORRECT YET
     do k=1, grid%z%num
        do n=1, num_si
-          available_light(k, n) = avg_irrad(k)
+          available_light(n, k) = avg_irrad(k)
        end do
     end do
 
