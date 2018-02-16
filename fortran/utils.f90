@@ -420,10 +420,26 @@ function trap_rule(arr, dx, nn)
   trap_rule = 0.0d0
 
   do ii=1, nn-1
-     trap_rule = trap_rule + 0.5d0 / dx * (arr(ii) + arr(ii+1))
+     trap_rule = trap_rule + 0.5d0 * dx * (arr(ii) + arr(ii+1))
   end do
 
 end function trap_rule
+
+! Integrate using trapezoid rule
+! Assuming both endpoints are included in arr
+function trap_rule_uneven(xx, yy, nn)
+  implicit none
+  double precision, dimension(nn) :: xx, yy
+  integer ii, nn
+  double precision trap_rule_uneven
+
+  trap_rule_uneven = 0.0d0
+
+  do ii=1, nn-1
+     trap_rule_uneven = trap_rule_uneven + 0.5d0 * (xx(ii+1) - xx(ii)) * (yy(ii) + yy(ii+1))
+  end do
+
+end function trap_rule_uneven
 
 ! Normalize 1D array and return integral w/ left endpoint rule
 function normalize(arr,dx,nn)
@@ -450,6 +466,35 @@ function normalize(arr,dx,nn)
     arr = arr / normalize
 
 end function
+
+! Normalize 1D unevenly-spaced array and
+! return integral w/ trapezoid rule
+! Will not be quite accurate if rightmost endpoint is not included
+! (Very small for VSF, so not a big deal there)
+! Modifies yy in place
+function normalize_uneven(xx, yy, nn) result(norm)
+  implicit none
+
+  ! INPUTS:
+  ! xx, yy - array values of data to normalize
+  double precision, dimension(nn) :: xx, yy
+  ! nn - length of arr
+  integer, intent(in) :: nn
+
+  ! OUTPUT:
+  ! normalize - integral before normalization (left endpoint rule)
+  double precision norm
+
+  ! BODY:
+
+  ! Calculate integral
+  ! PERHAPS WE SHOULD USE TRAPEZOID RULE
+  norm = trap_rule_uneven(xx, yy, nn)
+
+  ! Normalize array
+  yy = yy / norm
+
+end function normalize_uneven
 
 ! Read 2D array from file
 function read_array(filename,fmtstr,nn,mm,skiplines_in)

@@ -44,7 +44,7 @@ type optical_properties
    type(space_angle_grid) grid
    double precision, dimension(:), allocatable :: vsf_angles, vsf_vals
    double precision, dimension(:), allocatable :: abs_water, scat_water
-   double precision abs_kelp, scat_kelp
+   double precision abs_kelp, scat_kelp, vsf_scat_coef
    ! On x, y, z grid - including water & kelp.
    double precision, dimension(:,:,:), allocatable :: abs_grid, scat_grid 
    ! On theta, phi, theta_prime, phi_prime grid
@@ -207,14 +207,27 @@ contains
     iops%vsf_angles = tmp_2d_arr(:,1)
     iops%vsf_vals = tmp_2d_arr(:,2)
 
+    ! Normalize VSF & determine scattering coefficient
+    iops%vsf_scat_coef = normalize_uneven(iops%vsf_angles, iops%vsf_vals, iops%num_vsf)
+    write(*,*) 'VSF SCAT COEF = ', iops%vsf_scat_coef
+    write(*,*) 'vsf_angles = ', iops%vsf_angles
+    write(*,*) 'vsf_vals = ', iops%vsf_vals
+
+    ! Pre-evaluate for all pair of angles
     call iops%calc_vsf_on_grid()
+
   end subroutine load_vsf
 
   function eval_vsf(iops, theta)
     class(optical_properties) iops
     double precision theta
     double precision eval_vsf
-    eval_vsf = interp(theta, iops%vsf_angles, iops%vsf_vals, iops%num_vsf)
+    if(theta .eq. 0) then
+       eval_vsf = 0
+    else
+      eval_vsf = interp(theta, iops%vsf_angles, iops%vsf_vals, iops%num_vsf)
+   end if
+
   end function eval_vsf
 
   subroutine rope_init(rope, grid)
@@ -334,7 +347,6 @@ contains
     integer ntheta, nphi
     double precision angle_diff
     double precision vsf_val
-
 
     grid = iops%grid
 
