@@ -239,6 +239,9 @@ contains
     write(*,*) 'avg_irrad = ', avg_irrad
     !write(*,*) 'available_light = ', available_light
 
+    call convert_watts_to_photons_2d(available_light)
+    call convert_watts_to_photons_1d(avg_irrad)
+
     !write(*,*) 'done'
   end subroutine full_light_calculations
 
@@ -334,5 +337,20 @@ contains
     end do
 
   end subroutine calculate_available_light
+
+  subroutine convert_watts_to_photons_1d(watts)
+    real, dimension(:) :: watts
+    ! From Mobley Light & Water p.36
+    ! Convert to microeinsteins
+    watts = 4.2 * watts
+  end subroutine convert_watts_to_photons_1d
+
+  subroutine convert_watts_to_photons_2d(watts)
+    real, dimension(:,:) :: watts
+    ! From Mobley Light & Water p.36
+    ! Convert to microeinsteins
+    watts = 4.2 * watts
+  end subroutine convert_watts_to_photons_2d
+
 
 end module light_interface_module
