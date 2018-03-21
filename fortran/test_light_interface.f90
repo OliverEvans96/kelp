@@ -33,7 +33,7 @@ program test_light_interface
     integer k
 
     abs_kelp = 1.d0
-    scat_kelp = 0.1d0
+    scat_kelp = 0.01d0
 
     num_vsf = 55
     vsf_file = '/home/oliver/academic/research/kelp/data/vsf/nuc_vsf.txt'
@@ -50,7 +50,7 @@ program test_light_interface
     nz = 10
     ntheta = 10
     nphi = 10
-    num_scatters = 2
+    num_scatters = 1
 
     allocate(abs_water(nz))
     allocate(scat_water(nz))
@@ -63,8 +63,8 @@ program test_light_interface
     allocate(depth_spacing(nz))
 
     do k=1, nz
-       abs_water(k) = 1.d0
-       scat_water(k) = 0.1d0
+       abs_water(k) = abs_kelp
+       scat_water(k) = scat_kelp
 
        si_area(k) = 0.d0
        si_ind(k) = 0.d0

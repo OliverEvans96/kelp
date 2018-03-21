@@ -17,11 +17,17 @@ module asymptotics
     double precision bb
     integer n
 
+    double precision, dimension(:), allocatable :: path_spacing
+    double precision, dimension(:), allocatable :: outer_path_integrand
+
     nx = grid%x%num
     ny = grid%y%num
     nz = grid%z%num
     ntheta = grid%theta%num
     nphi = grid%phi%num
+
+    allocate(path_spacing(nz))
+    allocate(outer_path_integrand(nz))
 
     ! Scattering coefficient
     ! Allowed to vary over depth
@@ -30,8 +36,11 @@ module asymptotics
     call calculate_light_before_scattering(grid, bc, iops, radiance, path_spacing, outer_path_integrand)
 
     if (num_scatters .gt. 0) then
-       call calculate_light_after_scattering(grid, bc, iops, radiance, num_scatters)
+       call calculate_light_after_scattering(grid, bc, iops, radiance, num_scatters, path_spacing, outer_path_integrand)
     end if
+
+    deallocate(path_spacing)
+    deallocate(outer_path_integrand)
   end subroutine calculate_light_with_scattering
 
   subroutine calculate_light_before_scattering(grid, bc, iops, radiance, path_spacing, outer_path_integrand)
@@ -39,6 +48,7 @@ module asymptotics
     type(boundary_condition) bc
     type(optical_properties) iops
     double precision, dimension(:,:,:,:,:) :: radiance
+    double precision, dimension(:) :: path_spacing
     double precision, dimension(:) :: outer_path_integrand
     integer i, j, k, l, m
     type(index_list) indices
@@ -78,13 +88,14 @@ module asymptotics
     end do
   end subroutine calculate_light_before_scattering
 
-  subroutine calculate_light_after_scattering(grid, bc, iops, radiance, num_scatters)
+  subroutine calculate_light_after_scattering(grid, bc, iops, radiance, num_scatters, path_spacing, outer_path_integrand)
     type(space_angle_grid) grid
     type(boundary_condition) bc
     type(optical_properties) iops
     double precision, dimension(:,:,:,:,:) :: radiance
     integer num_scatters
-
+    double precision, dimension(:) :: path_spacing
+    double precision, dimension(:) :: outer_path_integrand
     double precision, dimension(:,:,:,:,:), allocatable :: rad_scatter
     integer n, k
     double precision bb
@@ -94,20 +105,20 @@ module asymptotics
 
     ! For now, just use first entry from scattering array everywhere
     bb = iops%scat_water(1)
+    write(*,*) 'prescatter = ', rad_scatter(:,:,:,2,2)
 
     do n=1, num_scatters
        write(*,*) 'scatter #', n
-       call scatter(grid, bc, iops, rad_scatter)
-       do k=1, grid%z%num
-          radiance(:,:,k,:,:) = radiance(:,:,k,:,:) + bb**n * rad_scatter(:,:,k,:,:)
-       end do
+       call scatter(grid, bc, iops, rad_scatter, path_spacing, outer_path_integrand)
+       radiance = radiance + bb**n * rad_scatter
+       write(*,*) 'rad_scatter = ', rad_scatter(:,:,:,2,2)
     end do
 
     deallocate(rad_scatter)
   end subroutine calculate_light_after_scattering
 
   ! Perform one scattering event
-  subroutine scatter(grid, bc, iops, rad_scatter)
+  subroutine scatter(grid, bc, iops, rad_scatter, path_spacing, outer_path_integrand)
     type(space_angle_grid) grid
     type(boundary_condition) bc
     type(optical_properties) iops
@@ -115,8 +126,9 @@ module asymptotics
     integer i, j, k, l, m, kp
     double precision, dimension(:,:,:,:,:), allocatable :: source, scatter_integral
     double precision, dimension(:,:), allocatable :: scatter_integrand
-    double precision, dimension(:), allocatable :: path_spacing
-    double precision, dimension(:), allocatable :: inner_path_integrand, outer_path_integrand
+    double precision, dimension(:) :: path_spacing
+    double precision, dimension(:), allocatable :: inner_path_integrand
+    double precision, dimension(:) :: outer_path_integrand
     double precision path_source
     integer nx, ny, nz, ntheta, nphi
 
@@ -131,32 +143,29 @@ module asymptotics
     allocate(scatter_integrand(ntheta, nphi))
     ! Allocate largest that will be needed.
     ! Most cases will only use a subset of these arrays.
-
-    allocate(path_spacing(nz))
     allocate(inner_path_integrand(nz))
-    allocate(outer_path_integrand(nz))
+
+    write(*,*) 'abs = ', iops%abs_grid
 
     call calculate_source(grid, iops, rad_scatter, source, scatter_integral, scatter_integrand)
     call advect_light(grid, iops, source, rad_scatter, path_spacing,&
          inner_path_integrand, outer_path_integrand)
 
     !write(*,*) 'source'
-    do i=1, nx
-       do j=1, ny
-          do k=1, nz
-            !write(*,'(10E15.3)') sum(rad_scatter(i,j,k,:,:))
-             !write(*,'(10E15.3)') sum(source(i,j,k,:,:))
-         end do
-       end do
-       !write(*,*) ''
-    end do
+    ! do i=1, nx
+    !    do j=1, ny
+    !       do k=1, nz
+    !         !write(*,'(10E15.3)') sum(rad_scatter(i,j,k,:,:))
+    !          !write(*,'(10E15.3)') sum(source(i,j,k,:,:))
+    !      end do
+    !    end do
+    !    !write(*,*) ''
+    ! end do
 
     deallocate(source)
     deallocate(scatter_integral)
     deallocate(scatter_integrand)
-    deallocate(path_spacing)
     deallocate(inner_path_integrand)
-    deallocate(outer_path_integrand)
   end subroutine scatter
 
   ! Calculate source from no-scatter or previous scattering layer
@@ -213,26 +222,25 @@ module asymptotics
     type(index_list) indices
     integer lp, mp
 
-      do lp=1, grid%theta%num
-        do mp=1, grid%phi%num
-           scatter_integrand(lp, mp) = iops%vsf(&
-                  indices%l,&
-                  indices%m,&
-                  lp,&
-                  mp) &
-              * rad_scatter(&
-                  indices%i,&
-                  indices%j,&
-                  indices%k,&
-                  lp,&
-                  mp)
-        end do
+    do lp=1, grid%theta%num
+      do mp=1, grid%phi%num
+          scatter_integrand(lp, mp) = iops%vsf(&
+                indices%l,&
+                indices%m,&
+                lp,&
+                mp) &
+            * rad_scatter(&
+                indices%i,&
+                indices%j,&
+                indices%k,&
+                lp,&
+                mp)
       end do
+    end do
 
-      scatter_integral(indices%i,indices%j,indices%k,indices%l,indices%m) = grid%integrate_angle_2d(scatter_integrand)
+    scatter_integral(indices%i,indices%j,indices%k,indices%l,indices%m) = grid%integrate_angle_2d(scatter_integrand)
 
    if(indices%i .eq. 1 .and. indices%j .eq. 5 .and. indices%k .eq. 3 .and. indices%l .eq. 3 .and. indices%m .eq. 3) then
-
        write(*,*) ''
        write(*,*) 'theta'
        write(*,*) grid%theta%vals
@@ -284,7 +292,8 @@ module asymptotics
        do k=2, nz
           indices%k = k
           kp_stop = k
-          path_spacing = grid%z%spacing(k:) / grid%phi%cos(m)
+          ! CHECK THIS
+          path_spacing(:k) = grid%z%spacing(:k) / grid%phi%cos(m)
           do l=1, ntheta
               indices%l = l
               do i=1, nx
@@ -316,7 +325,8 @@ module asymptotics
           indices%k = k
           kp_stop = k
           ! Minus sign since cos(phi) < 0 for upwelling
-          path_spacing = - grid%z%spacing(:k) / grid%phi%cos(m)
+          ! CHECK THIS
+          path_spacing(k:) = - grid%z%spacing(k:) / grid%phi%cos(m)
           do l=1, grid%theta%num
               indices%l = l
               do i=1, grid%x%num
@@ -390,8 +400,8 @@ module asymptotics
             grid%y_factor(l,m), source(:,:,:,l,m))
        !path_integrand(kp) = path_source * absorb_along_path(&
        !     grid, bc, iops, indices, kp)
-       ! IN PROGRESS
-       call absorb_along_path(grid, bc, iops, indices,&
+       ! path_spacing defined in advect_light
+       outer_path_integrand(kp) = absorb_along_path(grid, bc, iops, indices,&
             kp, path_source, path_spacing, inner_path_integrand)
     end do
     rad_scatter(i,j,k,l,m) = trap_rule_uneven(path_spacing, inner_path_integrand, path_length)
@@ -406,7 +416,7 @@ module asymptotics
   ! (BC is specified once and for all)
   ! i.e., radiance from nth scattering also considers nth absorption.
   function absorb_along_path(grid, bc, iops, indices,&
-       kmin, path_source, path_spacing, path_integrand)
+       kmin, path_source, path_spacing, inner_path_integrand)
     type(space_angle_grid) grid
     type(boundary_condition) bc
     type(optical_properties) iops
@@ -417,7 +427,7 @@ module asymptotics
     double precision x_mod, y_mod
 
     double precision path_source
-    double precision, dimension(:) :: path_spacing, path_integrand
+    double precision, dimension(:) :: path_spacing, inner_path_integrand
     double precision total_abs
 
     double precision absorb_along_path
@@ -448,7 +458,7 @@ module asymptotics
     phi = grid%phi%vals(indices%m)
 
     ! Number of coefficients to integrate over
-    path_length = abs(indices%k - kmin)
+    path_length = abs(indices%k - kmin) + 1
 
     ! Whether the ray is moving up or down
     ! 1 for down, -1 for up, 0 for neither
@@ -458,9 +468,9 @@ module asymptotics
 
     index = 0
     if(direction .ne. 0) then
-       do kp=kmin + direction, indices%k, direction
+       do kp=kmin, indices%k, direction
          index = index + 1
-         path_integrand(index) = interpolate_ray_at_depth(&
+         inner_path_integrand(index) = interpolate_ray_at_depth(&
               x, y, z, kp, nx, ny, nz, xmin, xmax, ymin, ymax,&
               grid%x%vals, grid%y%vals, grid%z%vals,&
               grid%x_factor(indices%l, indices%m),&
@@ -469,11 +479,19 @@ module asymptotics
        end do
     end if
 
-    ! TODO: DOUBLE CHECK THIS!!
-    path_spacing = grid%z%spacing(kmin:indices%k) / abs(grid%phi%cos(indices%m))
-    total_abs = trap_rule_uneven(path_spacing, path_integrand, path_length)
+    ! Only pass relevant portion of path_spacing to integrator
+    path_spacing(:path_length) = grid%z%spacing(kmin:indices%k:direction) / abs(grid%phi%cos(indices%m))
+    total_abs = midpoint_rule_halfends(path_spacing(:path_length), inner_path_integrand, path_length)
 
     absorb_along_path = path_source * exp(-total_abs)
+
+    ! if(indices%k<3) then
+    !    write(*,*) 'ind = ', indices%i, indices%j, indices%k, indices%l, indices%m
+    !    write(*,*) 'path_spacing      = ', path_spacing(:path_length)
+    !    write(*,*) 'path_abs          = ', inner_path_integrand
+    !    write(*,*) 'path_source       = ', path_source
+    !    write(*,*) 'absorb_along_path = ', absorb_along_path
+    ! end if
 
   end function absorb_along_path
 

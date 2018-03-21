@@ -427,19 +427,39 @@ end function trap_rule
 
 ! Integrate using trapezoid rule
 ! Assuming both endpoints are included in arr
-function trap_rule_uneven(xx, yy, nn)
+function trap_rule_uneven(dx, yy, nn)
   implicit none
-  double precision, dimension(nn) :: xx, yy
+  double precision, dimension(nn-1) :: dx
+  double precision, dimension(nn) :: yy
   integer ii, nn
   double precision trap_rule_uneven
 
   trap_rule_uneven = 0.0d0
 
   do ii=1, nn-1
-     trap_rule_uneven = trap_rule_uneven + 0.5d0 * (xx(ii+1) - xx(ii)) * (yy(ii) + yy(ii+1))
+     trap_rule_uneven = trap_rule_uneven + 0.5d0 * dx(ii) * (yy(ii) + yy(ii+1))
   end do
 
 end function trap_rule_uneven
+
+! Integrate using midpoint rule
+! First and last bins, only use inner half
+function midpoint_rule_halfends(dx, yy, nn) result(integral)
+  implicit none
+  integer ii, nn
+  double precision, dimension(nn) :: dx, yy
+  double precision integral
+
+  if(nn > 1) then
+    integral = .5d0 * (dx(1)*yy(1) + dx(nn)*yy(nn))
+
+    do ii=2, nn-1
+      integral = integral + dx(ii)*yy(ii)
+    end do
+  else
+    integral = 0.d0
+  end if
+end function midpoint_rule_halfends
 
 ! Normalize 1D array and return integral w/ left endpoint rule
 function normalize(arr,dx,nn)

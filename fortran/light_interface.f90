@@ -201,10 +201,10 @@ contains
     ! Rescale surface radiance to match surface irradiance
     bc%bc_grid = bc%bc_grid * surface_irrad / grid%integrate_angle_2d(bc%bc_grid)
 
-    write(*,*) 'bc'
-    do i=1, grid%y%num
-        write(*,'(10F15.3)') bc%bc_grid(i,:)
-    end do
+    ! write(*,*) 'bc'
+    ! do i=1, grid%y%num
+    !     write(*,'(10F15.3)') bc%bc_grid(i,:)
+    ! end do
 
     call light%init_grid(grid)
 
@@ -222,6 +222,12 @@ contains
     !write(*,*) 'vsf_vals = ', iops%vsf_vals
     !write(*,*) 'vsf norm  = ', grid%integrate_angle_2d(iops%vsf(1,1,:,:))
 
+    write(*,*) 'abs_water = ', abs_water
+    write(*,*) 'scat_water = ', scat_water
+    write(*,*) 'avg_irrad = ', avg_irrad
+    !write(*,*) 'available_light = ', available_light
+
+
     !write(*,*) 'deinit'
     call bc%deinit()
     call iops%deinit()
@@ -233,11 +239,6 @@ contains
     deallocate(pop_length_stds)
     deallocate(num_fronds)
     deallocate(p_kelp)
-
-    write(*,*) 'abs_water = ', abs_water
-    write(*,*) 'scat_water = ', scat_water
-    write(*,*) 'avg_irrad = ', avg_irrad
-    !write(*,*) 'available_light = ', available_light
 
     !write(*,*) 'done'
   end subroutine full_light_calculations

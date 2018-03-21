@@ -209,9 +209,9 @@ contains
 
     ! Normalize VSF & determine scattering coefficient
     iops%vsf_scat_coef = normalize_uneven(iops%vsf_angles, iops%vsf_vals, iops%num_vsf)
-    write(*,*) 'VSF SCAT COEF = ', iops%vsf_scat_coef
-    write(*,*) 'vsf_angles = ', iops%vsf_angles
-    write(*,*) 'vsf_vals = ', iops%vsf_vals
+    ! write(*,*) 'VSF SCAT COEF = ', iops%vsf_scat_coef
+    ! write(*,*) 'vsf_angles = ', iops%vsf_angles
+    ! write(*,*) 'vsf_vals = ', iops%vsf_vals
 
     ! Pre-evaluate for all pair of angles
     call iops%calc_vsf_on_grid()
