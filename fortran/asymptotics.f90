@@ -407,6 +407,125 @@ module asymptotics
     rad_scatter(i,j,k,l,m) = trap_rule_uneven(path_spacing, inner_path_integrand, path_length)
   end subroutine integrate_ray
 
+  ! Traverse from surface or bottom to point (xi, yj, zk)
+  ! in the direction omega_p, extracting path lengths (ds) and
+  ! function values (f) along the way.
+  subroutine traverse(grid, iops, i, j, k, p, ds, f)
+    type(space_angle_grid) grid
+    type(optical_properties) iops
+    integer i, j, k, p
+    double precision, dimension(:), intent(out) :: ds, f
+
+    double precision p0x, p0y, p0z
+    double precision p1x, p1y, p1z
+    double precision z0
+    double precision s_tilde
+    integer dir_x, dir_y, dir_z
+    integer shift_x, shift_y, shift_z
+    integer cell_x, cell_y, cell_z
+    integer edge_x, edge_y, edge_z
+    double precision length_to_x, length_to_y, length_to_z
+    double precision s_next_x, s_next_y, s_next_z
+    double precision s, integral
+    integer t
+
+    ! Destination point
+    p1x = grid%x%vals(i)
+    p1y = grid%y%vals(j)
+    p1z = grid%z%vals(k)
+
+    ! Direction
+    if(p < (grid%angles%nomega-2)/2) then
+       ! Upwelling light originates from bottom
+       z0 = grid%z%maxval
+    else
+       ! Downwelling light originates from surface
+       z0 = 0.d0
+    end if
+
+    ! Total path length from origin to destination
+    ! (sign is correct for upwelling and downwelling)
+    s_tilde = (p1z - z0)/grid%angles%cos_phi_p(p)
+
+    ! Origin point
+    p0x = p1x - s_tilde * grid%angles%sin_phi_p(p) * grid%angles%cos_theta_p(p)
+    p0y = p1y - s_tilde * grid%angles%sin_phi_p(p) * grid%angles%sin_theta_p(p)
+    p0z = p1z - s_tilde * grid%angles%cos_phi_p(p)
+
+    ! Direction of ray in each dimension. 1 => increasing. -1 => decreasing.
+    dir_x = sign(p1x-p0x)
+    dir_y = sign(p1y-p0y)
+    dir_z = sign(p1z-p0z)
+
+    ! Shifts
+    ! Conversion from cell_inds to edge_inds
+    ! merge is fortran's ternary operator
+    shift_x = merge(1,0,dir_x>0)
+    shift_y = merge(1,0,dir_y>0)
+    shift_z = merge(1,0,dir_z>0)
+
+    ! Indices for cell containing origin point
+    cell_x = ceil((p0x-grid%x%minval)/grid%x%spacing)
+    cell_y = ceil((p0y-grid%y%minval)/grid%y%spacing)
+    cell_z = merge(1, grid%z%num, dir_z>0)
+
+    ! Edge indices preceeding starting cells
+    edge_x = cell_x + shift_x
+    edge_y = cell_y + shift_y
+    edge_z = cell_z + shift_z
+
+    ! Calculate path lengths from origin to each
+    ! edge plane in each dimension
+    length_to_x = (grid%x%edges - p0x)/(p1x-p0x)
+    length_to_y = (grid%y%edges - p0y)/(p1y-p0y)
+    length_to_z = (grid%z%edges - p0z)/(p1z-p0z)
+
+    ! Path length to next edge plane in each dimension
+    s_next_x = (grid%x%edges(edge_x) - p0x)/(p1x-p0x)
+    s_next_y = (grid%y%edges(edge_y) - p0y)/(p1y-p0y)
+    s_next_z = (grid%z%edges(edge_z) - p0z)/(p1z-p0z)
+
+    ! Initialize loop variables
+    s = 0.d0
+    integral = 0.d0
+    t = 1
+
+    do while (s .lt. s_tilde)
+       ! Extract function values
+       f(t) = iops%abs_grid(cell_x, cell_y, cell_z)
+
+       ! Move to next cell in path
+       if (s_next_x .le. min(s_next_y, s_next_z)) then
+          ! x edge is closest
+          s_next = s_next_x
+          cell_x = cell_x + dir_x
+          edge_x = edge_x + dir_x
+          s_next_x = (grid%x%edges(edge_x) - p0x)/(p1x-p0x)
+       else if (s_next_y .le. min(s_next_x, s_next_z))
+          ! y edge is closest
+          s_next = s_next_y
+          cell_y = cell_y + dir_y
+          edge_y = edge_y + dir_y
+          s_next_y = (grid%y%edges(edge_y) - p0y)/(p1y-p0y)
+       else
+          ! z edge is closest
+          s_next = s_next_z
+          cell_z = cell_z + dir_z
+          edge_z = edge_z + dir_z
+          s_next_z = (grid%z%edges(edge_z) - p0z)/(p1z-p0z)
+       end if
+
+       ! Extract path length from same cell as function vals
+       ds(t) = s_next - s
+
+       ! Update loop variables for next step
+       s = s_next
+       t = t + 1
+    end do
+
+  end subroutine traverse
+
+
   ! Calculate the percent of radiance remaining after passing
   ! through depth layers beginning with kmin, and ending before k.
   ! Path may be downwelling or upwelling.

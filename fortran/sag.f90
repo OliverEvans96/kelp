@@ -43,7 +43,7 @@ end type angle2d
 type space_dim
    integer num
    double precision minval, maxval
-   double precision, dimension(:), allocatable :: vals, spacing
+   double precision, dimension(:), allocatable :: vals, edges, spacing
  contains
    procedure :: integrate_points => space_integrate_points
    procedure :: trapezoid_rule
@@ -315,13 +315,15 @@ contains
     integer i
 
     allocate(space%vals(space%num))
+    allocate(space%edges(space%num))
     allocate(space%spacing(space%num))
 
     spacing = spacing_from_num(space%minval, space%maxval, space%num)
     call space%set_uniform_spacing(spacing)
 
     do i=1, space%num
-       space%vals(i) = space%minval + dble(i-1) * space%spacing(i)
+       space%edges(i) = space%minval + dble(i-1) * space%spacing(i)
+       space%vals(i) = space%minval + dble(i-0.5d0) * space%spacing(i)
     end do
 
   end subroutine assign_linspace
@@ -346,6 +348,7 @@ contains
   subroutine space_deinit(space)
     class(space_dim) :: space
     deallocate(space%vals)
+    deallocate(space%edges)
     deallocate(space%spacing)
   end subroutine space_deinit
 
