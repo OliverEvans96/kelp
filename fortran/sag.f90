@@ -118,11 +118,6 @@ contains
   subroutine angle_init(angles)
     class(angle2d) :: angles
     integer l, m, p
-    integer lh, mh
-
-    write(*,*) 'ntheta = ', angles%ntheta
-    write(*,*) 'nphi = ', angles%nphi
-    write(*,*) 'nomega = ', angles%nomega
 
     allocate(angles%theta(angles%ntheta))
     allocate(angles%phi(angles%nphi))
@@ -145,9 +140,6 @@ contains
     angles%dtheta = 2.d0*pi/dble(angles%ntheta)
     angles%dphi = pi/dble(angles%nphi-1)
 
-    write(*,*) 'dtheta = ', angles%dtheta
-    write(*,*) 'dphi = ', angles%dphi
-
     ! Create grids
     do l=1, angles%ntheta
        angles%theta(l) = dble(l-1)*angles%dtheta
@@ -165,18 +157,11 @@ contains
        end if
     end do
 
-    write(*,*) 'theta'
-    call print_array(angles%theta, angles%ntheta, 1)
-    write(*,*) 'phi'
-    call print_array(angles%phi, angles%nphi, 1)
-
     ! Create p arrays
     do m=2, angles%nphi-1
        do l=1, angles%ntheta
           p = angles%phat(l, m)
-          lh = angles%lhat(p)
-          mh = angles%mhat(p)
-          write(*,*) 'l,m,p,lh,mh = ', l, m, p, lh, mh
+
           angles%theta_p(p) = angles%theta(l)
           angles%theta_edge_p(p) = angles%theta_edge(l)
           angles%phi_p(p) = angles%phi(m)
@@ -190,7 +175,6 @@ contains
     ! North Pole
     p = angles%nomega-1
     m=1
-    write(*,*) 'l,m,p = ', l, m, p
     angles%theta_p(p) = angles%theta(l)
     angles%theta_edge_p(p) = angles%theta_edge(l)
     angles%phi_p(p) = angles%phi(m)
@@ -200,21 +184,9 @@ contains
     ! South Pole
     p = angles%nomega
     m = angles%nphi
-    write(*,*) 'l,m,p = ', l, m, p
     angles%theta_p(p) = angles%theta(l)
     angles%theta_edge_p(p) = angles%theta_edge(l)
     angles%phi_p(p) = angles%phi(m)
-
-    write(*,*) 'theta_p'
-    call print_array(angles%theta_p, angles%nomega, 1)
-    write(*,*) 'phi_p'
-    call print_array(angles%phi_p, angles%nomega, 1)
-
-
-    ! Test values
-    write(*,*) 'cos_phi_edge'
-    call print_array(angles%cos_phi_edge, angles%nphi, 1)
-    write(*,*) 'end'
 
   end subroutine angle_init
 
@@ -242,14 +214,6 @@ contains
     integral = integral + 2.d0*pi*(1.d0-cos(angles%dphi/2.d0)) * (&
          func_vals(angles%nomega-1) &
          + func_vals(angles%nomega))
-    write(*,*) 't_no', angles%theta_p(angles%nomega)
-    write(*,*) 'p_no', angles%phi_p(angles%nomega)
-    write(*,*) 'np = ', func_vals(angles%nomega-1)
-    write(*,*) 'sp = ', func_vals(angles%nomega)
-    write(*,*) 'poles = ', 2.d0*pi*(1.d0-cos(angles%dphi/2.d0)) * (&
-         func_vals(angles%nomega-1) &
-         + func_vals(angles%nomega))
-
 
   end function angle_integrate_points
 
