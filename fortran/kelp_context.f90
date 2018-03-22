@@ -48,7 +48,7 @@ type optical_properties
    ! On x, y, z grid - including water & kelp.
    double precision, dimension(:,:,:), allocatable :: abs_grid, scat_grid 
    ! On theta, phi, theta_prime, phi_prime grid
-   double precision, dimension(:,:,:,:), allocatable :: vsf 
+   double precision, dimension(:,:), allocatable :: vsf 
  contains
    procedure :: init => iop_init
    procedure :: calculate_coef_grids
@@ -61,7 +61,7 @@ end type optical_properties
 type boundary_condition
    double precision max_rad, decay, theta_s, phi_s
    type(space_angle_grid) grid
-   double precision, dimension(:,:), allocatable :: bc_grid
+   double precision, dimension(:), allocatable :: bc_grid
  contains
    procedure :: bc_gaussian
    procedure :: init => bc_init
@@ -82,27 +82,22 @@ contains
     class(boundary_condition) bc
     type(space_angle_grid) grid
     double precision theta_s, phi_s, decay, max_rad
-    integer l, m
-    integer ntheta, nphi
+    integer p
     double precision theta, phi
 
-    ntheta = grid%theta%num
-    nphi = grid%phi%num
-
-    allocate(bc%bc_grid(ntheta, nphi))
+    allocate(bc%bc_grid(grid%angles%nomega))
 
     bc%theta_s = theta_s
     bc%phi_s = phi_s
     bc%decay = decay
     bc%max_rad = max_rad
 
-    do l=1, grid%theta%num
-       theta = grid%theta%vals(l)
-       do m=1, grid%phi%num
-          phi = grid%phi%vals(m)
-          bc%bc_grid(l, m) = bc%bc_gaussian(theta, phi)
-       end do
+    do p=1, grid%angles%nomega
+       theta = grid%angles%theta_p(p)
+       phi = grid%angles%phi_p(p)
+       bc%bc_grid(p) = bc%bc_gaussian(theta, phi)
     end do
+
   end subroutine bc_init
 
   subroutine bc_deinit(bc)
@@ -169,7 +164,7 @@ contains
     ! Assume that these must be allocated here
     allocate(iops%vsf_angles(iops%num_vsf))
     allocate(iops%vsf_vals(iops%num_vsf))
-    allocate(iops%vsf(grid%theta%num, grid%phi%num, grid%theta%num, grid%phi%num))
+    allocate(iops%vsf(grid%angles%nomega,grid%angles%nomega))
     allocate(iops%abs_grid(grid%x%num, grid%y%num, grid%z%num))
     allocate(iops%scat_grid(grid%x%num, grid%y%num, grid%z%num))
   end subroutine iop_init
@@ -343,29 +338,24 @@ contains
     class(optical_properties) iops
     type(space_angle_grid) grid
     double precision th, ph, thp, php
-    integer l, m, lp, mp
-    integer ntheta, nphi
+    integer p, pp
+    integer nomega
     double precision angle_diff
     double precision vsf_val
 
     grid = iops%grid
+    nomega = grid%angles%nomega
 
-    ntheta = grid%theta%num
-    nphi = grid%phi%num
-
-    do l=1, ntheta
-       th = grid%theta%vals(l)
-       do m=1, nphi
-          ph = grid%phi%vals(m)
-          do lp=1, ntheta
-             thp = grid%theta%vals(lp)
-             do mp=1, nphi
-                php = grid%phi%vals(mp)
-                iops%vsf(l,m,lp,mp) = iops%eval_vsf(angle_diff_3d(th,ph,thp,php))
-             end do
-          end do
+    do p=1, nomega
+       th = grid%angles%theta_p(p)
+       ph = grid%angles%phi_p(p)
+       do  pp=1, nomega
+          th = grid%angles%theta_p(pp)
+          ph = grid%angles%phi_p(pp)
+          iops%vsf(p, pp) = iops%eval_vsf(angle_diff_3d(th,ph,thp,php))
        end do
     end do
+
   end subroutine calc_vsf_on_grid
 
   subroutine iop_deinit(iops)

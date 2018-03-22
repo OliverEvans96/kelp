@@ -638,8 +638,8 @@ contains
     ! to allow other functions to add to it
     call mat%calculate_repeat_index(indices)
 
-    do lp=1, grid%theta%num
-       do mp=1, grid%phi%num
+    do mp=1, grid%phi%num
+      do lp=1, grid%theta%num
           val = - bb * prefactor * iops%vsf(l,m,lp,mp)
           call mat%assign(val, i, j, k, lp, mp)
        end do
