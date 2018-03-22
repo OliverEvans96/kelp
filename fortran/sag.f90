@@ -18,7 +18,7 @@ implicit none
 !integer, parameter :: pi = 3.141592653589793D+00
 
 type index_list
-   integer i, j, k, l, m
+   integer i, j, k, p
  contains
    procedure :: init => index_list_init
    procedure :: print => index_list_print
@@ -31,6 +31,8 @@ type angle2d
    double precision, dimension(:), allocatable ::  theta_p, phi_p, theta_edge_p, phi_edge_p
    double precision, dimension(:), allocatable :: cos_theta, sin_theta, cos_phi, sin_phi
    double precision, dimension(:), allocatable :: cos_theta_edge, sin_theta_edge, cos_phi_edge, sin_phi_edge
+   double precision, dimension(:), allocatable :: cos_theta_p, sin_theta_p, cos_phi_p, sin_phi_p
+   double precision, dimension(:), allocatable :: cos_theta_edge_p, sin_theta_edge_p, cos_phi_edge_p, sin_phi_edge_p
  contains
    procedure :: set_num => angle_set_num
    procedure :: phat, lhat, mhat
@@ -78,14 +80,13 @@ contains
     indices%i = 1
     indices%j = 1
     indices%k = 1
-    indices%l = 1
-    indices%m = 1
+    indices%p = 1
   end subroutine
 
   subroutine index_list_print(indices)
     class(index_list) indices
 
-    write(*,*) 'i, j, k, l, m =', indices%i, indices%j, indices%k, indices%l, indices%m
+    write(*,*) 'i, j, k, p =', indices%i, indices%j, indices%k, indices%p
   end subroutine index_list_print
 
   subroutine angle_set_num(angles, ntheta, nphi)
@@ -131,10 +132,14 @@ contains
     allocate(angles%sin_theta(angles%nomega))
     allocate(angles%cos_phi(angles%nomega))
     allocate(angles%sin_phi(angles%nomega))
-    allocate(angles%cos_theta_edge(angles%nomega))
-    allocate(angles%sin_theta_edge(angles%nomega))
-    allocate(angles%cos_phi_edge(angles%nomega-1))
-    allocate(angles%sin_phi_edge(angles%nomega-1))
+    allocate(angles%cos_theta_edge(angles%ntheta))
+    allocate(angles%sin_theta_edge(angles%ntheta))
+    allocate(angles%cos_phi_edge(angles%nphi-1))
+    allocate(angles%sin_phi_edge(angles%nphi-1))
+    allocate(angles%cos_theta_edge_p(angles%nomega))
+    allocate(angles%sin_theta_edge_p(angles%nomega))
+    allocate(angles%cos_phi_edge_p(angles%nomega-1))
+    allocate(angles%sin_phi_edge_p(angles%nomega-1))
 
     ! Calculate spacing
     angles%dtheta = 2.d0*pi/dble(angles%ntheta)
@@ -143,17 +148,29 @@ contains
     ! Create grids
     do l=1, angles%ntheta
        angles%theta(l) = dble(l-1)*angles%dtheta
+       angles%cos_theta(l) = cos(angles%theta(l))
+       angles%sin_theta(l) = sin(angles%theta(l))
+       angles%cos_theta_p(p) = cos(angles%theta_p(p))
+       angles%sin_theta_p(p) = sin(angles%theta_p(p))
        angles%theta_edge(l) = dble(l-1)*angles%dtheta
        angles%cos_theta_edge(l) = cos(angles%theta_edge(l))
        angles%sin_theta_edge(l) = sin(angles%theta_edge(l))
+       angles%cos_theta_edge_p(p) = cos(angles%theta_edge_p(p))
+       angles%sin_theta_edge_p(p) = sin(angles%theta_edge_p(p))
     end do
 
     do m=1, angles%nphi
        angles%phi(m) = dble(m-1.d0)*angles%dphi
+       angles%cos_phi_p(m) = cos(angles%phi_p(m))
+       angles%sin_phi_p(m) = sin(angles%phi_p(m))
+       angles%cos_phi_p(p) = cos(angles%phi_p(p))
+       angles%sin_phi_p(p) = sin(angles%phi_p(p))
        if(m<angles%nphi) then
           angles%phi_edge(m) = dble(m-0.5d0)*angles%dphi
           angles%cos_phi_edge(m) = cos(angles%phi_edge(m))
           angles%sin_phi_edge(m) = sin(angles%phi_edge(m))
+          angles%cos_phi_edge_p(p) = cos(angles%phi_edge_p(p))
+          angles%sin_phi_edge_p(p) = sin(angles%phi_edge_p(p))
        end if
     end do
 
@@ -257,6 +274,10 @@ contains
     deallocate(angles%sin_theta_edge)
     deallocate(angles%cos_phi_edge)
     deallocate(angles%sin_phi_edge)
+    deallocate(angles%cos_theta_edge_p)
+    deallocate(angles%sin_theta_edge_p)
+    deallocate(angles%cos_phi_edge_p)
+    deallocate(angles%sin_phi_edge_p)
   end subroutine angle_deinit
 
 

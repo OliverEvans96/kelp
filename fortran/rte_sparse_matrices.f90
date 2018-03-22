@@ -14,13 +14,13 @@ type rte_mat
    type(space_angle_grid) grid
    type(optical_properties) iops
    type(solver_params) params
-   integer nx, ny, nz, ntheta, nphi
-   integer ent, i, j, k, l, m
+   integer nx, ny, nz, nomega
+   integer ent, i, j, k, p
    integer repeat_index
    integer nonzero, n_total
-   integer x_block_size, y_block_size, z_block_size, theta_block_size, phi_block_size
+   integer x_block_size, y_block_size, z_block_size, omega_block_size
 
-   double precision, dimension(:,:,:,:), allocatable :: surface_vals
+   double precision, dimension(:), allocatable :: surface_vals
 
    ! A stored in coordinate form in row, col, data
    integer, dimension(:), allocatable :: row, col
@@ -79,7 +79,7 @@ contains
 
     n_total = mat%n_total
     nnz = mat%nonzero
-    allocate(mat%surface_vals(grid%x%num, grid%y%num, grid%theta%num, grid%phi%num))
+    allocate(mat%surface_vals(grid%angles%nomega))
     allocate(mat%row(nnz))
     allocate(mat%col(nnz))
     allocate(mat%data(nnz))
@@ -106,20 +106,21 @@ contains
 
   subroutine calculate_size(mat)
     class(rte_mat) mat
-    integer nx, ny, nz, ntheta, nphi
+    integer nx, ny, nz, nomega
 
     nx = mat%grid%x%num
     ny = mat%grid%y%num
     nz = mat%grid%z%num
-    ntheta = mat%grid%theta%num
-    nphi = mat%grid%phi%num
+    nomega = mat%grid%angles%nomega
 
-    mat%nonzero = nx * ny * ntheta * nphi * ( (nz-1) * (6 + ntheta * nphi) + 1)
-    mat%n_total = nx * ny * nz * ntheta * nphi
+    !mat%nonzero = nx * ny * ntheta * nphi * ( (nz-1) * (6 + ntheta * nphi) + 1)
+    mat%nonzero = nx * ny * nomega * (nz * (nomega + 6) - 1)
+    mat%n_total = nx * ny * nz * nomega
 
-    mat%theta_block_size = 1
-    mat%phi_block_size = mat%theta_block_size * ntheta
-    mat%x_block_size = mat%phi_block_size * nphi
+    !mat%theta_block_size = 1
+    !mat%phi_block_size = mat%theta_block_size * ntheta
+    mat%omega_block_size = 1
+    mat%x_block_size = mat%omega_block_size * nomega
     mat%y_block_size = mat%x_block_size * nx
     mat%z_block_size = mat%y_block_size * ny
 
@@ -136,28 +137,23 @@ contains
     class(boundary_condition) bc
     double precision theta, phi, rad_val
     double precision, dimension(:,:,:,:,:) :: radiance
-    integer i, j, l, m
+    integer i, j, p
 
     !write(*,*) 'Set BC!!!'
-    do l=1, mat%grid%theta%num
-       theta = mat%grid%theta%vals(l)
-       do m=1, mat%grid%theta%num/2
-          phi = mat%grid%phi%vals(m)
-          do i=1, mat%grid%x%num
-            do j=1, mat%grid%y%num
-               rad_val = bc%bc_gaussian(theta, phi)
-               mat%surface_vals(i,j,l,m) = rad_val
-               radiance(i,j,1,l,m) = rad_val
-             end do
-          end do
-       end do
+    !!! SHOULD BE EASIER TO SEPARATE UPWELLING AND DOWNWELLING
+    !!! THIS IS WRONG
+    do p=1, mat%grid%angles%nomega/2
+       theta = mat%grid%angles%theta_p(p)
+       phi = mat%grid%angles%phi_p(p)
+       rad_val = bc%bc_gaussian(theta, phi)
+       mat%surface_vals(p) = rad_val
     end do
     !write(*,*) 'Done Setting'
   end subroutine mat_set_bc
 
   subroutine mat_initial_guess(mat)
     class(rte_mat) mat
-    integer i, j, k, l, m
+    integer i, j, k, p
     double precision dz
     double precision aa, bb, atten
     integer index
@@ -177,20 +173,18 @@ contains
              ! Attenuation factor
              atten = 1.d0 - aa * dz
              ! Downwelling light
-             do m=1, mat%grid%phi%num / 2
-                do l=1, mat%grid%theta%num
-                   mat%sol(index) = atten * mat%surface_vals(i,j,l,m)
-                   index = index + 1
-                end do
+             !!! NOT RIGHT - UPWELLING VS DOWNWELLING
+             do p=1, mat%grid%angles%nomega / 2
+                mat%sol(index) = atten * mat%surface_vals(p)
+                index = index + 1
              end do
              ! Upwelling light
-             ! Still counting m from 1 since surface_vals is only defined up to nphi/2
+             ! Still counting p from 1 since surface_vals is only defined up to nphi/2
              ! However index has incremented to the correct position for upwelling light.
-             do m=1, mat%grid%phi%num / 2
-                do l=1, mat%grid%theta%num
-                   mat%sol(index) = atten * mat%surface_vals(i,j,l,m)
-                   index = index + 1
-                end do
+             !!! NOT RIGHT - UPWELLING VS DOWNWELLING
+             do p=1, mat%grid%angles%nomega / 2
+                mat%sol(index) = atten * mat%surface_vals(p)
+                index = index + 1
              end do
           end do
        end do
@@ -252,21 +246,21 @@ contains
     class(rte_mat) mat
     type(index_list) indices
 
-    mat%repeat_index = mat%ent + mat%grid%phi%num * (indices%l-1) &
-         + indices%m - 1
+    ! NEED TO ADD THIS BACK IN
+    !mat%repeat_index = mat%ent + mat%grid%phi%num * (indices%l-1) &
+    !     + indices%p - 1
   end subroutine mat_calculate_repeat_index
 
-  function mat_ind(mat, i, j, k, l, m) result(ind)
+  function mat_ind(mat, i, j, k, p) result(ind)
     ! Assuming var ordering: z, y, x, phi, theta
     class(rte_mat) mat
     type(space_angle_grid) grid
-    integer i, j, k, l, m
+    integer i, j, k, p
     integer ind
     grid = mat%grid
 
     ind = (i-1) * mat%x_block_size + (j-1) * mat%y_block_size + &
-         (k-1) * mat%z_block_size + (l) * mat%theta_block_size + &
-         (m-1) * mat%phi_block_size
+         (k-1) * mat%z_block_size + (p) * mat%omega_block_size
   end function mat_ind
 
   subroutine mat_set_ind(mat, indices)
@@ -277,19 +271,18 @@ contains
     mat%i = indices%i
     mat%j = indices%j
     mat%k = indices%k
-    mat%l = indices%l
-    mat%m = indices%m
+    mat%p = indices%p
   end subroutine mat_set_ind
 
-  subroutine mat_assign(mat, val, i, j, k, l, m)
+  subroutine mat_assign(mat, val, i, j, k, p)
     ! It's assumed that this is the only time this entry is defined
     class(rte_mat) mat
     double precision val
-    integer i, j, k, l, m
+    integer i, j, k, p
     integer row_num, col_num
 
-    row_num = mat%ind(mat%i, mat%j, mat%k, mat%l, mat%m)
-    col_num = mat%ind(i, j, k, l, m)
+    row_num = mat%ind(mat%i, mat%j, mat%k,  mat%p)
+    col_num = mat%ind(i, j, k, p)
 
     mat%row(mat%ent) = row_num
     mat%col(mat%ent) = col_num
@@ -297,12 +290,12 @@ contains
        write(*,*) 'ISNAN'
        write(*,*) 'row = ', row_num
        write(*,*) 'col = ', col_num
-       write(*,*) 'mat_index =', mat%i, mat%j, mat%k, mat%l, mat%m
-       write(*,*) 'index =', i, j, k, l, m
+       write(*,*) 'mat_index =', mat%i, mat%j, mat%k, mat%p
+       write(*,*) 'index =', i, j, k, p
        write(*,*) 'entry =', mat%ent
     endif
 
-    ! if(i.eq.mat%i .and. j.eq.mat%j .and. k.eq.mat%j .and. l.eq.mat%l .and. m.eq.mat%m) then
+    ! if(i.eq.mat%i .and. j.eq.mat%j .and. k.eq.mat%j .and. l.eq.mat%l .and. p.eq.mat%p) then
     !    write(*,*) 'diag: ', val
     ! endif
 
@@ -326,13 +319,13 @@ contains
     mat%data(index) = mat%data(index) + data
   end subroutine mat_add
 
-  subroutine mat_assign_rhs(mat, data, i, j, k, l, m)
+  subroutine mat_assign_rhs(mat, data, i, j, k, p)
     class(rte_mat) mat
     double precision data
-    integer i, j, k, l, m
+    integer i, j, k, p
     integer row_num
 
-    row_num = mat%ind(mat%i, mat%j, mat%k, mat%l, mat%m)
+    row_num = mat%ind(mat%i, mat%j, mat%k, mat%p)
 
     mat%rhs(row_num) = data
   end subroutine mat_assign_rhs
@@ -370,13 +363,12 @@ contains
     type(optical_properties) iops
     double precision attenuation
     type(index_list) indices
-    integer i, j, k, l, m
+    integer i, j, k, p
     double precision aa, bb
     i = indices%i
     j = indices%j
     k = indices%k
-    l = indices%l
-    m = indices%m
+    p = indices%p
 
     iops = mat%iops
 
@@ -392,21 +384,20 @@ contains
     type(space_angle_grid) grid
     double precision val, dx
     type(index_list) indices
-    integer i, j, k, l, m
+    integer i, j, k, p
     i = indices%i
     j = indices%j
     k = indices%k
-    l = indices%l
-    m = indices%m
+    p = indices%p
     grid = mat%grid
 
     dx = grid%x%spacing(indices%k)
 
-    val = grid%phi%sin(m) * grid%theta%cos(l) / (2.d0 * dx)
+    val = grid%angles%sin_phi_p(p) * grid%angles%cos_theta_p(p) / (2.d0 * dx)
 
     call mat%set_ind(indices)
-    call mat%assign(-val,i-1,j,k,l,m)
-    call mat%assign(val,i+1,j,k,l,m)
+    call mat%assign(-val,i-1,j,k,p)
+    call mat%assign(val,i+1,j,k,p)
   end subroutine x_cd2
 
   subroutine x_cd2_first(mat, indices)
@@ -415,23 +406,22 @@ contains
     double precision val, dx
     integer nx
     type(index_list) indices
-    integer i, j, k, l, m
+    integer i, j, k, p
 
     i = indices%i
     j = indices%j
     k = indices%k
-    l = indices%l
-    m = indices%m
+    p = indices%p
     grid = mat%grid
 
     dx = grid%x%spacing(indices%k)
     nx = grid%x%num
 
-    val = grid%phi%sin(m) * grid%theta%cos(l) / (2.d0 * dx)
+    val = grid%angles%sin_phi_p(p) * grid%angles%cos_theta_p(p) / (2.d0 * dx)
 
     call mat%set_ind(indices)
-    call mat%assign(-val,nx,j,k,l,m)
-    call mat%assign(val,i+1,j,k,l,m)
+    call mat%assign(-val,nx,j,k,p)
+    call mat%assign(val,i+1,j,k,p)
   end subroutine x_cd2_first
 
   subroutine x_cd2_last(mat, indices)
@@ -439,21 +429,20 @@ contains
     type(space_angle_grid) grid
     double precision val, dx
     type(index_list) indices
-    integer i, j, k, l, m
+    integer i, j, k, p
     i = indices%i
     j = indices%j
     k = indices%k
-    l = indices%l
-    m = indices%m
+    p = indices%p
     grid = mat%grid
 
     dx = grid%x%spacing(indices%k)
 
-    val = grid%phi%sin(m) * grid%theta%cos(l) / (2.d0 * dx)
+    val = grid%angles%sin_phi_p(p) * grid%angles%cos_theta_p(p) / (2.d0 * dx)
 
     call mat%set_ind(indices)
-    call mat%assign(-val,i-1,j,k,l,m)
-    call mat%assign(val,1,j,k,l,m)
+    call mat%assign(-val,i-1,j,k,p)
+    call mat%assign(val,1,j,k,p)
   end subroutine x_cd2_last
 
   subroutine y_cd2(mat, indices)
@@ -461,21 +450,20 @@ contains
     type(space_angle_grid) grid
     double precision val, dy
     type(index_list) indices
-    integer i, j, k, l, m
+    integer i, j, k, p
     i = indices%i
     j = indices%j
     k = indices%k
-    l = indices%l
-    m = indices%m
+    p = indices%p
     grid = mat%grid
 
     dy = grid%y%spacing(indices%k)
 
-    val = grid%phi%sin(m) * grid%theta%sin(l) / (2.d0 * dy)
+    val = grid%angles%sin_phi_p(p) * grid%angles%sin_theta_p(p) / (2.d0 * dy)
 
     call mat%set_ind(indices)
-    call mat%assign(-val,i,j-1,k,l,m)
-    call mat%assign(val,i,j+1,k,l,m)
+    call mat%assign(-val,i,j-1,k,p)
+    call mat%assign(val,i,j+1,k,p)
   end subroutine y_cd2
 
   subroutine y_cd2_first(mat, indices)
@@ -484,22 +472,21 @@ contains
     double precision val, dy
     integer ny
     type(index_list) indices
-    integer i, j, k, l, m
+    integer i, j, k, p
     i = indices%i
     j = indices%j
     k = indices%k
-    l = indices%l
-    m = indices%m
+    p = indices%p
     grid = mat%grid
 
     dy = grid%y%spacing(indices%k)
     ny = grid%y%num
 
-    val = grid%phi%sin(m) * grid%theta%sin(l) / (2.d0 * dy)
+    val = grid%angles%sin_phi_p(p) * grid%angles%sin_theta_p(p) / (2.d0 * dy)
 
     call mat%set_ind(indices)
-    call mat%assign(-val,i,ny,k,l,m)
-    call mat%assign(val,i,j+1,k,l,m)
+    call mat%assign(-val,i,ny,k,p)
+    call mat%assign(val,i,j+1,k,p)
   end subroutine y_cd2_first
 
   subroutine y_cd2_last(mat, indices)
@@ -508,21 +495,20 @@ contains
     double precision val, dy
     integer ny
     type(index_list) indices
-    integer i, j, k, l, m
+    integer i, j, k, p
     i = indices%i
     j = indices%j
     k = indices%k
-    l = indices%l
-    m = indices%m
+    p = indices%p
     grid = mat%grid
 
     dy = grid%y%spacing(indices%k)
 
-    val = grid%phi%sin(m) * grid%theta%sin(l) / (2.d0 * dy)
+    val = grid%angles%sin_phi_p(p) * grid%angles%sin_theta_p(p) / (2.d0 * dy)
 
     call mat%set_ind(indices)
-    call mat%assign(-val,i,j-1,k,l,m)
-    call mat%assign(val,i,1,k,l,m)
+    call mat%assign(-val,i,j-1,k,p)
+    call mat%assign(val,i,1,k,p)
   end subroutine y_cd2_last
 
   subroutine z_cd2(mat, indices)
@@ -530,21 +516,20 @@ contains
     type(space_angle_grid) grid
     double precision val, dz
     type(index_list) indices
-    integer i, j, k, l, m
+    integer i, j, k, p
     i = indices%i
     j = indices%j
     k = indices%k
-    l = indices%l
-    m = indices%m
+    p = indices%p
     grid = mat%grid
 
     dz = grid%z%spacing(indices%k)
 
-    val = grid%phi%cos(m) / (2.d0 * dz)
+    val = grid%angles%cos_phi_p(p) / (2.d0 * dz)
 
     call mat%set_ind(indices)
-    call mat%assign(-val,i,j,k-1,l,m)
-    call mat%assign(val,i,j,k+1,l,m)
+    call mat%assign(-val,i,j,k-1,p)
+    call mat%assign(val,i,j,k+1,p)
   end subroutine z_cd2
 
   subroutine z_fd2(mat, indices)
@@ -556,17 +541,16 @@ contains
     type(space_angle_grid) grid
     double precision val, val1, val2, val3, dz
     type(index_list) indices
-    integer i, j, k, l, m
+    integer i, j, k, p
     i = indices%i
     j = indices%j
     k = indices%k
-    l = indices%l
-    m = indices%m
+    p = indices%p
     grid = mat%grid
 
     dz = grid%z%spacing(indices%k)
 
-    val = grid%phi%cos(m) / (2.d0 * dz)
+    val = grid%angles%cos_phi_p(p) / (2.d0 * dz)
 
     val1 = -3.d0 * val
     val2 = 4.d0 * val
@@ -574,8 +558,8 @@ contains
 
     call mat%set_ind(indices)
     call mat%add(val1)
-    call mat%assign(val2,i,j,k+1,l,m)
-    call mat%assign(val3,i,j,k+2,l,m)
+    call mat%assign(val2,i,j,k+1,p)
+    call mat%assign(val3,i,j,k+2,p)
   end subroutine z_fd2
 
   subroutine z_bd2(mat, indices)
@@ -587,17 +571,16 @@ contains
     type(space_angle_grid) grid
     double precision val, val1, val2, val3, dz
     type(index_list) indices
-    integer i, j, k, l, m
+    integer i, j, k, p
     i = indices%i
     j = indices%j
     k = indices%k
-    l = indices%l
-    m = indices%m
+    p = indices%p
     grid = mat%grid
 
     dz = grid%z%spacing(indices%k)
 
-    val = grid%phi%cos(m) / (2.d0 * dz)
+    val = grid%angles%cos_phi_p(p) / (2.d0 * dz)
 
     val1 = 3.d0 * val
     val2 = -4.d0 * val
@@ -605,8 +588,8 @@ contains
 
     call mat%set_ind(indices)
     call mat%add(val1)
-    call mat%assign(val2,i,j,k-1,l,m)
-    call mat%assign(val3,i,j,k-2,l,m)
+    call mat%assign(val2,i,j,k-1,p)
+    call mat%assign(val3,i,j,k-2,p)
   end subroutine z_bd2
 
   subroutine angular_integral(mat, indices)
@@ -618,32 +601,31 @@ contains
     double precision val
     double precision prefactor
     type(index_list) indices
-    integer i, j, k, l, m
+    integer i, j, k, p
     double precision bb
 
     i = indices%i
     j = indices%j
     k = indices%k
-    l = indices%l
-    m = indices%m
+    p = indices%p
     grid = mat%grid
     iops = mat%iops
 
-    prefactor = grid%theta%prefactor * grid%phi%prefactor
-    call mat%set_ind(indices)
+    ! prefactor = grid%theta%prefactor * grid%phi%prefactor
+    ! call mat%set_ind(indices)
 
-    bb = iops%scat_grid(i, j, k)
+    ! bb = iops%scat_grid(i, j, k)
 
-    ! Store entry number of element at i,j,k,l,m
-    ! to allow other functions to add to it
-    call mat%calculate_repeat_index(indices)
+    ! ! Store entry number of element at i,j,k,p
+    ! ! to allow other functions to add to it
+    ! call mat%calculate_repeat_index(indices)
 
-    do mp=1, grid%phi%num
-      do lp=1, grid%theta%num
-          val = - bb * prefactor * iops%vsf(l,m,lp,mp)
-          call mat%assign(val, i, j, k, lp, mp)
-       end do
-    end do
+    ! do mp=1, grid%phi%num
+    !   do lp=1, grid%theta%num
+    !       val = - bb * prefactor * iops%vsf(l,p,lp,mp)
+    !       call mat%assign(val, i, j, k, lp, mp)
+    !    end do
+    ! end do
 
   end subroutine angular_integral
 
@@ -652,18 +634,17 @@ contains
     type(space_angle_grid) grid
     double precision bc_val
     type(index_list) indices
-    integer i, j, k, l, m
+    integer i, j, k, p
     i = indices%i
     j = indices%j
     k = indices%k
-    l = indices%l
-    m = indices%m
+    p = indices%p
 
     grid = mat%grid
 
     call mat%set_ind(indices)
-    call mat%assign(1.d0,i,j,k,l,m)
-    call mat%assign_rhs(mat%surface_vals(i,j,l,m), i, j, k, l, m)
+    call mat%assign(1.d0,i,j,k,p)
+    call mat%assign_rhs(mat%surface_vals(p), i, j, k, p)
   end subroutine z_surface_bc
 
   subroutine z_bottom_bc(mat, indices)
@@ -671,12 +652,11 @@ contains
     type(space_angle_grid) grid
     double precision bc_val
     type(index_list) indices
-    integer i, j, k, l, m
+    integer i, j, k, p
     i = indices%i
     j = indices%j
     k = indices%k
-    l = indices%l
-    m = indices%m
+    p = indices%p
 
     grid = mat%grid
 
@@ -684,8 +664,8 @@ contains
     bc_val = 0.d0
 
     call mat%set_ind(indices)
-    call mat%assign(1.d0,i,j,k,l,m)
-    call mat%assign_rhs(bc_val, i, j, k, l, m)
+    call mat%assign(1.d0,i,j,k,p)
+    call mat%assign_rhs(bc_val, i, j, k, p)
   end subroutine z_bottom_bc
 
   ! Finite difference wrappers
