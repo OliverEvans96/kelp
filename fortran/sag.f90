@@ -42,6 +42,19 @@ type angle2d
    procedure :: deinit => angle_deinit
 end type angle2d
 
+type angle_dim
+   integer num
+   double precision minval, maxval, prefactor
+   double precision, dimension(:), allocatable :: vals, weights, sin, cos
+ contains
+   procedure :: set_bounds => angle_set_bounds
+   procedure :: set_num => angle1d_set_num
+   procedure :: deinit => angle1d_deinit
+   procedure :: integrate_points => angle1d_integrate_points
+   procedure :: integrate_func => angle1d_integrate_func
+   procedure :: assign_legendre
+end type angle_dim
+
 type space_dim
    integer num
    double precision minval, maxval
@@ -100,20 +113,20 @@ contains
   function lhat(angles, p) result(l)
     class(angle2d) :: angles
     integer l, p
-    l = mod1(p, angles%ntheta)
+    l = mod1(p-1, angles%ntheta)
   end function lhat
 
   function mhat(angles, p) result(m)
     class(angle2d) :: angles
     integer m, p
-    m = ceiling(dble(p)/dble(angles%ntheta)) + 1
+    m = ceiling(dble(p-1)/dble(angles%ntheta)) + 1
   end function mhat
 
   function phat(angles, l, m) result(p)
     class(angle2d) :: angles
     integer l, m, p
 
-    p = (m-2)*angles%ntheta + l
+    p = (m-2)*angles%ntheta + l + 1
   end function phat
 
   subroutine angle_init(angles)
@@ -128,6 +141,10 @@ contains
     allocate(angles%phi_p(angles%nomega))
     allocate(angles%theta_edge_p(angles%nomega))
     allocate(angles%phi_edge_p(angles%nomega))
+    allocate(angles%cos_theta_p(angles%nomega))
+    allocate(angles%sin_theta_p(angles%nomega))
+    allocate(angles%cos_phi_p(angles%nomega))
+    allocate(angles%sin_phi_p(angles%nomega))
     allocate(angles%cos_theta(angles%nomega))
     allocate(angles%sin_theta(angles%nomega))
     allocate(angles%cos_phi(angles%nomega))
@@ -150,27 +167,19 @@ contains
        angles%theta(l) = dble(l-1)*angles%dtheta
        angles%cos_theta(l) = cos(angles%theta(l))
        angles%sin_theta(l) = sin(angles%theta(l))
-       angles%cos_theta_p(p) = cos(angles%theta_p(p))
-       angles%sin_theta_p(p) = sin(angles%theta_p(p))
        angles%theta_edge(l) = dble(l-1)*angles%dtheta
        angles%cos_theta_edge(l) = cos(angles%theta_edge(l))
        angles%sin_theta_edge(l) = sin(angles%theta_edge(l))
-       angles%cos_theta_edge_p(p) = cos(angles%theta_edge_p(p))
-       angles%sin_theta_edge_p(p) = sin(angles%theta_edge_p(p))
     end do
 
     do m=1, angles%nphi
        angles%phi(m) = dble(m-1.d0)*angles%dphi
-       angles%cos_phi_p(m) = cos(angles%phi_p(m))
-       angles%sin_phi_p(m) = sin(angles%phi_p(m))
-       angles%cos_phi_p(p) = cos(angles%phi_p(p))
-       angles%sin_phi_p(p) = sin(angles%phi_p(p))
+       angles%cos_phi(m) = cos(angles%phi(m))
+       angles%sin_phi(m) = sin(angles%phi(m))
        if(m<angles%nphi) then
           angles%phi_edge(m) = dble(m-0.5d0)*angles%dphi
           angles%cos_phi_edge(m) = cos(angles%phi_edge(m))
           angles%sin_phi_edge(m) = sin(angles%phi_edge(m))
-          angles%cos_phi_edge_p(p) = cos(angles%phi_edge_p(p))
-          angles%sin_phi_edge_p(p) = sin(angles%phi_edge_p(p))
        end if
     end do
 
@@ -180,9 +189,19 @@ contains
           p = angles%phat(l, m)
 
           angles%theta_p(p) = angles%theta(l)
-          angles%theta_edge_p(p) = angles%theta_edge(l)
           angles%phi_p(p) = angles%phi(m)
+          angles%theta_edge_p(p) = angles%theta_edge(l)
           angles%phi_edge_p(p) = angles%phi_edge(m)
+
+          angles%cos_theta_p(p) = cos(angles%theta_p(p))
+          angles%sin_theta_p(p) = sin(angles%theta_p(p))
+          angles%cos_phi_p(p) = cos(angles%phi_p(p))
+          angles%sin_phi_p(p) = sin(angles%phi_p(p))
+
+          angles%cos_theta_edge_p(p) = cos(angles%theta_edge_p(p))
+          angles%sin_theta_edge_p(p) = sin(angles%theta_edge_p(p))
+          angles%cos_phi_edge_p(p) = cos(angles%phi_edge_p(p))
+          angles%sin_phi_edge_p(p) = sin(angles%phi_edge_p(p))
 
        end do
     end do
@@ -190,7 +209,7 @@ contains
     ! Poles
     l=1
     ! North Pole
-    p = angles%nomega-1
+    p = 1
     m=1
     angles%theta_p(p) = angles%theta(l)
     angles%theta_edge_p(p) = angles%theta_edge(l)
@@ -217,7 +236,7 @@ contains
     integral = 0
 
     ! Interior
-    do p=1, angles%nomega-2
+    do p=2, angles%nomega-1
        m = angles%mhat(p)
        integral = integral + func_vals(p) * ( &
        angles%cos_phi_edge(m-1) &
@@ -229,7 +248,7 @@ contains
 
     ! Include poles
     integral = integral + 2.d0*pi*(1.d0-cos(angles%dphi/2.d0)) * (&
-         func_vals(angles%nomega-1) &
+         func_vals(1) &
          + func_vals(angles%nomega))
 
   end function angle_integrate_points
@@ -255,7 +274,6 @@ contains
     deallocate(func_vals)
   end function angle_integrate_func
 
-
   subroutine angle_deinit(angles)
     class(angle2d) :: angles
     deallocate(angles%theta)
@@ -270,6 +288,10 @@ contains
     deallocate(angles%sin_theta)
     deallocate(angles%cos_phi)
     deallocate(angles%sin_phi)
+    deallocate(angles%cos_theta_p)
+    deallocate(angles%sin_theta_p)
+    deallocate(angles%cos_phi_p)
+    deallocate(angles%sin_phi_p)
     deallocate(angles%cos_theta_edge)
     deallocate(angles%sin_theta_edge)
     deallocate(angles%cos_phi_edge)
@@ -279,6 +301,87 @@ contains
     deallocate(angles%cos_phi_edge_p)
     deallocate(angles%sin_phi_edge_p)
   end subroutine angle_deinit
+
+
+  !!! ANGLE 1D !!!
+
+  subroutine angle_set_bounds(angle, minval, maxval)
+    class(angle_dim) :: angle
+    double precision minval, maxval
+    angle%minval = minval
+    angle%maxval = maxval
+  end subroutine angle_set_bounds
+
+  subroutine angle1d_set_num(angle, num)
+    class(angle_dim) :: angle
+    integer num
+    angle%num = num
+  end subroutine angle1d_set_num
+
+  ! To calculate \int_{xmin}^{xmax} f(x) dx :
+  ! int = prefactor * sum(weights * f(roots))
+  subroutine assign_legendre(angle)
+    class(angle_dim) :: angle
+    double precision root, weight, theta
+    integer i
+    ! glpair produces both x and theta, where x=cos(theta). We'll throw out theta.
+
+    allocate(angle%vals(angle%num))
+    allocate(angle%weights(angle%num))
+    allocate(angle%sin(angle%num))
+    allocate(angle%cos(angle%num))
+
+    ! Prefactor for integration
+    ! From change of variables
+    angle%prefactor = (angle%maxval - angle%minval) / 2.d0
+
+    do i = 1, angle%num
+       call glpair(angle%num, i, theta, weight, root)
+       call affine_transform(root, -1.d0, 1.d0, angle%minval, angle%maxval)
+       angle%vals(i) = root
+       angle%weights(i) = weight
+       angle%sin(i) = sin(root)
+       angle%cos(i) = cos(root)
+    end do
+
+  end subroutine assign_legendre
+
+  ! Integrate callable function over angle via Gauss-Legendre quadrature
+
+  function angle1d_integrate_func(angle, func_callable) result(integral)
+    class(angle_dim) :: angle
+    double precision, external :: func_callable
+    double precision, dimension(:), allocatable :: func_vals
+    double precision integral
+    integer i
+
+    allocate(func_vals(angle%num))
+
+    do i=1, angle%num
+       func_vals(i) = func_callable(angle%vals(i))
+    end do
+
+    integral = angle%integrate_points(func_vals)
+
+    deallocate(func_vals)
+  end function angle1d_integrate_func
+
+  ! Integrate function given function values sampled at legendre theta values
+  function angle1d_integrate_points(angle, func_vals) result(integral)
+    class(angle_dim) :: angle
+    double precision, dimension(angle%num) :: func_vals
+    double precision integral
+
+    integral = angle%prefactor * sum(angle%weights * func_vals)
+  end function angle1d_integrate_points
+
+  subroutine angle1d_deinit(angle)
+    class(angle_dim) :: angle
+    deallocate(angle%vals)
+    deallocate(angle%weights)
+    deallocate(angle%sin)
+    deallocate(angle%cos)
+  end subroutine angle1d_deinit
 
 
   !! SPACE !!
