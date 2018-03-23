@@ -112,7 +112,7 @@ test_context: $(SRC)/test_context.f90 $(INC)/prob.o $(INC)/utils.o $(INC)/kelp_c
 	$(FC) $(BFLAGS) $^ -o $(BIN)/$@
 test_gl: $(SRC)/test_gl.f90 $(INC)/fastgl.o
 	$(FC) $(BFLAGS) $^ -o $(BIN)/$@
-test_grid: $(SRC)/test_grid.f90 $(INC)/kelp_context.o $(INC)/fastgl.o $(INC)/prob.o $(INC)/sag.o $(INC)/utils.o
+test_grid: $(SRC)/test_grid.f90 $(INC)/test_grid_mod.o $(INC)/kelp_context.o $(INC)/fastgl.o $(INC)/prob.o $(INC)/sag.o $(INC)/utils.o
 	$(FC) $(BFLAGS) $^ -o $(BIN)/$@
 test_gmres: $(SRC)/test_gmres.f90 $(INC)/mgmres.o $(INC)/utils.o $(INC)/hdf5_utils.o $(INC)/kelp_context.o $(INC)/sag.o $(INC)/fastgl.o $(INC)/prob.o
 	$(H5FC) $(BFLAGS) $^ -o $(BIN)/$@
@@ -160,6 +160,8 @@ $(INC)/kelp3d.o: $(SRC)/kelp3d.f90 $(INC)/kelp_context.o
 $(INC)/test_kelp3d_mod.o: $(SRC)/test_kelp3d_mod.f90 $(INC)/kelp3d.o #$(INC)/hdf5_utils.o
 	$(FC) $(OFLAGS) $< -o $@
 $(INC)/test_rte3d_mod.o: $(SRC)/test_rte3d_mod.f90 $(INC)/test_kelp3d_mod.o $(INC)/rte3d.o $(INC)/kelp3d.o $(INC)/light_context.o #$(INC)/hdf5_utils.o
+	$(FC) $(OFLAGS) $< -o $@
+$(INC)/test_grid_mod.o: $(SRC)/test_grid_mod.f90 $(INC)/sag.o
 	$(FC) $(OFLAGS) $< -o $@
 $(INC)/rte_sparse_matrices.o: $(SRC)/rte_sparse_matrices.f90 $(INC)/sag.o $(INC)/kelp_context.o $(INC)/mgmres.o
 	$(FC) $(OFLAGS) $< -o $@
