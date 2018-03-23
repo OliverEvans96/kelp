@@ -106,13 +106,15 @@ py_wrap: pykelp3d_wrap pyrte3d_wrap pyasymptotics_wrap
 # Tests #
 #########
 
-test: test_context test_gl test_grid test_gmres #test_prob test_kelp_3d
+test: test_context test_gl test_asymptotics test_grid test_gmres #test_prob test_kelp_3d
 
 test_context: $(SRC)/test_context.f90 $(INC)/prob.o $(INC)/utils.o $(INC)/kelp_context.o
 	$(FC) $(BFLAGS) $^ -o $(BIN)/$@
 test_gl: $(SRC)/test_gl.f90 $(INC)/fastgl.o
 	$(FC) $(BFLAGS) $^ -o $(BIN)/$@
 test_grid: $(SRC)/test_grid.f90 $(INC)/test_grid_mod.o $(INC)/kelp_context.o $(INC)/fastgl.o $(INC)/prob.o $(INC)/sag.o $(INC)/utils.o
+	$(FC) $(BFLAGS) $^ -o $(BIN)/$@
+test_asymptotics: $(SRC)/test_asymptotics.f90 $(INC)/test_asymptotics_mod.o $(INC)/asymptotics.o $(INC)/light_context.o $(INC)/rte_sparse_matrices.o $(INC)/mgmres.o $(INC)/rte3d.o $(INC)/kelp_context.o $(INC)/fastgl.o $(INC)/prob.o $(INC)/sag.o $(INC)/utils.o
 	$(FC) $(BFLAGS) $^ -o $(BIN)/$@
 test_gmres: $(SRC)/test_gmres.f90 $(INC)/mgmres.o $(INC)/utils.o $(INC)/hdf5_utils.o $(INC)/kelp_context.o $(INC)/sag.o $(INC)/fastgl.o $(INC)/prob.o
 	$(H5FC) $(BFLAGS) $^ -o $(BIN)/$@
@@ -162,6 +164,8 @@ $(INC)/test_kelp3d_mod.o: $(SRC)/test_kelp3d_mod.f90 $(INC)/kelp3d.o #$(INC)/hdf
 $(INC)/test_rte3d_mod.o: $(SRC)/test_rte3d_mod.f90 $(INC)/test_kelp3d_mod.o $(INC)/rte3d.o $(INC)/kelp3d.o $(INC)/light_context.o #$(INC)/hdf5_utils.o
 	$(FC) $(OFLAGS) $< -o $@
 $(INC)/test_grid_mod.o: $(SRC)/test_grid_mod.f90 $(INC)/sag.o
+	$(FC) $(OFLAGS) $< -o $@
+$(INC)/test_asymptotics_mod.o: $(SRC)/test_asymptotics_mod.f90 $(SRC)/asymptotics.f90 $(INC)/prob.o $(INC)/fastgl.o $(INC)/sag.o $(INC)/utils.o $(INC)/rte3d.o $(INC)/kelp_context.o $(INC)/light_context.o $(INC)/rte_sparse_matrices.o $(INC)/asymptotics.o
 	$(FC) $(OFLAGS) $< -o $@
 $(INC)/rte_sparse_matrices.o: $(SRC)/rte_sparse_matrices.f90 $(INC)/sag.o $(INC)/kelp_context.o $(INC)/mgmres.o
 	$(FC) $(OFLAGS) $< -o $@
