@@ -1,17 +1,69 @@
-program test_grid
-  use test_grid_mod
+module test_grid
+  use sag
   implicit none
-  double precision, external :: f_ang
 
-  call test_2d_angular_integration(f_ang, 10, 10, 13.823007d0)
-  call test_2d_angular_integration(f_ang, 20, 20, 12.570662d0)
+contains
 
-  call test_angle_p_conversions(10, 10)
-  call test_angle_p_conversions(15, 25)
-  call test_angle_p_conversions(30, 15)
-end program test_grid
+  function test_2d_angular_integration(func, ntheta, nphi) result(integral)
+    type(space_angle_grid) grid
+    double precision, external :: func
+    integer ntheta, nphi
+    double precision integral
 
-function f_ang(theta, phi)
-  double precision theta, phi, f_ang
-  f_ang = 1.d0 + 0.1d0*(sin(10.d0*phi)+cos(10.d0*theta))
-end function f_ang
+    call grid%set_bounds(-1.d0,1.d0,-2.d0,2.d0,-3.d0,3.d0)
+    call grid%set_num(4,4,4, ntheta, nphi)
+    call grid%init()
+
+    integral = grid%angles%integrate_func(func)
+
+    !if(passed) then
+    !   write(*,'(A,I2,A,I2)') '* PASS - test_2d_angular_integration: ', ntheta, 'x', nphi
+    !else
+    !   write(*,'(A,I2,A,I2)') '* FAIL - test_2d_angular_integration: ', ntheta, 'x', nphi
+    !end if
+
+    call grid%deinit()
+  end function test_2d_angular_integration
+
+  function test_angle_p_conversions(ntheta, nphi) result(passed)
+  integer ntheta, nphi
+  logical passed
+  integer l, m, p
+  type(space_angle_grid) grid
+
+  call grid%set_bounds(-1.d0,1.d0,-2.d0,2.d0,-3.d0,3.d0)
+  call grid%set_num(4,4,4, ntheta, nphi)
+  call grid%init()
+
+  passed = .true.
+
+  ! Make sure that conversions between l,m and p
+  ! are invertible on interior of angular grid
+  do l=1, ntheta
+     do m=2, nphi-1
+        p = grid%angles%phat(l, m)
+        if(grid%angles%lhat(p) .ne. l) then
+           passed = .false.
+           exit
+        end if
+        if(grid%angles%mhat(p) .ne. m) then
+           passed = .false.
+           exit
+        end if
+     end do
+     if(.not. passed) then
+        exit
+     end if
+  end do
+
+  !if(passed) then
+  !   write(*,'(A,I2,A,I2)') '* PASS - test_p_conversions: ', ntheta, 'x', nphi
+  !else
+  !   write(*,'(A,I2,A,I2)') '* FAIL - test_p_conversions: ', ntheta, 'x', nphi
+  !end if
+
+  call grid%deinit()
+
+  end function test_angle_p_conversions
+
+end module test_grid

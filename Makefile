@@ -30,6 +30,7 @@ BIN=$(BASE)/bin
 SRC=$(BASE)/fortran
 INC=$(BASE)/include
 PYDIR=$(BASE)/python
+JULIA=$(BASE)/julia
 # External modules
 EXT=$(SRC)/download
 # F2PY .so / .py directory
@@ -64,7 +65,10 @@ OFLAGS=-J$(INC) -I$(INC) $(CFLAGS) $(PFLAGS) -fPIC $(OPTFLAGS) #$(OMPFLAGS)
 BFLAGS=-J$(INC) -I$(INC) $(PFLAGS) $(OPTFLAGS) #$(OMPFLAGS)
 # Flags for F2PY
 F2PYFLAGS=-L$(INC) -I$(INC) # $(PFLAGS) $(OPTFLAGS) #$(OMPFLAGS)
-
+# Test flags
+TESTFLAGS=-J$(INC) -I$(INC) -shared -fPIC
+# Export LD_LIBRARY_PATH for tests
+TESTEXP=export LD_LIBRARY_PATH=$(INC):$(LD_LIBRARY_PATH)
 
 ###############
 # Executables #
@@ -102,12 +106,21 @@ pyasymptotics_wrap: $(INC)/pyasymptotics_wrap.o $(INC)/prob.o $(INC)/fastgl.o $(
 
 py_wrap: pykelp3d_wrap pyrte3d_wrap pyasymptotics_wrap
 
+# TESTS for use with Julia
+$(INC)/test_grid.so: $(SRC)/test_grid.f90 $(INC)/fastgl.o $(INC)/sag.o $(INC)/utils.o
+	$(FC) $(TESTFLAGS) $^ -o $@
+
 #########
 # Tests #
 #########
 
-test: test_context test_gl test_asymptotics test_grid test_gmres #test_prob test_kelp_3d
+#test: test_context test_gl test_asymptotics test_grid test_gmres #test_prob test_kelp_3d
 
+# Julia Tests
+test: $(INC)/test_grid.so
+	$(TESTEXP); julia $(JULIA)/tests.jl
+
+# Old Fortran tests
 test_context: $(SRC)/test_context.f90 $(INC)/prob.o $(INC)/utils.o $(INC)/kelp_context.o
 	$(FC) $(BFLAGS) $^ -o $(BIN)/$@
 test_gl: $(SRC)/test_gl.f90 $(INC)/fastgl.o
@@ -205,7 +218,7 @@ $(INC)/prob.o: $(EXT)/prob.f90
 # Utils
 
 clean: rmo
-	rm -f $(INC)/*.mod $(INC)/*.o $(BIN)/*
+	rm -f $(INC)/*.mod $(INC)/*.o $(INC)/*.so $(BIN)/*
 	rm -rf $(F2PYDIR)/*
 
 rmo:
