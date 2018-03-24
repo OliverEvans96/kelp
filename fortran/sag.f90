@@ -133,6 +133,8 @@ contains
     class(angle2d) :: angles
     integer l, m, p
 
+
+    ! TODO: CONSIDER REMOVING non-p
     allocate(angles%theta(angles%ntheta))
     allocate(angles%phi(angles%nphi))
     allocate(angles%theta_edge(angles%ntheta))
@@ -167,7 +169,7 @@ contains
        angles%theta(l) = dble(l-1)*angles%dtheta
        angles%cos_theta(l) = cos(angles%theta(l))
        angles%sin_theta(l) = sin(angles%theta(l))
-       angles%theta_edge(l) = dble(l-1)*angles%dtheta
+       angles%theta_edge(l) = dble(l-0.5d0)*angles%dtheta
        angles%cos_theta_edge(l) = cos(angles%theta_edge(l))
        angles%sin_theta_edge(l) = sin(angles%theta_edge(l))
     end do

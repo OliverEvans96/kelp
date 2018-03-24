@@ -66,4 +66,47 @@ contains
 
   end function test_angle_p_conversions
 
+  subroutine make_grid(&
+       xmin, xmax, ymin, ymax, zmin, zmax,&
+       nx, ny, nz, ntheta, nphi,&
+       dx, dy, dz, dtheta, dphi,&
+       x, y, z, theta, phi,&
+       x_edge, y_edge, z_edge, theta_edge, phi_edge)
+    double precision, intent(in) ::  xmin, xmax, ymin, ymax, zmin, zmax
+    integer, intent(in) :: nx, ny, nz, ntheta, nphi
+    double precision, intent(out) :: dtheta, dphi
+    double precision, intent(out), dimension(nx) :: x, x_edge, dx
+    double precision, intent(out), dimension(ny) :: y, y_edge, dy
+    double precision, intent(out), dimension(nz) :: z, z_edge, dz
+    double precision, intent(out), dimension(ntheta) :: theta
+    double precision, intent(out), dimension(ntheta) :: theta_edge
+    double precision, intent(out), dimension(nphi) :: phi
+    double precision, intent(out), dimension(nphi-1) :: phi_edge
+
+    type(space_angle_grid) grid
+
+    call grid%set_bounds(xmin, xmax, ymin, ymax, zmin, zmax)
+    call grid%set_num(nx, ny, nz, ntheta, nphi)
+    call grid%init()
+
+    dx = grid%x%spacing
+    dy = grid%y%spacing
+    dz = grid%z%spacing
+    dtheta = grid%angles%dtheta
+    dphi = grid%angles%dphi
+
+    x = grid%x%vals
+    y = grid%y%vals
+    z = grid%z%vals
+    theta = grid%angles%theta
+    phi = grid%angles%phi
+
+    x_edge = grid%x%edges
+    y_edge = grid%y%edges
+    z_edge = grid%z%edges
+    theta_edge = grid%angles%theta_edge
+    phi_edge = grid%angles%phi_edge
+    call grid%deinit()
+  end subroutine make_grid
+
 end module test_grid
