@@ -16,6 +16,68 @@ function test_angle_p_conversions(nθ, nϕ)
           Bool, (Ref{Int64}, Ref{Int64}), nθ, nϕ)
 end
 
+function calculate_max_cells(xmin, xmax, ymin, ymax, zmin, zmax, nx, ny, nz, nθ, nϕ)
+    max_cells = ccall((:__test_asymptotics_MOD_test_max_cells, "test_asymptotics"),
+        Int64,
+        (
+            # Bounds
+            Ref{Float64},
+            Ref{Float64},
+            Ref{Float64},
+            Ref{Float64},
+            Ref{Float64},
+            Ref{Float64},
+
+            # Num
+            Ref{Int64},
+            Ref{Int64},
+            Ref{Int64},
+            Ref{Int64},
+            Ref{Int64},
+        ),
+        xmin, xmax, ymin, ymax, zmin, zmax,
+        nx, ny, nz, nθ, nϕ)
+    return max_cells
+end
+
+function test_traverse(xmin, xmax, ymin, ymax, zmin, zmax, nx, ny, nz, nθ, nϕ)
+    max_cells = calculate_max_cells(xmin, xmax, ymin, ymax, zmin, zmax, nx, ny, nz, nθ, nϕ)
+    nω = nθ*(nϕ-2)+2
+
+    println("max_cells = $max_cells ($(typeof(max_cells)))")
+    s = zeros(max_cells)
+    ds = zeros(max_cells)
+    ã = zeros(max_cells)
+    gₙ = zeros(max_cells)
+    rad_scatter = zeros(nx, ny, nz, nω)
+    num_cells = [0]
+
+    ccall((:__test_asymptotics_MOD_test_traverse,"test_asymptotics"),
+          Void, (
+              Ref{Int64},
+              Ref{Int64},
+              Ref{Int64},
+              Ref{Int64},
+              Ref{Int64},
+              Ref{Float64},
+              Ref{Float64},
+              Ref{Float64},
+              Ref{Float64},
+              Ref{Float64},
+              Ref{Int64}
+          ),
+          nx, ny, nz, nθ, nϕ,
+          s, ds, ã, gₙ, rad_scatter, num_cells)
+
+    num_cells = num_cells[1]
+    s = s[1:num_cells]
+    ds = ds[1:num_cells]
+    ã = ã[1:num_cells]
+    gₙ = gₙ[1:num_cells]
+
+    return s, ds, ã, gₙ, rad_scatter
+end
+
 function make_grid(xmin, xmax, ymin, ymax, zmin, zmax, nx, ny, nz, nθ, nϕ)
     dx = zeros(nx)
     dy = zeros(ny)
@@ -204,3 +266,32 @@ end
         end
     end
 end
+
+@testset "Asymptotics" begin
+    @testset "Traverse" begin
+        xmin = -6
+        ymin = -6
+        zmin = -6
+        xmax = 6
+        ymax = 6
+        zmax = 6
+        lims = [xmin ymin zmin; xmax ymax zmax]
+        nx = 10
+        ny = 10
+        nz = 10
+        nθ = 10
+        nϕ = 10
+        nums = [nx ny nz nθ nϕ]
+        s, ds, ã, gₙ, rad_scatter = test_traverse(lims..., nums...)
+        # No NaN values
+        @test all(.!isnan.(ã))
+        @test all(.!isnan.(gₙ))
+        @test all(.!isnan.(s))
+        @test all(.!isnan.(ds))
+        @test all(.!isnan.(rad_scatter))
+        # s increasing
+        @test all(diff(s).≥0)
+    end
+end
+
+
