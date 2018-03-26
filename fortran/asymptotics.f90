@@ -134,7 +134,6 @@ module asymptotics
     nz = grid%z%num
     nomega = grid%angles%nomega
 
-
     allocate(source(nx, ny, nz, nomega))
     allocate(scatter_integral(nx, ny, nz, nomega))
     allocate(scatter_integrand(nomega))
@@ -184,23 +183,21 @@ module asymptotics
           indices%j = j
           do k=1, nz
              indices%k = k
-             ! TODO: DOUBLE CHECK INDICES
              do p=1, nomega
                 indices%p = p
                 call calculate_scatter_integral(&
                     grid, iops, rad_scatter,&
                     scatter_integral,&
                     scatter_integrand, indices)
-                !write(*,*) 'integrand ', i, j, k, l, m
-                !write(*,*) scatter_integrand(:,:)
-                !write(*,*) 'integral', scatter_integral(i,j,k,l,m)
-                !write(*,*) ''
+                ! write(*,*) 'integrand ', i, j, k, p
+                ! write(*,*) scatter_integrand(:)
+                ! write(*,*) 'integral', scatter_integral(i,j,k,p)
+                ! write(*,*) ''
              end do
           end do
        end do
     end do
 
-    ! TODO: THINK ABOUT WHAT VALUE VSF(0) SHOULD HAVE
     source = -rad_scatter + scatter_integral
 
   end subroutine calculate_source
@@ -213,7 +210,6 @@ module asymptotics
     type(index_list) indices
     integer pp
 
-    ! TODO: Exclude forward direction from scattering integral?
     do pp=1, grid%angles%nomega
        scatter_integrand(pp) = iops%vsf(&
              indices%p,&
@@ -224,6 +220,10 @@ module asymptotics
              indices%k,&
              pp)
     end do
+
+    ! Exclude current direction
+    ! TODO: Make sure this is the right thing to do
+    scatter_integrand(indices%p) = 0
 
     scatter_integral(indices%i,indices%j,indices%k,indices%p) = grid%angles%integrate_points(scatter_integrand)
 
@@ -447,17 +447,34 @@ module asymptotics
     double precision, dimension(:), intent(out) :: s_array, ds, a_tilde, gn
     integer t
     integer, intent(out) :: num_cells
-
     double precision p0x, p0y, p0z
     double precision p1x, p1y, p1z
     double precision z0
-    double precision s_tilde
+    double precision s_tilde, s
     integer dir_x, dir_y, dir_z
     integer shift_x, shift_y, shift_z
     integer cell_x, cell_y, cell_z
     integer edge_x, edge_y, edge_z
+    integer first_x, last_x, first_y, last_y
     double precision s_next_x, s_next_y, s_next_z, s_next
-    double precision s, integral
+    double precision x_factor, y_factor, z_factor
+    double precision ds_x, ds_y
+    double precision, dimension(grid%z%num) :: ds_z
+
+    ! Divide by these numbers to get path separation
+    ! from separation in individual dimensions
+    write(*,*) 'PROBLEM'
+    write(*,*) 'p =', p
+    write(*,*) 'sin =', grid%angles%sin_phi_p
+    write(*,*) 'sin p =', grid%angles%sin_phi_p(p)
+    x_factor = abs(grid%angles%sin_phi_p(p) * grid%angles%cos_theta_p(p))
+    y_factor = abs(grid%angles%sin_phi_p(p) * grid%angles%sin_theta_p(p))
+    z_factor = abs(grid%angles%cos_phi_p(p))
+
+    ! This one is an array because z spacing can vary
+    ! z_factor should never be 0, because the ray will never
+    ! reach the surface or bottom.
+    ds_z(:) = grid%z%spacing(:)/z_factor
 
     ! Destination point
     p1x = grid%x%vals(i)
@@ -465,27 +482,41 @@ module asymptotics
     p1z = grid%z%vals(k)
 
     ! Direction
-    if(p < (grid%angles%nomega-2)/2) then
+    if(p < grid%angles%nomega/2) then
+       ! Downwelling light originates from surface
+       z0 = grid%z%minval
+       dir_z = 1
+    else
        ! Upwelling light originates from bottom
        z0 = grid%z%maxval
-    else
-       ! Downwelling light originates from surface
-       z0 = 0.d0
+       dir_z = -1
     end if
 
     ! Total path length from origin to destination
     ! (sign is correct for upwelling and downwelling)
     s_tilde = (p1z - z0)/grid%angles%cos_phi_p(p)
 
+    ! Path spacings between edge intersections in each dimension
+    ! Set to 0 if infinite in this dimension
+    if(x_factor .eq. 0) then
+       ds_x = 2*s_tilde
+    else
+       ds_x = grid%x%spacing(1)/x_factor
+    end if
+    if(y_factor .eq. 0) then
+       ds_y = 2*s_tilde
+    else
+       ds_y = grid%y%spacing(1)/y_factor
+    end if
+
     ! Origin point
-    p0x = p1x - s_tilde * grid%angles%sin_phi_p(p) * grid%angles%cos_theta_p(p)
-    p0y = p1y - s_tilde * grid%angles%sin_phi_p(p) * grid%angles%sin_theta_p(p)
-    p0z = p1z - s_tilde * grid%angles%cos_phi_p(p)
+    p0x = p1x - s_tilde * x_factor
+    p0y = p1y - s_tilde * y_factor
+    p0z = p1z - s_tilde * z_factor
 
     ! Direction of ray in each dimension. 1 => increasing. -1 => decreasing.
     dir_x = sgn(p1x-p0x)
     dir_y = sgn(p1y-p0y)
-    dir_z = sgn(p1z-p0z)
 
     ! Shifts
     ! Conversion from cell_inds to edge_inds
@@ -495,61 +526,186 @@ module asymptotics
     shift_z = merge(1,0,dir_z>0)
 
     ! Indices for cell containing origin point
-    ! TODO: Is this a good idea? Assuming that x spacing is constant
-    cell_x = ceiling((p0x-grid%x%minval)/grid%x%spacing(1))
-    cell_y = ceiling((p0y-grid%y%minval)/grid%y%spacing(1))
-    cell_z = merge(1, grid%z%num, dir_z>0)
+    cell_x = floor((p0x-grid%x%minval)/grid%x%spacing(1)) + 1
+    cell_y = floor((p0y-grid%y%minval)/grid%y%spacing(1)) + 1
+    ! x and y may be in periodic image, so shift back.
+    cell_x = mod1(cell_x, grid%x%num)
+    cell_y = mod1(cell_y, grid%y%num)
+
+    ! z starts at top or bottom depending on direction.
+    if(dir_z > 0) then
+       cell_z = 1
+    else
+       cell_z = grid%z%num
+    end if
 
     ! Edge indices preceeding starting cells
-    edge_x = cell_x + shift_x
-    edge_y = cell_y + shift_y
-    edge_z = cell_z + shift_z
+    edge_x = mod1(cell_x + shift_x, grid%x%num)
+    edge_y = mod1(cell_y + shift_y, grid%y%num)
+    edge_z = mod1(cell_z + shift_z, grid%z%num)
+
+    ! First and last cells given direction
+    if(dir_x .gt. 0) then
+       first_x = 1
+       last_x = grid%x%num
+    else
+       first_x = grid%x%num
+       last_x = 1
+    end if
+    if(dir_y .gt. 0) then
+       first_y = 1
+       last_y = grid%y%num
+    else
+       first_y = grid%y%num
+       last_y = 1
+    end if
 
     ! Path length to next edge plane in each dimension
-    s_next_x = (grid%x%edges(edge_x) - p0x)/(p1x-p0x)
-    s_next_y = (grid%y%edges(edge_y) - p0y)/(p1y-p0y)
-    s_next_z = (grid%z%edges(edge_z) - p0z)/(p1z-p0z)
+    if(x_factor .eq. 0) then
+       ! Will never cross, so set above total path length
+       s_next_x = 2*s_tilde
+    else if(cell_x .eq. last_x) then
+       ! If starts out at last cell, then compare to periodic image
+       s_next_x = (grid%x%edges(first_x) + dir_x*(grid%x%maxval - grid%x%minval)&
+            - shift_mod(p0x, grid%x%minval, grid%x%maxval)) / x_factor
+    else
+       ! Otherwise, just compare to next cell
+       s_next_x = dir_x * (grid%x%edges(edge_x)&
+            - shift_mod(p0x, grid%x%minval, grid%x%maxval)) / x_factor
+    end if
 
-    ! Initialize loop variables
+    ! Path length to next edge plane in each dimension
+    if(y_factor .eq. 0) then
+       ! Will never cross, so set above total path length
+       s_next_y = 2*s_tilde
+    else if(cell_y .eq. last_y) then
+       ! If starts out at last cell, then compare to periodic image
+       s_next_y = (grid%y%edges(first_y) + dir_y*(grid%y%maxval - grid%y%minval)&
+            - shift_mod(p0x, grid%y%minval, grid%y%maxval)) / y_factor
+    else
+       ! Otherwise, just compare to next cell
+       s_next_y = dir_y * (grid%y%edges(edge_y)&
+            - shift_mod(p0x, grid%y%minval, grid%y%maxval)) / y_factor
+    end if
+
+    s_next_z = ds_z(cell_z)
+
+    ! Initialize path
     s = 0.d0
-    integral = 0.d0
 
     ! Start with t=0 so that we can increment before storing,
     ! so that t will be the number of grid cells at the end of the loop.
     t=0
 
+    write(*,*) 'i, j, k, p =', i, j, k, p
+
+    write(*,*) 'theta, phi = ', 180/pi*grid%angles%theta_p(p), 180/pi*grid%angles%phi_p(p)
+    write(*,*) 'z0 =', z0
+
+    write(*,*) 'p0 = ', p0x, p0y, p0z
+    write(*,*) 'p1 = ', p1x, p1y, p1z
+
+    write(*,*) 'dir_x =', dir_x
+    write(*,*) 'dir_y =', dir_y
+    write(*,*) 'dir_z =', dir_z
+
+    write(*,*) 'shift_x = ', shift_x
+    write(*,*) 'shift_y = ', shift_y
+    write(*,*) 'shift_z = ', shift_z
+
+    write(*,*) 'xmin = ', grid%x%minval
+    write(*,*) 'ymin = ', grid%y%minval
+    write(*,*) 'zmin = ', grid%z%minval
+
+    write(*,*) 'dx = ', grid%x%spacing(1)
+    write(*,*) 'dy = ', grid%y%spacing(1)
+    write(*,*) 'dz = ', grid%z%spacing(1)
+
+    write(*,*) 'init cell_x = ', cell_x
+    write(*,*) 'init cell_y = ', cell_y
+    write(*,*) 'init cell_z = ', cell_z
+
+    write(*,*) 's_next_x =', s_next_x
+    write(*,*) 's_next_y =', s_next_y
+    write(*,*) 's_next_z =', s_next_z
+
+    write(*,*) 's, s_tilde = ', s, s_tilde
+
+    write(*,*) ''
+    write(*,*) '---'
+
+    ! s is the beginning of the current cell,
+    ! s_next is the end of the current cell.
     do while (s .lt. s_tilde)
        ! Move cell counter
        t = t + 1
 
-       ! Store path length
-       s_array(t) = s
+       write(*,*)
+       write(*,*) 't = ', t
+       write(*,*) 'cell_x = ', cell_x
+       write(*,*) 'cell_y = ', cell_y
+       write(*,*) 'cell_z = ', cell_z
+
+       write(*,*) 'x plane: ', grid%x%edges(edge_x)
+       write(*,*) 'y plane: ', grid%y%edges(edge_y)
+       write(*,*) 'z plane: ', grid%z%edges(edge_z)
+
+       write(*,*) 'x center: ', grid%x%vals(cell_x)
+       write(*,*) 'y center: ', grid%y%vals(cell_y)
+       write(*,*) 'z center: ', grid%z%vals(cell_z)
+
+       write(*,*) 's_next_x =', s_next_x
+       write(*,*) 's_next_y =', s_next_y
+       write(*,*) 's_next_z =', s_next_z
 
        ! Extract function values
        a_tilde(t) = iops%abs_grid(cell_x, cell_y, cell_z)
        gn(t) = source(cell_x, cell_y, cell_z, p)
 
        ! Move to next cell in path
-       if (s_next_x .le. min(s_next_y, s_next_z)) then
+       if(s_next_x .le. min(s_next_y, s_next_z)) then
           ! x edge is closest
           s_next = s_next_x
-          cell_x = cell_x + dir_x
-          edge_x = edge_x + dir_x
-          s_next_x = (grid%x%edges(edge_x) - p0x)/(p1x-p0x)
+
+          ! Increment indices (periodic)
+          cell_x = mod1(cell_x + dir_x, grid%x%num)
+          edge_x = mod1(edge_x + dir_x, grid%x%num)
+
+          ! x intersection after the one at s=s_next
+          s_next_x = s_next + ds_x
+
        else if (s_next_y .le. min(s_next_x, s_next_z)) then
           ! y edge is closest
           s_next = s_next_y
-          cell_y = cell_y + dir_y
-          edge_y = edge_y + dir_y
-          s_next_y = (grid%y%edges(edge_y) - p0y)/(p1y-p0y)
+
+          ! Increment indices (periodic)
+          cell_y = mod1(cell_y + dir_y, grid%y%num)
+          edge_y = mod1(edge_y + dir_y, grid%y%num)
+
+          ! y intersection after the one at s=s_next
+          s_next_y = s_next + ds_y
+
        else
           ! z edge is closest
           s_next = s_next_z
+
+          ! Increment indices (periodic)
           cell_z = cell_z + dir_z
           edge_z = edge_z + dir_z
-          s_next_z = (grid%z%edges(edge_z) - p0z)/(p1z-p0z)
+
+          ! z intersection after the one at s=s_next
+          s_next_z = s_next + ds_z(cell_z)
        end if
 
+       ! Cut off early if this is the end
+       ! This will be the last cell traversed if s_next >= s_tilde
+       s_next = min(s_tilde, s_next)
+
+       write(*,*) 's, s_next = ', s, s_next
+       write(*,*) 's_next/s_tilde = ', s_next / s_tilde
+
+       ! Store path length
+       s_array(t) = s_next
        ! Extract path length from same cell as function vals
        ds(t) = s_next - s
 
@@ -559,6 +715,9 @@ module asymptotics
 
     ! Return number of cells traversed
     num_cells = t
+
+    write(*,*) 'final position', p1x, p1y, p1z
+
   end subroutine traverse_ray
 
   ! Calculate the percent of radiance remaining after passing

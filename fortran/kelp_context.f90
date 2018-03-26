@@ -326,6 +326,7 @@ contains
     ! Faster, but produces lots of NaNs (at least in Python)
     !alpha = sin(theta)*sin(theta_prime)*cos(theta-theta_prime) + cos(phi)*cos(phi_prime)
 
+
     ! Slower, but more accurate
     alpha = (sin(phi)*sin(phi_prime) &
       * (cos(theta)*cos(theta_prime) + sin(theta)*sin(theta_prime)) &
@@ -350,8 +351,8 @@ contains
        th = grid%angles%theta_p(p)
        ph = grid%angles%phi_p(p)
        do  pp=1, nomega
-          th = grid%angles%theta_p(pp)
-          ph = grid%angles%phi_p(pp)
+          thp = grid%angles%theta_p(pp)
+          php = grid%angles%phi_p(pp)
           iops%vsf(p, pp) = iops%eval_vsf(angle_diff_3d(th,ph,thp,php))
        end do
     end do

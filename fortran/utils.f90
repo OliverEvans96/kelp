@@ -148,7 +148,7 @@ function mod1(i, n)
   integer i, n, m
   integer mod1
 
-  m = mod(i, n)
+  m = modulo(i, n)
 
   if(m .eq. 0) then
      mod1 = n

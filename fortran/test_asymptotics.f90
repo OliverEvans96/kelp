@@ -20,48 +20,66 @@ contains
     call grid%deinit()
   end function test_max_cells
 
-  subroutine test_traverse(nx, ny, nz, ntheta, nphi, path_lengths, ds, a_tilde, gn, rad_scatter, num_cells)
+  subroutine test_traverse(&
+       xmin, xmax, ymin, ymax, zmin, zmax,&
+       nx, ny, nz, ntheta, nphi,&
+       i, j, k, l, m,&
+       s_array, ds, a_tilde, gn, rad_scatter, num_cells)
     type(space_angle_grid) grid
     type(optical_properties) iops
     integer i, j, k, l, m, p
+    integer ip, jp, kp
     integer num_cells
+    double precision xmin, xmax, ymin, ymax, zmin, zmax
     double precision, dimension(:,:,:), allocatable :: p_kelp
     ! Fortran doesn't seem to enforce upper limits
     ! Couldn't find any reason not to do this
-    double precision, dimension(1) :: path_lengths, s_array, ds, a_tilde, gn
-    double precision, dimension(1,1,1,1) :: rad_scatter
+    double precision, dimension(:) :: s_array, ds, a_tilde, gn
+    double precision, dimension(:,:,:,:) :: rad_scatter
     integer nx, ny, nz, ntheta, nphi, nomega
     double precision, allocatable, dimension(:,:,:,:) :: scatter_integral, source
     double precision, allocatable, dimension(:) :: scatter_integrand
 
-    call grid%set_bounds(-1.d0,1.d0,-2.d0,2.d0,-3.d0,3.d0)
+    call grid%set_bounds(xmin, xmax, ymin, ymax, zmin, zmax)
     call grid%set_num(nx, ny, nz, ntheta, nphi)
     call grid%init()
     nomega = grid%angles%nomega
+
+    write(*,*) 'nx = ', nx
+    write(*,*) 'ny = ', ny
+    write(*,*) 'nz = ', nz
+    write(*,*) 'nomega = ', nomega
+
+    write(*,*) 'x =', grid%x%vals
+    write(*,*) 'y =', grid%y%vals
+    write(*,*) 'z =', grid%z%vals
+    write(*,*) 'theta =', grid%angles%theta
+    write(*,*) 'phi =', grid%angles%phi
 
     allocate(p_kelp(nx,ny,nz))
     allocate(scatter_integral(nx, ny, nz, nomega))
     allocate(scatter_integrand(nomega))
     allocate(source(nx,ny,nz,nomega))
 
-
-    call iops%init(grid)
-
-    iops%abs_kelp = 1.0
-    iops%scat_kelp = 0.0
-    iops%abs_water = 1.0
-    iops%scat_water = 0.0
-
     ! Just set vsf to be even, same angles as theta for convenience
     iops%num_vsf = ntheta
-    iops%vsf_angles = grid%angles%theta
-    iops%vsf_vals = 0*grid%angles%theta + 1
+    call iops%init(grid)
+    ! Copy arrays to avoid confusing allocation issues
+    iops%vsf_angles(:) = grid%angles%theta(:)
+    iops%vsf_vals(:) = 0*grid%angles%theta(:) + 1
 
+    iops%scat_kelp = 0.0
+    iops%abs_kelp = 1.0
 
-    do i=1, nx
-       do j=1, ny
-          do k=1, nz
-             p_kelp(i,j,k) = 0.5d0
+    do kp=1, grid%z%num
+      iops%abs_water(kp) = 1.0
+      iops%scat_water(kp) = 0.0
+    end do
+
+    do ip=1, nx
+       do jp=1, ny
+          do kp=1, nz
+             p_kelp(ip,jp,kp) = 0.5d0
           end do
        end do
     end do
@@ -69,15 +87,11 @@ contains
     call iops%calc_vsf_on_grid()
     call iops%calculate_coef_grids(p_kelp)
 
-    i = 3
-    j = 2
-    k = 1
-    l = 3
-    m = 2
-
     p = grid%angles%phat(l,m)
+    write(*,*) 'PHAT l, m, p =', l, m, p
 
     call calculate_source(grid, iops, rad_scatter, source, scatter_integral, scatter_integrand)
+
     call traverse_ray(grid, iops, source, i, j, k, p, s_array, ds, a_tilde, gn, num_cells)
 
     call iops%deinit()

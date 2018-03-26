@@ -46,7 +46,7 @@ H5FC=h5fc
 # (Should replace CFLAGS in OFLAGS)
 # Compile & run normally,
 # Then call gprof `executable`
-PFLAGS= #-g -O0
+PFLAGS= -g -O0 #-fcheck=all
 
 # Open MP
 OMPFLAGS=-fopenmp
@@ -112,6 +112,9 @@ $(INC)/test_grid.so: $(SRC)/test_grid.f90 $(INC)/fastgl.o $(INC)/sag.o $(INC)/ut
 $(INC)/test_asymptotics.so: $(SRC)/test_asymptotics.f90 $(INC)/asymptotics.o $(INC)/light_context.o $(INC)/rte_sparse_matrices.o $(INC)/mgmres.o $(INC)/rte3d.o $(INC)/kelp_context.o $(INC)/fastgl.o $(INC)/prob.o $(INC)/sag.o $(INC)/utils.o
 	$(FC) $(TESTFLAGS) $^ -o $@
 
+$(INC)/test_asymptotics.o: $(SRC)/test_asymptotics.f90 $(INC)/asymptotics.o $(INC)/light_context.o $(INC)/rte_sparse_matrices.o $(INC)/mgmres.o $(INC)/rte3d.o $(INC)/kelp_context.o $(INC)/fastgl.o $(INC)/prob.o $(INC)/sag.o $(INC)/utils.o
+	$(FC) $(OFLAGS) $^ -o $@
+
 #########
 # Tests #
 #########
@@ -121,6 +124,9 @@ $(INC)/test_asymptotics.so: $(SRC)/test_asymptotics.f90 $(INC)/asymptotics.o $(I
 # Julia Tests
 test: $(INC)/test_grid.so $(INC)/test_asymptotics.so
 	$(TESTEXP); julia $(JULIA)/tests.jl
+
+test_traverse: $(SRC)/test_traverse.f90 $(INC)/test_asymptotics.o $(INC)/asymptotics.o $(INC)/light_context.o $(INC)/rte_sparse_matrices.o $(INC)/mgmres.o $(INC)/rte3d.o $(INC)/kelp_context.o $(INC)/fastgl.o $(INC)/prob.o $(INC)/sag.o $(INC)/utils.o
+	$(FC) $(BFLAGS) $^ -o $(BIN)/$@
 
 # Old Fortran tests
 test_context: $(SRC)/test_context.f90 $(INC)/prob.o $(INC)/utils.o $(INC)/kelp_context.o
@@ -188,7 +194,8 @@ $(INC)/rte3d.o: $(SRC)/rte3d.f90 $(INC)/kelp_context.o $(INC)/rte_sparse_matrice
 	$(FC) $(OFLAGS) $< -o $@
 $(INC)/asymptotics.o: $(SRC)/asymptotics.f90 $(INC)/rte3d.o $(INC)/kelp_context.o $(INC)/rte_sparse_matrices.o $(INC)/light_context.o
 	$(FC) $(OFLAGS) $< -o $@
-
+$(INC)/test_asymptotics.o: $(SRC)/test_asymptotics.f90 $(INC)/asymptotics.o $(INC)/light_context.o $(INC)/rte_sparse_matrices.o $(INC)/mgmres.o $(INC)/rte3d.o $(INC)/kelp_context.o $(INC)/fastgl.o $(INC)/prob.o $(INC)/sag.o $(INC)/utils.o
+	$(FC) $(OFLAGS) $< -o $@
 $(INC)/pykelp3d_wrap.o: $(SRC)/pykelp3d_wrap.f90 $(INC)/prob.o $(INC)/fastgl.o $(INC)/sag.o $(INC)/utils.o $(INC)/kelp3d.o $(INC)/kelp_context.o
 	$(FC) $(OFLAGS) $< -o $@
 $(INC)/pyrte3d_wrap.o: $(SRC)/pyrte3d_wrap.f90 $(INC)/prob.o $(INC)/fastgl.o $(INC)/sag.o $(INC)/utils.o $(INC)/rte3d.o $(INC)/kelp_context.o $(INC)/light_context.o $(INC)/rte_sparse_matrices.o

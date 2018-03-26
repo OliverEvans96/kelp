@@ -6,7 +6,7 @@ module light_context
 
   type light_state
      double precision, dimension(:,:,:), allocatable :: irradiance
-     double precision, dimension(:,:,:,:,:), allocatable :: radiance
+     double precision, dimension(:,:,:,:), allocatable :: radiance
      type(space_angle_grid) :: grid
      type(rte_mat) :: mat
    contains
@@ -20,10 +20,11 @@ module light_context
 
 contains
 
+  ! Init for use with mat
   subroutine light_init(light, mat)
     class(light_state) light
     type(rte_mat) mat
-    integer nx, ny, nz, ntheta, nphi
+    integer nx, ny, nz, nomega
 
     light%mat = mat
     light%grid = mat%grid
@@ -31,41 +32,39 @@ contains
     nx = light%grid%x%num
     ny = light%grid%y%num
     nz = light%grid%z%num
-    ntheta = light%grid%theta%num
-    nphi = light%grid%phi%num
+    nomega = light%grid%angles%nomega
 
     allocate(light%irradiance(nx, ny, nz))
-    allocate(light%radiance(nx, ny, nz, ntheta, nphi))
+    allocate(light%radiance(nx, ny, nz, nomega))
   end subroutine light_init
 
+  ! Init for use without mat
   subroutine light_init_grid(light, grid)
     class(light_state) light
     type(space_angle_grid) grid
-    integer nx, ny, nz, ntheta, nphi
+    integer nx, ny, nz, nomega
 
     light%grid = grid
 
     nx = light%grid%x%num
     ny = light%grid%y%num
     nz = light%grid%z%num
-    ntheta = light%grid%theta%num
-    nphi = light%grid%phi%num
+    nomega = light%grid%angles%nomega
 
     allocate(light%irradiance(nx, ny, nz))
-    allocate(light%radiance(nx, ny, nz, ntheta, nphi))
+    allocate(light%radiance(nx, ny, nz, nomega))
   end subroutine light_init_grid
 
   subroutine calculate_radiance(light)
     class(light_state) light
-    integer i, j, k, l, m
-    integer nx, ny, nz, ntheta, nphi
+    integer i, j, k, p
+    integer nx, ny, nz, nomega
     integer index
 
     nx = light%grid%x%num
     ny = light%grid%y%num
     nz = light%grid%z%num
-    ntheta = light%grid%theta%num
-    nphi = light%grid%phi%num
+    nomega = light%grid%angles%nomega
 
     index = 1
 
@@ -75,11 +74,10 @@ contains
     do k=1, nz
        do j=1, ny
           do i=1, nx
-             do m=1, nphi
-                do l=1, ntheta
-                   light%mat%sol(index) = light%radiance(i,j,j,l,m)
-                   index = index + 1
-                end do
+             do p=1, nomega
+                ! TODO: DOUBLE CHECK INDEX HERE
+                light%mat%sol(index) = light%radiance(i,j,j,p)
+                index = index + 1
              end do
           end do
        end do
@@ -96,11 +94,10 @@ contains
     do k=1, nz
        do j=1, ny
           do i=1, nx
-             do m=1, nphi
-                do l=1, ntheta
-                   light%radiance(i,j,k,l,m) = light%mat%sol(index)
-                   index = index + 1
-                end do
+             do p=1, nomega
+                ! TODO: DOUBLE CHECK INDEX HERE
+                light%radiance(i,j,k,p) = light%mat%sol(index)
+                index = index + 1
              end do
           end do
        end do
@@ -119,8 +116,8 @@ contains
     do i=1, nx
        do j=1, ny
           do k=1, nz
-             light%irradiance(i,j,k) = light%grid%integrate_angle_2d( &
-                  light%radiance(i,j,k,:,:))
+             light%irradiance(i,j,k) = light%grid%angles%integrate_points( &
+                  light%radiance(i,j,k,:))
           end do
        end do
     end do

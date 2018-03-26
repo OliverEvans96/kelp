@@ -113,20 +113,38 @@ contains
   function lhat(angles, p) result(l)
     class(angle2d) :: angles
     integer l, p
-    l = mod1(p-1, angles%ntheta)
+    if(p .eq. 1) then
+       l = 1
+    else if(p .eq. angles%nomega) then
+       l = 1
+    else
+       l = mod1(p-1, angles%ntheta)
+   end if
   end function lhat
 
   function mhat(angles, p) result(m)
     class(angle2d) :: angles
     integer m, p
-    m = ceiling(dble(p-1)/dble(angles%ntheta)) + 1
+    if(p .eq. 1) then
+       m = 1
+    else if(p .eq. angles%nomega) then
+       m = angles%ntheta
+    else
+       m = ceiling(dble(p-1)/dble(angles%ntheta)) + 1
+    end if
   end function mhat
 
   function phat(angles, l, m) result(p)
     class(angle2d) :: angles
     integer l, m, p
 
-    p = (m-2)*angles%ntheta + l + 1
+    if(m .eq. 1) then
+       p = 1
+    else if(m .eq. angles%nphi) then
+       p = angles%nomega
+    else
+       p = (m-2)*angles%ntheta + l + 1
+    end if
   end function phat
 
   subroutine angle_init(angles)
@@ -218,6 +236,14 @@ contains
     angles%phi_p(p) = angles%phi(m)
     ! phi_edge_p only defined up to nphi-1.
     angles%phi_edge_p(p) = angles%phi_edge(m)
+    angles%cos_theta_p(p) = cos(angles%theta_p(p))
+    angles%sin_theta_p(p) = sin(angles%theta_p(p))
+    angles%cos_phi_p(p) = cos(angles%phi_p(p))
+    angles%sin_phi_p(p) = sin(angles%phi_p(p))
+    angles%cos_theta_edge_p(p) = cos(angles%theta_edge_p(p))
+    angles%sin_theta_edge_p(p) = sin(angles%theta_edge_p(p))
+    angles%cos_phi_edge_p(p) = cos(angles%phi_edge_p(p))
+    angles%sin_phi_edge_p(p) = sin(angles%phi_edge_p(p))
 
     ! South Pole
     p = angles%nomega
@@ -225,6 +251,10 @@ contains
     angles%theta_p(p) = angles%theta(l)
     angles%theta_edge_p(p) = angles%theta_edge(l)
     angles%phi_p(p) = angles%phi(m)
+    angles%cos_theta_p(p) = cos(angles%theta_p(p))
+    angles%sin_theta_p(p) = sin(angles%theta_p(p))
+    angles%cos_phi_p(p) = cos(angles%phi_p(p))
+    angles%sin_phi_p(p) = sin(angles%phi_p(p))
 
   end subroutine angle_init
 
