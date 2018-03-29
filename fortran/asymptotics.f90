@@ -210,6 +210,7 @@ module asymptotics
     type(index_list) indices
     integer pp
 
+    ! Current direction is already excluded by VSF
     do pp=1, grid%angles%nomega
        scatter_integrand(pp) = iops%vsf(&
              indices%p,&
@@ -220,10 +221,6 @@ module asymptotics
              indices%k,&
              pp)
     end do
-
-    ! Exclude current direction
-    ! TODO: Make sure this is the right thing to do
-    scatter_integrand(indices%p) = 0
 
     scatter_integral(indices%i,indices%j,indices%k,indices%p) = grid%angles%integrate_points(scatter_integrand)
 
@@ -463,10 +460,10 @@ module asymptotics
 
     ! Divide by these numbers to get path separation
     ! from separation in individual dimensions
-    write(*,*) 'PROBLEM'
-    write(*,*) 'p =', p
-    write(*,*) 'sin =', grid%angles%sin_phi_p
-    write(*,*) 'sin p =', grid%angles%sin_phi_p(p)
+    ! write(*,*) 'PROBLEM'
+    ! write(*,*) 'p =', p
+    ! write(*,*) 'sin =', grid%angles%sin_phi_p
+    ! write(*,*) 'sin p =', grid%angles%sin_phi_p(p)
     x_factor = abs(grid%angles%sin_phi_p(p) * grid%angles%cos_theta_p(p))
     y_factor = abs(grid%angles%sin_phi_p(p) * grid%angles%sin_theta_p(p))
     z_factor = abs(grid%angles%cos_phi_p(p))
@@ -599,40 +596,40 @@ module asymptotics
 
     write(*,*) 'i, j, k, p =', i, j, k, p
 
-    write(*,*) 'theta, phi = ', 180/pi*grid%angles%theta_p(p), 180/pi*grid%angles%phi_p(p)
-    write(*,*) 'z0 =', z0
+    ! write(*,*) 'theta, phi = ', 180/pi*grid%angles%theta_p(p), 180/pi*grid%angles%phi_p(p)
+    ! write(*,*) 'z0 =', z0
 
-    write(*,*) 'p0 = ', p0x, p0y, p0z
-    write(*,*) 'p1 = ', p1x, p1y, p1z
+    ! write(*,*) 'p0 = ', p0x, p0y, p0z
+    ! write(*,*) 'p1 = ', p1x, p1y, p1z
 
-    write(*,*) 'dir_x =', dir_x
-    write(*,*) 'dir_y =', dir_y
-    write(*,*) 'dir_z =', dir_z
+    ! write(*,*) 'dir_x =', dir_x
+    ! write(*,*) 'dir_y =', dir_y
+    ! write(*,*) 'dir_z =', dir_z
 
-    write(*,*) 'shift_x = ', shift_x
-    write(*,*) 'shift_y = ', shift_y
-    write(*,*) 'shift_z = ', shift_z
+    ! write(*,*) 'shift_x = ', shift_x
+    ! write(*,*) 'shift_y = ', shift_y
+    ! write(*,*) 'shift_z = ', shift_z
 
-    write(*,*) 'xmin = ', grid%x%minval
-    write(*,*) 'ymin = ', grid%y%minval
-    write(*,*) 'zmin = ', grid%z%minval
+    ! write(*,*) 'xmin = ', grid%x%minval
+    ! write(*,*) 'ymin = ', grid%y%minval
+    ! write(*,*) 'zmin = ', grid%z%minval
 
-    write(*,*) 'dx = ', grid%x%spacing(1)
-    write(*,*) 'dy = ', grid%y%spacing(1)
-    write(*,*) 'dz = ', grid%z%spacing(1)
+    ! write(*,*) 'dx = ', grid%x%spacing(1)
+    ! write(*,*) 'dy = ', grid%y%spacing(1)
+    ! write(*,*) 'dz = ', grid%z%spacing(1)
 
-    write(*,*) 'init cell_x = ', cell_x
-    write(*,*) 'init cell_y = ', cell_y
-    write(*,*) 'init cell_z = ', cell_z
+    ! write(*,*) 'init cell_x = ', cell_x
+    ! write(*,*) 'init cell_y = ', cell_y
+    ! write(*,*) 'init cell_z = ', cell_z
 
-    write(*,*) 's_next_x =', s_next_x
-    write(*,*) 's_next_y =', s_next_y
-    write(*,*) 's_next_z =', s_next_z
+    ! write(*,*) 's_next_x =', s_next_x
+    ! write(*,*) 's_next_y =', s_next_y
+    ! write(*,*) 's_next_z =', s_next_z
 
-    write(*,*) 's, s_tilde = ', s, s_tilde
+    ! write(*,*) 's, s_tilde = ', s, s_tilde
 
-    write(*,*) ''
-    write(*,*) '---'
+    ! write(*,*) ''
+    ! write(*,*) '---'
 
     ! s is the beginning of the current cell,
     ! s_next is the end of the current cell.
@@ -640,27 +637,30 @@ module asymptotics
        ! Move cell counter
        t = t + 1
 
-       write(*,*)
-       write(*,*) 't = ', t
-       write(*,*) 'cell_x = ', cell_x
-       write(*,*) 'cell_y = ', cell_y
-       write(*,*) 'cell_z = ', cell_z
+       ! write(*,*)
+       ! write(*,*) 't = ', t
+       ! write(*,*) 'cell_x = ', cell_x
+       ! write(*,*) 'cell_y = ', cell_y
+       ! write(*,*) 'cell_z = ', cell_z
+       !write(*,*) 'traverse cell ', cell_x, cell_y, cell_z
 
-       write(*,*) 'x plane: ', grid%x%edges(edge_x)
-       write(*,*) 'y plane: ', grid%y%edges(edge_y)
-       write(*,*) 'z plane: ', grid%z%edges(edge_z)
+       ! write(*,*) 'x plane: ', grid%x%edges(edge_x)
+       ! write(*,*) 'y plane: ', grid%y%edges(edge_y)
+       ! write(*,*) 'z plane: ', grid%z%edges(edge_z)
 
-       write(*,*) 'x center: ', grid%x%vals(cell_x)
-       write(*,*) 'y center: ', grid%y%vals(cell_y)
-       write(*,*) 'z center: ', grid%z%vals(cell_z)
+       ! write(*,*) 'x center: ', grid%x%vals(cell_x)
+       ! write(*,*) 'y center: ', grid%y%vals(cell_y)
+       ! write(*,*) 'z center: ', grid%z%vals(cell_z)
 
-       write(*,*) 's_next_x =', s_next_x
-       write(*,*) 's_next_y =', s_next_y
-       write(*,*) 's_next_z =', s_next_z
+       ! write(*,*) 's_next_x =', s_next_x
+       ! write(*,*) 's_next_y =', s_next_y
+       ! write(*,*) 's_next_z =', s_next_z
 
        ! Extract function values
        a_tilde(t) = iops%abs_grid(cell_x, cell_y, cell_z)
        gn(t) = source(cell_x, cell_y, cell_z, p)
+
+       !write(*,*) 'a_tilde = ', a_tilde(t)
 
        ! Move to next cell in path
        if(s_next_x .le. min(s_next_y, s_next_z)) then
@@ -701,13 +701,15 @@ module asymptotics
        ! This will be the last cell traversed if s_next >= s_tilde
        s_next = min(s_tilde, s_next)
 
-       write(*,*) 's, s_next = ', s, s_next
-       write(*,*) 's_next/s_tilde = ', s_next / s_tilde
 
        ! Store path length
        s_array(t) = s_next
        ! Extract path length from same cell as function vals
        ds(t) = s_next - s
+
+       !write(*,*) 's, s_next = ', s, s_next
+       !write(*,*) 's_next/s_tilde = ', s_next / s_tilde
+       !write(*,*) 'ds = ', ds(t)
 
        ! Update path length
        s = s_next
@@ -716,7 +718,7 @@ module asymptotics
     ! Return number of cells traversed
     num_cells = t
 
-    write(*,*) 'final position', p1x, p1y, p1z
+    !write(*,*) 'final position', p1x, p1y, p1z
 
   end subroutine traverse_ray
 

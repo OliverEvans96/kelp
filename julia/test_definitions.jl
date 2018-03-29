@@ -39,7 +39,61 @@ function calculate_max_cells(xmin, xmax, ymin, ymax, zmin, zmax, nx, ny, nz, nθ
     return max_cells
 end
 
-function test_traverse(xmin, xmax, ymin, ymax, zmin, zmax, nx, ny, nz, nθ, nϕ, i, j, k, l, m)
+function test_ray_integral(xmin, xmax, ymin, ymax, zmin, zmax,
+                           nx, ny, nz, nθ, nϕ,
+                           i, j, k, l, m, pkelp_fun)
+
+    cells, edges, spacing = make_grid(
+        xmin, xmax, ymin, ymax, zmin, zmax,
+        nx, ny, nz, nθ, nϕ
+    )
+
+    x, y, z, θ, ϕ = cells
+
+    vec_x = [x[i],y[j],z[k]]
+    vec_omega = [
+        sin(ϕ[m])*cos(θ[l]),
+        sin(ϕ[m])*sin(θ[l]),
+        cos(ϕ[m])
+    ]
+
+    z0 = vec_omega[3] < 0 ? zmax : zmin
+    s̃ = (vec_x[3] - z0) / vec_omega[3]
+    vec_x0 = vec_x - s̃ * vec_omega
+
+    println("vec_x = $vec_x")
+    println("vec_omega = $vec_omega")
+    println("z0 = $z0")
+    println("s̃ = $s̃")
+    println("vec_x0 = $vec_x0")
+
+    # Path function
+    # This is "l"
+    path_fun(s) = vec_x0 + s/s̃ * (vec_x - vec_x0)
+
+    shift_mod(x, xmin, xmax) = xmin + mod(x-xmin, xmax-xmin)
+    # Make path function periodic
+    function path_fun_per(s)
+        path = path_fun(s)
+        return [
+            shift_mod(path[1], xmin, xmax),
+            shift_mod(path[2], ymin, ymax),
+            shift_mod(path[3], zmin, zmax),
+        ]
+    end
+
+    # Assume that a_kelp = 1.0, a_water = 1.0,
+    # so that a(x,y,z) = p_kelp(x,y,z)
+    ã(s) = pkelp_fun(path_fun_per(s)...)
+
+    # Integrate numerically
+    tol = 1.0e-4
+    integral, err = hquadrature(ã, 0.0, s̃, reltol=tol, abstol=tol)
+
+    return integral
+end
+
+function test_traverse(xmin, xmax, ymin, ymax, zmin, zmax, nx, ny, nz, nθ, nϕ, i, j, k, l, m, pkelp_jfun=((args...) -> 1.0))
     max_cells = calculate_max_cells(xmin, xmax, ymin, ymax, zmin, zmax, nx, ny, nz, nθ, nϕ)
     nω = nθ*(nϕ-2)+2
 
@@ -50,6 +104,14 @@ function test_traverse(xmin, xmax, ymin, ymax, zmin, zmax, nx, ny, nz, nθ, nϕ,
     gₙ = zeros(max_cells)
     rad_scatter = zeros(nx, ny, nz, nω)
     num_cells = [0]
+
+    # Convert to fortran-callable function
+    # To determine pkelp. With abs_kelp = 1.0, abs_water = 0.0,
+    # this function effectively determines abs_grid.
+    pkelp_cfun = cfunction(
+        pkelp_jfun, Float64,
+        (Ref{Float64}, Ref{Float64}, Ref{Float64})
+    )
 
     ccall((:__test_asymptotics_MOD_test_traverse,"test_asymptotics"),
           Void, (
@@ -81,12 +143,16 @@ function test_traverse(xmin, xmax, ymin, ymax, zmin, zmax, nx, ny, nz, nθ, nϕ,
               Ref{Float64},
               Ref{Float64},
               Ref{Float64},
-              Ref{Int64}
+              Ref{Int64},
+
+              # Kelp Function
+              Ptr{Void}
           ),
           xmin, xmax, ymin, ymax, zmin, zmax,
           nx, ny, nz, nθ, nϕ,
           i, j, k, l, m,
-          s, ds, ã, gₙ, rad_scatter, num_cells)
+          s, ds, ã, gₙ, rad_scatter,
+          num_cells, pkelp_cfun)
 
     num_cells = num_cells[1]
     s = s[1:num_cells]

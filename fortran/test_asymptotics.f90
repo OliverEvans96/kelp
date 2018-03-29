@@ -24,7 +24,8 @@ contains
        xmin, xmax, ymin, ymax, zmin, zmax,&
        nx, ny, nz, ntheta, nphi,&
        i, j, k, l, m,&
-       s_array, ds, a_tilde, gn, rad_scatter, num_cells)
+       s_array, ds, a_tilde, gn, rad_scatter,&
+       num_cells, pkelp_fun)
     type(space_angle_grid) grid
     type(optical_properties) iops
     integer i, j, k, l, m, p
@@ -34,27 +35,28 @@ contains
     double precision, dimension(:,:,:), allocatable :: p_kelp
     ! Fortran doesn't seem to enforce upper limits
     ! Couldn't find any reason not to do this
-    double precision, dimension(:) :: s_array, ds, a_tilde, gn
-    double precision, dimension(:,:,:,:) :: rad_scatter
+    double precision, dimension(1) :: s_array, ds, a_tilde, gn
+    double precision, dimension(1,1,1,1) :: rad_scatter
     integer nx, ny, nz, ntheta, nphi, nomega
     double precision, allocatable, dimension(:,:,:,:) :: scatter_integral, source
     double precision, allocatable, dimension(:) :: scatter_integrand
+    double precision, external :: pkelp_fun
 
     call grid%set_bounds(xmin, xmax, ymin, ymax, zmin, zmax)
     call grid%set_num(nx, ny, nz, ntheta, nphi)
     call grid%init()
     nomega = grid%angles%nomega
 
-    write(*,*) 'nx = ', nx
-    write(*,*) 'ny = ', ny
-    write(*,*) 'nz = ', nz
-    write(*,*) 'nomega = ', nomega
+    ! write(*,*) 'nx = ', nx
+    ! write(*,*) 'ny = ', ny
+    ! write(*,*) 'nz = ', nz
+    ! write(*,*) 'nomega = ', nomega
 
-    write(*,*) 'x =', grid%x%vals
-    write(*,*) 'y =', grid%y%vals
-    write(*,*) 'z =', grid%z%vals
-    write(*,*) 'theta =', grid%angles%theta
-    write(*,*) 'phi =', grid%angles%phi
+    ! write(*,*) 'x =', grid%x%vals
+    ! write(*,*) 'y =', grid%y%vals
+    ! write(*,*) 'z =', grid%z%vals
+    ! write(*,*) 'theta =', grid%angles%theta
+    ! write(*,*) 'phi =', grid%angles%phi
 
     allocate(p_kelp(nx,ny,nz))
     allocate(scatter_integral(nx, ny, nz, nomega))
@@ -72,14 +74,17 @@ contains
     iops%abs_kelp = 1.0
 
     do kp=1, grid%z%num
-      iops%abs_water(kp) = 1.0
+      iops%abs_water(kp) = 0.0
       iops%scat_water(kp) = 0.0
     end do
 
     do ip=1, nx
        do jp=1, ny
           do kp=1, nz
-             p_kelp(ip,jp,kp) = 0.5d0
+             p_kelp(ip,jp,kp) = pkelp_fun(&
+                  grid%x%vals(ip),&
+                  grid%y%vals(jp),&
+                  grid%z%vals(kp))
           end do
        end do
     end do
@@ -88,7 +93,7 @@ contains
     call iops%calculate_coef_grids(p_kelp)
 
     p = grid%angles%phat(l,m)
-    write(*,*) 'PHAT l, m, p =', l, m, p
+    !write(*,*) 'PHAT l, m, p =', l, m, p
 
     call calculate_source(grid, iops, rad_scatter, source, scatter_integral, scatter_integrand)
 

@@ -92,15 +92,61 @@ end
         nθ = 10
         nϕ = 10
         nums = [nx ny nz nθ nϕ]
-        s, ds, ã, gₙ, rad_scatter = test_traverse(lims..., nums...)
+        # i, j, k, l, m
+        indices = (3, 5, 4, 5, 3)
+        s, ds, ã, gₙ, rad_scatter = test_traverse(lims..., nums..., indices...)
+
+        println("ã = $ã")
+        println("gₙ = $gₙ")
+        println("s = $s")
+        println("ds = $ds")
         # No NaN values
         @test all(.!isnan.(ã))
         @test all(.!isnan.(gₙ))
         @test all(.!isnan.(s))
         @test all(.!isnan.(ds))
         @test all(.!isnan.(rad_scatter))
+
         # s increasing
         @test all(diff(s).≥0)
+
+    end
+    @testset "Path Integration" for test_num=1:5
+        # Grid vs analytical integral
+        xmin = -6
+        ymin = -6
+        zmin = -6
+        xmax = 6
+        ymax = 6
+        zmax = 6
+        lims = [xmin ymin zmin; xmax ymax zmax]
+        nx = 30
+        ny = 30
+        nz = 30
+        nθ = 12
+        nϕ = 12
+        nums = [nx ny nz nθ nϕ]
+        # i, j, k, l, m
+        # Choose random indices
+        indices = [rand(1:num) for num in nums]
+
+        println("inds = $indices")
+
+        pkelp_fun(x,y,z) = 1+sin(x) + 4*(2+sin(y)^2) + (1+cos(x*y+z))
+        s, ds, ã, gₙ, rad_scatter = test_traverse(lims..., nums..., indices..., pkelp_fun)
+        # println("ã = $ã")
+        # println("gₙ = $gₙ")
+        # println("s = $s")
+        # println("ds = $ds")
+
+        grid_integ = ds'*ã
+        quad_integ = test_ray_integral(lims...,nums...,indices...,pkelp_fun)
+        println("grid_integ = $grid_integ")
+        println("quad_integ = $quad_integ")
+        println()
+        @test grid_integ > 0
+        @test grid_integ ≈ quad_integ rtol=0.20
+
     end
 end
 
