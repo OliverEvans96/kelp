@@ -8,7 +8,7 @@ contains
       fs, fr, ft, p_kelp)
 
     integer nx, ny, nz
-    double precision xmin, xmax, ymin, ymax, zmax
+    double precision xmin, xmax, ymin, ymax, zmin, zmax
     double precision, dimension(nz) :: frond_lengths, frond_stds, &
         water_speeds, water_angles, num_fronds
     double precision fs, fr, ft
@@ -25,24 +25,10 @@ contains
     !    quadrature_degree = 5
     ! endif
 
-    ! INIT GRID
-    grid%x%minval = xmin
-    grid%x%maxval = xmax
-    grid%x%num = nx
-
-    grid%y%minval = ymin
-    grid%y%maxval = ymax
-    grid%y%num = ny
-
-    grid%z%maxval = zmax
-    grid%z%num = nz
-
-    ! Doesn't actually matter, since we'll have to regenerate
+    call grid%set_bounds(xmin, xmax, ymin, ymax, zmin, zmax)
+    ! ntheta, nphi don't actually matter, since we'll have to regenerate
     ! the grid for the RTE part since we can't pass derived types here.
-    grid%theta%num = 10
-    grid%phi%num = 10
-
-    call grid%set_uniform_spacing_from_num()
+    call grid%set_num(nx, ny, nz, 4, 4)
     call grid%init()
 
     ! INIT ROPE

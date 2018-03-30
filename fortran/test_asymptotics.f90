@@ -97,7 +97,7 @@ contains
 
     call calculate_source(grid, iops, rad_scatter, source, scatter_integral, scatter_integrand)
 
-    call traverse_ray(grid, iops, source, i, j, k, p, s_array, ds, a_tilde, gn, num_cells)
+    call traverse_ray(grid, iops, source, i, j, k, p, s_array, ds, a_tilde, gn, num_cells, .false.)
 
     call iops%deinit()
     call grid%deinit()

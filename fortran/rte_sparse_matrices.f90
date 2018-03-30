@@ -132,11 +132,10 @@ contains
 !    call write_coo(filename, mat%row, mat%col, mat%data, mat%nonzero)
 !  end subroutine mat_to_hdf
 
-  subroutine mat_set_bc(mat, bc, radiance)
+  subroutine mat_set_bc(mat, bc)
     class(rte_mat) mat
     class(boundary_condition) bc
     double precision theta, phi, rad_val
-    double precision, dimension(:,:,:,:,:) :: radiance
     integer i, j, p
 
     !write(*,*) 'Set BC!!!'
@@ -173,7 +172,7 @@ contains
              ! Attenuation factor
              atten = 1.d0 - aa * dz
              ! Downwelling light
-             !!! NOT RIGHT - UPWELLING VS DOWNWELLING
+             !!! TODO: NOT RIGHT - UPWELLING VS DOWNWELLING
              do p=1, mat%grid%angles%nomega / 2
                 mat%sol(index) = atten * mat%surface_vals(p)
                 index = index + 1

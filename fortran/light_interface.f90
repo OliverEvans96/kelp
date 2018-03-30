@@ -171,7 +171,6 @@ contains
     iops%abs_water = abs_water
     iops%scat_water = scat_water
 
-
     !write(*,*) 'iop init'
     !iops%vsf_angles = vsf_angles
     !iops%vsf_vals = vsf_vals

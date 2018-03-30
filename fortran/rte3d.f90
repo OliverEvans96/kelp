@@ -212,7 +212,7 @@ subroutine interior_angle_loop(mat, indices, ddx, ddy)
   type(space_angle_grid) grid
   type(rte_mat) mat
   type(index_list) indices
-  integer l, m
+  integer p
 
   ! Allow derivative subroutines to be passed as arguments
   interface
@@ -232,16 +232,13 @@ subroutine interior_angle_loop(mat, indices, ddx, ddy)
 
   grid = mat%grid
 
-  do m=1, grid%phi%num
-  indices%m = m
-     do l=1, grid%theta%num
-     indices%l = l
-        call mat%angular_integral(indices)
-        call ddx(mat, indices)
-        call ddy(mat, indices)
-        call mat%z_cd2(indices)
-        call mat%attenuate(indices)
-     end do
+  do p=1, grid%angles%nomega
+      indices%p = p
+      call mat%angular_integral(indices)
+      call ddx(mat, indices)
+      call ddy(mat, indices)
+      call mat%z_cd2(indices)
+      call mat%attenuate(indices)
   end do
 end subroutine
 
@@ -250,7 +247,7 @@ subroutine surface_angle_loop(mat, indices, ddx, ddy)
   type(space_angle_grid) grid
   type(rte_mat) mat
   type(index_list) indices
-  integer l, m
+  integer p
 
   ! Allow derivative subroutines to be passed as arguments
   interface
@@ -271,25 +268,19 @@ subroutine surface_angle_loop(mat, indices, ddx, ddy)
   grid = mat%grid
 
   ! Downwelling
-  do m=1, grid%phi%num/2
-     indices%m = m
-     do l=1, grid%theta%num
-        indices%l = l
-        call mat%z_surface_bc(indices)
-     end do
+  ! TODO: Downwelling vs upwelling
+  do p=1, grid%angles%nomega / 2
+     call mat%z_surface_bc(indices)
   end do
 
   ! Upwelling
-  do m=grid%phi%num/2+1, grid%phi%num
-     indices%m = m
-     do l=1, grid%theta%num
-        indices%l = l
-        call mat%angular_integral(indices)
-        call ddx(mat, indices)
-        call ddy(mat, indices)
-        call mat%z_fd2(indices)
-        call mat%attenuate(indices)
-     end do
+  do p=grid%angles%nomega/2+1, grid%angles%nomega
+     indices%p = p
+     call mat%angular_integral(indices)
+     call ddx(mat, indices)
+     call ddy(mat, indices)
+     call mat%z_fd2(indices)
+     call mat%attenuate(indices)
   end do
 
 end subroutine surface_angle_loop
@@ -298,8 +289,8 @@ subroutine bottom_angle_loop(mat, indices, ddx, ddy)
   type(space_angle_grid) grid
   type(rte_mat) mat
   type(index_list) indices
-  integer l, m
-  
+  integer p
+
   ! Allow derivative subroutines to be passed as arguments
   interface
      subroutine ddx(mat, indices)
@@ -319,25 +310,19 @@ subroutine bottom_angle_loop(mat, indices, ddx, ddy)
   grid = mat%grid
 
   ! Downwelling
-  do m=1, grid%phi%num/2
-     indices%m = m
-     do l=1, grid%theta%num
-        indices%l = l
-        call mat%angular_integral(indices)
-        call ddx(mat, indices)
-        call ddy(mat, indices)
-        call mat%z_bd2(indices)
-        call mat%attenuate(indices)
-     end do
+  do p=1, grid%angles%nomega
+     indices%p = p
+     call mat%angular_integral(indices)
+     call ddx(mat, indices)
+     call ddy(mat, indices)
+     call mat%z_bd2(indices)
+     call mat%attenuate(indices)
   end do
 
   ! Upwelling
-  do m=grid%phi%num/2+1, grid%phi%num
-     indices%m = m
-     do l=1, grid%theta%num
-        indices%l = l
-        call mat%z_bottom_bc(indices)
-     end do
+  do p=grid%angles%nomega/2+1, grid%angles%nomega
+     indices%p = p
+     call mat%z_bottom_bc(indices)
   end do
 
 end subroutine bottom_angle_loop

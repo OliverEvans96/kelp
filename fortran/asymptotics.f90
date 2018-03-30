@@ -271,6 +271,7 @@ module asymptotics
     double precision, dimension(:) :: scatter_integrand
     type(index_list) indices
     integer pp
+    double precision s
 
     ! Current direction is already excluded by VSF
     do pp=1, grid%angles%nomega
@@ -284,7 +285,9 @@ module asymptotics
              pp)
     end do
 
-    scatter_integral(indices%i,indices%j,indices%k,indices%p) = grid%angles%integrate_points(scatter_integrand)
+
+    s = grid%angles%integrate_points(scatter_integrand)
+    scatter_integral(indices%i,indices%j,indices%k,indices%p) = s
 
    if(indices%i .eq. 2 .and. indices%j .eq. 5 .and. indices%k .eq. 3 .and. indices%p .eq. 5) then
        write(*,*) ''
@@ -402,7 +405,7 @@ module asymptotics
     integer i, j
 
     integral = 0
-    do i=1, num_cells
+    do i=1, num_cells-1
        bi = -a_tilde(i)*s(i+1)
        do j=1, num_cells-1
           bi = bi - a_tilde(j)*ds(j)
@@ -411,6 +414,9 @@ module asymptotics
        if(a_tilde(i) .eq. 0) then
           di = ds(i)*exp(bi)
        else
+          !write(*,*) 'i =', i
+          !write(*,*) 'a_tilde =', a_tilde(i)
+          !write(*,*) 's =', s(i), s(i+1)
           di = (exp(a_tilde(i)*s(i+1))-exp(a_tilde(i)*s(i)))/a_tilde(i)
        end if
 
@@ -644,7 +650,7 @@ module asymptotics
 
     !write(*,*) 'T5'
     ! Path length to next edge plane in each dimension
-    if(x_factor .eq. 0) then
+    if(abs(x_factor) .lt. 1.d-10) then
        ! Will never cross, so set above total path length
        s_next_x = 2*s_tilde
     else if(cell_x .eq. last_x) then
@@ -657,7 +663,7 @@ module asymptotics
     end if
 
     ! Path length to next edge plane in each dimension
-    if(y_factor .eq. 0) then
+    if(abs(y_factor) .lt. 1.d-10) then
        ! Will never cross, so set above total path length
        s_next_y = 2*s_tilde
     else if(cell_y .eq. last_y) then

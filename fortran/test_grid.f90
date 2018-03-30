@@ -66,6 +66,21 @@ contains
 
   end function test_angle_p_conversions
 
+  function make_fortran_grid(xmin, xmax, ymin, ymax, zmin, zmax, nx, ny, nz, ntheta, nphi) result(grid)
+    double precision, intent(in) ::  xmin, xmax, ymin, ymax, zmin, zmax
+    integer, intent(in) :: nx, ny, nz, ntheta, nphi
+    type(space_angle_grid) grid
+
+    call grid%set_bounds(xmin, xmax, ymin, ymax, zmin, zmax)
+    call grid%set_num(nx, ny, nz, ntheta, nphi)
+    call grid%init()
+  end function make_fortran_grid
+
+  subroutine destruct_fortran_grid(grid)
+    type(space_angle_grid) grid
+    call grid%deinit()
+  end subroutine destruct_fortran_grid
+
   subroutine make_grid(&
        xmin, xmax, ymin, ymax, zmin, zmax,&
        nx, ny, nz, ntheta, nphi,&

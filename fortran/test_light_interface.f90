@@ -12,8 +12,8 @@ program test_light_interface
     double precision solar_azimuthal
     double precision surface_irrad
     integer num_si
-    double precision, dimension(:), allocatable ::  si_area
-    double precision, dimension(:), allocatable ::  si_ind
+    double precision, dimension(:,:), allocatable ::  si_area
+    double precision, dimension(:,:), allocatable ::  si_ind
     double precision frond_thickness
     double precision frond_aspect_ratio
     double precision frond_shape_ratio
@@ -30,9 +30,9 @@ program test_light_interface
     real, dimension(:,:), allocatable :: available_light
     real, dimension(:), allocatable ::  avg_irrad
 
-    integer k
+    integer i, k
 
-    abs_kelp = 1.d0
+    abs_kelp = 2.d0
     scat_kelp = 0.01d0
 
     num_vsf = 55
@@ -45,17 +45,17 @@ program test_light_interface
     rope_spacing = 10.d0
 
     num_si = 10
-    nx = 10
-    ny = 10
-    nz = 10
-    ntheta = 10
-    nphi = 10
+    nx = 5
+    ny = 5
+    nz = 5
+    ntheta = 5
+    nphi = 6
     num_scatters = 1
 
     allocate(abs_water(nz))
     allocate(scat_water(nz))
-    allocate(si_area(nz))
-    allocate(si_ind(nz))
+    allocate(si_area(nz, num_si))
+    allocate(si_ind(nz, num_si))
     allocate(current_speeds(nz))
     allocate(current_angles(nz))
     allocate(available_light(nz, num_si))
@@ -66,8 +66,10 @@ program test_light_interface
        abs_water(k) = abs_kelp
        scat_water(k) = scat_kelp
 
-       si_area(k) = 0.d0
-       si_ind(k) = 0.d0
+       do i=1, num_si
+          si_area(k, i) = 3.d0
+          si_ind(k, i) = 10
+       end do
 
        current_speeds(k) = 0.d0
        current_angles(k) = 0.d0
@@ -76,6 +78,11 @@ program test_light_interface
 
        depth_spacing(k) = 1.d0
     end do
+
+    ! Frond properties
+    frond_aspect_ratio = 2.d0
+    frond_shape_ratio = 0.5d0
+    frond_thickness = 0.05d0
 
     call full_light_calculations( &
          ! OPTICAL PROPERTIES
