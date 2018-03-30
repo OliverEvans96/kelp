@@ -129,6 +129,7 @@ contains
     zmin = 0.d0
     zmax = sum(depth_spacing)
 
+    write(*,*) 'Grid'
     call grid%set_bounds(xmin, xmax, ymin, ymax, zmin, zmax)
     call grid%set_num(nx, ny, nz, ntheta, nphi)
     call grid%init()
@@ -137,6 +138,7 @@ contains
 
     call rope%init(grid)
 
+    write(*,*) 'Rope'
     ! Calculate kelp distribution
     call calculate_length_dist_from_superinds( &
     nz, &
@@ -154,16 +156,16 @@ contains
     rope%water_speeds = current_speeds
     rope%water_angles = current_angles
 
+    write(*,*) 'Frond'
     ! INIT FROND
     call frond%set_shape(frond_shape_ratio, frond_aspect_ratio, frond_thickness)
-
     ! CALCULATE KELP
     quadrature_degree = 5
     call calculate_kelp_on_grid(grid, p_kelp, frond, rope, quadrature_degree)
     ! INIT IOPS
     iops%num_vsf = num_vsf
     call iops%init(grid)
-    !write(*,*) 'IOPs'
+    write(*,*) 'IOPs'
     iops%abs_kelp = abs_kelp
     iops%scat_kelp = scat_kelp
     iops%abs_water = abs_water
@@ -193,10 +195,10 @@ contains
 
     call light%init_grid(grid)
 
-    !write(*,*) 'Scatter'
+    write(*,*) 'Scatter'
     call calculate_light_with_scattering(grid, bc, iops, light%radiance, num_scatters)
 
-    !write(*,*) 'Irrad'
+    write(*,*) 'Irrad'
     call light%calculate_irradiance()
 
     ! Calculate output variables
@@ -210,15 +212,20 @@ contains
     ! write(*,*) 'abs_water = ', abs_water
     ! write(*,*) 'scat_water = ', scat_water
     write(*,*) 'avg_irrad = ', avg_irrad
-    write(*,*) 'available_light = ', available_light
+    ! write(*,*) 'available_light = ', available_light
 
 
-    !write(*,*) 'deinit'
+    write(*,*) 'deinit'
     call bc%deinit()
+    !write(*,*) 'a'
     call iops%deinit()
+    !write(*,*) 'b'
     call light%deinit()
+    !write(*,*) 'c'
     call rope%deinit()
+    !write(*,*) 'd'
     call grid%deinit()
+    !write(*,*) 'e'
 
     deallocate(pop_length_means)
     deallocate(pop_length_stds)
@@ -270,7 +277,7 @@ contains
        num_fronds(k) = 0
 
        do i=1, num_si
-          si_length(i) = sqrt(2*frond_aspect_ratio*si_area(k,i))
+          si_length(i) = sqrt(2.d0*frond_aspect_ratio*si_area(k,i))
           mean_num = mean_num + si_length(i)
           num_fronds(k) = num_fronds(k) + si_ind(k,i)
        end do

@@ -46,7 +46,7 @@ H5FC=h5fc
 # (Should replace CFLAGS in OFLAGS)
 # Compile & run normally,
 # Then call gprof `executable`
-PFLAGS= -g -O0 #-fcheck=all
+PFLAGS= -g -O0 -ffpe-trap=zero,invalid,overflow,underflow -ffpe-summary=all #-fcheck=all
 
 # Open MP
 OMPFLAGS=-fopenmp
