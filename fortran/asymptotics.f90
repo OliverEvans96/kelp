@@ -8,7 +8,7 @@ module asymptotics
     type(boundary_condition) bc
     type(optical_properties) iops
     double precision, dimension(:,:,:,:) :: radiance
-    double precision, dimension(:,:,:,:), allocatable :: rad_scatter
+    double precision, dimension(:,:,:,:), allocatable :: rad_scatter, source
     integer num_scatters
     integer nx, ny, nz, nomega
     type(index_list) indices
@@ -30,47 +30,46 @@ module asymptotics
     allocate(path_spacing(max_cells))
     allocate(a_tilde(max_cells))
     allocate(gn(max_cells))
+    allocate(source(nx, ny, nz, nomega))
 
 
     ! Scattering coefficient
     ! Allowed to vary over depth
     ! Reset radiance
     !write(*,*) 'Before Scattering'
-    call calculate_light_before_scattering(grid, bc, iops, radiance, path_spacing, a_tilde)
+    call calculate_light_before_scattering(grid, bc, iops, source, radiance, path_length, path_spacing, a_tilde, gn)
 
     if (num_scatters .gt. 0) then
-       call calculate_light_after_scattering(grid, bc, iops, radiance, num_scatters, path_length, path_spacing, a_tilde, gn)
+       call calculate_light_after_scattering(grid, bc, iops, source, radiance, num_scatters, path_length, path_spacing, a_tilde, gn)
     end if
 
-    allocate(path_length(max_cells))
-    allocate(path_spacing(max_cells))
+    deallocate(path_length)
     deallocate(path_spacing)
     deallocate(a_tilde)
+    deallocate(gn)
+    deallocate(source)
   end subroutine calculate_light_with_scattering
 
-  subroutine calculate_light_before_scattering(grid, bc, iops, radiance, path_spacing, a_tilde)
+  subroutine calculate_light_before_scattering(grid, bc, iops, source, radiance, path_length, path_spacing, a_tilde, gn)
     type(space_angle_grid) grid
     type(boundary_condition) bc
     type(optical_properties) iops
-    double precision, dimension(:,:,:,:) :: radiance
-    double precision, dimension(:) :: path_spacing, a_tilde
+    double precision, dimension(:,:,:,:) :: radiance, source 
+    double precision, dimension(:) :: path_length, path_spacing, a_tilde, gn
     integer i, j, k, p
-    type(index_list) indices
     double precision surface_val
+    integer num_cells
 
     ! Downwelling light
-    ! TODO: Check indices
     do p=1, grid%angles%nomega/2
-       indices%p = p
-       surface_val = bc%bc_grid(indices%p)
+       surface_val = bc%bc_grid(p)
        do i=1, grid%x%num
-          indices%i = i
           do j=1, grid%y%num
-            indices%j = j
             do k=1, grid%z%num
-                indices%k = k
-                radiance(i,j,k,p) = absorb_along_path(grid, bc, iops, indices, 1,&
-                    surface_val, path_spacing, a_tilde)
+               call attenuate_light_from_surface(&
+                    grid, iops, source, i, j, k, p,&
+                    radiance, path_length, path_spacing,&
+                    a_tilde, gn, bc)
             end do
           end do
        end do
@@ -88,11 +87,28 @@ module asymptotics
      end do
   end subroutine calculate_light_before_scattering
 
-  subroutine calculate_light_after_scattering(grid, bc, iops, radiance, num_scatters, path_length, path_spacing, a_tilde, gn)
+  subroutine attenuate_light_from_surface(grid, iops, source, i, j, k, p,&
+       radiance, path_length, path_spacing, a_tilde, gn, bc)
     type(space_angle_grid) grid
     type(boundary_condition) bc
     type(optical_properties) iops
-    double precision, dimension(:,:,:,:) :: radiance
+    double precision, dimension(:,:,:,:) :: radiance, source
+    double precision, dimension(:) :: path_length, path_spacing, a_tilde, gn
+    integer i, j, k, p
+    integer num_cells
+
+    ! Don't need gn here, so just ignore it
+    call traverse_ray(grid, iops, source, i, j, k, p, path_length, path_spacing, a_tilde, gn, num_cells)
+    ! Start with surface bc and attenuate along path
+    radiance(i,j,k,p) = bc%bc_grid(p) * exp(-sum(path_spacing(1:num_cells) * a_tilde(1:num_cells)))
+  end subroutine attenuate_light_from_surface
+
+  subroutine calculate_light_after_scattering(grid, bc, iops, source, radiance,&
+       num_scatters, path_length, path_spacing, a_tilde, gn)
+    type(space_angle_grid) grid
+    type(boundary_condition) bc
+    type(optical_properties) iops
+    double precision, dimension(:,:,:,:) :: radiance, source
     integer num_scatters
     double precision, dimension(:) :: path_length, path_spacing, a_tilde, gn
     double precision, dimension(:,:,:,:), allocatable :: rad_scatter
@@ -104,25 +120,25 @@ module asymptotics
 
     ! For now, just use first entry from scattering array everywhere
     bb = iops%scat_water(1)
-    write(*,*) 'prescatter = ', rad_scatter(:,:,:,2)
+    !write(*,*) 'prescatter = ', rad_scatter(:,:,:,2)
 
     do n=1, num_scatters
        write(*,*) 'scatter #', n
-       call scatter(grid, bc, iops, rad_scatter, path_length, path_spacing, a_tilde, gn)
+       call scatter(grid, bc, iops, source, rad_scatter, path_length, path_spacing, a_tilde, gn)
        radiance = radiance + bb**n * rad_scatter
-       write(*,*) 'rad_scatter = ', rad_scatter(:,:,:,2)
+       !write(*,*) 'rad_scatter = ', rad_scatter(:,:,:,2)
     end do
 
     deallocate(rad_scatter)
   end subroutine calculate_light_after_scattering
 
   ! Perform one scattering event
-  subroutine scatter(grid, bc, iops, rad_scatter, path_length, path_spacing, a_tilde, gn)
+  subroutine scatter(grid, bc, iops, source, rad_scatter, path_length, path_spacing, a_tilde, gn)
     type(space_angle_grid) grid
     type(boundary_condition) bc
     type(optical_properties) iops
-    double precision, dimension(:,:,:,:) :: rad_scatter
-    double precision, dimension(:,:,:,:), allocatable :: source, scatter_integral
+    double precision, dimension(:,:,:,:) :: rad_scatter, source
+    double precision, dimension(:,:,:,:), allocatable :: scatter_integral
     double precision, dimension(:), allocatable :: scatter_integrand
     double precision, dimension(:) :: path_length, path_spacing, a_tilde, gn
     double precision path_source
@@ -134,7 +150,6 @@ module asymptotics
     nz = grid%z%num
     nomega = grid%angles%nomega
 
-    allocate(source(nx, ny, nz, nomega))
     allocate(scatter_integral(nx, ny, nz, nomega))
     allocate(scatter_integrand(nomega))
     ! Allocate largest that will be needed.
@@ -156,7 +171,6 @@ module asymptotics
     !    !write(*,*) ''
     ! end do
 
-    deallocate(source)
     deallocate(scatter_integral)
     deallocate(scatter_integrand)
   end subroutine scatter
@@ -243,13 +257,12 @@ module asymptotics
   subroutine advect_light(grid, iops, source, rad_scatter, path_length, path_spacing, a_tilde, gn)
     type(space_angle_grid) grid
     type(optical_properties) iops
-    double precision, dimension(:,:,:,:) :: rad_scatter
+    double precision, dimension(:,:,:,:) :: rad_scatter, source
     double precision, dimension(:) :: path_length, path_spacing, a_tilde, gn
     double precision path_source
 
     integer i, j, k, p, kp
     type(index_list) indices
-    double precision, dimension(:,:,:,:) :: source
 
 
     integer nx, ny, nz, nomega
@@ -319,7 +332,7 @@ module asymptotics
   end subroutine advect_light
 
   ! New algorithm, double integral over piecewise-constant 1d funcs
-  subroutine integrate_ray(grid, iops, source, rad_scatter, path_length, path_spacing, a_tilde, gn, i, j, k, p) 
+  subroutine integrate_ray(grid, iops, source, rad_scatter, path_length, path_spacing, a_tilde, gn, i, j, k, p)
     type(space_angle_grid) grid
     type(optical_properties) iops
     double precision, dimension(:,:,:,:) :: source, rad_scatter
@@ -333,6 +346,8 @@ module asymptotics
   end subroutine integrate_ray
 
   function calculate_ray_integral(num_cells, s, ds, a_tilde, gn) result(integral)
+    ! Double integral which accumulates all scattered light along the path
+    ! via an angular integral and attenuates it by integrating along the path
     integer num_cells
     double precision, dimension(num_cells) :: s, ds, a_tilde, gn
     double precision integral, bi, di
@@ -594,7 +609,7 @@ module asymptotics
     ! so that t will be the number of grid cells at the end of the loop.
     t=0
 
-    write(*,*) 'i, j, k, p =', i, j, k, p
+    ! write(*,*) 'i, j, k, p =', i, j, k, p
 
     ! write(*,*) 'theta, phi = ', 180/pi*grid%angles%theta_p(p), 180/pi*grid%angles%phi_p(p)
     ! write(*,*) 'z0 =', z0

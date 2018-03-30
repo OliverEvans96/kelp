@@ -129,23 +129,8 @@ contains
     zmin = 0.d0
     zmax = sum(depth_spacing)
 
-    ! INIT GRID
-    !write(*,*) 'Grid'
-    grid%x%minval = xmin
-    grid%x%maxval = xmax
-    grid%x%num = nx
-
-    grid%y%minval = ymin
-    grid%y%maxval = ymax
-    grid%y%num = ny
-
-    grid%z%minval = zmin
-    grid%z%maxval = zmax
-    grid%z%num = nz
-
-    grid%theta%num = ntheta
-    grid%phi%num = nphi
-
+    call grid%set_bounds(xmin, xmax, ymin, ymax, zmin, zmax)
+    call grid%set_num(nx, ny, nz, ntheta, nphi)
     call grid%init()
     !call grid%set_uniform_spacing_from_num()
     call grid%z%set_spacing_array(depth_spacing)
@@ -199,7 +184,7 @@ contains
     decay = 1.d0 ! Does matter, but maybe not much. Determines drop-off from angle
     call bc%init(grid, solar_zenith, solar_azimuthal, decay, max_rad)
     ! Rescale surface radiance to match surface irradiance
-    bc%bc_grid = bc%bc_grid * surface_irrad / grid%integrate_angle_2d(bc%bc_grid)
+    bc%bc_grid = bc%bc_grid * surface_irrad / grid%angles%integrate_points(bc%bc_grid)
 
     ! write(*,*) 'bc'
     ! do i=1, grid%y%num
@@ -222,10 +207,10 @@ contains
     !write(*,*) 'vsf_vals = ', iops%vsf_vals
     !write(*,*) 'vsf norm  = ', grid%integrate_angle_2d(iops%vsf(1,1,:,:))
 
-    write(*,*) 'abs_water = ', abs_water
-    write(*,*) 'scat_water = ', scat_water
+    ! write(*,*) 'abs_water = ', abs_water
+    ! write(*,*) 'scat_water = ', scat_water
     write(*,*) 'avg_irrad = ', avg_irrad
-    !write(*,*) 'available_light = ', available_light
+    write(*,*) 'available_light = ', available_light
 
 
     !write(*,*) 'deinit'
