@@ -8,9 +8,8 @@ contains
   subroutine full_light_calculations( &
     ! OPTICAL PROPERTIES
     abs_kelp, &
-    scat_kelp, &
     abs_water, &
-    scat_water, &
+    scat, &
     num_vsf, &
     vsf_file, &
     ! SUNLIGHT
@@ -48,10 +47,8 @@ contains
     ! OPTICAL PROPERTIES
     integer, intent(in) :: nx, ny, nz, ntheta, nphi
     ! Absorption and scattering coefficients
-    double precision, intent(in) :: abs_kelp
-    double precision, intent(in) :: scat_kelp
+    double precision, intent(in) :: abs_kelp, scat
     double precision, dimension(nz), intent(in) :: abs_water
-    double precision, dimension(nz), intent(in) :: scat_water
     ! Volume scattering function
     integer, intent(in) :: num_vsf
     character(len=*) :: vsf_file
@@ -173,9 +170,8 @@ contains
     call iops%init(grid)
     write(*,*) 'IOPs'
     iops%abs_kelp = abs_kelp
-    iops%scat_kelp = scat_kelp
     iops%abs_water = abs_water
-    iops%scat_water = scat_water
+    iops%scat = scat
 
     !write(*,*) 'iop init'
     !iops%vsf_angles = vsf_angles

@@ -163,7 +163,7 @@ module asymptotics
     rad_scatter = radiance
 
     ! For now, just use first entry from scattering array everywhere
-    bb = iops%scat_water(1)
+    bb = iops%scat
     write(*,*) 'prescatter = ', rad_scatter(2,2,:,2)
 
     do n=1, num_scatters

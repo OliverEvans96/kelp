@@ -162,7 +162,7 @@ contains
              ! Absorption coefficient
              aa = mat%iops%abs_grid(i,j,k)
              ! Scattering coefficient
-             bb = mat%iops%scat_grid(i,j,k)
+             bb = mat%iops%scat
              ! Attenuation factor
              atten = 1.d0 - aa * dz
              ! Downwelling light
@@ -362,7 +362,7 @@ contains
     iops = mat%iops
 
     aa = iops%abs_grid(i, j, k)
-    bb = iops%scat_grid(i, j, k)
+    bb = iops%scat
 
     attenuation = aa + bb
     call mat%add(attenuation)
@@ -601,7 +601,7 @@ contains
     iops = mat%iops
 
     ! TODO: Replace with single scattering coefficient
-    bb = iops%scat_water(k)
+    bb = iops%scat
     ! TODO: Add bb and beta prefactor in chapter 4 of thesis.
 
     ! North pole

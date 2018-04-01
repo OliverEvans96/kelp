@@ -49,10 +49,9 @@ contains
     iops%vsf_vals = vsf_vals
 
     iops%abs_kelp = a_k
-    iops%scat_kelp = b_k
+    iops%scat = b_k
     do k=1, grid%z%num
        iops%abs_water(k) = a_w
-       iops%scat_water(k) = b_w
     end do
 
     call iops%calc_vsf_on_grid()

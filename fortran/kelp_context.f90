@@ -44,9 +44,9 @@ type optical_properties
    type(space_angle_grid) grid
    double precision, dimension(:), allocatable :: vsf_angles, vsf_vals
    double precision, dimension(:), allocatable :: abs_water, scat_water
-   double precision abs_kelp, scat_kelp, vsf_scat_coef
+   double precision abs_kelp, vsf_scat_coef, scat
    ! On x, y, z grid - including water & kelp.
-   double precision, dimension(:,:,:), allocatable :: abs_grid, scat_grid 
+   double precision, dimension(:,:,:), allocatable :: abs_grid
    ! On theta, phi, theta_prime, phi_prime grid
    double precision, dimension(:,:), allocatable :: vsf 
  contains
@@ -171,7 +171,6 @@ contains
     allocate(iops%vsf_vals(iops%num_vsf))
     allocate(iops%vsf(grid%angles%nomega,grid%angles%nomega))
     allocate(iops%abs_grid(grid%x%num, grid%y%num, grid%z%num))
-    allocate(iops%scat_grid(grid%x%num, grid%y%num, grid%z%num))
   end subroutine iop_init
 
   subroutine calculate_coef_grids(iops, p_kelp)
@@ -183,7 +182,6 @@ contains
     ! Allow water IOPs to vary over depth
     do k=1, iops%grid%z%num
       iops%abs_grid(:,:,k) = (iops%abs_kelp - iops%abs_water(k)) * p_kelp(:,:,k) + iops%abs_water(k)
-      iops%scat_grid(:,:,k) = (iops%scat_kelp - iops%scat_water(k)) * p_kelp(:,:,k) + iops%scat_water(k)
    end do
 
   end subroutine calculate_coef_grids
@@ -372,7 +370,6 @@ contains
     deallocate(iops%abs_water)
     deallocate(iops%scat_water)
     deallocate(iops%abs_grid)
-    deallocate(iops%scat_grid)
   end subroutine iop_deinit
 
 end module kelp_context

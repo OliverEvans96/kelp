@@ -2,10 +2,8 @@ program test_light_interface
   use light_interface_module
 
   implicit none
-    double precision abs_kelp
-    double precision scat_kelp
+    double precision abs_kelp, scat
     double precision, dimension(:), allocatable :: abs_water
-    double precision, dimension(:), allocatable :: scat_water
     integer num_vsf
     character(len=56) vsf_file
     double precision solar_zenith
@@ -33,7 +31,7 @@ program test_light_interface
     integer i, k
 
     abs_kelp = 1.d0
-    scat_kelp = 0.01d0
+    scat = 0.01d0
 
     num_vsf = 55
     vsf_file = '/home/oliver/academic/research/kelp/data/vsf/nuc_vsf.txt'
@@ -53,7 +51,6 @@ program test_light_interface
     num_scatters = 1
 
     allocate(abs_water(nz))
-    allocate(scat_water(nz))
     allocate(si_area(nz, num_si))
     allocate(si_ind(nz, num_si))
     allocate(current_speeds(nz))
@@ -65,7 +62,6 @@ program test_light_interface
     ! Use kelp iops for water so that medium is homogeneous
     do k=1, nz
        abs_water(k) = abs_kelp
-       scat_water(k) = scat_kelp
 
        do i=1, num_si
           si_area(k, i) = 3.d0
@@ -88,9 +84,8 @@ program test_light_interface
     call full_light_calculations( &
          ! OPTICAL PROPERTIES
          abs_kelp, &
-         scat_kelp, &
          abs_water, &
-         scat_water, &
+         scat, &
          num_vsf, &
          vsf_file, &
          ! SUNLIGHT
@@ -122,7 +117,6 @@ program test_light_interface
          avg_irrad)
 
   deallocate(abs_water)
-  deallocate(scat_water)
   deallocate(si_area)
   deallocate(si_ind)
   deallocate(current_speeds)
