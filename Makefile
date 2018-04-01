@@ -153,7 +153,6 @@ test_pyasymptotics_wrap: $(SRC)/test_pyasymptotics_wrap.f90 $(INC)/pyasymptotics
 	#rm $@.o
 test_angular_integral: $(SRC)/test_angular_integral.f90 $(INC)/light_interface.o $(INC)/pyasymptotics_wrap.o $(INC)/asymptotics.o $(INC)/rte_sparse_matrices.o $(INC)/mgmres.o $(INC)/rte3d.o $(INC)/test_kelp3d_mod.o $(INC)/prob.o $(INC)/fastgl.o $(INC)/sag.o $(INC)/utils.o $(INC)/kelp3d.o $(INC)/kelp_context.o $(INC)/light_context.o #$(INC)/hdf5_utils.o
 	$(FC) $(BFLAGS) $^ -o $(BIN)/$@
-
 test_light_interface: $(SRC)/test_light_interface.f90 $(INC)/light_interface.o $(INC)/pyasymptotics_wrap.o $(INC)/asymptotics.o $(INC)/rte_sparse_matrices.o $(INC)/mgmres.o $(INC)/rte3d.o $(INC)/test_kelp3d_mod.o $(INC)/prob.o $(INC)/fastgl.o $(INC)/sag.o $(INC)/utils.o $(INC)/kelp3d.o $(INC)/kelp_context.o $(INC)/light_context.o #$(INC)/hdf5_utils.o
 	$(FC) $(BFLAGS) $^ -o $(BIN)/$@
 ### Old tests

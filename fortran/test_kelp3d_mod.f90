@@ -6,21 +6,26 @@ contains
 
 subroutine init_grid(grid)
   type(space_angle_grid) grid
+  double precision xmin, xmax, ymin, ymax, zmin, zmax
+  integer nx, ny, nz, ntheta, nphi
 
-  grid%x%minval = -1.d0
-  grid%x%maxval = 1.d0
-  grid%x%spacing = 2.d-1
+  xmin = -1.d0
+  xmax = 1.d0
+  nx = 10
 
-  grid%y%minval = -1.d0
-  grid%y%maxval = 1.d0
-  grid%y%spacing = 2.d-1
+  ymin = -1.d0
+  ymax = 1.d0
+  ny = 10
 
-  grid%z%minval = 0.d0
-  grid%z%maxval = 1.d1
-  grid%z%spacing = 1.d0
+  zmin = 0.d0
+  zmax = 1.d1
+  nz = 10
 
-  grid%theta%num = 10
-  grid%phi%num = 10
+  ntheta = 10
+  nphi = 10
+
+  call grid%set_bounds(xmin, xmax, ymin, ymax, zmin, zmax)
+  call grid%set_num(nx, ny, nz, ntheta, nphi)
 
   ! COMMENTING THIS BREAKS THINGS
   !call grid%set_num_from_spacing()
@@ -91,18 +96,18 @@ end subroutine init_params
 
 subroutine calculate_memory_usage(grid)
   type(space_angle_grid) grid
-  integer nx, ny, nz, ntheta, nphi, space_bytes, total_bytes, total_square_bytes
+  integer nx, ny, nz, nomega, space_bytes, total_bytes, total_square_bytes
   double precision space_megabytes, total_megabytes, total_square_megabytes
 
   nx = grid%x%num
   ny = grid%y%num
   nz = grid%z%num
-  ntheta = grid%theta%num
-  nphi = grid%phi%num
+  nomega = grid%angles%nomega
 
+  ! TODO: THIS IS PROBABLY NOT CORRECT
   space_bytes = 8 * nx * ny * nz
-  total_bytes = space_bytes * ntheta * nphi
-  total_square_bytes = 8 * (nx * ny * nz * ntheta * nphi) ** 2
+  total_bytes = space_bytes * nomega
+  total_square_bytes = 8 * (nx * ny * nz * nomega) ** 2
 
   space_megabytes = dble(space_bytes) / dble(1024 ** 2)
   total_megabytes = dble(total_bytes) / dble(1024 ** 2)

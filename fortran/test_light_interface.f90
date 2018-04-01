@@ -32,7 +32,7 @@ program test_light_interface
 
     integer i, k
 
-    abs_kelp = 2.d0
+    abs_kelp = 1.d0
     scat_kelp = 0.01d0
 
     num_vsf = 55
@@ -45,11 +45,11 @@ program test_light_interface
     rope_spacing = 10.d0
 
     num_si = 10
-    nx = 5
-    ny = 5
+    nx = 1
+    ny = 1
     nz = 5
-    ntheta = 5
-    nphi = 6
+    ntheta = 2
+    nphi = 2
     num_scatters = 1
 
     allocate(abs_water(nz))
@@ -62,6 +62,7 @@ program test_light_interface
     allocate(avg_irrad(nz))
     allocate(depth_spacing(nz))
 
+    ! Use kelp iops for water so that medium is homogeneous
     do k=1, nz
        abs_water(k) = abs_kelp
        scat_water(k) = scat_kelp

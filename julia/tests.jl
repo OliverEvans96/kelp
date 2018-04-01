@@ -145,9 +145,13 @@ end
         println("quad_integ = $quad_integ")
         println()
         @test grid_integ > 0
+        # Hopefully grid integration is accurate to 20%
         @test grid_integ ≈ quad_integ rtol=0.20
-
     end
+
+    @testset "Full Scattering" begin
+    end
+
 end
 
 

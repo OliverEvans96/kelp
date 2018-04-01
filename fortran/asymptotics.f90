@@ -289,6 +289,10 @@ module asymptotics
     s = grid%angles%integrate_points(scatter_integrand)
     scatter_integral(indices%i,indices%j,indices%k,indices%p) = s
 
+    if(s .lt. 0) then
+       write(*,*) 'SCATTER INTEGRAL NEGATIVE'
+    end if
+
    if(indices%i .eq. 2 .and. indices%j .eq. 5 .and. indices%k .eq. 3 .and. indices%p .eq. 5) then
        write(*,*) ''
        write(*,*) 'theta'
@@ -315,7 +319,6 @@ module asymptotics
     integer i, j, k, p, kp
     type(index_list) indices
 
-
     integer nx, ny, nz, nomega
     double precision x, y, z, theta, phi
 
@@ -326,57 +329,14 @@ module asymptotics
     nz = grid%z%num
     nomega = grid%angles%nomega
 
-    ! Downwelling (project ray to surface)
-    kp_start = 1
-    direction = 1
-    do p=1, nomega/2
-       indices%p = p
-       phi = grid%angles%phi_p(p)
-       ! k=1 is already determined by surface BC
-       ! Although k=1 would just be a no-op
-       do k=2, nz
-          indices%k = k
-          kp_stop = k
-          ! TODO: CHECK THIS
-          path_spacing(:k) = grid%z%spacing(:k) / grid%angles%cos_phi_p(p)
-          ! TODO: CHECK INDICES
+    do p=1, nomega
+       do k=1, nz
           do i=1, nx
-            indices%i = i
-            x = grid%x%vals(i)
             do j=1, ny
-                indices%j = j
-                y = grid%y%vals(j)
                 call integrate_ray(grid, iops, source,&
                      rad_scatter, path_length, path_spacing,&
                      a_tilde, gn, i, j, k, p)
             end do
-          end do
-       end do
-    end do
-
-    ! Upwelling (ray project to bottom)
-    kp_start = nz
-    direction = -1
-    do p=nomega+1, nomega
-       indices%p = p
-       ! k=nz is already determined by bottom BC
-       ! Although k=nz would just be a no-op
-       do k=1, grid%z%num-1
-          indices%k = k
-          kp_stop = k
-          ! Minus sign since cos(phi) < 0 for upwelling
-          ! TODO: CHECK THIS
-          path_spacing(k:) = - grid%z%spacing(k:) / grid%angles%cos_phi_p(p)
-          do i=1, grid%x%num
-            indices%i = i
-            x = grid%x%vals(i)
-            do j=1, grid%y%num
-                indices%j = j
-                y = grid%y%vals(j)
-                call integrate_ray(grid, iops, source,&
-                     rad_scatter, path_length, path_spacing,&
-                     a_tilde, gn, i, j, k, p)
-             end do
           end do
        end do
     end do
@@ -405,6 +365,7 @@ module asymptotics
     integer i, j
 
     integral = 0
+    ! TODO: Should this -1 be here?
     do i=1, num_cells-1
        bi = -a_tilde(i)*s(i+1)
        do j=1, num_cells-1
@@ -424,66 +385,6 @@ module asymptotics
     end do
 
   end function calculate_ray_integral
-
-
-  subroutine old_integrate_ray(x, y, k, source,&
-       grid, iops, indices, rad_scatter, path_spacing, inner_path_integrand,&
-       outer_path_integrand, kp_start, kp_stop, direction)
-    type(space_angle_grid) grid
-    type(boundary_condition) bc
-    type(optical_properties) iops
-    double precision, dimension(:,:,:,:) :: rad_scatter
-    integer i, j, k, p, kp
-    type(index_list) indices
-    double precision, dimension(:,:,:,:) :: source
-
-    double precision, dimension(:) :: path_spacing
-    double precision, dimension(:) :: inner_path_integrand, outer_path_integrand
-    double precision path_source
-
-    double precision xmin, xmax, ymin, ymax
-    integer nx, ny, nz, nomega
-    double precision x, y, z, theta, phi
-
-    integer kp_start, kp_stop, direction
-    integer path_length
-
-    nx = grid%x%num
-    ny = grid%y%num
-    nz = grid%z%num
-    nomega = grid%angles%nomega
-
-    xmin = grid%x%minval
-    xmax = grid%x%maxval
-    ymin = grid%y%minval
-    ymax = grid%y%maxval
-
-    i = indices%i
-    j = indices%j
-    k = indices%k
-    p = indices%p
-
-    path_length = abs(kp_stop - kp_start) + 1
-
-    z = grid%z%vals(k)
-
-    ! Downwelling: kp_start = 1, kp_stop = k, direction = 1
-    ! Upwelling: kp_start = nz, kp_stop = k, direction = -1
-    do kp = kp_start, kp_stop, direction
-       path_source = interpolate_ray_at_depth(&
-            x, y, z, kp, nx, ny, nz, xmin, xmax,&
-            ymin, ymax, grid%x%vals, grid%y%vals,&
-            grid%z%vals, grid%x_factor(p),&
-            grid%y_factor(p), source(:,:,:,p))
-       !path_integrand(kp) = path_source * absorb_along_path(&
-       !     grid, bc, iops, indices, kp)
-       ! path_spacing defined in advect_light
-       outer_path_integrand(kp) = absorb_along_path(grid, bc, iops, indices,&
-            kp, path_source, path_spacing, inner_path_integrand)
-    end do
-    rad_scatter(i,j,k,p) = trap_rule_uneven(path_spacing, inner_path_integrand, path_length)
-  end subroutine old_integrate_ray
-
 
   ! Calculate maximum number of cells a path through the grid could take
   ! This is a loose upper bound
@@ -545,10 +446,6 @@ module asymptotics
        write(*,*) 'sin(theta) = ', grid%angles%sin_theta_p(p)
     end if
 
-    ! This one is an array because z spacing can vary
-    ! z_factor should never be 0, because the ray will never
-    ! reach the surface or bottom.
-    ds_z(1:grid%z%num) = grid%z%spacing(1:grid%z%num)/z_factor
 
     ! Destination point
     p1x = grid%x%vals(i)
@@ -586,6 +483,11 @@ module asymptotics
        ds_y = abs(grid%y%spacing(1)/y_factor)
     end if
     !write(*,*) 'T3'
+
+    ! This one is an array because z spacing can vary
+    ! z_factor should never be 0, because the ray will never
+    ! reach the surface or bottom.
+    ds_z(1:grid%z%num) = dir_z * grid%z%spacing(1:grid%z%num)/z_factor
 
     ! Origin point
     p0x = p1x - s_tilde * x_factor

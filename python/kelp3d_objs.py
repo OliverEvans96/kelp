@@ -322,7 +322,7 @@ class Light(tr.HasTraits):
         calculate_asymptotic_light_field_f90(
             xmin, xmax, nx,
             ymin, ymax, ny,
-            zmax, nz,
+            zmin, zmax, nz,
             ntheta, nphi,
             a_water, a_kelp, b_water, b_kelp,
             num_vsf, vsf_angles, vsf_vals,

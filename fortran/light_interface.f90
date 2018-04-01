@@ -40,6 +40,8 @@ contains
     ! FINAL RESULTS
     available_light, &
     avg_irrad)
+    ! radiance,
+    ! irradiance,
 
     implicit none
 
@@ -88,6 +90,10 @@ contains
     ! FINAL RESULT
     real, dimension(nz, num_si), intent(out) :: available_light
     real, dimension(nz), intent(out) :: avg_irrad
+
+    ! JUST FOR DEBUGGING
+    !double precision, dimension(nx,ny,nz,ntheta*(nphi-2)+2) :: radiance
+    !double precision, dimension(nx,ny,nz) :: irradiance
 
     !-------------!
 
@@ -187,6 +193,9 @@ contains
     ! Rescale surface radiance to match surface irradiance
     bc%bc_grid = bc%bc_grid * surface_irrad / grid%angles%integrate_points(bc%bc_grid)
 
+    write(*,*) 'bc'
+    write(*,*) bc%bc_grid
+
     ! write(*,*) 'bc'
     ! do i=1, grid%y%num
     !     write(*,'(10F15.3)') bc%bc_grid(i,:)
@@ -212,6 +221,9 @@ contains
     ! write(*,*) 'scat_water = ', scat_water
     write(*,*) 'avg_irrad = ', avg_irrad
     ! write(*,*) 'available_light = ', available_light
+
+    !radiance = light%radiance
+    !irradiance = light%irradiance
 
 
     write(*,*) 'deinit'

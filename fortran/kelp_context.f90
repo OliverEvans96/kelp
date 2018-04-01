@@ -92,10 +92,15 @@ contains
     bc%decay = decay
     bc%max_rad = max_rad
 
-    do p=1, grid%angles%nomega
+    ! Only set BC for downwelling light
+    do p=1, grid%angles%nomega/2
        theta = grid%angles%theta_p(p)
        phi = grid%angles%phi_p(p)
        bc%bc_grid(p) = bc%bc_gaussian(theta, phi)
+    end do
+    ! Zero upwelling light specified at surface
+    do p=grid%angles%nomega/2+1, grid%angles%nomega
+       bc%bc_grid(p) = 0.d0
     end do
 
   end subroutine bc_init
