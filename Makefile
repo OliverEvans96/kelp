@@ -112,9 +112,6 @@ $(INC)/test_grid.so: $(SRC)/test_grid.f90 $(INC)/fastgl.o $(INC)/sag.o $(INC)/ut
 $(INC)/test_asymptotics.so: $(SRC)/test_asymptotics.f90 $(INC)/asymptotics.o $(INC)/light_context.o $(INC)/rte_sparse_matrices.o $(INC)/mgmres.o $(INC)/rte3d.o $(INC)/kelp_context.o $(INC)/fastgl.o $(INC)/prob.o $(INC)/sag.o $(INC)/utils.o
 	$(FC) $(TESTFLAGS) $^ -o $@
 
-$(INC)/test_asymptotics.o: $(SRC)/test_asymptotics.f90 $(INC)/asymptotics.o $(INC)/light_context.o $(INC)/rte_sparse_matrices.o $(INC)/mgmres.o $(INC)/rte3d.o $(INC)/kelp_context.o $(INC)/fastgl.o $(INC)/prob.o $(INC)/sag.o $(INC)/utils.o
-	$(FC) $(OFLAGS) $^ -o $@
-
 #########
 # Tests #
 #########

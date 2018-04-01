@@ -39,8 +39,6 @@ contains
     ! FINAL RESULTS
     available_light, &
     avg_irrad)
-    ! radiance,
-    ! irradiance,
 
     implicit none
 
@@ -87,10 +85,6 @@ contains
     ! FINAL RESULT
     real, dimension(nz, num_si), intent(out) :: available_light
     real, dimension(nz), intent(out) :: avg_irrad
-
-    ! JUST FOR DEBUGGING
-    !double precision, dimension(nx,ny,nz,ntheta*(nphi-2)+2) :: radiance
-    !double precision, dimension(nx,ny,nz) :: irradiance
 
     !-------------!
 
@@ -217,10 +211,6 @@ contains
     ! write(*,*) 'scat_water = ', scat_water
     write(*,*) 'avg_irrad = ', avg_irrad
     ! write(*,*) 'available_light = ', available_light
-
-    !radiance = light%radiance
-    !irradiance = light%irradiance
-
 
     write(*,*) 'deinit'
     call bc%deinit()
