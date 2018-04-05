@@ -1,5 +1,6 @@
 module test_grid
   use sag
+  use kelp_context
   implicit none
 
 contains
@@ -80,6 +81,48 @@ contains
     type(space_angle_grid) grid
     call grid%deinit()
   end subroutine destruct_fortran_grid
+
+  subroutine make_vsf(ntheta, nphi, theta, phi, theta_edge, phi_edge,&
+       dtheta, dphi, theta_p, phi_p, area_p,&
+       vsf, vsf_integral, vsf_angles, vsf_vals)
+    integer, parameter :: num_vsf = 55
+    integer, intent(in) :: ntheta, nphi
+    double precision, intent(out) :: dtheta, dphi
+    double precision, dimension(ntheta), intent(out) :: theta, theta_edge
+    double precision, dimension(nphi), intent(out) :: phi
+    double precision, dimension(nphi-1), intent(out) :: phi_edge
+    double precision, dimension(ntheta*(nphi-2)+2), intent(out) :: theta_p, phi_p, area_p
+    double precision, dimension(ntheta*(nphi-2)+2, ntheta*(nphi-2)+2), intent(out) :: vsf, vsf_integral
+    double precision, dimension(num_vsf) :: vsf_angles, vsf_vals
+    character(len=5), parameter :: fmtstr = 'E13.4'
+    character(len=56) :: vsf_file
+    type(space_angle_grid) grid
+    type(optical_properties) iops
+
+    call grid%set_bounds(0.d0, 1.d0, 0.d0, 1.d0, 0.d0, 1.d0)
+    call grid%set_num(1, 1, 1, ntheta, nphi)
+    call grid%init()
+
+    iops%num_vsf = num_vsf
+    call iops%init(grid)
+
+    vsf_file = '/home/oliver/academic/research/kelp/data/vsf/nuc_vsf.txt'
+    call iops%load_vsf(vsf_file, fmtstr)
+
+    theta(:) = grid%angles%theta(:)
+    phi(:) = grid%angles%phi(:)
+    theta_edge(:) = grid%angles%theta_edge(:)
+    phi_edge(:) = grid%angles%phi_edge(:)
+    dtheta = grid%angles%dtheta
+    dphi = grid%angles%dphi
+    theta_p(:) = grid%angles%theta_p(:)
+    phi_p(:) = grid%angles%phi_p(:)
+    area_p(:) = grid%angles%area_p(:)
+    vsf(:,:) = iops%vsf(:,:)
+    vsf_integral(:,:) = iops%vsf_integral(:,:)
+    vsf_angles(:) = iops%vsf_angles(:)
+    vsf_vals(:) = iops%vsf_vals(:)
+  end subroutine make_vsf
 
   subroutine make_grid(&
        xmin, xmax, ymin, ymax, zmin, zmax,&

@@ -1,4 +1,5 @@
 include("test_definitions.jl")
+using KelpTest
 
 xmin = 0
 ymin = 0

@@ -1,6 +1,59 @@
+module KelpTest
+
 using Cubature
+using Interpolations
+
+# Single integral alias
+∫(args...) = hquadrature(args...)[1]
+
+function test_fun(args...)
+    println(args)
+end
+export test_fun
 
 # Fortran Wrappers
+
+function test_make_vsf(nθ, nϕ)
+    θ = zeros(nθ)
+    ϕ = zeros(nϕ)
+    θe = zeros(nθ)
+    ϕe = zeros(nϕ-1)
+    dθ = [0.0]
+    dϕ = [0.0]
+    nω = nθ * (nϕ-2) + 2
+    θₚ = zeros(nω)
+    ϕₚ = zeros(nω)
+    aₚ = zeros(nω)
+    β = zeros(nω, nω)
+    βᵢ = zeros(nω, nω)
+
+    num_vsf = 55
+    vsf_angles = zeros(num_vsf)
+    vsf_vals = zeros(num_vsf)
+    ccall((:__test_grid_MOD_make_vsf, "test_grid"),
+          Void, (
+              Ref{Int64},
+              Ref{Int64},
+              Ref{Float64},
+              Ref{Float64},
+              Ref{Float64},
+              Ref{Float64},
+              Ref{Float64},
+              Ref{Float64},
+              Ref{Float64},
+              Ref{Float64},
+              Ref{Float64},
+              Ref{Float64},
+              Ref{Float64},
+              Ref{Float64},
+              Ref{Float64}
+          ),
+          nθ, nϕ, θ, ϕ, θe, ϕe, dθ, dϕ,
+          θₚ, ϕₚ, aₚ, β, βᵢ, vsf_angles, vsf_vals
+    )
+    return θ, ϕ, θe, ϕe, dθ[1], dϕ[1], θₚ, ϕₚ, aₚ, β, βᵢ, vsf_angles, vsf_vals
+end
+export test_make_vsf
 
 function test_2d_angular_integration(f, nθ, nϕ)
     fptr = cfunction(f, Float64, (Ref{Float64}, Ref{Float64},))
@@ -8,12 +61,14 @@ function test_2d_angular_integration(f, nθ, nϕ)
            "test_grid"),
           Float64, (Ptr{Void}, Ref{Int64}, Ref{Int64}), fptr, nθ, nϕ)
 end
+export test_2d_angular_integration
 
 function test_angle_p_conversions(nθ, nϕ)
     ccall((:__test_grid_MOD_test_angle_p_conversions,
            "test_grid"),
           Bool, (Ref{Int64}, Ref{Int64}), nθ, nϕ)
 end
+export test_angle_p_conversions
 
 function calculate_max_cells(xmin, xmax, ymin, ymax, zmin, zmax, nx, ny, nz, nθ, nϕ)
     max_cells = ccall((:__test_asymptotics_MOD_test_max_cells, "test_asymptotics"),
@@ -38,6 +93,7 @@ function calculate_max_cells(xmin, xmax, ymin, ymax, zmin, zmax, nx, ny, nz, nθ
         nx, ny, nz, nθ, nϕ)
     return max_cells
 end
+export calculate_max_cells
 
 function test_ray_integral(xmin, xmax, ymin, ymax, zmin, zmax,
                            nx, ny, nz, nθ, nϕ,
@@ -92,6 +148,7 @@ function test_ray_integral(xmin, xmax, ymin, ymax, zmin, zmax,
 
     return integral
 end
+export test_ray_integral
 
 function test_traverse(xmin, xmax, ymin, ymax, zmin, zmax, nx, ny, nz, nθ, nϕ, i, j, k, l, m, pkelp_jfun=((args...) -> 1.0))
     max_cells = calculate_max_cells(xmin, xmax, ymin, ymax, zmin, zmax, nx, ny, nz, nθ, nϕ)
@@ -162,6 +219,7 @@ function test_traverse(xmin, xmax, ymin, ymax, zmin, zmax, nx, ny, nz, nθ, nϕ,
 
     return s, ds, ã, gₙ, rad_scatter
 end
+export test_traverse
 
 function make_grid(xmin, xmax, ymin, ymax, zmin, zmax, nx, ny, nz, nθ, nϕ)
     dx = zeros(nx)
@@ -232,6 +290,7 @@ function make_grid(xmin, xmax, ymin, ymax, zmin, zmax, nx, ny, nz, nθ, nϕ)
     spacing = dx, dy, dz, dθ[1], dϕ[1]
     return cells, edges, spacing
 end
+export make_grid
 
 # Julia Functions
 
@@ -253,6 +312,7 @@ function gengrid(nθ, nϕ)
 
     return dθ, θ, θe, dϕ, ϕ, ϕe
 end
+export gen_grid
 
 function angularquad(f, nθ, nϕ)
     dθ, θ, θe, dϕ, ϕ, ϕe = gengrid(nθ, nϕ)
@@ -270,8 +330,122 @@ function angularquad(f, nθ, nϕ)
 
     return integ
 end
+export angularquad
 
 function angularcubature(f, tol=1e-5)
     cubature, cube_err = hcubature(ω -> begin (θ, ϕ) = ω; sin(ϕ)*f(θ, ϕ) end, (0.,0.), (2π,π), reltol=tol, abstol=tol)
     return cubature
+end
+export angularcubature
+
+function rte1d_exact(I₀, a, b, zmin, zmax, z)
+    z₀, z₁ = zmin, zmax
+    s = a/b + 1
+    q = sqrt(a^2+2*a*b)/b
+    c₂ = -(s+q)*I₀*exp(b*q*(2*z₁-z₀))/(s-q-(s+q)*exp(2b*q*(z₁-z₀)))
+    c₁ = exp(-b*q*z₀) * (I₀ - c₂*exp(-b*q*z₀))
+    L⁺ = c₁*exp.(b*q*z) + c₂*exp.(-b*q*z)
+    L⁻ = c₁*(s+q)*exp.(b*q*z) + c₂*(s-q)*exp.(-b*q*z)
+    return L⁺, L⁻
+end
+export rte1d_exact
+
+function asymptotics1d_exact(I₀::Float64, a::Float64, b::Float64, 
+        zmin::Float64, zmax::Float64, z::Array{Float64,1}, num_scatters::Int)
+    # Radiance without scattering
+    L₀⁺ = I₀ * exp.(-a*(z.-zmin))
+    L₀⁻ = zeros(z)
+
+    # Radiance to use for source calculation
+    Lₙ₋₁⁺ = L₀⁺[:]
+    Lₙ₋₁⁻ = L₀⁻[:]
+
+    # Initialize final radiance
+    L⁺ = L₀⁺[:]
+    L⁻ = L₀⁻[:]
+
+    for n = 1:num_scatters
+        # Calculate source
+        gₙ⁺ = interpolate(Lₙ₋₁⁻ - Lₙ₋₁⁺, BSpline(Linear()), OnCell())
+        gₙ⁻ = interpolate(Lₙ₋₁⁺ - Lₙ₋₁⁻, BSpline(Linear()), OnCell())
+
+        # Define nested anonymous functions and apply elementwize to z
+        Lₙ⁺ = (z -> ∫(zp -> exp(-a*(z-zp)) * gₙ⁺[zp], zmin, z)).(z)
+        Lₙ⁻ = (z -> ∫(zp -> exp(-a*(zp-z)) * gₙ⁻[zp], z, zmax)).(z)
+
+        # Accumulate total radiance
+        L⁺ += b^n * Lₙ⁺
+        L⁻ += b^n * Lₙ⁻
+
+        # Update
+        Lₙ₋₁⁺[:] = Lₙ⁺[:]
+        Lₙ₋₁⁻[:] = Lₙ⁻[:]
+    end
+
+    return L⁺, L⁻
+end
+export asymptotics1d_exact
+
+function asymptotics1d_grid(I₀, a, b, β̃, zmin, zmax, nz, num_scatters)
+    z = zeros(nz)
+    L⁺ = zeros(nz)
+    L⁻ = zeros(nz)
+    vsf_cfunc = cfunction(β̃, Float64, (Ref{Float64},))
+    ccall((:__test_asymptotics_MOD_test_asymptotics_1d,
+           "test_asymptotics"),
+          Void,
+          (Ref{Float64},
+           Ref{Float64},
+           Ref{Float64},
+           Ptr{Void},
+           Ref{Float64},
+           Ref{Float64},
+           Ref{Int64},
+           Ref{Float64},
+           Ref{Float64},
+           Ref{Float64},
+           Ref{Int64}),
+          I₀, a, b, vsf_cfunc,
+          zmin, zmax, nz, z,
+          L⁺, L⁻, num_scatters
+          )
+
+    return z, L⁺, L⁻
+
+end
+export asymptotics1d_grid
+
+function p̂(l,m)
+    if m == 1
+        p = 1
+    elseif m == nϕ
+        p = nω
+    else
+        p = (m-2)*nθ + l + 1
+    end
+end
+export p̂
+
+function m̂(p)
+    if p == 1
+        m = 1
+    elseif p == nω
+        m = nϕ
+    else
+        m = ceil(Int, (p-1)/nθ) + 1
+    end
+end
+export m̂
+
+function l̂(p)
+    if p == 1
+        l = 1
+    elseif p == nω
+        l = 1
+    else
+        m = mod1(p-1, nθ)
+    end
+end
+export l̂
+
 end

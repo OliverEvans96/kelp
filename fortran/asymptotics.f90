@@ -32,7 +32,6 @@ module asymptotics
     allocate(gn(max_cells))
     allocate(source(nx, ny, nz, nomega))
 
-
     ! Scattering coefficient
     ! Allowed to vary over depth
     ! Reset radiance
@@ -273,21 +272,30 @@ module asymptotics
     integer pp
     double precision s
 
-    ! Current direction is already excluded by VSF
-    do pp=1, grid%angles%nomega
-       scatter_integrand(pp) = iops%vsf(&
-             indices%p,&
-             pp) &
+    !do pp=1, grid%angles%nomega
+    !   scatter_integrand(pp) = iops%vsf_integral(&
+    !        indices%p, &
+    !        pp) &
+    !     * rad_scatter(&
+    !         indices%i,&
+    !         indices%j,&
+    !         indices%k,&
+    !         pp)
+    !end do
+
+    !s = grid%angles%integrate_points(scatter_integrand)
+    !scatter_integral(indices%i,indices%j,indices%k,indices%p) = s
+
+    scatter_integral(indices%i,indices%j,indices%k,indices%p) &
+         = sum(iops%vsf_integral(indices%p, :) &
          * rad_scatter(&
-             indices%i,&
-             indices%j,&
-             indices%k,&
-             pp)
-    end do
+           indices%i,&
+           indices%j,&
+           indices%k,:))
 
-
-    s = grid%angles%integrate_points(scatter_integrand)
-    scatter_integral(indices%i,indices%j,indices%k,indices%p) = s
+    ! write(*,*) 'p =', indices%p
+    ! write(*,*) 'int =', sum(iops%vsf_integral(indices%p,:))
+    ! write(*,*) 'total =', scatter_integral(indices%i,indices%j,indices%k,indices%p)
 
     if(s .lt. 0) then
        write(*,*) 'SCATTER INTEGRAL NEGATIVE'

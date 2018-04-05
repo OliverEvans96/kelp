@@ -107,7 +107,7 @@ pyasymptotics_wrap: $(INC)/pyasymptotics_wrap.o $(INC)/prob.o $(INC)/fastgl.o $(
 py_wrap: pykelp3d_wrap pyrte3d_wrap pyasymptotics_wrap
 
 # TESTS for use with Julia
-$(INC)/test_grid.so: $(SRC)/test_grid.f90 $(INC)/fastgl.o $(INC)/sag.o $(INC)/utils.o
+$(INC)/test_grid.so: $(SRC)/test_grid.f90 $(INC)/fastgl.o $(INC)/sag.o $(INC)/kelp_context.o $(INC)/prob.o $(INC)/utils.o
 	$(FC) $(TESTFLAGS) $^ -o $@
 $(INC)/test_asymptotics.so: $(SRC)/test_asymptotics.f90 $(INC)/asymptotics.o $(INC)/light_context.o $(INC)/rte_sparse_matrices.o $(INC)/mgmres.o $(INC)/rte3d.o $(INC)/kelp_context.o $(INC)/fastgl.o $(INC)/prob.o $(INC)/sag.o $(INC)/utils.o
 	$(FC) $(TESTFLAGS) $^ -o $@

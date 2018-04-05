@@ -33,6 +33,7 @@ type angle2d
    double precision, dimension(:), allocatable :: cos_theta_edge, sin_theta_edge, cos_phi_edge, sin_phi_edge
    double precision, dimension(:), allocatable :: cos_theta_p, sin_theta_p, cos_phi_p, sin_phi_p
    double precision, dimension(:), allocatable :: cos_theta_edge_p, sin_theta_edge_p, cos_phi_edge_p, sin_phi_edge_p
+   double precision, dimension(:), allocatable :: area_p
  contains
    procedure :: set_num => angle_set_num
    procedure :: phat, lhat, mhat
@@ -52,6 +53,7 @@ type angle_dim
    procedure :: deinit => angle1d_deinit
    procedure :: integrate_points => angle1d_integrate_points
    procedure :: integrate_func => angle1d_integrate_func
+   procedure :: assign_linspace => angle1d_assign_linspace
    procedure :: assign_legendre
 end type angle_dim
 
@@ -128,7 +130,7 @@ contains
     if(p .eq. 1) then
        m = 1
     else if(p .eq. angles%nomega) then
-       m = angles%ntheta
+       m = angles%nphi
     else
        m = ceiling(dble(p-1)/dble(angles%ntheta)) + 1
     end if
@@ -150,6 +152,7 @@ contains
   subroutine angle_init(angles)
     class(angle2d) :: angles
     integer l, m, p
+    double precision area
 
 
     ! TODO: CONSIDER REMOVING non-p
@@ -177,6 +180,7 @@ contains
     allocate(angles%sin_theta_edge_p(angles%nomega))
     allocate(angles%cos_phi_edge_p(angles%nomega-1))
     allocate(angles%sin_phi_edge_p(angles%nomega-1))
+    allocate(angles%area_p(angles%nomega))
 
     ! Calculate spacing
     angles%dtheta = 2.d0*pi/dble(angles%ntheta)
@@ -205,6 +209,8 @@ contains
 
     ! Create p arrays
     do m=2, angles%nphi-1
+       area = angles%dtheta &
+            * (angles%cos_phi_edge(m-1) - angles%cos_phi_edge(m))
        do l=1, angles%ntheta
           p = angles%phat(l, m)
 
@@ -223,11 +229,14 @@ contains
           angles%cos_phi_edge_p(p) = cos(angles%phi_edge_p(p))
           angles%sin_phi_edge_p(p) = sin(angles%phi_edge_p(p))
 
+          angles%area_p(p) = area
        end do
     end do
 
     ! Poles
     l=1
+    area = 2.d0*pi*(1.d0-cos(angles%dphi/2.d0))
+
     ! North Pole
     p = 1
     m=1
@@ -244,6 +253,7 @@ contains
     angles%sin_theta_edge_p(p) = sin(angles%theta_edge_p(p))
     angles%cos_phi_edge_p(p) = cos(angles%phi_edge_p(p))
     angles%sin_phi_edge_p(p) = sin(angles%phi_edge_p(p))
+    angles%area_p(p) = area
 
     ! South Pole
     p = angles%nomega
@@ -255,7 +265,7 @@ contains
     angles%sin_theta_p(p) = sin(angles%theta_p(p))
     angles%cos_phi_p(p) = cos(angles%phi_p(p))
     angles%sin_phi_p(p) = sin(angles%phi_p(p))
-
+    angles%area_p(p) = area
   end subroutine angle_init
 
   ! Integrate function given function values at grid cells
@@ -265,23 +275,11 @@ contains
     double precision integral
     integer p, m
 
-    integral = 0
+    integral = 0.d0
 
-    ! Interior
-    do p=2, angles%nomega-1
-       m = angles%mhat(p)
-       integral = integral + func_vals(p) * ( &
-       angles%cos_phi_edge(m-1) &
-       - angles%cos_phi_edge(m))
+    do p=1, angles%nomega
+       integral = integral + angles%area_p(p) * func_vals(p)
     end do
-
-    ! Scale
-    integral = angles%dtheta * integral
-
-    ! Include poles
-    integral = integral + 2.d0*pi*(1.d0-cos(angles%dphi/2.d0)) * (&
-         func_vals(1) &
-         + func_vals(angles%nomega))
 
   end function angle_integrate_points
 
@@ -332,6 +330,7 @@ contains
     deallocate(angles%sin_theta_edge_p)
     deallocate(angles%cos_phi_edge_p)
     deallocate(angles%sin_phi_edge_p)
+    deallocate(angles%area_p)
   end subroutine angle_deinit
 
 
@@ -349,6 +348,17 @@ contains
     integer num
     angle%num = num
   end subroutine angle1d_set_num
+
+  subroutine angle1d_assign_linspace(angle)
+    class(angle_dim) :: angle
+    double precision spacing
+    integer i
+
+    spacing = (angle%maxval - angle%minval) / dble(angle%num)
+    do i=1, angle%num
+       angle%vals(i) = (i-1) * spacing
+    end do
+  end subroutine angle1d_assign_linspace
 
   ! To calculate \int_{xmin}^{xmax} f(x) dx :
   ! int = prefactor * sum(weights * f(roots))

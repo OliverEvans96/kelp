@@ -410,26 +410,26 @@ end function
 
 ! Integrate using trapezoid rule
 ! Assuming both endpoints are included in arr
-function trap_rule(arr, dx, nn)
+function trap_rule_dx(arr, dx, nn)
   implicit none
   double precision, dimension(nn) :: arr
   double precision dx
   integer ii, nn
-  double precision trap_rule
+  double precision trap_rule_dx
 
-  trap_rule = 0.0d0
+  trap_rule_dx = 0.0d0
 
   do ii=1, nn-1
-     trap_rule = trap_rule + 0.5d0 * dx * (arr(ii) + arr(ii+1))
+     trap_rule_dx = trap_rule_dx + 0.5d0 * dx * (arr(ii) + arr(ii+1))
   end do
 
-end function trap_rule
+end function trap_rule_dx
 
 ! Integrate using trapezoid rule
 ! Assuming both endpoints are included in arr
-function trap_rule_uneven(dx, yy, nn)
+function trap_rule_uneven(xx, yy, nn)
   implicit none
-  double precision, dimension(nn-1) :: dx
+  double precision, dimension(nn) :: xx
   double precision, dimension(nn) :: yy
   integer ii, nn
   double precision trap_rule_uneven
@@ -437,10 +437,23 @@ function trap_rule_uneven(dx, yy, nn)
   trap_rule_uneven = 0.0d0
 
   do ii=1, nn-1
-     trap_rule_uneven = trap_rule_uneven + 0.5d0 * dx(ii) * (yy(ii) + yy(ii+1))
+     trap_rule_uneven = trap_rule_uneven + 0.5d0 * (xx(ii+1)-xx(ii)) * (yy(ii) + yy(ii+1))
   end do
-
 end function trap_rule_uneven
+
+function trap_rule_dx_uneven(dx, yy, nn)
+  implicit none
+  double precision, dimension(nn-1) :: dx
+  double precision, dimension(nn) :: yy
+  integer ii, nn
+  double precision trap_rule_dx_uneven
+
+  trap_rule_dx_uneven = 0.0d0
+
+  do ii=1, nn-1
+     trap_rule_dx_uneven = trap_rule_dx_uneven + 0.5d0 * dx(ii) * (yy(ii) + yy(ii+1))
+  end do
+end function trap_rule_dx_uneven
 
 ! Integrate using midpoint rule
 ! First and last bins, only use inner half
@@ -462,7 +475,7 @@ function midpoint_rule_halfends(dx, yy, nn) result(integral)
 end function midpoint_rule_halfends
 
 ! Normalize 1D array and return integral w/ left endpoint rule
-function normalize(arr,dx,nn)
+function normalize_dx(arr,dx,nn)
     implicit none
 
     ! INPUTS:
@@ -475,17 +488,17 @@ function normalize(arr,dx,nn)
 
     ! OUTPUT:
     ! normalize - integral before normalization (left endpoint rule)
-    double precision normalize
+    double precision normalize_dx
 
     ! BODY:
 
     ! Calculate integral
-    normalize = lep_rule(arr,dx,nn)
+    normalize_dx = lep_rule(arr,dx,nn)
 
     ! Normalize array
-    arr = arr / normalize
+    arr = arr / normalize_dx
 
-end function
+  end function normalize_dx
 
 ! Normalize 1D unevenly-spaced array and
 ! return integral w/ trapezoid rule
@@ -512,7 +525,7 @@ function normalize_uneven(xx, yy, nn) result(norm)
   norm = trap_rule_uneven(xx, yy, nn)
 
   ! Normalize array
-  yy = yy / norm
+  yy(:) = yy(:) / norm
 
 end function normalize_uneven
 
