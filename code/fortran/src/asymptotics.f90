@@ -1,5 +1,7 @@
 module asymptotics
-  use rte3d
+  use kelp_context
+  !use rte_sparse_matrices
+  !use light_context
   implicit none
   contains
 

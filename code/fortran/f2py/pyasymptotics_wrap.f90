@@ -1,5 +1,9 @@
 module pyasymptotics_wrap
   use asymptotics
+  use rte_sparse_matrices
+  use rte3d
+  use kelp_context
+  use light_context
   implicit none
 
 contains
@@ -10,7 +14,7 @@ contains
        tol_abs, tol_rel, maxiter_inner, maxiter_outer, &
        p_kelp, radiance, irradiance, num_scatters, gmres_flag)
 
-    integer nx, ny, nz, ntheta, nphi, nomega
+    integer nx, ny, nz, ntheta, nphi
     double precision xmin, xmax, ymin, ymax, zmin, zmax
     double precision a_w, a_k, b_w, b_k
     integer num_vsf
@@ -31,8 +35,6 @@ contains
     type(light_state) light
     type(boundary_condition) bc
     integer k
-
-    ! TODO: Do I need to calculate nomega here? (I think it's okay.)
 
     ! INIT GRID
     write(*,*) 'Grid'
@@ -98,6 +100,9 @@ contains
 
     radiance = light%radiance
     irradiance = light%irradiance
+
+    write(*,*) 'irradiance'
+    write(*,*) irradiance
 
     write(*,*) 'deinit'
     call bc%deinit()

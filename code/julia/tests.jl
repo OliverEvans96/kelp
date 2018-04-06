@@ -1,5 +1,6 @@
 using Base.Test
 include("test_definitions.jl")
+using KelpTest
 
 @testset "Grid Tests" begin
     @testset "Cell Locations" for n=10:10:50

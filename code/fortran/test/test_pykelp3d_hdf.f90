@@ -1,4 +1,4 @@
-program pykelp3d
+program test_kelp3d_hdf
   use kelp3d
   implicit none
 
@@ -37,4 +37,4 @@ program pykelp3d
 
   call kelp3d_deinit(grid, rope, p_kelp)
 
-end program pykelp3d
+end program test_kelp3d_hdf

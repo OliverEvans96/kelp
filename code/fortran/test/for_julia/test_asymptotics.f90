@@ -1,5 +1,6 @@
 module test_asymptotics
   use asymptotics
+  use light_context
   implicit none
 
 contains
