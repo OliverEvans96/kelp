@@ -32,7 +32,6 @@ module asymptotics
     allocate(gn(max_cells))
     allocate(source(nx, ny, nz, nomega))
 
-
     ! Scattering coefficient
     ! Allowed to vary over depth
     ! Reset radiance
@@ -273,39 +272,48 @@ module asymptotics
     integer pp
     double precision s
 
-    ! Current direction is already excluded by VSF
-    do pp=1, grid%angles%nomega
-       scatter_integrand(pp) = iops%vsf(&
-             indices%p,&
-             pp) &
+    !do pp=1, grid%angles%nomega
+    !   scatter_integrand(pp) = iops%vsf_integral(&
+    !        indices%p, &
+    !        pp) &
+    !     * rad_scatter(&
+    !         indices%i,&
+    !         indices%j,&
+    !         indices%k,&
+    !         pp)
+    !end do
+
+    !s = grid%angles%integrate_points(scatter_integrand)
+    !scatter_integral(indices%i,indices%j,indices%k,indices%p) = s
+
+    scatter_integral(indices%i,indices%j,indices%k,indices%p) &
+         = sum(iops%vsf_integral(indices%p, :) &
          * rad_scatter(&
-             indices%i,&
-             indices%j,&
-             indices%k,&
-             pp)
-    end do
+           indices%i,&
+           indices%j,&
+           indices%k,:))
 
-
-    s = grid%angles%integrate_points(scatter_integrand)
-    scatter_integral(indices%i,indices%j,indices%k,indices%p) = s
+    ! write(*,*) 'p =', indices%p
+    ! write(*,*) 'int =', sum(iops%vsf_integral(indices%p,:))
+    ! write(*,*) 'total =', scatter_integral(indices%i,indices%j,indices%k,indices%p)
 
     if(s .lt. 0) then
        write(*,*) 'SCATTER INTEGRAL NEGATIVE'
     end if
 
-   if(indices%i .eq. 2 .and. indices%j .eq. 5 .and. indices%k .eq. 3 .and. indices%p .eq. 5) then
-       write(*,*) ''
-       write(*,*) 'theta'
-       write(*,*) grid%angles%theta
-       write(*,*) 'phi'
-       write(*,*) grid%angles%phi
-       write(*,*) 'integrand ', indices%i, indices%j, indices%k, indices%p
-       write(*,*) scatter_integrand(:)
-       write(*,*) 'integral', scatter_integral(indices%i,indices%j,indices%k,indices%p)
-       write(*,*) ''
-       write(*,*) ''
-       write(*,*) ''
-    end if
+    ! if(indices%i .eq. 2 .and. indices%j .eq. 5 .and. indices%k .eq. 3 .and. indices%p .eq. 5) then
+    !    write(*,*) ''
+    !    write(*,*) 'theta'
+    !    write(*,*) grid%angles%theta
+    !    write(*,*) 'phi'
+    !    write(*,*) grid%angles%phi
+    !    write(*,*) 'integrand ', indices%i, indices%j, indices%k, indices%p
+    !    write(*,*) scatter_integrand(:)
+    !    write(*,*) 'integral', scatter_integral(indices%i,indices%j,indices%k,indices%p)
+    !    write(*,*) ''
+    !    write(*,*) ''
+    !    write(*,*) ''
+    ! end if
 
   end subroutine calculate_scatter_integral
 

@@ -42,13 +42,13 @@ end type depth_state
 type optical_properties
    integer num_vsf
    type(space_angle_grid) grid
-   double precision, dimension(:), allocatable :: vsf_angles, vsf_vals
+   double precision, dimension(:), allocatable :: vsf_angles, vsf_vals, vsf_cos
    double precision, dimension(:), allocatable :: abs_water, scat_water
    double precision abs_kelp, vsf_scat_coef, scat
    ! On x, y, z grid - including water & kelp.
    double precision, dimension(:,:,:), allocatable :: abs_grid
    ! On theta, phi, theta_prime, phi_prime grid
-   double precision, dimension(:,:), allocatable :: vsf 
+   double precision, dimension(:,:), allocatable :: vsf, vsf_integral
  contains
    procedure :: init => iop_init
    procedure :: calculate_coef_grids
@@ -56,6 +56,7 @@ type optical_properties
    procedure :: eval_vsf
    procedure :: calc_vsf_on_grid
    procedure :: deinit => iop_deinit
+   procedure :: vsf_from_function
 end type optical_properties
 
 type boundary_condition
@@ -169,7 +170,9 @@ contains
     ! Assume that these must be allocated here
     allocate(iops%vsf_angles(iops%num_vsf))
     allocate(iops%vsf_vals(iops%num_vsf))
+    allocate(iops%vsf_cos(iops%num_vsf))
     allocate(iops%vsf(grid%angles%nomega,grid%angles%nomega))
+    allocate(iops%vsf_integral(grid%angles%nomega,grid%angles%nomega))
     allocate(iops%abs_grid(grid%x%num, grid%y%num, grid%z%num))
   end subroutine iop_init
 
@@ -205,26 +208,20 @@ contains
     iops%vsf_angles = tmp_2d_arr(:,1)
     iops%vsf_vals = tmp_2d_arr(:,2)
 
-    ! Normalize VSF & determine scattering coefficient
-    iops%vsf_scat_coef = normalize_uneven(iops%vsf_angles, iops%vsf_vals, iops%num_vsf)
-    ! write(*,*) 'VSF SCAT COEF = ', iops%vsf_scat_coef
     ! write(*,*) 'vsf_angles = ', iops%vsf_angles
     ! write(*,*) 'vsf_vals = ', iops%vsf_vals
 
     ! Pre-evaluate for all pair of angles
     call iops%calc_vsf_on_grid()
-
   end subroutine load_vsf
 
   function eval_vsf(iops, theta)
     class(optical_properties) iops
     double precision theta
     double precision eval_vsf
-    if(theta .eq. 0) then
-       eval_vsf = 0
-    else
-      eval_vsf = interp(theta, iops%vsf_angles, iops%vsf_vals, iops%num_vsf)
-   end if
+    ! No need to set vsf(0) = 0.
+    ! It's the area under the curve that matters, not the value.
+    eval_vsf = interp(theta, iops%vsf_angles, iops%vsf_vals, iops%num_vsf)
 
   end function eval_vsf
 
@@ -335,8 +332,30 @@ contains
       * (cos(theta)*cos(theta_prime) + sin(theta)*sin(theta_prime)) &
       + cos(phi)*cos(phi_prime))
 
+    ! Avoid out-of-bounds errors due to rounding
+    alpha = min(1.d0, alpha)
+    alpha = max(-1.d0, alpha)
+
     diff = acos(alpha)
   end function angle_diff_3d
+
+  subroutine vsf_from_function(iops, func)
+    class(optical_properties) iops
+    double precision, external :: func
+    integer i
+    type(angle_dim) :: angle1d
+
+    call angle1d%set_bounds(-1.d0, 1.d0)
+    call angle1d%set_num(iops%num_vsf)
+    call angle1d%assign_legendre()
+
+    iops%vsf_angles = acos(angle1d%vals)
+    do i=1, iops%num_vsf
+       iops%vsf_vals(i) = func(iops%vsf_angles(i))
+    end do
+
+    call iops%calc_vsf_on_grid()
+  end subroutine vsf_from_function
 
   subroutine calc_vsf_on_grid(iops)
     class(optical_properties) iops
@@ -346,9 +365,22 @@ contains
     integer nomega
     double precision angle_diff
     double precision vsf_val
+    double precision norm
 
     grid = iops%grid
     nomega = grid%angles%nomega
+
+    ! Calculate cos VSF
+    iops%vsf_cos = cos(iops%vsf_angles)
+
+    ! Normalize cos VSF to 1/(2pi) on [-1, 1]
+    iops%vsf_scat_coef = abs(trap_rule_uneven(iops%vsf_cos, iops%vsf_vals, iops%num_vsf))
+    iops%vsf_vals(:) = iops%vsf_vals(:) / (2*pi * iops%vsf_scat_coef)
+
+    ! write(*,*) 'norm = ', iops%vsf_scat_coef
+    ! write(*,*) 'now: ', trap_rule_uneven(iops%vsf_cos, iops%vsf_vals, iops%num_vsf)
+    ! write(*,*) 'cos: ', iops%vsf_cos
+    ! write(*,*) 'vals: ', iops%vsf_vals
 
     do p=1, nomega
        th = grid%angles%theta_p(p)
@@ -356,10 +388,24 @@ contains
        do  pp=1, nomega
           thp = grid%angles%theta_p(pp)
           php = grid%angles%phi_p(pp)
+          ! TODO: Might be better to calculate average scattering
+          ! from angular cell rather than only using center
           iops%vsf(p, pp) = iops%eval_vsf(angle_diff_3d(th,ph,thp,php))
        end do
+
+       ! Normalize each row of VSF (midpoint rule)
+       norm = sum(iops%vsf(p,:) * grid%angles%area_p(:))
+       iops%vsf(p,:) = iops%vsf(p,:) / norm
+
+       ! % / meter light scattered from cell pp into direction p.
+       ! TODO: Could integrate VSF instead of just using value at center
+       iops%vsf_integral(p, :) = iops%vsf(p, :) * grid%angles%area_p(:)
     end do
 
+    ! Normalize VSF on unit sphere w.r.t. north pole
+    !iops%vsf_scat_coef = sum(iops%vsf(1,:) * iops%grid%angles%area_p)
+    !iops%vsf = iops%vsf / iops%vsf_scat_coef
+    !iops%vsf_integral = iops%vsf_integral / iops%vsf_scat_coef
   end subroutine calc_vsf_on_grid
 
   subroutine iop_deinit(iops)
@@ -367,6 +413,7 @@ contains
     deallocate(iops%vsf_angles)
     deallocate(iops%vsf_vals)
     deallocate(iops%vsf)
+    deallocate(iops%vsf_integral)
     deallocate(iops%abs_water)
     deallocate(iops%scat_water)
     deallocate(iops%abs_grid)

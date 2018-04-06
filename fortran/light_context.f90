@@ -75,7 +75,6 @@ contains
        do j=1, ny
           do i=1, nx
              do p=1, nomega
-                ! TODO: DOUBLE CHECK INDEX HERE
                 light%mat%sol(index) = light%radiance(i,j,j,p)
                 index = index + 1
              end do
