@@ -31,7 +31,7 @@ program test_light_interface
     integer i, k
 
     abs_kelp = 1.d0
-    scat = 0.01d0
+    scat = 0.1d0
 
     num_vsf = 55
     vsf_file = '/home/oliver/academic/research/kelp/data/vsf/nuc_vsf.txt'
@@ -46,7 +46,7 @@ program test_light_interface
     nx = 1
     ny = 1
     nz = 5
-    ntheta = 2
+    ntheta = 1
     nphi = 2
     num_scatters = 1
 
