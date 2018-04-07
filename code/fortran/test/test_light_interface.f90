@@ -30,9 +30,6 @@ program test_light_interface
 
     integer i, k
 
-    write(*,*) 'Hello, world!'
-    return
-
     abs_kelp = 1.d0
     scat = 0.1d0
 

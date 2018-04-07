@@ -30,9 +30,11 @@ PFLAGS= -g -O0 -ffpe-trap=zero,invalid,overflow,underflow -ffpe-summary=all #-fc
 #https://stackoverflow.com/questions/42386065/inlining-functions-in-fortran
 #OPTFLAGS=-Ofast -flto
 
-FFLAGS = $(PFLAGS) -fPIC -shared #-fopenmp
+# Doesn't work as shared? Executable gives SEGFAULT immediately.
+# But that's okay, because this works.
+FFLAGS = $(PFLAGS) -fPIC #-fopenmp
 # Flags for F2PY
-F2PYFLAGS=- # $(PFLAGS) $(OPTFLAGS) #$(OMPFLAGS)
+F2PYFLAGS= -fPIC # $(PFLAGS) $(OPTFLAGS) #$(OMPFLAGS)
 # Test flags
 TESTFLAGS= -shared -fPIC $(FFLAGS)
 # Export LD_LIBRARY_PATH for tests
