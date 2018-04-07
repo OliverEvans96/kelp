@@ -402,7 +402,7 @@ contains
        ! % / meter light scattered from cell pp into direction p.
        ! TODO: Could integrate VSF instead of just using value at center
        iops%vsf_integral(p, :) = iops%vsf(p, :) * grid%angles%area_p(:)
-       write(*,*) 'vsf_integral (beta_pp)', p, ' = ', iops%vsf_integral(p, :)
+       !write(*,*) 'vsf_integral (beta_pp)', p, ' = ', iops%vsf_integral(p, :)
     end do
 
     ! Normalize VSF on unit sphere w.r.t. north pole

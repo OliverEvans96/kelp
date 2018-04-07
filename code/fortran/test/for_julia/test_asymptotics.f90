@@ -48,17 +48,6 @@ contains
     call grid%init()
     nomega = grid%angles%nomega
 
-    ! write(*,*) 'nx = ', nx
-    ! write(*,*) 'ny = ', ny
-    ! write(*,*) 'nz = ', nz
-    ! write(*,*) 'nomega = ', nomega
-
-    ! write(*,*) 'x =', grid%x%vals
-    ! write(*,*) 'y =', grid%y%vals
-    ! write(*,*) 'z =', grid%z%vals
-    ! write(*,*) 'theta =', grid%angles%theta
-    ! write(*,*) 'phi =', grid%angles%phi
-
     allocate(p_kelp(nx,ny,nz))
     allocate(scatter_integral(nx, ny, nz, nomega))
     allocate(scatter_integrand(nomega))
@@ -93,11 +82,10 @@ contains
     call iops%calculate_coef_grids(p_kelp)
 
     p = grid%angles%phat(l,m)
-    !write(*,*) 'PHAT l, m, p =', l, m, p
 
     call calculate_source(grid, iops, rad_scatter, source, scatter_integral, scatter_integrand)
 
-    call traverse_ray(grid, iops, source, i, j, k, p, s_array, ds, a_tilde, gn, num_cells, .false.)
+    call traverse_ray(grid, iops, source, i, j, k, p, s_array, ds, a_tilde, gn, num_cells)
 
     call iops%deinit()
     call grid%deinit()
@@ -108,7 +96,7 @@ contains
     deallocate(source)
   end subroutine test_traverse
 
-  subroutine test_asymptotics_1d(I0, a, b, vsf_func, zmin, zmax, nz, z, Lp, Lm, num_scatters, cmn_source, cmn_rad_scatter)
+  subroutine test_asymptotics_1d(I0, a, b, vsf_func, zmin, zmax, nz, z, Lp, Lm, num_scatters)
     !character(len=5), parameter :: fmtstr = 'E13.4'
     !character(len=56) :: vsf_file
     double precision, external :: vsf_func
@@ -123,7 +111,6 @@ contains
     type(light_state) light
     integer k
     double precision, dimension(1,1,nz) :: p_kelp
-    double precision, dimension(nz, 2, num_scatters+1), intent(out) :: cmn_source, cmn_rad_scatter
 
     call grid%set_bounds(0.d0, 1.d0, 0.d0, 1.d0, zmin, zmax)
     call grid%set_num(1, 1, nz, 1, 2)
@@ -132,7 +119,6 @@ contains
     ! INIT IOPS
     iops%num_vsf = 55
     call iops%init(grid)
-    write(*,*) 'IOPs'
     iops%abs_kelp = a
     do k=1, nz
       iops%abs_water(k) = a
@@ -142,10 +128,6 @@ contains
     iops%scat = b
 
     call iops%calculate_coef_grids(p_kelp)
-
-    !write(*,*) 'iop init'
-    !iops%vsf_angles = vsf_angles
-    !iops%vsf_vals = vsf_vals
 
     ! Will be called on cos vals [-1, 1]
     call iops%vsf_from_function(vsf_func)
@@ -160,7 +142,7 @@ contains
 
     call light%init_grid(grid)
 
-    call calculate_light_with_scattering(grid, bc, iops, light%radiance, num_scatters, cmn_source, cmn_rad_scatter)
+    call calculate_light_with_scattering(grid, bc, iops, light%radiance, num_scatters)
 
     ! Extract radiance
     Lp(:) = light%radiance(1,1,:,1)
@@ -170,13 +152,9 @@ contains
     z(:) = grid%z%vals(:)
 
     call bc%deinit()
-    !write(*,*) 'a'
     call iops%deinit()
-    !write(*,*) 'b'
     call light%deinit()
-    !write(*,*) 'c'
     call grid%deinit()
-    !write(*,*) 'e'
   end subroutine test_asymptotics_1d
 
 end module test_asymptotics

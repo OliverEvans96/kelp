@@ -416,13 +416,6 @@ function asymptotics1d_grid(I₀, a, b, β̃, zmin, zmax, nz, num_scatters)
     L⁻ = zeros(nz)
     vsf_cfunc = cfunction(β̃, Float64, (Ref{Float64},))
 
-    # Debugging variables
-    source = zeros(nz, 2, num_scatters)
-    rad_scatter = zeros(nz, 2, num_scatters+1)
-
-    # Recompile
-    #run(`make test_asymptotics.so`)
-
     # This syntax allows updating library between calls
     # See https://discourse.julialang.org/t/unload-a-shared-library/5344/4
     funcsym = :__test_asymptotics_MOD_test_asymptotics_1d
@@ -440,17 +433,14 @@ function asymptotics1d_grid(I₀, a, b, β̃, zmin, zmax, nz, num_scatters)
            Ref{Float64},
            Ref{Float64},
            Ref{Float64},
-           Ref{Int64},
-           Ref{Float64},
-           Ref{Float64}),
+           Ref{Int64}),
           I₀, a, b, vsf_cfunc,
           zmin, zmax, nz, z,
-          L⁺, L⁻, num_scatters,
-          source, rad_scatter
+          L⁺, L⁻, num_scatters
           )
     Libdl.dlclose(lib)
 
-    return z, L⁺, L⁻, source, rad_scatter
+    return z, L⁺, L⁻
 
 end
 export asymptotics1d_grid
