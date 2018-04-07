@@ -108,12 +108,13 @@ contains
     deallocate(source)
   end subroutine test_traverse
 
-  subroutine test_asymptotics_1d(I0, a, b, vsf_func, zmin, zmax, nz, z, Lp, Lm, num_scatters)
+  subroutine test_asymptotics_1d(I0, a, b, vsf_func, zmin, zmax, nz, z, Lp, Lm, num_scatters, cmn_source, cmn_rad_scatter)
     !character(len=5), parameter :: fmtstr = 'E13.4'
     !character(len=56) :: vsf_file
     double precision, external :: vsf_func
     double precision, intent(in) :: I0, a, b, zmin, zmax
-    integer, intent(in) :: nz, num_scatters
+    integer, intent(in) :: nz
+    integer, intent(in) :: num_scatters
     ! Downwelling (Lp) and upwelling (Lm) radiance
     double precision, intent(out), dimension(nz) :: Lp, Lm, z
     type(space_angle_grid) grid
@@ -122,6 +123,7 @@ contains
     type(light_state) light
     integer k
     double precision, dimension(1,1,nz) :: p_kelp
+    double precision, dimension(nz, 2, num_scatters+1), intent(out) :: cmn_source, cmn_rad_scatter
 
     call grid%set_bounds(0.d0, 1.d0, 0.d0, 1.d0, zmin, zmax)
     call grid%set_num(1, 1, nz, 1, 2)
@@ -158,7 +160,7 @@ contains
 
     call light%init_grid(grid)
 
-    call calculate_light_with_scattering(grid, bc, iops, light%radiance, num_scatters)
+    call calculate_light_with_scattering(grid, bc, iops, light%radiance, num_scatters, cmn_source, cmn_rad_scatter)
 
     ! Extract radiance
     Lp(:) = light%radiance(1,1,:,1)

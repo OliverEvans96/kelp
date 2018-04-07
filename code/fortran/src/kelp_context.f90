@@ -349,12 +349,14 @@ contains
     call angle1d%set_num(iops%num_vsf)
     call angle1d%assign_legendre()
 
-    iops%vsf_angles = acos(angle1d%vals)
+    iops%vsf_angles(:) = acos(angle1d%vals(:))
     do i=1, iops%num_vsf
        iops%vsf_vals(i) = func(iops%vsf_angles(i))
     end do
 
     call iops%calc_vsf_on_grid()
+
+    call angle1d%deinit()
   end subroutine vsf_from_function
 
   subroutine calc_vsf_on_grid(iops)
@@ -400,6 +402,7 @@ contains
        ! % / meter light scattered from cell pp into direction p.
        ! TODO: Could integrate VSF instead of just using value at center
        iops%vsf_integral(p, :) = iops%vsf(p, :) * grid%angles%area_p(:)
+       write(*,*) 'vsf_integral (beta_pp)', p, ' = ', iops%vsf_integral(p, :)
     end do
 
     ! Normalize VSF on unit sphere w.r.t. north pole

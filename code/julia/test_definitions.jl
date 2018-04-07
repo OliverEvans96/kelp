@@ -5,6 +5,7 @@ using Interpolations
 
 # Single integral alias
 ∫(args...) = hquadrature(args...)[1]
+export ∫
 
 function test_fun(args...)
     println(args)
@@ -350,8 +351,14 @@ function rte1d_exact(I₀, a, b, zmin, zmax, z)
 end
 export rte1d_exact
 
-function asymptotics1d_exact(I₀::Float64, a::Float64, b::Float64, 
+function asymptotics1d_exact(I₀::Float64, a::Float64, b::Float64, βπ::Float64,
         zmin::Float64, zmax::Float64, z::Array{Float64,1}, num_scatters::Int)
+    # Get interpolation index from z
+    indx(z′) = (z′-z[1])/(z[end]-z[1]) * (length(z) - 1) + 1
+
+    # % of scattered light remaining in angular grid cell
+    β₀ = 1 - βπ
+
     # Radiance without scattering
     L₀⁺ = I₀ * exp.(-a*(z.-zmin))
     L₀⁻ = zeros(z)
@@ -364,14 +371,31 @@ function asymptotics1d_exact(I₀::Float64, a::Float64, b::Float64,
     L⁺ = L₀⁺[:]
     L⁻ = L₀⁻[:]
 
+    # Debug variables
+    Lₙ = zeros(length(z), 2, num_scatters+1)
+    gₙ = zeros(length(z), 2, num_scatters+1)
+
+    Lₙ[:,1,1] = L₀⁺
+    Lₙ[:,2,1] = L₀⁻
+
     for n = 1:num_scatters
-        # Calculate source
-        gₙ⁺ = interpolate(Lₙ₋₁⁻ - Lₙ₋₁⁺, BSpline(Linear()), OnCell())
-        gₙ⁻ = interpolate(Lₙ₋₁⁺ - Lₙ₋₁⁻, BSpline(Linear()), OnCell())
+        # Calculate source and interpolate
+        gₙ⁺ = z′ -> (βπ * interpolate(Lₙ₋₁⁻ - Lₙ₋₁⁺, BSpline(Linear()), OnCell())[indx(z′)])
+        gₙ⁻ = z′ -> (βπ * interpolate(Lₙ₋₁⁺ - Lₙ₋₁⁻, BSpline(Linear()), OnCell())[indx(z′)])
+
+        # for (k, zz) in enumerate(z)
+        #     println("k = $k. βπ(L⁺ - L⁻) = $(βπ*(Lₙ₋₁⁺[k] - Lₙ₋₁⁻[k])) =? $(gₙ⁻(zz))")
+        # end
 
         # Define nested anonymous functions and apply elementwize to z
-        Lₙ⁺ = (z -> ∫(zp -> exp(-a*(z-zp)) * gₙ⁺[zp], zmin, z)).(z)
-        Lₙ⁻ = (z -> ∫(zp -> exp(-a*(zp-z)) * gₙ⁻[zp], z, zmax)).(z)
+        Lₙ⁺ = (z -> ∫(zp -> exp(-a*(z-zp)) * gₙ⁺(zp), zmin, z)).(z)
+        Lₙ⁻ = (z -> ∫(zp -> exp(-a*(zp-z)) * gₙ⁻(zp), z, zmax)).(z)
+
+        # Debug
+        gₙ[:,1,n] = gₙ⁺.(z)
+        gₙ[:,2,n] = gₙ⁻.(z)
+        Lₙ[:,1,n+1] = Lₙ⁺
+        Lₙ[:,2,n+1] = Lₙ⁻
 
         # Accumulate total radiance
         L⁺ += b^n * Lₙ⁺
@@ -382,7 +406,7 @@ function asymptotics1d_exact(I₀::Float64, a::Float64, b::Float64,
         Lₙ₋₁⁻[:] = Lₙ⁻[:]
     end
 
-    return L⁺, L⁻
+    return L⁺, L⁻, Lₙ, gₙ
 end
 export asymptotics1d_exact
 
@@ -391,8 +415,20 @@ function asymptotics1d_grid(I₀, a, b, β̃, zmin, zmax, nz, num_scatters)
     L⁺ = zeros(nz)
     L⁻ = zeros(nz)
     vsf_cfunc = cfunction(β̃, Float64, (Ref{Float64},))
-    ccall((:__test_asymptotics_MOD_test_asymptotics_1d,
-           "test_asymptotics"),
+
+    # Debugging variables
+    source = zeros(nz, 2, num_scatters)
+    rad_scatter = zeros(nz, 2, num_scatters+1)
+
+    # Recompile
+    #run(`make test_asymptotics.so`)
+
+    # This syntax allows updating library between calls
+    # See https://discourse.julialang.org/t/unload-a-shared-library/5344/4
+    funcsym = :__test_asymptotics_MOD_test_asymptotics_1d
+    lib = Libdl.dlopen("../../include/test_asymptotics.so")
+    sym = Libdl.dlsym(lib, funcsym)
+    ccall(sym,
           Void,
           (Ref{Float64},
            Ref{Float64},
@@ -404,13 +440,17 @@ function asymptotics1d_grid(I₀, a, b, β̃, zmin, zmax, nz, num_scatters)
            Ref{Float64},
            Ref{Float64},
            Ref{Float64},
-           Ref{Int64}),
+           Ref{Int64},
+           Ref{Float64},
+           Ref{Float64}),
           I₀, a, b, vsf_cfunc,
           zmin, zmax, nz, z,
-          L⁺, L⁻, num_scatters
+          L⁺, L⁻, num_scatters,
+          source, rad_scatter
           )
+    Libdl.dlclose(lib)
 
-    return z, L⁺, L⁻
+    return z, L⁺, L⁻, source, rad_scatter
 
 end
 export asymptotics1d_grid

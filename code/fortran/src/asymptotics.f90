@@ -5,7 +5,7 @@ module asymptotics
   implicit none
   contains
 
-  subroutine calculate_light_with_scattering(grid, bc, iops, radiance, num_scatters)
+  subroutine calculate_light_with_scattering(grid, bc, iops, radiance, num_scatters, cmn_source, cmn_rad_scatter)
     type(space_angle_grid) grid
     type(boundary_condition) bc
     type(optical_properties) iops
@@ -20,6 +20,8 @@ module asymptotics
     integer max_cells
 
     double precision, dimension(:), allocatable :: path_length, path_spacing, a_tilde, gn
+    double precision, dimension(grid%z%num, 2, num_scatters) :: &
+         cmn_source, cmn_rad_scatter
 
     nx = grid%x%num
     ny = grid%y%num
@@ -43,7 +45,10 @@ module asymptotics
     ! write(*,*) '0'
 
     if (num_scatters .gt. 0) then
-       call calculate_light_after_scattering(grid, bc, iops, source, radiance, num_scatters, path_length, path_spacing, a_tilde, gn)
+       call calculate_light_after_scattering(&
+            grid, bc, iops, source, radiance, &
+            num_scatters, path_length, path_spacing, &
+            a_tilde, gn, cmn_source, cmn_rad_scatter)
     end if
 
     ! write(*,*) '1'
@@ -149,7 +154,8 @@ module asymptotics
   end subroutine attenuate_light_from_surface
 
   subroutine calculate_light_after_scattering(grid, bc, iops, source, radiance,&
-       num_scatters, path_length, path_spacing, a_tilde, gn)
+       num_scatters, path_length, path_spacing, a_tilde, gn,&
+       cmn_source, cmn_rad_scatter)
     type(space_angle_grid) grid
     type(boundary_condition) bc
     type(optical_properties) iops
@@ -159,19 +165,28 @@ module asymptotics
     double precision, dimension(:,:,:,:), allocatable :: rad_scatter
     integer n, k
     double precision bb
+    double precision, dimension(grid%z%num, 2, num_scatters) :: &
+         cmn_source, cmn_rad_scatter
 
     allocate(rad_scatter(grid%x%num, grid%y%num, grid%z%num, grid%angles%nomega))
     rad_scatter = radiance
 
     ! For now, just use first entry from scattering array everywhere
     bb = iops%scat
-    write(*,*) 'prescatter = ', rad_scatter(2,2,:,2)
+    !write(*,*) 'prescatter = ', rad_scatter(2,2,:,2)
+
+    cmn_rad_scatter(:,:,1) = rad_scatter(1,1,:,:)
+
 
     do n=1, num_scatters
        write(*,*) 'scatter #', n
        call scatter(grid, bc, iops, source, rad_scatter, path_length, path_spacing, a_tilde, gn)
        radiance = radiance + bb**n * rad_scatter
-       write(*,*) 'rad_scatter = ', rad_scatter(2,2,:,2)
+       !write(*,*) 'rad_scatter = ', rad_scatter(2,2,:,2)
+
+       ! Save quantities for debugging (common variables)
+       cmn_rad_scatter(:,:,n+1) = rad_scatter(1,1,:,:)
+       cmn_source(:,:,n) = source(1,1,:,:)
     end do
 
     write(*,*) 'deallocate rad_scatter'
@@ -207,6 +222,8 @@ module asymptotics
     call calculate_source(grid, iops, rad_scatter, source, scatter_integral, scatter_integrand)
     call advect_light(grid, iops, source, rad_scatter, path_length, path_spacing, a_tilde, gn)
 
+
+
     !write(*,*) 'source'
     ! do i=1, nx
     !    do j=1, ny
@@ -218,11 +235,8 @@ module asymptotics
     !    !write(*,*) ''
     ! end do
 
-    write(*,*) 'A'
     deallocate(scatter_integral)
-    write(*,*) 'B'
     deallocate(scatter_integrand)
-    write(*,*) 'C'
   end subroutine scatter
 
   ! Calculate source from no-scatter or previous scattering layer
@@ -257,11 +271,19 @@ module asymptotics
                 ! write(*,*) 'integral', scatter_integral(i,j,k,p)
                 ! write(*,*) ''
              end do
+             !write(*,*) 'SI(', k, ') = ', scatter_integral(i,j,k,1)
           end do
        end do
     end do
 
     source = -rad_scatter + scatter_integral
+
+    ! Report, assuming 1D, beta_pi = 0.5
+    ! do k=1, grid%z%num
+    !    write(*,*) 'k =', k, '. 0.5 * (L2 - L1) = ', &
+    !         0.5*(rad_scatter(1,1,k,2) - rad_scatter(1,1,k,1)), &
+    !         '=?', source(1,1,k,2)
+    ! end do
 
   end subroutine calculate_source
 
@@ -361,8 +383,24 @@ module asymptotics
     integer i, j, k, p
     integer num_cells
     double precision integral
+    logical print_flag
 
-    call traverse_ray(grid, iops, source, i, j, k, p, path_length, path_spacing, a_tilde, gn, num_cells, .false.)
+    if((k .eq. 10) .and. (p .eq. 1)) then
+       print_flag = .true.
+    end if
+
+    print_flag = .false.
+
+
+    call traverse_ray(grid, iops, source, i, j, k, p, path_length, path_spacing, a_tilde, gn, num_cells, print_flag)
+    ! All of this looks exactly as I would expect.
+    ! write(*,*) 'k,p = ', k, p
+    ! write(*,*) 'num_cells =', num_cells
+    ! write(*,*) 's =', path_length(1:num_cells+1)
+    ! write(*,*) 'ds =', path_spacing(1:num_cells)
+    ! write(*,*) 'a_tilde =', a_tilde(1:num_cells)
+    ! write(*,*) 'gn =', gn(1:num_cells)
+    ! write(*,*)
     rad_scatter(i,j,k,p) = calculate_ray_integral(num_cells, path_length, path_spacing, a_tilde, gn)
   end subroutine integrate_ray
 
@@ -370,20 +408,21 @@ module asymptotics
     ! Double integral which accumulates all scattered light along the path
     ! via an angular integral and attenuates it by integrating along the path
     integer num_cells
-    double precision, dimension(num_cells) :: s, ds, a_tilde, gn
+    double precision, dimension(num_cells) :: ds, a_tilde, gn
+    double precision, dimension(num_cells+1) :: s
     double precision integral, bi, di
     integer i, j
 
+    ! TODO: The issue is probably here!
     integral = 0
-    ! TODO: Should this -1 be here?
-    do i=1, num_cells-1
+    do i=1, num_cells
        bi = -a_tilde(i)*s(i+1)
-       do j=1, num_cells-1
+       do j=i+1, num_cells
           bi = bi - a_tilde(j)*ds(j)
        end do
 
        if(a_tilde(i) .eq. 0) then
-          di = ds(i)*exp(bi)
+          di = ds(i)
        else
           !write(*,*) 'i =', i
           !write(*,*) 'a_tilde =', a_tilde(i)
@@ -391,7 +430,7 @@ module asymptotics
           di = (exp(a_tilde(i)*s(i+1))-exp(a_tilde(i)*s(i)))/a_tilde(i)
        end if
 
-       integral = integral + gn(i)*di
+       integral = integral + gn(i)*di * exp(bi)
     end do
 
   end function calculate_ray_integral
@@ -442,6 +481,13 @@ module asymptotics
     double precision smx, smy
     zero = 0.d0
 
+    ! TODO: Remove this. Just for debugging.
+    do t=1, size(s_array)
+       s_array(t) = 0.0
+       ds(t) = 0.0
+    end do
+    t = 0
+
     ! Divide by these numbers to get path separation
     ! from separation in individual dimensions
     x_factor = grid%angles%sin_phi_p(p) * grid%angles%cos_theta_p(p)
@@ -455,7 +501,6 @@ module asymptotics
        write(*,*) 'sin(phi) = ', grid%angles%sin_phi_p(p)
        write(*,*) 'sin(theta) = ', grid%angles%sin_theta_p(p)
     end if
-
 
     ! Destination point
     p1x = grid%x%vals(i)
@@ -598,6 +643,7 @@ module asymptotics
     !write(*,*) 'T6'
     ! Initialize path
     s = 0.d0
+    s_array(1) = 0.d0
 
     ! Start with t=0 so that we can increment before storing,
     ! so that t will be the number of grid cells at the end of the loop.
@@ -642,6 +688,8 @@ module asymptotics
       write(*,*) ''
       write(*,*) '---'
    end if
+
+   print_flag = .false.
 
    !write(*,*) 'T7'
     ! s is the beginning of the current cell,
@@ -729,9 +777,8 @@ module asymptotics
        ! This will be the last cell traversed if s_next >= s_tilde
        s_next = min(s_tilde, s_next)
 
-
        ! Store path length
-       s_array(t) = s_next
+       s_array(t+1) = s_next
        ! Extract path length from same cell as function vals
        ds(t) = s_next - s
 
