@@ -12,7 +12,8 @@ JTEST=$(TEST)/for_julia
 INC=.
 PYDIR=$(BASE)/code/python
 JULIA=$(BASE)/code/julia
-# F2PY .so / .py directory
+# F2PY .so directory
+F2PY_INC=$(PYDIR)/fortran_wrappers
 
 # Fortran Compiler
 FC=gfortran
@@ -69,6 +70,7 @@ $(jtest_inc): %.so: $(JTEST)/%.f90
 	$(FC) $(TESTFLAGS) $^ -o $@
 $(f2py_targets): %: $(F2PY)/%.f90
 	f2py -m $@ -c $^
+	mv $@.*.so $(F2PY_INC)
 
 ################
 # Object files #
@@ -152,4 +154,4 @@ test_vsf: rte_core.so utils.so
 .PHONY: clean
 
 clean:
-	rm -f *.mod *.so *.py $(BIN)/*
+	rm -f *.mod *.o *.so $(F2PY_INC)/*.so $(BIN)/*
