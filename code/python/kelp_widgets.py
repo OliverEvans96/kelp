@@ -102,7 +102,7 @@ class HandDrawFigure(bq.Figure):
                 (self.line, 'y'),
                 (self.traitful, self.trait_name)
             )
-        if self.xdim is not None:
+        if self.xdim:
             tr.link(
                 (self.xscale, 'min'),
                 (self.xdim, 'minval')
@@ -790,7 +790,7 @@ class VolumePlotWidget(ipw.VBox):
         new = self.vol_transform(data)
         fig.data_min = np.min(new)
         fig.data_max = np.max(new)
-        fig.volume_data = new
+        fig.volume_data = np.copy(new)
 
     def vol_transform(self, vol_data):
         "Transform 3D array for volume plot"

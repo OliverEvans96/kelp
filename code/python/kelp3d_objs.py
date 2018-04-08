@@ -289,6 +289,7 @@ class Light(tr.HasTraits):
         nz = self.grid.z.num
         ntheta = self.grid.theta.num
         nphi = self.grid.phi.num
+        nomega = self.grid.nomega
 
         # IOPs
         num_vsf = self.iops.num_vsf
@@ -321,7 +322,7 @@ class Light(tr.HasTraits):
 
         #np.savetxt('pyrad_in.txt', self.radiance.flatten())
 
-        if self.radiance.shape != (nx, ny, nz, ntheta, nphi):
+        if self.radiance.shape != (nx, ny, nz, nomega):
             print("RESETTING RADIANCE")
             self.reset_radiance()
         if self.irradiance.shape != (nx, ny, nz):
@@ -348,7 +349,7 @@ class Light(tr.HasTraits):
 
     def volume_plot(self):
         "Transform so that the new y is the old -z for IPyVolume."
-        return ipv.quickvolshow(np.swapaxes(self.irradiance[:,:,::-1], 1, 2)) 
+        return ipv.quickvolshow(np.swapaxes(self.irradiance[:,:,::-1], 1, 2))
 
 
 class OpticalProperties(tr.HasTraits):
@@ -367,7 +368,7 @@ class OpticalProperties(tr.HasTraits):
         self.init_logic()
 
     def init_vals(self):
-        self.a_kelp = 1000
+        self.a_kelp = 10
         self.a_water = .25
         self.b = 1
 
@@ -390,9 +391,10 @@ class OpticalProperties(tr.HasTraits):
         self.vsf_vals = self.normalize(self.vsf_angles, vsf_vals)
 
     def normalize(self, vsf_angles, vsf_vals):
-        norm = np.abs(simps(x=vsf_angles, y=vsf_vals))
+        # Normalize beta_tilde to 1/(2pi) on [-1, 1]
+        norm = np.abs(simps(x=np.cos(vsf_angles), y=vsf_vals))
         try:
-            return vsf_vals / norm
+            return vsf_vals / (2*np.pi * norm)
         except ZeroDivisionError:
             return vsf_vals
 

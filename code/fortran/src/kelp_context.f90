@@ -35,8 +35,6 @@ contains
    procedure :: set_depth
    procedure :: length_distribution_cdf
    procedure :: angle_distribution_pdf
-   procedure :: angle_mod
-   procedure :: angle_diff_2d
 end type depth_state
 
 type optical_properties
@@ -286,25 +284,23 @@ contains
     ! So take difference of angles and input into
     ! von_mises dist. centered & x=0.
 
-    diff = depth%angle_diff_2d(theta_f, theta_w)
+    diff = angle_diff_2d(theta_f, theta_w)
 
     call von_mises_pdf(diff, 0.d0, v_w, output)
   end function angle_distribution_pdf
 
-  function angle_mod(depth, theta) result(mod_theta)
+  function angle_mod(theta) result(mod_theta)
     ! Shift theta to the interval [-pi, pi]
     ! which is where von_mises_pdf is defined.
 
-    class(depth_state) depth
     double precision theta, mod_theta
 
     mod_theta = mod(theta + pi, 2.d0*pi) - pi
   end function angle_mod
 
-  function angle_diff_2d(depth, theta1, theta2) result(diff)
+  function angle_diff_2d(theta1, theta2) result(diff)
     ! Shortest difference between two angles which may be
     ! in different periods.
-    class(depth_state) depth
     double precision theta1, theta2, diff
     double precision modt1, modt2
 
@@ -364,8 +360,6 @@ contains
     double precision th, ph, thp, php
     integer p, pp
     integer nomega
-    double precision angle_diff
-    double precision vsf_val
     double precision norm
 
     grid = iops%grid

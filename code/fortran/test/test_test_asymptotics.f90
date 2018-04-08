@@ -1,22 +1,30 @@
-function vsf(costheta)
-  double precision a, vsf, costheta
-  a = 5.d0
-  vsf = exp(-a*(costheta+1)) * a / (exp(a)-exp(-a))
-end function vsf
+function vsf_func(costheta)
+  use utils
+  double precision a, vsf_func, costheta
+  ! vsf_func decay parameter
+  a = 10.d0
+  vsf_func = exp(a*(costheta)) * a / (2*pi*(exp(a)-exp(-a)))
+end function vsf_func
+
+function a_func(x, y, z)
+  double precision x, y, z, a_func
+  a_func = 100 * (x + y + z ** 2)
+end function a_func
 
 program test_test_asymptotics
-  use kelp_context
-  use asymptotics
-  use light_context
-  double precision, external :: vsf
+  !use kelp_context
+  !use asymptotics
+  !use light_context
+  use test_asymptotics
+  implicit none
+
+  double precision, external :: vsf_func, a_func
   double precision :: I0, b, theta_s, phi_s, decay
   integer :: nx, ny, nz, ntheta, nphi, nomega
   integer :: num_scatters
 
-  type(space_angle_grid) grid
-  type(optical_properties) iops
-  type(boundary_condition) bc
-  type(light_state) light
+  double precision, dimension(:,:,:,:), allocatable :: rad
+  double precision, dimension(:,:,:), allocatable :: irrad
 
   double precision x, y, z
   integer i, j, k
@@ -27,8 +35,7 @@ program test_test_asymptotics
   ntheta = 10
   nphi = 10
 
-  a = 1.0
-  b = 0.1
+  b = 1.0
 
   theta_s = 0.0
   phi_s = 0.0
@@ -39,46 +46,16 @@ program test_test_asymptotics
 
   nomega = ntheta * (nphi-2) + 2
 
-  call grid%set_bounds(0.d0, 1.d0, 0.d0, 1.d0, 0.d0, 1.d0)
-  call grid%set_num(nx, ny, nz, ntheta, nphi)
-  call grid%init()
+  allocate(rad(nx,ny,nz,nomega))
+  allocate(irrad(nx,ny,nz))
 
-  ! INIT IOPS
-  iops%num_vsf = 55
-  call iops%init(grid)
+  call test_asymptotics_3d(&
+       I0, theta_s, phi_s, decay, &
+       a_func, b, vsf_func, &
+       nx, ny, nz, ntheta, nphi, &
+       num_scatters, rad, irrad)
 
-  do i=1, nx
-      x = grid%x%vals(i)
-      do j=1, ny
-        y = grid%y%vals(j)
-        do k=1, nz
-            z = grid%z%vals(k)
-            iops%abs_grid(i,j,k) = a
-        end do
-      end do
-  end do
-
-  iops%scat = b
-
-  ! Will be called on cos vals [-1, 1]
-  call iops%vsf_from_function(vsf)
-
-  ! Straight downward light
-  call bc%init(grid, theta_s, phi_s, decay, I0)
-
-  ! Rescale surface radiance to match surface irradiance
-  bc%bc_grid = bc%bc_grid * I0 / grid%angles%integrate_points(bc%bc_grid)
-
-  call light%init_grid(grid)
-  call calculate_light_with_scattering(grid, bc, iops, light%radiance, num_scatters)
-  call light%calculate_irradiance()
-
-  ! write(*,*) 'irrad'
-  ! write(*,*) light%irradiance
-
-  call bc%deinit()
-  call iops%deinit()
-  call light%deinit()
-  call grid%deinit()
+  deallocate(irrad)
+  deallocate(rad)
 
 end program test_test_asymptotics

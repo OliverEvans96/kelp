@@ -98,14 +98,13 @@ contains
     call iops%init(grid)
     iops%vsf_angles = vsf_angles
     iops%vsf_vals = vsf_vals
+    call iops%calc_vsf_on_grid()
 
     iops%abs_kelp = a_k
-    iops%scat = b
     do k=1, grid%z%num
        iops%abs_water(k) = a_w
     end do
-
-    call iops%calc_vsf_on_grid()
+    iops%scat = b
     call iops%calculate_coef_grids(p_kelp)
 
     write(*,*) 'BC'

@@ -95,7 +95,6 @@ contains
     integer quadrature_degree
 
     type(space_angle_grid) grid
-    type(rte_mat) mat
     type(optical_properties) iops
     type(light_state) light
     type(rope_state) rope
@@ -105,9 +104,6 @@ contains
     double precision, dimension(:), allocatable :: pop_length_means, pop_length_stds
     ! Number of fronds in each depth layer
     double precision, dimension(:), allocatable :: num_fronds
-
-    integer i, j, k
-
     double precision, dimension(:,:,:), allocatable :: p_kelp
 
     write(*,*) 'Light calculation'
@@ -316,7 +312,7 @@ contains
 
     integer i, j, k, n
 
-    ! THIS IS NOT CORRECT YET
+    ! TODO: THIS IS NOT CORRECT YET
     do k=1, grid%z%num
        do n=1, num_si
           available_light(k, n) = avg_irrad(k)

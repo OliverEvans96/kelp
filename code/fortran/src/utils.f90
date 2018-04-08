@@ -303,10 +303,9 @@ end function bilinear_array_periodic
 
 ! Bilinear interpolation on evenly spaced 2D grid
 ! Assume upper and lower endpoints are included
-function bilinear_array(x, y, nx, ny, x_vals, y_vals, fun_vals)
+function bilinear_array(x, y, x_vals, y_vals, fun_vals)
   implicit none
   double precision x, y
-  integer nx, ny
   double precision, dimension(:) :: x_vals, y_vals
   double precision, dimension(:,:) :: fun_vals
 
@@ -546,20 +545,16 @@ function read_array(filename,fmtstr,nn,mm,skiplines_in)
     integer skiplines
 
     ! OUTPUT:
-    double precision, dimension(nn,mm) :: read_array, tmp_array
+    double precision, dimension(nn,mm) :: read_array
 
     ! BODY:
 
-    ! Row,column counters
-    integer ii, jj
+    ! Row counter
+    integer ii
     ! File unit number
     integer, parameter :: un = 10
     ! Final format to use
     character(len=256) finfmt
-    ! iostat flag
-    integer io
-    ! Temporary variable to read & write
-    double precision, dimension(mm) :: tmpdbl
 
     ! Generate final format string
     write(finfmt,'(A,I1,A,A)') '(', mm, fmtstr, ')'

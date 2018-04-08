@@ -273,7 +273,7 @@ contains
     class(angle2d) :: angles
     double precision, dimension(angles%nomega) :: func_vals
     double precision integral
-    integer p, m
+    integer p
 
     integral = 0.d0
 
@@ -497,7 +497,6 @@ contains
   subroutine set_uniform_spacing_from_num(space)
     ! Create evenly spaced grid (linspace)
     class(space_dim) :: space
-    integer k
     double precision spacing
 
     spacing = spacing_from_num(space%minval, space%maxval, space%num)

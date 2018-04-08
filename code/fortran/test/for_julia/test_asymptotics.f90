@@ -200,8 +200,6 @@ contains
 
     iops%scat = b
 
-    call iops%calculate_coef_grids(p_kelp)
-
     ! Will be called on cos vals [-1, 1]
     call iops%vsf_from_function(vsf_func)
 
@@ -217,6 +215,9 @@ contains
 
     rad = light%radiance
     irrad = light%irradiance
+
+    write(*,*) 'irrad'
+    write(*,*) irrad
 
     call bc%deinit()
     call iops%deinit()

@@ -10,13 +10,9 @@ module asymptotics
     type(boundary_condition) bc
     type(optical_properties) iops
     double precision, dimension(:,:,:,:) :: radiance
-    double precision, dimension(:,:,:,:), allocatable :: rad_scatter, source
+    double precision, dimension(:,:,:,:), allocatable :: source
     integer num_scatters
     integer nx, ny, nz, nomega
-    type(index_list) indices
-    double precision surface_val
-    double precision bb
-    integer n
     integer max_cells
 
     double precision, dimension(:), allocatable :: path_length, path_spacing, a_tilde, gn
@@ -28,6 +24,20 @@ module asymptotics
 
     max_cells = calculate_max_cells(grid)
 
+    !write(*,*) 'abs:'
+    !write(*,*) iops%abs_grid
+
+    write(*,*) 'max abs:', maxval(iops%abs_grid)
+
+    write(*,*) 'scat =', iops%scat
+    write(*,*) 'x:', grid%x%minval, grid%x%maxval, grid%x%num
+    write(*,*) 'y:', grid%y%minval, grid%y%maxval, grid%y%num
+    write(*,*) 'z:', grid%z%minval, grid%z%maxval, grid%z%num
+    write(*,*) 'ntheta, nphi, nomega =', &
+         grid%angles%ntheta, grid%angles%nphi, grid%angles%nomega
+    write(*,*) 'bc:', bc%bc_grid
+    write(*,*)
+
     allocate(path_length(max_cells))
     allocate(path_spacing(max_cells))
     allocate(a_tilde(max_cells))
@@ -38,7 +48,7 @@ module asymptotics
 
     if (num_scatters .gt. 0) then
        call calculate_light_after_scattering(&
-            grid, bc, iops, source, radiance, &
+            grid, iops, source, radiance, &
             num_scatters, path_length, path_spacing, &
             a_tilde, gn)
     end if
@@ -58,7 +68,6 @@ module asymptotics
     double precision, dimension(:) :: path_length, path_spacing, a_tilde, gn
     integer i, j, k, p
     double precision surface_val
-    integer num_cells
 
     ! Downwelling light
     do p=1, grid%angles%nomega/2
@@ -97,26 +106,30 @@ module asymptotics
     integer i, j, k, p
     integer num_cells
     double precision atten
-    integer ip
 
     ! Don't need gn here, so just ignore it
     call traverse_ray(grid, iops, source, i, j, k, p, path_length, path_spacing, a_tilde, gn, num_cells)
 
     ! Start with surface bc and attenuate along path
     atten = sum(path_spacing(1:num_cells) * a_tilde(1:num_cells))
-    radiance(i,j,k,p) = bc%bc_grid(p) * exp(-atten)
+    ! Avoid underflow
+    if(atten .lt. 100.d0) then
+       radiance(i,j,k,p) = bc%bc_grid(p) * exp(-atten)
+    else
+       radiance(i,j,k,p) = 0.d0
+    end if
+
   end subroutine attenuate_light_from_surface
 
-  subroutine calculate_light_after_scattering(grid, bc, iops, source, radiance,&
+  subroutine calculate_light_after_scattering(grid, iops, source, radiance,&
        num_scatters, path_length, path_spacing, a_tilde, gn)
     type(space_angle_grid) grid
-    type(boundary_condition) bc
     type(optical_properties) iops
     double precision, dimension(:,:,:,:) :: radiance, source
     integer num_scatters
     double precision, dimension(:) :: path_length, path_spacing, a_tilde, gn
     double precision, dimension(:,:,:,:), allocatable :: rad_scatter
-    integer n, k
+    integer n
     double precision bb
 
     allocate(rad_scatter(grid%x%num, grid%y%num, grid%z%num, grid%angles%nomega))
@@ -125,7 +138,7 @@ module asymptotics
 
     do n=1, num_scatters
        write(*,*) 'scatter #', n
-       call scatter(grid, bc, iops, source, rad_scatter, path_length, path_spacing, a_tilde, gn)
+       call scatter(grid, iops, source, rad_scatter, path_length, path_spacing, a_tilde, gn)
        radiance = radiance + bb**n * rad_scatter
     end do
 
@@ -133,16 +146,12 @@ module asymptotics
   end subroutine calculate_light_after_scattering
 
   ! Perform one scattering event
-  subroutine scatter(grid, bc, iops, source, rad_scatter, path_length, path_spacing, a_tilde, gn)
+  subroutine scatter(grid, iops, source, rad_scatter, path_length, path_spacing, a_tilde, gn)
     type(space_angle_grid) grid
-    type(boundary_condition) bc
     type(optical_properties) iops
     double precision, dimension(:,:,:,:) :: rad_scatter, source
     double precision, dimension(:,:,:,:), allocatable :: scatter_integral
-    double precision, dimension(:), allocatable :: scatter_integrand
     double precision, dimension(:) :: path_length, path_spacing, a_tilde, gn
-    double precision path_source
-    integer max_cells
     integer nx, ny, nz, nomega
 
     nx = grid%x%num
@@ -151,21 +160,18 @@ module asymptotics
     nomega = grid%angles%nomega
 
     allocate(scatter_integral(nx, ny, nz, nomega))
-    allocate(scatter_integrand(nomega))
 
-    call calculate_source(grid, iops, rad_scatter, source, scatter_integral, scatter_integrand)
+    call calculate_source(grid, iops, rad_scatter, source, scatter_integral)
     call advect_light(grid, iops, source, rad_scatter, path_length, path_spacing, a_tilde, gn)
 
     deallocate(scatter_integral)
-    deallocate(scatter_integrand)
   end subroutine scatter
 
   ! Calculate source from no-scatter or previous scattering layer
-  subroutine calculate_source(grid, iops, rad_scatter, source, scatter_integral, scatter_integrand)
+  subroutine calculate_source(grid, iops, rad_scatter, source, scatter_integral)
     type(space_angle_grid) grid
     type(optical_properties) iops
     double precision, dimension(:,:,:,:) :: rad_scatter, source, scatter_integral
-    double precision, dimension(:) :: scatter_integrand
     type(index_list) indices
     integer nx, ny, nz, nomega
     integer i, j, k, p
@@ -184,9 +190,9 @@ module asymptotics
              do p=1, nomega
                 indices%p = p
                 call calculate_scatter_integral(&
-                    grid, iops, rad_scatter,&
+                    iops, rad_scatter,&
                     scatter_integral,&
-                    scatter_integrand, indices)
+                    indices)
              end do
           end do
        end do
@@ -196,14 +202,10 @@ module asymptotics
 
   end subroutine calculate_source
 
-  subroutine calculate_scatter_integral(grid, iops, rad_scatter, scatter_integral, scatter_integrand, indices)
-    type(space_angle_grid) grid
+  subroutine calculate_scatter_integral(iops, rad_scatter, scatter_integral, indices)
     type(optical_properties) iops
     double precision, dimension(:,:,:,:) :: rad_scatter, scatter_integral
-    double precision, dimension(:) :: scatter_integrand
     type(index_list) indices
-    integer pp
-    double precision s
 
     scatter_integral(indices%i,indices%j,indices%k,indices%p) &
          = sum(iops%vsf_integral(indices%p, :) &
@@ -219,15 +221,9 @@ module asymptotics
     type(optical_properties) iops
     double precision, dimension(:,:,:,:) :: rad_scatter, source
     double precision, dimension(:) :: path_length, path_spacing, a_tilde, gn
-    double precision path_source
 
-    integer i, j, k, p, kp
-    type(index_list) indices
-
+    integer i, j, k, p
     integer nx, ny, nz, nomega
-    double precision x, y, z, theta, phi
-
-    integer kp_start, kp_stop, direction
 
     nx = grid%x%num
     ny = grid%y%num
@@ -255,7 +251,6 @@ module asymptotics
     double precision, dimension(:) :: path_length, path_spacing, a_tilde, gn
     integer i, j, k, p
     integer num_cells
-    double precision integral
 
     call traverse_ray(grid, iops, source, i, j, k, p, path_length, path_spacing, a_tilde, gn, num_cells)
     rad_scatter(i,j,k,p) = calculate_ray_integral(num_cells, path_length, path_spacing, a_tilde, gn)
@@ -277,6 +272,7 @@ module asymptotics
           bi = bi - a_tilde(j)*ds(j)
        end do
 
+       ! Careful: This will overflow if a_tilde is too large.
        if(a_tilde(i) .eq. 0) then
           di = ds(i)
        else
@@ -383,8 +379,8 @@ module asymptotics
     p0z = p1z - s_tilde * z_factor
 
     ! Direction of ray in each dimension. 1 => increasing. -1 => decreasing.
-    dir_x = sgn(p1x-p0x)
-    dir_y = sgn(p1y-p0y)
+    dir_x = int(sgn(p1x-p0x))
+    dir_y = int(sgn(p1y-p0y))
 
     ! Shifts
     ! Conversion from cell_inds to edge_inds

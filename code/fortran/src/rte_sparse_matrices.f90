@@ -136,8 +136,7 @@ contains
   subroutine mat_set_bc(mat, bc)
     class(rte_mat) mat
     class(boundary_condition) bc
-    double precision theta, phi, rad_val
-    integer i, j, p
+    integer p
 
     do p=1, mat%grid%angles%nomega/2
        mat%surface_vals(p) = bc%bc_grid(p)
@@ -315,6 +314,7 @@ contains
     integer i, j, k, p
     integer row_num
 
+    ! TODO: Double check this
     row_num = mat%ind(mat%i, mat%j, mat%k, mat%p)
     mat%rhs(row_num) = data
   end subroutine mat_assign_rhs
@@ -482,7 +482,6 @@ contains
     class(rte_mat) mat
     type(space_angle_grid) grid
     double precision val, dy
-    integer ny
     type(index_list) indices
     integer i, j, k, p
     i = indices%i
@@ -594,13 +593,12 @@ contains
     double precision val, pole_val
     double precision prefactor
     type(index_list) indices
-    integer i, j, k, p
+    integer i, j, k
     double precision bb
 
     grid = mat%grid
     iops = mat%iops
 
-    ! TODO: Replace with single scattering coefficient
     bb = iops%scat
     ! TODO: Add bb and beta prefactor in chapter 4 of thesis.
 

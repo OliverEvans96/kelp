@@ -82,7 +82,7 @@ subroutine surface_space_loop(mat, indices)
   type(rte_mat) mat
   type(space_angle_grid) grid
   type(index_list) indices
-  integer i, j, k
+  integer i, j
 
   grid = mat%grid
 
@@ -147,7 +147,7 @@ subroutine bottom_space_loop(mat, indices)
   type(rte_mat) mat
   type(space_angle_grid) grid
   type(index_list) indices
-  integer i, j, k
+  integer i, j
 
   grid = mat%grid
 
@@ -329,9 +329,7 @@ end subroutine bottom_angle_loop
 
 subroutine gen_matrix(mat)
   type(rte_mat) mat
-  type(optical_properties) iops
   type(index_list) indices
-  type(boundary_condition) bc
 
   call indices%init()
 
