@@ -157,4 +157,71 @@ contains
     call grid%deinit()
   end subroutine test_asymptotics_1d
 
+  subroutine test_asymptotics_3d(&
+       I0, theta_s, phi_s, decay, &
+       a_func, b, vsf_func, &
+       nx, ny, nz, ntheta, nphi, &
+       num_scatters, rad, irrad)
+
+    double precision, external :: a_func, vsf_func
+    double precision, intent(in) :: I0, b, theta_s, phi_s, decay
+    integer, intent(in) :: nx, ny, nz, ntheta, nphi
+    integer, intent(in) :: num_scatters
+    double precision, dimension(nx, ny, nz, ntheta*(nphi-2)+2), intent(out) :: rad
+    double precision, dimension(nx, ny, nz), intent(out) :: irrad
+
+    type(space_angle_grid) grid
+    type(optical_properties) iops
+    type(boundary_condition) bc
+    type(light_state) light
+
+    double precision, dimension(nx, ny, nz) :: p_kelp
+    double precision x, y, z
+    integer i, j, k
+
+    call grid%set_bounds(0.d0, 1.d0, 0.d0, 1.d0, 0.d0, 1.d0)
+    call grid%set_num(nx, ny, nz, ntheta, nphi)
+    call grid%init()
+
+    ! INIT IOPS
+    iops%num_vsf = 55
+    call iops%init(grid)
+
+    do i=1, nx
+       x = grid%x%vals(i)
+       do j=1, ny
+          y = grid%y%vals(j)
+          do k=1, nz
+             z = grid%z%vals(k)
+             iops%abs_grid(i,j,k) = a_func(x, y, z)
+          end do
+       end do
+    end do
+
+    iops%scat = b
+
+    call iops%calculate_coef_grids(p_kelp)
+
+    ! Will be called on cos vals [-1, 1]
+    call iops%vsf_from_function(vsf_func)
+
+    ! Straight downward light
+    call bc%init(grid, theta_s, phi_s, decay, I0)
+
+    ! Rescale surface radiance to match surface irradiance
+    bc%bc_grid = bc%bc_grid * I0 / grid%angles%integrate_points(bc%bc_grid)
+
+    call light%init_grid(grid)
+    call calculate_light_with_scattering(grid, bc, iops, light%radiance, num_scatters)
+    call light%calculate_irradiance()
+
+    rad = light%radiance
+    irrad = light%irradiance
+
+    call bc%deinit()
+    call iops%deinit()
+    call light%deinit()
+    call grid%deinit()
+  end subroutine test_asymptotics_3d
+
 end module test_asymptotics

@@ -4,9 +4,10 @@ from numpy.polynomial.legendre import leggauss
 from scipy.integrate import simps
 import ipyvolume as ipv
 
-from fortran_wrappers.pykelp3d_wrap import f90wrap_py_gen_kelp as gen_kelp_f90
+#from fortran_wrappers.pykelp3d_wrap import f90wrap_py_gen_kelp as gen_kelp_f90
 #from fortran_wrappers.pyrte3d_wrap import f90wrap_py_calculate_light_field as calculate_light_field_f90
-from fortran_wrappers.pyasymptotics_wrap import f90wrap_py_calculate_asymptotic_light_field as calculate_asymptotic_light_field_f90
+#from fortran_wrappers.pyasymptotics_wrap import f90wrap_py_calculate_asymptotic_light_field as calculate_asymptotic_light_field_f90
+from fortran_wrappers.pykelp3d_wrap import pykelp3d_wrap as f90
 
 class SpaceDim(tr.HasTraits):
     minval = tr.Float()
@@ -79,16 +80,29 @@ class Grid(tr.HasTraits):
     z = tr.Any()
     theta = tr.Any()
     phi = tr.Any()
+    nomega = tr.Int()
 
     def __init__(self):
+        super().__init__()
+        self.init_dims()
+        self.init_logic()
+
+    def init_dims(self):
         ns = 20
         na = 20
-        super().__init__()
         self.x = SpaceDim(-5, 5, ns)
         self.y = SpaceDim(-5, 5, ns)
         self.z = SpaceDim(0, 10, ns)
         self.theta = AngleDim(0, 2*np.pi, na)
         self.phi = AngleDim(0, np.pi, int(np.floor(na/2)))
+        self.calculate_nomega()
+
+    def calculate_nomega(self, *args):
+        self.nomega = self.theta.num * (self.phi.num - 2 ) + 2
+
+    def init_logic(self):
+        self.theta.observe(self.calculate_nomega, names='num')
+        self.phi.observe(self.calculate_nomega, names='num')
 
 class Rope(tr.HasTraits):
     frond_lengths = tr.Any()
@@ -188,11 +202,11 @@ class Kelp(tr.HasTraits):
         nz = self.grid.z.num
 
         # Rope
-        frond_lengths = self.rope.frond_lengths
-        frond_stds = self.rope.frond_stds
-        num_fronds = self.rope.num_fronds
-        water_speeds = self.rope.water_speeds
-        water_angles = self.rope.water_angles
+        frond_lengths = np.asfortranarray(self.rope.frond_lengths)
+        frond_stds = np.asfortranarray(self.rope.frond_stds)
+        num_fronds = np.asfortranarray(self.rope.num_fronds)
+        water_speeds = np.asfortranarray(self.rope.water_speeds)
+        water_angles = np.asfortranarray(self.rope.water_angles)
 
         # Frond
         fs = self.frond.fs
@@ -206,10 +220,10 @@ class Kelp(tr.HasTraits):
         self.p_kelp = np.asfortranarray(np.zeros([nx, ny, nz]))
 
         # Call fortran
-        gen_kelp_f90(
-            xmin, xmax, nx,
-            ymin, ymax, ny,
-            zmax, nz,
+        f90.gen_kelp(
+            xmin, xmax,
+            ymin, ymax,
+            zmin, zmax,
             frond_lengths,
             frond_stds,
             num_fronds,
@@ -249,8 +263,7 @@ class Light(tr.HasTraits):
                 self.grid.x.num,
                 self.grid.y.num,
                 self.grid.z.num,
-                self.grid.theta.num,
-                self.grid.phi.num,
+                self.grid.nomega
             ]) + 1e-6
         )
 
@@ -284,8 +297,7 @@ class Light(tr.HasTraits):
         p_kelp = self.kelp.p_kelp
         a_water = self.iops.a_water
         a_kelp = self.iops.a_kelp
-        b_water = self.iops.b_water
-        b_kelp = self.iops.b_kelp
+        b = self.iops.b
 
         # Boundary Condition
         theta_s = self.bc.theta_s
@@ -319,31 +331,19 @@ class Light(tr.HasTraits):
         # Call fortran
 
         # Asymptotics + GMRES (optional)
-        calculate_asymptotic_light_field_f90(
-            xmin, xmax, nx,
-            ymin, ymax, ny,
-            zmin, zmax, nz,
+        f90.calculate_light_field(
+            xmin, xmax,
+            ymin, ymax,
+            zmin, zmax,
             ntheta, nphi,
-            a_water, a_kelp, b_water, b_kelp,
-            num_vsf, vsf_angles, vsf_vals,
+            a_water, a_kelp, b,
+            vsf_angles, vsf_vals,
             theta_s, phi_s, max_rad, decay,
             tol_abs, tol_rel, maxiter_inner, maxiter_outer,
             p_kelp, self.radiance, self.irradiance,
             num_scatters, gmres_flag
         )
 
-        # GMRES (no asymptotics)
-        # calculate_light_field_f90(
-        #     xmin, xmax, nx,
-        #     ymin, ymax, ny,
-        #     zmax, nz,
-        #     ntheta, nphi,
-        #     a_water, a_kelp, b_water, b_kelp,
-        #     num_vsf, vsf_angles, vsf_vals,
-        #     theta_s, phi_s, max_rad, decay,
-        #     tol_abs, tol_rel, maxiter_inner, maxiter_outer,
-        #     p_kelp, self.radiance, self.irradiance
-        # )
         #np.savetxt('pyrad_out.txt', self.radiance.flatten())
 
     def volume_plot(self):
@@ -353,9 +353,8 @@ class Light(tr.HasTraits):
 
 class OpticalProperties(tr.HasTraits):
     a_kelp = tr.Float()
-    b_kelp = tr.Float()
     a_water = tr.Float()
-    b_water = tr.Float()
+    b = tr.Float()
     grid = tr.Any()
     num_vsf = tr.Int()
     vsf_vals = tr.Any()
@@ -369,9 +368,8 @@ class OpticalProperties(tr.HasTraits):
 
     def init_vals(self):
         self.a_kelp = 1000
-        self.b_kelp = 1
         self.a_water = .25
-        self.b_water = 1
+        self.b = 1
 
         self.num_vsf = self.grid.phi.num
         self.vsf_angles = self.grid.phi.vals

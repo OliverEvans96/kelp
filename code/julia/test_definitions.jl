@@ -441,9 +441,64 @@ function asymptotics1d_grid(I₀, a, b, β̃, zmin, zmax, nz, num_scatters)
     Libdl.dlclose(lib)
 
     return z, L⁺, L⁻
-
 end
 export asymptotics1d_grid
+
+"""
+3D Asymptotics.
+Surface radiance gaussian: I₀, θₛ, ϕₛ.
+IOPs: a_func, b, β̃.
+Unit grid: nx, ny, nz, nθ, nϕ
+Asymptotic order: num_scatters
+
+Returns: radiance, irradiance
+"""
+function asymptotics3d_grid(I₀, θₛ, ϕₛ, decay,
+                            a_func, b, β̃,
+                            nx, ny, nz, nθ, nϕ,
+                            num_scatters)
+    nω = nθ * (nϕ - 2) + 2
+
+    # Radiance
+    rad = zeros(nx, ny, nz, nω)
+    irrad = zeros(nx, ny, nz)
+
+    # Create fortran-callable function
+    a_cfunc = cfunction(a_func, Float64, (Ref{Float64}, Ref{Float64}, Ref{Float64}))
+    vsf_cfunc = cfunction(β̃, Float64, (Ref{Float64},))
+
+    # This syntax allows updating library between calls
+    # See https://discourse.julialang.org/t/unload-a-shared-library/5344/4
+    funcsym = :__test_asymptotics_MOD_test_asymptotics_3d
+    lib = Libdl.dlopen("../../include/test_asymptotics.so")
+    sym = Libdl.dlsym(lib, funcsym)
+    ccall(sym,
+          Void,
+          (Ref{Float64},
+           Ref{Float64},
+           Ref{Float64},
+           Ref{Float64},
+           Ptr{Void},
+           Ref{Float64},
+           Ptr{Void},
+           Ref{Int64},
+           Ref{Int64},
+           Ref{Int64},
+           Ref{Int64},
+           Ref{Int64},
+           Ref{Int64},
+           Ref{Float64},
+           Ref{Float64}),
+          I₀, θₛ, ϕₛ, decay,
+          a_cfunc, b, vsf_cfunc,
+          nx, ny, nz, nθ, nϕ,
+          num_scatters,
+          rad, irrad)
+    Libdl.dlclose(lib)
+
+    return rad, irrad
+end
+export asymptotics3d_grid
 
 function p̂(l,m)
     if m == 1

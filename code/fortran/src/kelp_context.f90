@@ -43,7 +43,7 @@ type optical_properties
    integer num_vsf
    type(space_angle_grid) grid
    double precision, dimension(:), allocatable :: vsf_angles, vsf_vals, vsf_cos
-   double precision, dimension(:), allocatable :: abs_water, scat_water
+   double precision, dimension(:), allocatable :: abs_water
    double precision abs_kelp, vsf_scat_coef, scat
    ! On x, y, z grid - including water & kelp.
    double precision, dimension(:,:,:), allocatable :: abs_grid
@@ -165,7 +165,6 @@ contains
     ! Assume that these are preallocated and passed to function
     ! Nevermind, don't assume this.
     allocate(iops%abs_water(grid%z%num))
-    allocate(iops%scat_water(grid%z%num))
 
     ! Assume that these must be allocated here
     allocate(iops%vsf_angles(iops%num_vsf))
@@ -415,11 +414,12 @@ contains
     class(optical_properties) iops
     deallocate(iops%vsf_angles)
     deallocate(iops%vsf_vals)
+    deallocate(iops%vsf_cos)
     deallocate(iops%vsf)
     deallocate(iops%vsf_integral)
     deallocate(iops%abs_water)
-    deallocate(iops%scat_water)
     deallocate(iops%abs_grid)
+
   end subroutine iop_deinit
 
 end module kelp_context

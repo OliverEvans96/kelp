@@ -478,9 +478,8 @@ class IOPWidget(ipw.VBox):
     def init_elements(self):
         self.title = ipw.HTML("<h3>Optical Properties</h3>")
         self.aw_slider = ipw.FloatSlider(min=0,max=10000, description='$a_w$')
-        self.bw_slider = ipw.FloatSlider(min=0,max=10, description='$b_w$')
         self.ak_slider = ipw.FloatSlider(min=0,max=10000, description='$a_k$')
-        self.bk_slider = ipw.FloatSlider(min=0,max=10, description='$b_k$')
+        self.b_slider = ipw.FloatSlider(min=0,max=10, description='$b$')
 
         self.vsf_plot = HandDrawFigure(
             self, 'vsf_vals',
@@ -495,9 +494,8 @@ class IOPWidget(ipw.VBox):
 
     def init_logic(self):
         tr.link((self.iops, 'a_water'), (self.aw_slider, 'value'))
-        tr.link((self.iops, 'b_water'), (self.bw_slider, 'value'))
         tr.link((self.iops, 'a_kelp'), (self.ak_slider, 'value'))
-        tr.link((self.iops, 'b_kelp'), (self.bk_slider, 'value'))
+        tr.link((self.iops, 'b'), (self.b_slider, 'value'))
         self.observe(self.set_iops_vsf, names='vsf_vals')
 
     def init_vals(self):
@@ -516,9 +514,8 @@ class IOPWidget(ipw.VBox):
             ipw.HBox([
                 ipw.VBox([
                     self.aw_slider,
-                    self.bw_slider,
+                    self.b_slider,
                     self.ak_slider,
-                    self.bk_slider
                 ]),
                 self.vsf_plot
             ])
@@ -819,7 +816,7 @@ class RadianceWidget(ipw.VBox):
 
     def init_vals(self):
         # Theta and phi indices
-        self.ntheta, self.nphi = self.light.radiance.shape[-2:]
+        self.ntheta, self.nphi = self.light.grid.theta.num, self.light.grid.phi.num
         self.l = 0
         self.m = 0
 

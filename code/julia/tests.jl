@@ -2,6 +2,7 @@ using Base.Test
 include("test_definitions.jl")
 using KelpTest
 
+#=
 @testset "Grid Tests" begin
     @testset "Cell Locations" for n=10:10:50
         xmin = -6
@@ -78,7 +79,9 @@ using KelpTest
     end
 end
 
+=#
 @testset "Asymptotics" begin
+    #=
     @testset "Traverse" begin
         xmin = -6
         ymin = -6
@@ -149,10 +152,48 @@ end
         # Hopefully grid integration is accurate to 20%
         @test grid_integ ≈ quad_integ rtol=0.20
     end
+    =#
 
-    @testset "Full Scattering" begin
+    @testset "Asymptotics 3D" begin
+        I₀ = 1.0
+        θₛ = 0.0
+        ϕₛ = 0.0
+        decay = 1.0
+        a_func(x,y,z) = x+y-z
+        b = 1.0
+        # Normalized to 1/(2π) on [-1, 1]
+        function β̃(cosθ)
+            vsf_exp = 5.0
+            exp(-vsf_exp*cosθ)*vsf_exp/(exp(vsf_exp)-exp(-vsf_exp)) / (2π)
+        end
+
+        nx = 10
+        ny = 10
+        nz = 10
+        nθ = 1
+        nϕ = 2
+
+        num_scatters = 0
+
+        rad, irrad = asymptotics3d_grid(
+            I₀, θₛ, ϕₛ, decay,
+            a_func, b, β̃,
+            nx, ny, nz, nθ, nϕ,
+            num_scatters)
+
+        if sum(isnan.(rad)) != 0
+            badinds = zip(ind2sub(rad, find(isnan, rad))...)
+            println("NaNs:")
+            for inds in badinds
+              println(inds)
+            end
+        end
+
+
+        # At least make sure there are no NaNs.
+        @test sum(isnan.(rad)) == 0
+        @test sum(isnan.(irrad)) == 0
     end
-
 end
 
 

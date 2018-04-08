@@ -192,7 +192,7 @@ module asymptotics
        end do
     end do
 
-    source = -rad_scatter + scatter_integral
+    source(:,:,:,:) = -rad_scatter(:,:,:,:) + scatter_integral(:,:,:,:)
 
   end subroutine calculate_source
 
