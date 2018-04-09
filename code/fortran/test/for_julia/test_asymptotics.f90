@@ -40,7 +40,6 @@ contains
     double precision, dimension(1,1,1,1) :: rad_scatter
     integer nx, ny, nz, ntheta, nphi, nomega
     double precision, allocatable, dimension(:,:,:,:) :: scatter_integral, source
-    double precision, allocatable, dimension(:) :: scatter_integrand
     double precision, external :: pkelp_fun
 
     call grid%set_bounds(xmin, xmax, ymin, ymax, zmin, zmax)
@@ -50,7 +49,6 @@ contains
 
     allocate(p_kelp(nx,ny,nz))
     allocate(scatter_integral(nx, ny, nz, nomega))
-    allocate(scatter_integrand(nomega))
     allocate(source(nx,ny,nz,nomega))
 
     ! Just set vsf to be even, same angles as theta for convenience
@@ -83,7 +81,7 @@ contains
 
     p = grid%angles%phat(l,m)
 
-    call calculate_source(grid, iops, rad_scatter, source, scatter_integral, scatter_integrand)
+    call calculate_source(grid, iops, rad_scatter, source, scatter_integral)
 
     call traverse_ray(grid, iops, source, i, j, k, p, s_array, ds, a_tilde, gn, num_cells)
 
@@ -92,7 +90,6 @@ contains
 
     deallocate(p_kelp)
     deallocate(scatter_integral)
-    deallocate(scatter_integrand)
     deallocate(source)
   end subroutine test_traverse
 
@@ -175,7 +172,6 @@ contains
     type(boundary_condition) bc
     type(light_state) light
 
-    double precision, dimension(nx, ny, nz) :: p_kelp
     double precision x, y, z
     integer i, j, k
 

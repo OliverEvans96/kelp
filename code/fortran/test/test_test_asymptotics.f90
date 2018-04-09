@@ -8,7 +8,7 @@ end function vsf_func
 
 function a_func(x, y, z)
   double precision x, y, z, a_func
-  a_func = 100 * (x + y + z ** 2)
+  a_func = x + y + z ** 2
 end function a_func
 
 program test_test_asymptotics
@@ -26,16 +26,13 @@ program test_test_asymptotics
   double precision, dimension(:,:,:,:), allocatable :: rad
   double precision, dimension(:,:,:), allocatable :: irrad
 
-  double precision x, y, z
-  integer i, j, k
-
   nx = 10
   ny = 10
   nz = 10
   ntheta = 10
   nphi = 10
 
-  b = 1.0
+  b = 0.5
 
   theta_s = 0.0
   phi_s = 0.0
