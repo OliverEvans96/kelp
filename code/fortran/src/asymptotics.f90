@@ -167,7 +167,7 @@ module asymptotics
     nz = grid%z%num
     nomega = grid%angles%nomega
 
-    !$OMP PARALLEL DO
+    !$OMP PARALLEL DO FIRSTPRIVATE(indices)
     do k=1, nz
        indices%k = k
        do i=1, nx
@@ -218,7 +218,7 @@ module asymptotics
     nz = grid%z%num
     nomega = grid%angles%nomega
 
-    !$OMP PARALLEL DO
+    !$OMP PARALLEL DO FIRSTPRIVATE(i, j, p)
     do k=1, nz
        do i=1, nx
          do j=1, ny

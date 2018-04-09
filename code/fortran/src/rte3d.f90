@@ -15,7 +15,7 @@ subroutine interior_space_loop(mat, indices)
   grid = mat%grid
 
   ! z interior
-  !$OMP PARALLEL DO
+  !$OMP PARALLEL DO FIRSTPRIVATE(indices)
   do k=2 , grid%z%num - 1
      indices%k = k
      write(*,*) 'k =', indices%k, '/', grid%z%num
@@ -96,7 +96,7 @@ subroutine surface_space_loop(mat, indices)
            call surface_angle_loop(mat, indices, wrap_x_cd2_first, wrap_y_cd2_last)
 
      ! x interior
-     !$OMP PARALLEL DO
+     !$OMP PARALLEL DO FIRSTPRIVATE(indices)
      do i=2, grid%x%num - 1
      indices%i = i
         ! y first
@@ -155,7 +155,7 @@ subroutine bottom_space_loop(mat, indices)
           call bottom_angle_loop(mat, indices, wrap_x_cd2_first, wrap_y_cd2_last)
 
      ! x interior
-     !$OMP PARALLEL DO
+     !$OMP PARALLEL DO FIRSTPRIVATE(indices)
      do i=2, grid%x%num - 1
         indices%i = i
         ! y first
