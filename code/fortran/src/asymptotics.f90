@@ -24,20 +24,6 @@ module asymptotics
 
     max_cells = calculate_max_cells(grid)
 
-    !write(*,*) 'abs:'
-    !write(*,*) iops%abs_grid
-
-    write(*,*) 'max abs:', maxval(iops%abs_grid)
-
-    write(*,*) 'scat =', iops%scat
-    write(*,*) 'x:', grid%x%minval, grid%x%maxval, grid%x%num
-    write(*,*) 'y:', grid%y%minval, grid%y%maxval, grid%y%num
-    write(*,*) 'z:', grid%z%minval, grid%z%maxval, grid%z%num
-    write(*,*) 'ntheta, nphi, nomega =', &
-         grid%angles%ntheta, grid%angles%nphi, grid%angles%nomega
-    write(*,*) 'bc:', bc%bc_grid
-    write(*,*)
-
     allocate(path_length(max_cells))
     allocate(path_spacing(max_cells))
     allocate(a_tilde(max_cells))
@@ -181,12 +167,13 @@ module asymptotics
     nz = grid%z%num
     nomega = grid%angles%nomega
 
-    do i=1, nx
-       indices%i = i
-       do j=1, ny
-          indices%j = j
-          do k=1, nz
-             indices%k = k
+    !$OMP PARALLEL DO
+    do k=1, nz
+       indices%k = k
+       do i=1, nx
+         indices%i = i
+         do j=1, ny
+             indices%j = j
              do p=1, nomega
                 indices%p = p
                 call calculate_scatter_integral(&
@@ -197,6 +184,7 @@ module asymptotics
           end do
        end do
     end do
+    !$OMP END PARALLEL DO
 
     source(:,:,:,:) = -rad_scatter(:,:,:,:) + scatter_integral(:,:,:,:)
 
@@ -230,10 +218,11 @@ module asymptotics
     nz = grid%z%num
     nomega = grid%angles%nomega
 
-    do p=1, nomega
-       do k=1, nz
-          do i=1, nx
-            do j=1, ny
+    !$OMP PARALLEL DO
+    do k=1, nz
+       do i=1, nx
+         do j=1, ny
+             do p=1, nomega
                 call integrate_ray(grid, iops, source,&
                      rad_scatter, path_length, path_spacing,&
                      a_tilde, gn, i, j, k, p)
@@ -241,6 +230,8 @@ module asymptotics
           end do
        end do
     end do
+    !$OMP END PARALLEL DO
+
   end subroutine advect_light
 
   ! New algorithm, double integral over piecewise-constant 1d funcs

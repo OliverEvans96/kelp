@@ -24,9 +24,9 @@ ymax = 1
 zmin = 0
 zmax = 2
 
-nx = 10
-ny = 10
-nz = 10
+nx = 20
+ny = 20
+nz = 20
 ntheta = 10
 nphi = 10
 
@@ -60,7 +60,7 @@ maxiter_inner = 100
 maxiter_outer = 100
 
 num_scatters = 1
-gmres_flag = .true.
+gmres_flag = .false.
 
 do i=1, nx
    do j=1, ny

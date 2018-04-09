@@ -35,7 +35,7 @@ OPTFLAGS= -Ofast -flto
 
 # Doesn't work as shared? Executable gives SEGFAULT immediately.
 # But that's okay, because this works.
-FFLAGS=$(PFLAGS) -fPIC $(OPTFLAGS) -Wall #-fopenmp
+FFLAGS=$(PFLAGS) -fPIC $(OPTFLAGS) -Wall -fopenmp
 # Flags for F2PY
 F2PYFLAGS=-fPIC # $(PFLAGS) $(OPTFLAGS)
 # Test flags
