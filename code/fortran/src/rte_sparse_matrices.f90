@@ -197,6 +197,7 @@ contains
     ! whose coefficient will be modified
     ! several times per row
     mat%repeat_ent = mat%ent + mat%p - 1
+
   end subroutine mat_calculate_repeat_ent
 
   function mat_ind(mat, i, j, k, p) result(ind)
@@ -561,7 +562,6 @@ contains
     val1 = grid%angles%cos_phi_p(indices%p) / (5.d0 * grid%z%spacing(1))
     val2 = 7.d0 * val1
 
-    call mat%set_row(indices)
     call mat%assign(val1,indices%i,indices%j,2,indices%p)
     call mat%add(val2)
 
@@ -581,7 +581,6 @@ contains
     val1 = -grid%angles%cos_phi_p(indices%p) / (5.d0 * grid%z%spacing(1))
     val2 = 7.d0 * val1
 
-    call mat%set_row(indices)
     call mat%assign(val1,indices%i,indices%j,grid%z%num-1,indices%p)
     call mat%add(val2)
 

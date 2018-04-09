@@ -24,15 +24,15 @@ ymax = 1
 zmin = 0
 zmax = 2
 
-nx = 6
-ny = 6
-nz = 6
-ntheta = 6
-nphi = 6
+nx = 10
+ny = 10
+nz = 10
+ntheta = 10
+nphi = 10
 
 nomega = ntheta*(nphi-2)+2
 
-num_vsf = 10
+num_vsf = 30
 
 allocate(vsf_angles(num_vsf))
 allocate(vsf_vals(num_vsf))
