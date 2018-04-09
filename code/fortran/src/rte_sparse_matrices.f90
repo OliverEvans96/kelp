@@ -28,12 +28,14 @@ type rte_mat
    ! b and x stored in rhs in full form
    double precision, dimension(:), allocatable :: rhs, sol
 
-   ! Given row and column number, determine corresponding position in row, col, data
-   !integer, dimension(:,:), allocatable :: index_map
+   ! Pointer to solver subroutine
+   ! Set to mgmres by default
+   procedure(solver_interface), pointer, nopass :: solver => mgmres_st
+
  contains
    procedure :: init => mat_init
    procedure :: deinit => mat_deinit
-   procedure calculate_size
+   procedure :: calculate_size
    procedure :: set_solver_params => mat_set_solver_params
    procedure :: set_row => mat_set_row
    procedure :: assign => mat_assign
@@ -61,7 +63,24 @@ type rte_mat
    procedure z_bd2
    procedure z_surface_bc
    procedure z_bottom_bc
+
 end type rte_mat
+
+abstract interface
+   ! Define interface for external procedure
+   ! https://stackoverflow.com/questions/8549415/how-to-declare-the-interface-section-for-a-procedure-argument-which-in-turn-ref
+   subroutine solver_interface(n_total, nonzero, row, col, data, &
+        sol, rhs, maxiter_outer, maxiter_inner, &
+        tol_abs, tol_rel)
+     integer ::  n_total, nonzero
+     integer, dimension(nonzero) :: row, col
+     double precision, dimension(nonzero) :: data
+     double precision, dimension(nonzero) :: sol
+     double precision, dimension(n_total) :: rhs
+     integer :: maxiter_outer, maxiter_inner
+     double precision :: tol_abs, tol_rel
+   end subroutine solver_interface
+end interface
 
 contains
 
@@ -171,9 +190,14 @@ contains
     close(3)
     close(4)
 
-    call mgmres_st(mat%n_total, mat%nonzero, mat%row, mat%col, mat%data, &
-         mat%sol, mat%rhs, params%maxiter_outer, params%maxiter_inner, &
+    open(unit=5, file='sol.txt')
+    call mat%solver(mat%n_total, mat%nonzero, &
+         mat%row, mat%col, mat%data, mat%sol, mat%rhs, &
+         params%maxiter_outer, params%maxiter_inner, &
          params%tol_abs, params%tol_rel)
+
+    write(5,*) mat%sol
+    close(5)
 
   end subroutine mat_solve
 

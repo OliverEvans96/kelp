@@ -35,7 +35,7 @@ OPTFLAGS= -Ofast -flto
 
 # Doesn't work as shared? Executable gives SEGFAULT immediately.
 # But that's okay, because this works.
-FFLAGS=$(PFLAGS) -fPIC $(OPTFLAGS) -Wall -fopenmp
+FFLAGS=$(PFLAGS) -fPIC $(OPTFLAGS) -Wall #-fopenmp
 # Flags for F2PY
 F2PYFLAGS=-fPIC # $(PFLAGS) $(OPTFLAGS)
 # Test flags
@@ -88,9 +88,9 @@ $(ext_inc): %.o: $(EXT)/%.f90
 $(test_bin): %: $(TEST)/%.f90
 	$(FC) $(FFLAGS) $^ -o $(BIN)/$@
 $(test_mod_inc): %.o: $(TEST_MOD)/%.f90
-	$(FC) -c $(FFLAGS) $^ -o $@
+	$(FC) -c $(FFLAGS) $< -o $@
 $(jtest_inc): %.so: $(JTEST)/%.f90
-	$(FC) $(TESTFLAGS) $^ -o $@
+	$(FC) $(TESTFLAGS) $< -o $@
 $(f2py_targets): %: $(F2PY)/%.f90
 	f2py -m $@ -c $^
 	rm -f $(F2PY_INC)/$@.*.so
@@ -100,7 +100,8 @@ $(hdf5_inc): %.o: $(HDF5)/%.f90
 
 # F2PY test w/o python
 # TODO: This is pretty sloppy
-kelp3d_wrap.o: %.o: $(F2PY)/py%.f90
+kelp3d_wrap.o: %.o: $(F2PY)/py%.f90 kelp3d_wrap.o asymptotics.o rte_sparse_matrices.o mgmres.o rte3d.o prob.o fastgl.o sag.o utils.o kelp3d.o kelp_context.o light_context.o
+
 	$(FC) -c $(FFLAGS) $^ -o $@
 test_kelp3d_wrap: %: $(TEST)/test_pyasymptotics_wrap.f90 kelp3d_wrap.o asymptotics.o rte_sparse_matrices.o mgmres.o rte3d.o prob.o fastgl.o sag.o utils.o kelp3d.o kelp_context.o light_context.o
 	$(FC) $(FFLAGS) $^ -o $(BIN)/$@

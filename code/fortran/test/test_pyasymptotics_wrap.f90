@@ -24,11 +24,11 @@ ymax = 1
 zmin = 0
 zmax = 2
 
-nx = 20
-ny = 20
-nz = 20
-ntheta = 10
-nphi = 10
+nx = 6
+ny = 6
+nz = 6
+ntheta = 6
+nphi = 6
 
 nomega = ntheta*(nphi-2)+2
 
@@ -56,11 +56,11 @@ decay = 1.d0
 
 tol_abs = 1.d-3
 tol_rel = 1.d-3
-maxiter_inner = 100
-maxiter_outer = 100
+maxiter_inner = 2
+maxiter_outer = 2
 
-num_scatters = 1
-gmres_flag = .false.
+num_scatters = 0
+gmres_flag = .true.
 
 do i=1, nx
    do j=1, ny

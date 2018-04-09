@@ -72,10 +72,10 @@ contains
     ! Traverse solution vector in order
     ! so as to avoid calculating index
     do k=1, nz
-       do j=1, ny
-          do i=1, nx
+       do i=1, nx
+           do j=1, ny
              do p=1, nomega
-                light%mat%sol(index) = light%radiance(i,j,j,p)
+                light%mat%sol(index) = light%radiance(i,j,k,p)
                 index = index + 1
              end do
           end do
@@ -91,10 +91,9 @@ contains
 
     ! Extract solution
     do k=1, nz
-       do j=1, ny
-          do i=1, nx
+       do i=1, nx
+          do j=1, ny
              do p=1, nomega
-                ! TODO: DOUBLE CHECK INDEX HERE
                 light%radiance(i,j,k,p) = light%mat%sol(index)
                 index = index + 1
              end do

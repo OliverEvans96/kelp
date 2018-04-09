@@ -61,7 +61,8 @@ contains
        a_w, a_k, b, num_vsf, vsf_angles, vsf_vals, &
        theta_s, phi_s, max_rad, decay, &
        tol_abs, tol_rel, maxiter_inner, maxiter_outer, &
-       p_kelp, radiance, irradiance, num_scatters, gmres_flag)
+       p_kelp, radiance, irradiance, num_scatters, &
+       sparse_flag, sparse_solver_callable)
 
     integer nx, ny, nz, ntheta, nphi
     double precision xmin, xmax, ymin, ymax, zmin, zmax
@@ -76,7 +77,10 @@ contains
     integer maxiter_inner, maxiter_outer
 
     integer num_scatters
-    logical gmres_flag
+    ! Rely on external function to solve sparse matrix
+    ! (e.g. from Julia or Python)
+    procedure(solver_interface), optional :: sparse_solver_callable
+    logical sparse_flag
 
     type(space_angle_grid) grid
     type(rte_mat) mat
@@ -113,18 +117,22 @@ contains
     write(*,*) 'Scatter'
     call calculate_light_with_scattering(grid, bc, iops, radiance, num_scatters)
 
-    if(gmres_flag) then
+    if(sparse_flag) then
 
       ! INIT MAT
-      write(*,*) 'GMRES Mat'
+      write(*,*) 'Sparse Matrix'
       ! Set boundary condition
       call mat%init(grid, iops)
       call mat%set_bc(bc)
       call gen_matrix(mat)
-      mat%params%maxiter_outer = maxiter_outer
-      mat%params%maxiter_inner = maxiter_inner
-      mat%params%tol_abs = tol_abs
-      mat%params%tol_rel = tol_rel
+
+      ! Set sparse solver and params
+      if(present(sparse_solver_callable)) then
+         mat%solver => sparse_solver_callable
+      end if
+      call mat%set_solver_params( &
+           maxiter_outer, maxiter_inner, &
+           tol_abs, tol_rel)
 
       ! Initialize & set initial guess
       write(*,*) 'Light'
