@@ -8,6 +8,7 @@ SRC=$(FTN)/src
 EXT=$(FTN)/external
 HDF5=$(FTN)/hdf5
 TEST=$(FTN)/test
+TEST_MOD=$(TEST)/mod
 F2PY=$(FTN)/f2py
 JTEST=$(TEST)/for_julia
 INC=.
@@ -26,15 +27,15 @@ H5FC=h5fc
 # (Should replace CFLAGS in OFLAGS)
 # Compile & run normally,
 # Then call gprof `executable`
-PFLAGS= #-g -O0 -ffpe-trap=zero,invalid,overflow,underflow -ffpe-summary=all #-fcheck=all
+PFLAGS= -g -O0 -ffpe-trap=zero,invalid,overflow,underflow -ffpe-summary=all #-fcheck=all
 
 # Optimize performance
 #https://stackoverflow.com/questions/42386065/inlining-functions-in-fortran
-OPTFLAGS=-Ofast -flto
+OPTFLAGS= #-Ofast -flto
 
 # Doesn't work as shared? Executable gives SEGFAULT immediately.
 # But that's okay, because this works.
-FFLAGS=$(PFLAGS) -fPIC $(OPTFLAGS)
+FFLAGS=$(PFLAGS) -fPIC $(OPTFLAGS) -Wall
 # Flags for F2PY
 F2PYFLAGS=-fPIC # $(PFLAGS) $(OPTFLAGS)
 # Test flags
@@ -47,6 +48,7 @@ f90_src = $(wildcard $(SRC)/*.f90)
 ext_src = $(wildcard $(EXT)/*.f90)
 hdf5_src = $(wildcard $(HDF5)/*.f90)
 test_src = $(wildcard $(TEST)/*.f90)
+test_mod_src = $(wildcard $(TEST_MOD)/*.f90)
 jtest_src = $(wildcard $(JTEST)/*.f90)
 f2py_src = $(wildcard $(F2PY)/*.f90)
 # Names of .o files which they will produce
@@ -54,6 +56,7 @@ f90_inc = $(f90_src:$(SRC)/%.f90=%.o)
 ext_inc = $(ext_src:$(EXT)/%.f90=%.o)
 hdf5_inc = $(hdf5_src:$(HDF5)/%.f90=%.o)
 test_bin = $(test_src:$(TEST)/%.f90=%)
+test_mod_inc = $(test_mod_src:$(TEST_MOD)/%.f90=%.o)
 jtest_inc = $(jtest_src:$(JTEST)/%.f90=%.so)
 f2py_targets = $(f2py_src:$(F2PY)/%.f90=%)
 .PHONY: $(test_bin) $(f2py_targets)
@@ -65,8 +68,9 @@ f2py_targets = $(f2py_src:$(F2PY)/%.f90=%)
 # Default target makes all objects
 all: $(f90_inc)
 
-# Make all f2py wrappers
-f2py: $(f2py_targets)
+report:
+	@echo $(test_mod_src)
+	@echo $(test_mod_inc)
 
 # Make all f2py wrappers
 f2py: $(f2py_targets)
@@ -83,13 +87,23 @@ $(ext_inc): %.o: $(EXT)/%.f90
 	$(FC) -c $(FFLAGS) $< -o $@
 $(test_bin): %: $(TEST)/%.f90
 	$(FC) $(FFLAGS) $^ -o $(BIN)/$@
+$(test_mod_inc): %.o: $(TEST_MOD)/%.f90
+	$(FC) -c $(FFLAGS) $^ -o $@
 $(jtest_inc): %.so: $(JTEST)/%.f90
 	$(FC) $(TESTFLAGS) $^ -o $@
 $(f2py_targets): %: $(F2PY)/%.f90
 	f2py -m $@ -c $^
-	mv $@.*.so $(F2PY_INC)
+	rm -f $(F2PY_INC)/$@.*.so
+	ln -s $(PWD)/$@.*.so $(F2PY_INC)
 $(hdf5_inc): %.o: $(HDF5)/%.f90
 	$(H5FC) -c $(FFLAGS) $< -o $@
+
+# F2PY test w/o python
+# TODO: This is pretty sloppy
+kelp3d_wrap.o: %.o: $(F2PY)/py%.f90
+	$(FC) -c $(FFLAGS) $^ -o $@
+test_kelp3d_wrap: %: $(TEST)/test_pyasymptotics_wrap.f90 kelp3d_wrap.o asymptotics.o rte_sparse_matrices.o mgmres.o rte3d.o prob.o fastgl.o sag.o utils.o kelp3d.o kelp_context.o light_context.o
+	$(FC) $(FFLAGS) $^ -o $(BIN)/$@
 
 ################
 # Object files #
@@ -153,9 +167,9 @@ test_asymptotics: test_asymptotics_mod.o asymptotics.o light_context.o rte_spars
 test_gmres: mgmres.o utils.o hdf5_utils.o kelp_context.o sag.o fastgl.o prob.o
 test_prob: prob.o prob.o
 test_kelp3d: test_kelp3d_mod.o prob.o fastgl.o sag.o utils.o kelp3d.o kelp_context.o #hdf5_utils.o
-test_rte3d: rte_sparse_matrices.o test_rte3d_mod.o mgmres.o rte3d.o test_kelp3d_mod.o prob.o fastgl.o sag.o utils.o kelp3d.o kelp_context.o light_context.o #hdf5_utils.o
+test_rte3d: test_rte3d_mod.o #rte_sparse_matrices.o test_rte3d_mod.o mgmres.o rte3d.o test_kelp3d_mod.o prob.o fastgl.o sag.o utils.o kelp3d.o kelp_context.o light_context.o #hdf5_utils.o
 test_pyrte3d_wrap: pyrte3d_wrap.o rte_sparse_matrices.o mgmres.o rte3d.o test_kelp3d_mod.o prob.o fastgl.o sag.o utils.o kelp3d.o kelp_context.o light_context.o #hdf5_utils.o
-test_pyasymptotics_wrap: pyasymptotics_wrap.o asymptotics.o rte_sparse_matrices.o mgmres.o rte3d.o test_kelp3d_mod.o prob.o fastgl.o sag.o utils.o kelp3d.o kelp_context.o light_context.o #hdf5_utils.o
+test_pyasymptotics_wrap: pykelp3d_wrap #asymptotics.o rte_sparse_matrices.o mgmres.o rte3d.o test_kelp3d_mod.o prob.o fastgl.o sag.o utils.o kelp3d.o kelp_context.o light_context.o #hdf5_utils.o
 test_angular_integral: light_interface.o pyasymptotics_wrap.o asymptotics.o rte_sparse_matrices.o mgmres.o rte3d.o test_kelp3d_mod.o prob.o fastgl.o sag.o utils.o kelp3d.o kelp_context.o light_context.o #hdf5_utils.o
 test_light_interface: light_interface.o asymptotics.o rte_sparse_matrices.o mgmres.o rte3d.o prob.o fastgl.o sag.o utils.o kelp3d.o kelp_context.o light_context.o #hdf5_utils.o
 

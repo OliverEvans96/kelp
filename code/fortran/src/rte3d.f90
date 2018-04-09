@@ -28,8 +28,8 @@ subroutine interior_space_loop(mat, indices)
        ! y interior
        !$OMP PARALLEL DO
        do j=2, grid%y%num - 1
-       indices%j = j
-           call interior_angle_loop(mat, indices, wrap_x_cd2_first, wrap_y_cd2)
+          indices%j = j
+          call interior_angle_loop(mat, indices, wrap_x_cd2_first, wrap_y_cd2)
        end do
        !$OMP END PARALLEL DO
        ! y last
@@ -46,7 +46,7 @@ subroutine interior_space_loop(mat, indices)
         ! y interior
         !$OMP PARALLEL DO
         do j=2, grid%y%num - 1
-        indices%j = j
+           indices%j = j
            call interior_angle_loop(mat, indices, wrap_x_cd2, wrap_y_cd2)
         end do
         !$OMP END PARALLEL DO
@@ -115,7 +115,7 @@ subroutine surface_space_loop(mat, indices)
         ! y interior
         !$OMP PARALLEL DO
         do j=2, grid%y%num - 1
-        indices%j = j
+           indices%j = j
            call surface_angle_loop(mat, indices, wrap_x_cd2, wrap_y_cd2)
         end do
         !$OMP END PARALLEL DO
@@ -133,7 +133,7 @@ subroutine surface_space_loop(mat, indices)
        ! y surface
        !$OMP PARALLEL DO
        do j=2, grid%y%num - 1
-       indices%j = j
+          indices%j = j
           call surface_angle_loop(mat, indices, wrap_x_cd2_last, wrap_y_cd2)
        end do
        !$OMP END PARALLEL DO
@@ -173,7 +173,7 @@ subroutine bottom_space_loop(mat, indices)
      ! x interior
      !$OMP PARALLEL DO
      do i=2, grid%x%num - 1
-     indices%i = i
+        indices%i = i
         ! y first
         indices%j=1
            call bottom_angle_loop(mat, indices, wrap_x_cd2, wrap_y_cd2_first)
@@ -268,9 +268,13 @@ subroutine surface_angle_loop(mat, indices, ddx, ddy)
   grid = mat%grid
 
   ! Downwelling
-  ! TODO: Downwelling vs upwelling
   do p=1, grid%angles%nomega / 2
+     indices%p = p
+     call mat%angular_integral(indices)
+     call ddx(mat, indices)
+     call ddy(mat, indices)
      call mat%z_surface_bc(indices)
+     call mat%attenuate(indices)
   end do
 
   ! Upwelling
@@ -310,7 +314,7 @@ subroutine bottom_angle_loop(mat, indices, ddx, ddy)
   grid = mat%grid
 
   ! Downwelling
-  do p=1, grid%angles%nomega
+  do p=1, grid%angles%nomega/2
      indices%p = p
      call mat%angular_integral(indices)
      call ddx(mat, indices)
@@ -322,7 +326,11 @@ subroutine bottom_angle_loop(mat, indices, ddx, ddy)
   ! Upwelling
   do p=grid%angles%nomega/2+1, grid%angles%nomega
      indices%p = p
+     call mat%angular_integral(indices)
+     call ddx(mat, indices)
+     call ddy(mat, indices)
      call mat%z_bottom_bc(indices)
+     call mat%attenuate(indices)
   end do
 
 end subroutine bottom_angle_loop

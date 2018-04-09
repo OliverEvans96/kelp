@@ -113,8 +113,6 @@ contains
     write(*,*) 'Scatter'
     call calculate_light_with_scattering(grid, bc, iops, radiance, num_scatters)
 
-    !! I THINK WE CAN DO WITHOUT COPYING RADIANCE !!
-
     if(gmres_flag) then
 
       ! INIT MAT

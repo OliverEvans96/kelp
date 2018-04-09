@@ -1,9 +1,9 @@
 program test_pyasymptotics_wrap
-use pyasymptotics_wrap
+use pykelp3d_wrap
 
 double precision xmin, xmax, ymin, ymax, zmin, zmax
 integer nx, ny, nz, ntheta, nphi, nomega
-double precision a_w, a_k, b_w, b_k
+double precision a_w, a_k, b
 integer num_vsf
 double precision, dimension(:), allocatable :: vsf_angles, vsf_vals
 double precision theta_s, phi_s, max_rad, decay
@@ -40,28 +40,27 @@ allocate(p_kelp(nx, ny, nz))
 allocate(radiance(nx, ny, nz, nomega))
 allocate(irradiance(nx, ny, nz))
 
-a_w = 1
-a_k = 0
-b_w = 0
-b_k = 0
+a_w = 1.d0
+a_k = 0.d0
+b = 0.2d0
 
 do i=1, num_vsf
    vsf_angles(i) = pi/num_vsf * (i-1)
    vsf_vals(i) = pi - vsf_angles(i)
 end do
 
-theta_s = 0
-phi_s = 0
-max_rad = 1
-decay = 1
+theta_s = 0.d0
+phi_s = 0.d0
+max_rad = 1.d0
+decay = 1.d0
 
 tol_abs = 1.d-3
 tol_rel = 1.d-3
-maxiter_inner = 10
-maxiter_outer = 10
+maxiter_inner = 100
+maxiter_outer = 100
 
-num_scatters = 3
-gmres_flag = .false.
+num_scatters = 1
+gmres_flag = .true.
 
 do i=1, nx
    do j=1, ny
@@ -75,9 +74,9 @@ do i=1, nx
    end do
 end do
 
-call py_calculate_asymptotic_light_field( &
+call calculate_light_field( &
      xmin, xmax, nx, ymin, ymax, ny, zmin, zmax, nz, ntheta, nphi, &
-     a_w, a_k, b_w, b_k, num_vsf, vsf_angles, vsf_vals, &
+     a_w, a_k, b, num_vsf, vsf_angles, vsf_vals, &
      theta_s, phi_s, max_rad, decay, &
      tol_abs, tol_rel, maxiter_inner, maxiter_outer, &
      p_kelp, radiance, irradiance, num_scatters, gmres_flag)
