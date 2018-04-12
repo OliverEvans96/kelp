@@ -23,8 +23,6 @@ FC=gfortran
 H5FC=h5fc
 
 # Profiling (timing) flags
-# Add to OFLAGS and BFLAGS
-# (Should replace CFLAGS in OFLAGS)
 # Compile & run normally,
 # Then call gprof `executable`
 PFLAGS= #-g -ffpe-trap=zero,invalid,overflow,underflow -ffpe-summary=all -fcheck=all #-O0 
@@ -39,7 +37,7 @@ FFLAGS=$(PFLAGS) -fPIC $(OPTFLAGS) -Wall #-fopenmp
 # Flags for F2PY
 F2PYFLAGS=-fPIC # $(PFLAGS) $(OPTFLAGS)
 # Test flags
-TESTFLAGS=-shared -fPIC $(FFLAGS)
+TESTMODFLAGS=-shared -fPIC $(FFLAGS)
 # Export LD_LIBRARY_PATH for tests
 TESTEXP=export LD_LIBRARY_PATH=$(INC):$(LD_LIBRARY_PATH)
 
@@ -55,22 +53,27 @@ f2py_src = $(wildcard $(F2PY)/*.f90)
 f90_inc = $(f90_src:$(SRC)/%.f90=%.o)
 ext_inc = $(ext_src:$(EXT)/%.f90=%.o)
 hdf5_inc = $(hdf5_src:$(HDF5)/%.f90=%.o)
-test_bin = $(test_src:$(TEST)/%.f90=%)
 test_mod_inc = $(test_mod_src:$(TEST_MOD)/%.f90=%.o)
 jtest_inc = $(jtest_src:$(JTEST)/%.f90=%.so)
+f2py_inc = $(f2py_src:$(F2PY)/%.f90=%.o)
+# Other
+test_bin = $(test_src:$(TEST)/%.f90=%)
 f2py_targets = $(f2py_src:$(F2PY)/%.f90=%)
-.PHONY: $(test_bin) $(f2py_targets)
 
 ##########
 # GROUPS #
 ##########
 
+.PHONY: all clean $(test_bin) $(f2py_targets)
+
 # Default target makes all objects
 all: $(f90_inc)
 
 report:
-	@echo $(test_mod_src)
-	@echo $(test_mod_inc)
+#	@echo $(test_mod_src)
+#	@echo $(test_mod_inc)
+#	@echo $(test_bin)
+	@echo $(f2py_targets)
 
 # Make all f2py wrappers
 f2py: $(f2py_targets)
@@ -85,26 +88,23 @@ $(f90_inc): %.o: $(SRC)/%.f90
 	$(FC) -c $(FFLAGS) $< -o $@
 $(ext_inc): %.o: $(EXT)/%.f90
 	$(FC) -c $(FFLAGS) $< -o $@
+$(hdf5_inc): %.o: $(HDF5)/%.f90
+	$(H5FC) -c $(FFLAGS) $< -o $@
 $(test_bin): %: $(TEST)/%.f90
 	$(FC) $(FFLAGS) $^ -o $(BIN)/$@
 $(test_mod_inc): %.o: $(TEST_MOD)/%.f90
 	$(FC) -c $(FFLAGS) $< -o $@
 $(jtest_inc): %.so: $(JTEST)/%.f90
 	$(FC) $(TESTFLAGS) $< -o $@
+# For actually importing in python
 $(f2py_targets): %: $(F2PY)/%.f90
 	f2py -m $@ -c $^
 	rm -f $(F2PY_INC)/$@.*.so
 	ln -s $(PWD)/$@.*.so $(F2PY_INC)
-$(hdf5_inc): %.o: $(HDF5)/%.f90
-	$(H5FC) -c $(FFLAGS) $< -o $@
+# To test outside of python directly in fortran
+$(f2py_inc): %.o: $(F2PY)/%.f90
+	$(FC) -c $(FFLAGS) $< -o $@
 
-# F2PY test w/o python
-# TODO: This is pretty sloppy
-kelp3d_wrap.o: %.o: $(F2PY)/py%.f90 kelp3d_wrap.o asymptotics.o rte_sparse_matrices.o mgmres.o rte3d.o prob.o fastgl.o sag.o utils.o kelp3d.o kelp_context.o light_context.o
-
-	$(FC) -c $(FFLAGS) $^ -o $@
-test_kelp3d_wrap: %: $(TEST)/test_pyasymptotics_wrap.f90 kelp3d_wrap.o asymptotics.o rte_sparse_matrices.o mgmres.o rte3d.o prob.o fastgl.o sag.o utils.o kelp3d.o kelp_context.o light_context.o
-	$(FC) $(FFLAGS) $^ -o $(BIN)/$@
 
 ################
 # Object files #
@@ -124,15 +124,21 @@ asymptotics.o: kelp_context.o rte_sparse_matrices.o light_context.o
 #pyasymptotics_wrap.o: asymptotics.o
 light_interface.o: asymptotics.o rte3d.o kelp3d.o
 
+# H5FC
+hdf5_utils.o: utils.o kelp_context.o
+
 # Test mods
 test_kelp3d_mod.o: kelp3d.o #hdf5_utils.o
 test_rte3d_mod.o: test_kelp3d_mod.o rte3d.o kelp3d.o light_context.o #hdf5_utils.o
 test_grid_mod.o: sag.o
 test_asymptotics.o: asymptotics.o light_context.o rte_sparse_matrices.o mgmres.o rte3d.o
 test_asymptotics_mod.o: asymptotics.o prob.o fastgl.o sag.o utils.o rte3d.o kelp_context.o light_context.o rte_sparse_matrices.o asymptotics.o
+# F2PY test w/o python
+pykelp3d_wrap.o: asymptotics.o rte_sparse_matrices.o mgmres.o rte3d.o prob.o fastgl.o sag.o utils.o kelp3d.o kelp_context.o light_context.o
 
-# H5FC
-hdf5_utils.o: utils.o kelp_context.o
+# F2PY Test
+test_pykelp3d_wrap: pykelp3d_wrap.o asymptotics.o rte_sparse_matrices.o mgmres.o rte3d.o prob.o fastgl.o sag.o utils.o kelp3d.o kelp_context.o light_context.o
+test_pyasymptotics_wrap: asymptotics.o rte_sparse_matrices.o mgmres.o rte3d.o prob.o fastgl.o sag.o utils.o kelp3d.o kelp_context.o light_context.o
 
 ########
 # F2PY #
@@ -170,7 +176,7 @@ test_prob: prob.o prob.o
 test_kelp3d: test_kelp3d_mod.o prob.o fastgl.o sag.o utils.o kelp3d.o kelp_context.o #hdf5_utils.o
 test_rte3d: test_rte3d_mod.o #rte_sparse_matrices.o test_rte3d_mod.o mgmres.o rte3d.o test_kelp3d_mod.o prob.o fastgl.o sag.o utils.o kelp3d.o kelp_context.o light_context.o #hdf5_utils.o
 test_pyrte3d_wrap: pyrte3d_wrap.o rte_sparse_matrices.o mgmres.o rte3d.o test_kelp3d_mod.o prob.o fastgl.o sag.o utils.o kelp3d.o kelp_context.o light_context.o #hdf5_utils.o
-test_pyasymptotics_wrap: pykelp3d_wrap #asymptotics.o rte_sparse_matrices.o mgmres.o rte3d.o test_kelp3d_mod.o prob.o fastgl.o sag.o utils.o kelp3d.o kelp_context.o light_context.o #hdf5_utils.o
+#test_pyasymptotics_wrap: pykelp3d_wrap #asymptotics.o rte_sparse_matrices.o mgmres.o rte3d.o test_kelp3d_mod.o prob.o fastgl.o sag.o utils.o kelp3d.o kelp_context.o light_context.o #hdf5_utils.o
 test_angular_integral: light_interface.o pyasymptotics_wrap.o asymptotics.o rte_sparse_matrices.o mgmres.o rte3d.o test_kelp3d_mod.o prob.o fastgl.o sag.o utils.o kelp3d.o kelp_context.o light_context.o #hdf5_utils.o
 test_light_interface: light_interface.o asymptotics.o rte_sparse_matrices.o mgmres.o rte3d.o prob.o fastgl.o sag.o utils.o kelp3d.o kelp_context.o light_context.o #hdf5_utils.o
 
@@ -181,8 +187,6 @@ test_vsf: rte_core.o utils.o
 #############
 # UTILITIES #
 #############
-
-.PHONY: clean
 
 clean:
 	rm -f *.mod *.so *.o $(F2PY_INC)/*.o $(BIN)/*
