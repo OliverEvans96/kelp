@@ -1,4 +1,4 @@
-program test_pyasymptotics_wrap
+program test_pykelp3d_wrap
 use pykelp3d_wrap
 
 double precision xmin, xmax, ymin, ymax, zmin, zmax
@@ -24,11 +24,11 @@ ymax = 1
 zmin = 0
 zmax = 2
 
-nx = 10
-ny = 10
-nz = 10
-ntheta = 10
-nphi = 10
+nx = 6
+ny = 6
+nz = 6
+ntheta = 6
+nphi = 6
 
 nomega = ntheta*(nphi-2)+2
 
@@ -89,5 +89,5 @@ deallocate(p_kelp)
 deallocate(radiance)
 deallocate(irradiance)
 
-end program test_pyasymptotics_wrap
+end program test_pykelp3d_wrap
 

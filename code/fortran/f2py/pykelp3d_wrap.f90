@@ -56,13 +56,28 @@ contains
 
   end subroutine gen_kelp
 
+  subroutine test_callback(callback)
+    procedure(solver_interface) :: callback
+    integer, parameter ::  n_total=10, nonzero=10
+    integer, dimension(nonzero) :: row, col
+    double precision, dimension(nonzero) :: data
+    double precision, dimension(nonzero) :: sol
+    double precision, dimension(n_total) :: rhs
+    integer :: maxiter_outer, maxiter_inner
+    double precision :: tol_abs, tol_rel
+    call callback(n_total, nonzero, row, col, data, &
+         sol, rhs, maxiter_outer, maxiter_inner, &
+         tol_abs, tol_rel)
+    write(*,*) 'it works!'
+  end subroutine test_callback
+
   subroutine calculate_light_field( &
        xmin, xmax, nx, ymin, ymax, ny, zmin, zmax, nz, ntheta, nphi, &
        a_w, a_k, b, num_vsf, vsf_angles, vsf_vals, &
        theta_s, phi_s, max_rad, decay, &
        tol_abs, tol_rel, maxiter_inner, maxiter_outer, &
        p_kelp, radiance, irradiance, num_scatters, &
-       sparse_flag, sparse_solver_callable)
+       sparse_flag, solver_callback)
 
     integer nx, ny, nz, ntheta, nphi
     double precision xmin, xmax, ymin, ymax, zmin, zmax
@@ -71,7 +86,7 @@ contains
     double precision, dimension(num_vsf) :: vsf_angles, vsf_vals
     double precision theta_s, phi_s, max_rad, decay
     double precision, dimension(nx, ny, nz) :: p_kelp
-    double precision, dimension(:, :, :, :) :: radiance
+    double precision, dimension(nx, ny, nz, ntheta*(nphi-2)+2) :: radiance
     double precision, dimension(nx, ny, nz) :: irradiance
     double precision tol_abs, tol_rel
     integer maxiter_inner, maxiter_outer
@@ -79,8 +94,8 @@ contains
     integer num_scatters
     ! Rely on external function to solve sparse matrix
     ! (e.g. from Julia or Python)
-    procedure(solver_interface), optional :: sparse_solver_callable
     logical sparse_flag
+    procedure(solver_interface), optional :: solver_callback
 
     type(space_angle_grid) grid
     type(rte_mat) mat
@@ -88,6 +103,16 @@ contains
     type(light_state) light
     type(boundary_condition) bc
     integer k
+
+    ! Have to explicitly have a call to solver_callback
+    ! in this function so that f2py treats it as a callback.
+    if(.false.) then
+       call solver_callback(&
+            1, 1, (/0/), (/0/), (/0.d0/), &
+            (/0.d0/), (/0.d0/), 0, 0, 0.d0, 0.d0)
+      write(*,*) 'it works!'
+   end if
+
 
     ! INIT GRID
     write(*,*) 'Grid'
@@ -127,8 +152,8 @@ contains
       call gen_matrix(mat)
 
       ! Set sparse solver and params
-      if(present(sparse_solver_callable)) then
-         mat%solver => sparse_solver_callable
+      if(present(solver_callback)) then
+         mat%solver => solver_callback
       end if
       call mat%set_solver_params( &
            maxiter_outer, maxiter_inner, &

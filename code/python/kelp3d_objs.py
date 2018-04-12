@@ -4,10 +4,24 @@ from numpy.polynomial.legendre import leggauss
 from scipy.integrate import simps
 import ipyvolume as ipv
 
+from scipy.sparse.linalg import gmres
+
 #from fortran_wrappers.pykelp3d_wrap import f90wrap_py_gen_kelp as gen_kelp_f90
 #from fortran_wrappers.pyrte3d_wrap import f90wrap_py_calculate_light_field as calculate_light_field_f90
 #from fortran_wrappers.pyasymptotics_wrap import f90wrap_py_calculate_asymptotic_light_field as calculate_asymptotic_light_field_f90
 from fortran_wrappers.pykelp3d_wrap import pykelp3d_wrap as f90
+
+def gmres_wrapper(n_total, nonzero, row, col, data,
+        sol, rhs, maxiter_outer, maxiter_inner,
+        tol_abs, tol_rel):
+    A = scipy.sparse.coo_matrix(
+        (data, (row, col)),
+        shape=(n_total, n_total)
+    )
+
+    return gmres(A, rhs, tol=abs_tol,
+                 restart=maxiter_inner,
+                 maxiter=maxiter_outer)
 
 class SpaceDim(tr.HasTraits):
     minval = tr.Float()
@@ -342,7 +356,7 @@ class Light(tr.HasTraits):
             theta_s, phi_s, max_rad, decay,
             tol_abs, tol_rel, maxiter_inner, maxiter_outer,
             p_kelp, self.radiance, self.irradiance,
-            num_scatters, gmres_flag
+            num_scatters, gmres_flag, gmres_wrapper
         )
 
         #np.savetxt('pyrad_out.txt', self.radiance.flatten())

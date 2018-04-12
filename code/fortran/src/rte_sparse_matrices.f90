@@ -66,7 +66,7 @@ type rte_mat
 
 end type rte_mat
 
-abstract interface
+interface
    ! Define interface for external procedure
    ! https://stackoverflow.com/questions/8549415/how-to-declare-the-interface-section-for-a-procedure-argument-which-in-turn-ref
    subroutine solver_interface(n_total, nonzero, row, col, data, &
