@@ -5,23 +5,51 @@ from scipy.integrate import simps
 import ipyvolume as ipv
 
 from scipy.sparse.linalg import gmres
+from scipy.sparse import coo_matrix
 
 #from fortran_wrappers.pykelp3d_wrap import f90wrap_py_gen_kelp as gen_kelp_f90
 #from fortran_wrappers.pyrte3d_wrap import f90wrap_py_calculate_light_field as calculate_light_field_f90
 #from fortran_wrappers.pyasymptotics_wrap import f90wrap_py_calculate_asymptotic_light_field as calculate_asymptotic_light_field_f90
 from fortran_wrappers.pykelp3d_wrap import pykelp3d_wrap as f90
 
-def gmres_wrapper(n_total, nonzero, row, col, data,
-        sol, rhs, maxiter_outer, maxiter_inner,
-        tol_abs, tol_rel):
-    A = scipy.sparse.coo_matrix(
-        (data, (row, col)),
+
+# Excluding n_total and nonzero from argument list
+# since Python will know them from array sizes.
+def gmres_wrapper(row, col, data, sol, rhs,
+                  maxiter_outer, maxiter_inner,
+                  tol_abs, tol_rel):
+    #np_row = np.array(row)
+    #np_col = np.array(col)
+    #np_data = np.array(data)
+    #np_rhs = np.array(rhs)
+    print("row = {}".format(row))
+    print("row_size = {}".format(len(row)))
+
+    nonzero = len(row)
+    n_total = len(rhs)
+
+    A = coo_matrix(
+        # Matrix is 1-indexed, Python is not.
+        (data, (row-1, col-1)),
         shape=(n_total, n_total)
     )
 
-    return gmres(A, rhs, tol=abs_tol,
+    x, info = gmres(A, rhs, tol=tol_abs,
                  restart=maxiter_inner,
                  maxiter=maxiter_outer)
+    if not info:
+        print("GMRES Success!")
+        sol[:] = x[:]
+        print("Sol:")
+        print(sol[:20])
+    else:
+        print("GMRES Error '{}'".format(info))
+
+def phony_wrapper(n_total, nonzero, row, col, data,
+        sol, rhs, maxiter_outer, maxiter_inner,
+        tol_abs, tol_rel):
+    print("Phony!")
+
 
 class SpaceDim(tr.HasTraits):
     minval = tr.Float()
@@ -345,6 +373,8 @@ class Light(tr.HasTraits):
 
         # Call fortran
 
+        # print("radiance: ", self.radiance)
+
         # Asymptotics + GMRES (optional)
         f90.calculate_light_field(
             xmin, xmax,
@@ -384,7 +414,7 @@ class OpticalProperties(tr.HasTraits):
     def init_vals(self):
         self.a_kelp = 10
         self.a_water = .25
-        self.b = 1
+        self.b = 0.3
 
         self.num_vsf = self.grid.phi.num
         self.vsf_angles = self.grid.phi.vals

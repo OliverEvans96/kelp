@@ -444,22 +444,6 @@ function asymptotics1d_grid(I₀, a, b, β̃, zmin, zmax, nz, num_scatters)
 end
 export asymptotics1d_grid
 
-abstract interface
-   ! Define interface for external procedure
-   ! https://stackoverflow.com/questions/8549415/how-to-declare-the-interface-section-for-a-procedure-argument-which-in-turn-ref
-   subroutine solver_interface(n_total, nonzero, row, col, data, &
-        sol, rhs, maxiter_outer, maxiter_inner, &
-        tol_abs, tol_rel)
-     integer ::  n_total, nonzero
-     integer, dimension(nonzero) :: row, col
-     double precision, dimension(nonzero) :: data
-     double precision, dimension(nonzero) :: sol
-     double precision, dimension(n_total) :: rhs
-     integer :: maxiter_outer, maxiter_inner
-     double precision :: tol_abs, tol_rel
-   end subroutine solver_interface
-end interface
-
 """
 3D Asymptotics.
 Surface radiance gaussian: I₀, θₛ, ϕₛ.

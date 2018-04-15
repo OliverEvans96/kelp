@@ -89,41 +89,6 @@ contains
     type(boundary_condition) bc
     integer k
 
-
-    !! DUMMY VARIABLES
-    ! Explicit constants won't do.
-    ! f2py needs typed variables.
-    integer, parameter ::  tmp_n_total=1
-    integer, parameter ::  tmp_nonzero=1
-    integer, dimension(tmp_nonzero) :: tmp_row
-    integer, dimension(tmp_nonzero) :: tmp_col
-    double precision, dimension(tmp_nonzero) :: tmp_data
-    double precision, dimension(tmp_nonzero) :: tmp_sol
-    double precision, dimension(tmp_n_total) :: tmp_rhs
-    integer :: tmp_maxiter_outer
-    integer :: tmp_maxiter_inner
-    double precision :: tmp_tol_abs
-    double precision :: tmp_tol_rel
-    ! TODO: FINISH THIS, ADD UNDERSCORES
-    ! Have to explicitly have a call to solver_callback
-    ! in this function so that f2py treats it as a callback.
-    tmp_row = (/ 1 /)
-    tmp_col = (/ 1 /)
-    tmp_data = (/ 0.d0 /)
-    tmp_sol = (/ 0.d0 /)
-    tmp_rhs = (/ 0.d0 /)
-    tmp_maxiter_inner = 0
-    tmp_maxiter_outer = 0
-    tmp_tol_abs = 0.d0
-    tmp_tol_rel = 0.d0
-    if(.false.) then
-       call solver_callback(tmp_n_total, tmp_nonzero, &
-           tmp_row, tmp_col, tmp_data, tmp_sol, tmp_rhs, &
-           tmp_maxiter_outer, tmp_maxiter_inner, &
-           tmp_tol_abs, tmp_tol_rel)
-   end if
-
-
     ! INIT GRID
     write(*,*) 'Grid'
     call grid%set_bounds(xmin, xmax, ymin, ymax, zmin, zmax)
