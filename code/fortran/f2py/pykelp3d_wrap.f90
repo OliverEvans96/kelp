@@ -80,7 +80,6 @@ contains
     ! Rely on external function to solve sparse matrix
     ! (e.g. from Julia or Python)
     logical sparse_flag
-    !f2py intent(callback) solver_callback
     procedure(solver_interface), optional :: solver_callback
 
     type(space_angle_grid) grid
@@ -118,7 +117,7 @@ contains
     tmp_tol_abs = 0.d0
     tmp_tol_rel = 0.d0
     if(.false.) then
-       call solver_interface(tmp_n_total, tmp_nonzero, &
+       call solver_callback(tmp_n_total, tmp_nonzero, &
            tmp_row, tmp_col, tmp_data, tmp_sol, tmp_rhs, &
            tmp_maxiter_outer, tmp_maxiter_inner, &
            tmp_tol_abs, tmp_tol_rel)
