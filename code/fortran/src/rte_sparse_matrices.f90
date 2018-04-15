@@ -181,25 +181,21 @@ contains
     open(unit=2, file='col.txt')
     open(unit=3, file='data.txt')
     open(unit=4, file='rhs.txt')
+    open(unit=5, file='sol.txt')
     write(1,*) mat%row
     write(2,*) mat%col
     write(3,*) mat%data
     write(4,*) mat%rhs
+
     close(1)
     close(2)
     close(3)
     close(4)
 
-    open(unit=5, file='sol.txt')
-
-    write(*,*) 'f: size(data) =', size(mat%data)
-
     call mat%solver(mat%n_total, mat%nonzero, &
          mat%row, mat%col, mat%data, mat%sol, mat%rhs, &
          params%maxiter_outer, params%maxiter_inner, &
          params%tol_abs, params%tol_rel)
-
-    write(*,*) 'FSol:', mat%sol(1:20)
 
     write(5,*) mat%sol
     close(5)

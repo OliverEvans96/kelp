@@ -18,13 +18,6 @@ from fortran_wrappers.pykelp3d_wrap import pykelp3d_wrap as f90
 def gmres_wrapper(row, col, data, sol, rhs,
                   maxiter_outer, maxiter_inner,
                   tol_abs, tol_rel):
-    #np_row = np.array(row)
-    #np_col = np.array(col)
-    #np_data = np.array(data)
-    #np_rhs = np.array(rhs)
-    print("row = {}".format(row))
-    print("row_size = {}".format(len(row)))
-
     nonzero = len(row)
     n_total = len(rhs)
 
@@ -40,16 +33,8 @@ def gmres_wrapper(row, col, data, sol, rhs,
     if not info:
         print("GMRES Success!")
         sol[:] = x[:]
-        print("Sol:")
-        print(sol[:20])
     else:
         print("GMRES Error '{}'".format(info))
-
-def phony_wrapper(n_total, nonzero, row, col, data,
-        sol, rhs, maxiter_outer, maxiter_inner,
-        tol_abs, tol_rel):
-    print("Phony!")
-
 
 class SpaceDim(tr.HasTraits):
     minval = tr.Float()
