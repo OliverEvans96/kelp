@@ -24,7 +24,7 @@ module asymptotics
 
     max_cells = calculate_max_cells(grid)
 
-    allocate(path_length(max_cells))
+    allocate(path_length(max_cells+1))
     allocate(path_spacing(max_cells))
     allocate(a_tilde(max_cells))
     allocate(gn(max_cells))
@@ -329,6 +329,9 @@ module asymptotics
     p1y = grid%y%vals(j)
     p1z = grid%z%vals(k)
 
+    !write(*,*) 'START PATH.'
+    !write(*,*) 'ijk = ', i, j, k
+
     ! Direction
     if(p .le. grid%angles%nomega/2) then
        ! Downwelling light originates from surface
@@ -470,6 +473,17 @@ module asymptotics
        a_tilde(t) = iops%abs_grid(cell_x, cell_y, cell_z)
        gn(t) = source(cell_x, cell_y, cell_z, p)
 
+       !write(*,*) ''
+       !write(*,*) 's_next_x = ', s_next_x
+       !write(*,*) 's_next_y = ', s_next_y
+       !write(*,*) 's_next_z = ', s_next_z
+       !write(*,*) 'theta, phi =', grid%angles%theta_p(p)*180.d0/pi, grid%angles%phi_p(p)*180.d0/pi
+       !write(*,*) 's = ', s, '/', s_tilde
+       !write(*,*) 'cell_z =', cell_z, '/', grid%z%num
+       !write(*,*) 's_next_z =', s_next_z
+       !write(*,*) 'last_z =', last_z
+       !write(*,*) 'new'
+
        ! Move to next cell in path
        if(s_next_x .le. min(s_next_y, s_next_z)) then
           ! x edge is closest
@@ -493,7 +507,7 @@ module asymptotics
           ! y intersection after the one at s=s_next
           s_next_y = s_next + ds_y
 
-       else
+       else if(s_next_z .le. min(s_next_x, s_next_y)) then
           ! z edge is closest
           s_next = s_next_z
 
@@ -501,14 +515,18 @@ module asymptotics
           cell_z = cell_z + dir_z
           edge_z = edge_z + dir_z
 
+          !write(*,*) 'z edge, s_next =', s_next
+
           ! z intersection after the one at s=s_next
-          if(cell_z .ne. last_z) then
+          if(cell_z .lt. last_z) then
              ! Only look ahead if we aren't at the end
              s_next_z = s_next + ds_z(cell_z)
           else
              ! Otherwise, no need to continue.
              ! this is our final destination.
+          !   exit
              s_next_z = 2*s_tilde
+             !write(*,*) 'end. s_next_z =', s_next_z
           end if
 
        end if

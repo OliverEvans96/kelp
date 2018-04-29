@@ -111,6 +111,9 @@ contains
     iops%scat = b
     call iops%calculate_coef_grids(p_kelp)
 
+    write(*,*) 'max abs =', maxval(iops%abs_grid)
+    write(*,*) 'max loc =', maxloc(iops%abs_grid)
+
     write(*,*) 'BC'
     call bc%init(grid, theta_s, phi_s, decay, max_rad)
 

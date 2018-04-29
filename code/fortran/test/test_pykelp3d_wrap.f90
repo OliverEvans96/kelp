@@ -24,11 +24,11 @@ ymax = 1
 zmin = 0
 zmax = 2
 
-nx = 6
-ny = 6
-nz = 6
-ntheta = 6
-nphi = 6
+nx = 10
+ny = 10
+nz = 10
+ntheta = 20
+nphi = 20
 
 nomega = ntheta*(nphi-2)+2
 
@@ -60,7 +60,7 @@ maxiter_inner = 100
 maxiter_outer = 100
 
 num_scatters = 1
-gmres_flag = .true.
+gmres_flag = .false.
 
 do i=1, nx
    do j=1, ny
@@ -82,6 +82,14 @@ call calculate_light_field( &
      p_kelp, radiance, irradiance, num_scatters, gmres_flag)
 
 !write(*,*) 'radiance =', radiance
+
+write(*,*) 'rad min: ', minval(radiance)
+write(*,*) 'rad max: ', maxval(radiance)
+write(*,*) 'rad mean: ', sum(radiance)/size(radiance)
+write(*,*)
+write(*,*) 'irrad min: ', minval(irradiance)
+write(*,*) 'irrad max: ', maxval(irradiance)
+write(*,*) 'irrad mean: ', sum(irradiance)/size(irradiance)
 
 deallocate(vsf_angles)
 deallocate(vsf_vals)

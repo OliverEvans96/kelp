@@ -365,7 +365,7 @@ contains
     p = indices%p
     grid = mat%grid
 
-    dx = grid%x%spacing(indices%k)
+    dx = grid%x%spacing(1)
 
     val = grid%angles%sin_phi_p(p) * grid%angles%cos_theta_p(p) / (2.d0 * dx)
 
@@ -387,7 +387,7 @@ contains
     p = indices%p
     grid = mat%grid
 
-    dx = grid%x%spacing(indices%k)
+    dx = grid%x%spacing(1)
     nx = grid%x%num
 
     val = grid%angles%sin_phi_p(p) * grid%angles%cos_theta_p(p) / (2.d0 * dx)
@@ -408,7 +408,7 @@ contains
     p = indices%p
     grid = mat%grid
 
-    dx = grid%x%spacing(indices%k)
+    dx = grid%x%spacing(1)
 
     val = grid%angles%sin_phi_p(p) * grid%angles%cos_theta_p(p) / (2.d0 * dx)
 
@@ -428,7 +428,7 @@ contains
     p = indices%p
     grid = mat%grid
 
-    dy = grid%y%spacing(indices%k)
+    dy = grid%y%spacing(1)
 
     val = grid%angles%sin_phi_p(p) * grid%angles%sin_theta_p(p) / (2.d0 * dy)
 
@@ -449,7 +449,7 @@ contains
     p = indices%p
     grid = mat%grid
 
-    dy = grid%y%spacing(indices%k)
+    dy = grid%y%spacing(1)
     ny = grid%y%num
 
     val = grid%angles%sin_phi_p(p) * grid%angles%sin_theta_p(p) / (2.d0 * dy)
@@ -470,7 +470,7 @@ contains
     p = indices%p
     grid = mat%grid
 
-    dy = grid%y%spacing(indices%k)
+    dy = grid%y%spacing(1)
 
     val = grid%angles%sin_phi_p(p) * grid%angles%sin_theta_p(p) / (2.d0 * dy)
 
