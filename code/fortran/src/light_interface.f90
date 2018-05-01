@@ -320,45 +320,14 @@ contains
     double precision, dimension(:) :: num_fronds
     double precision, dimension(:,:,:) :: irradiance
 
-    double precision s, numer, denom, ptilde_sum
-
     integer k
 
     ! Calculate the average irradiance experienced over the frond.
     ! Has same units as irradiance.
     do k=1, grid%z%num
-       write(*,*) ''
-       write(*,*) 'dx =', grid%x%spacing(1)
-       write(*,*) 'dy =', grid%y%spacing(1)
-       write(*,*) 'dz =', grid%z%spacing(k)
-       write(*,*) 'p_k =', p_kelp(:,:,k)
-       write(*,*) 'irrad =', irradiance(:,:,k)
-       write(*,*) 'num_fronds =', num_fronds(k)
-       write(*,*) 'ft =', frond%ft
-
-       s = sum(p_kelp(:,:,k)*irradiance(:,:,k))
-       write(*,*) 's =', s
-
-       numer = grid%x%spacing(1)*grid%y%spacing(1)*grid%z%spacing(k) * s
-       denom = (num_fronds(k)*frond%ft)
-
-       write(*,*) 'ptilde =', &
-            grid%x%spacing(1)*grid%y%spacing(1) &
-            / (num_fronds(k)*frond%ft) &
-            * p_kelp(:,:,k)
-
-       ptilde_sum = grid%x%spacing(1)*grid%y%spacing(1) &
-            / (num_fronds(k)*frond%ft) &
-            * sum(p_kelp(:,:,k))
-
-       write(*,*) 'ptilde_sum =', ptilde_sum
-
-       write(*,*) 'numer =', numer
-       write(*,*) 'denom =', denom
-
-       perceived_irrad(k) = real(numer/denom/ptilde_sum)
-
-       write(*,*) 'perceived =', perceived_irrad(k)
+       perceived_irrad(k) = real( &
+            sum(p_kelp(:,:,k)*irradiance(:,:,k)) &
+            / sum(p_kelp(:,:,k)))
     end do
 
   end subroutine calculate_perceived_irrad
