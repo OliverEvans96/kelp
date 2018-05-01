@@ -15,3 +15,5 @@ rhs.txt
 sol.txt
 .#*
 *.png
+*.so
+*.pyc
