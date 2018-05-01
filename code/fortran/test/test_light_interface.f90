@@ -42,8 +42,8 @@ program test_light_interface
     rope_spacing = 10.d0
 
     num_si = 10
-    nx = 4
-    ny = 4
+    nx = 6
+    ny = 6
     nz = 5
     ntheta = 4
     nphi = 4
@@ -59,10 +59,10 @@ program test_light_interface
     allocate(depth_spacing(nz))
 
     do k=1, nz
-       abs_water(k) = 0.5
+       abs_water(k) = 0.0
        do i=1, num_si
           si_area(k, i) = 1000.d0
-          si_ind(k, i) = 10!00
+          si_ind(k, i) = 1000
        end do
 
        current_speeds(k) = 0.d0

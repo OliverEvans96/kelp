@@ -202,8 +202,8 @@ contains
 
     ! Calculate output variables
     call calculate_average_irradiance(grid, light, avg_irrad)
-    call calculate_perceived_irrad(grid, frond, p_kelp, &
-         num_fronds, perceived_irrad, light%irradiance)
+    call calculate_perceived_irrad(grid, p_kelp, &
+         perceived_irrad, light%irradiance)
 
     !write(*,*) 'vsf_angles = ', iops%vsf_angles
     !write(*,*) 'vsf_vals = ', iops%vsf_vals
@@ -214,6 +214,10 @@ contains
     write(*,*) 'kelp '
     write(*,*) p_kelp(:,:,:)
     write(*,*) 'ft =', frond%ft
+
+    write(*,*) 'irrad'
+    write(*,*) light%irradiance
+
     write(*,*) 'avg_irrad = ', avg_irrad
     write(*,*) 'perceived_irrad = ', perceived_irrad
 
@@ -311,13 +315,11 @@ contains
     end do
   end subroutine calculate_average_irradiance
 
-  subroutine calculate_perceived_irrad(grid, frond, p_kelp, &
-       num_fronds, perceived_irrad, irradiance)
+  subroutine calculate_perceived_irrad(grid, p_kelp, &
+       perceived_irrad, irradiance)
     type(space_angle_grid) grid
-    type(frond_shape) frond
     double precision, dimension(:,:,:) :: p_kelp
     real, dimension(:) :: perceived_irrad
-    double precision, dimension(:) :: num_fronds
     double precision, dimension(:,:,:) :: irradiance
 
     integer k
