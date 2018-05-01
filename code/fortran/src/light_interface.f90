@@ -37,7 +37,7 @@ contains
     nphi, &
     num_scatters, &
     ! FINAL RESULTS
-    available_light, &
+    perceived_irrad, &
     avg_irrad)
 
     implicit none
@@ -83,8 +83,7 @@ contains
     integer, intent(in) :: num_scatters
 
     ! FINAL RESULT
-    real, dimension(nz, num_si), intent(out) :: available_light
-    real, dimension(nz), intent(out) :: avg_irrad
+    real, dimension(nz), intent(out) :: avg_irrad, perceived_irrad
 
     !-------------!
 
@@ -149,6 +148,12 @@ contains
     rope%water_speeds = current_speeds
     rope%water_angles = current_angles
 
+    write(*,*) 'frond_lengths  =', rope%frond_lengths
+    write(*,*) 'frond_stds  =', rope%frond_stds
+    write(*,*) 'num_fronds  =', rope%num_fronds
+    write(*,*) 'water_speeds  =', rope%water_speeds
+    write(*,*) 'water_angles  =', rope%water_angles
+
     write(*,*) 'Frond'
     ! INIT FROND
     call frond%set_shape(frond_shape_ratio, frond_aspect_ratio, frond_thickness)
@@ -197,7 +202,8 @@ contains
 
     ! Calculate output variables
     call calculate_average_irradiance(grid, light, avg_irrad)
-    call calculate_available_light(grid, p_kelp, num_si, si_area, si_ind, available_light, avg_irrad)
+    call calculate_perceived_irrad(grid, frond, p_kelp, &
+         num_fronds, perceived_irrad, light%irradiance)
 
     !write(*,*) 'vsf_angles = ', iops%vsf_angles
     !write(*,*) 'vsf_vals = ', iops%vsf_vals
@@ -205,8 +211,11 @@ contains
 
     ! write(*,*) 'abs_water = ', abs_water
     ! write(*,*) 'scat_water = ', scat_water
+    write(*,*) 'kelp '
+    write(*,*) p_kelp(:,:,:)
+    write(*,*) 'ft =', frond%ft
     write(*,*) 'avg_irrad = ', avg_irrad
-    ! write(*,*) 'available_light = ', available_light
+    write(*,*) 'perceived_irrad = ', perceived_irrad
 
     write(*,*) 'deinit'
     call bc%deinit()
@@ -302,23 +311,56 @@ contains
     end do
   end subroutine calculate_average_irradiance
 
-  subroutine calculate_available_light(grid, p_kelp, num_si, si_area, si_ind, available_light, avg_irrad)
+  subroutine calculate_perceived_irrad(grid, frond, p_kelp, &
+       num_fronds, perceived_irrad, irradiance)
     type(space_angle_grid) grid
+    type(frond_shape) frond
     double precision, dimension(:,:,:) :: p_kelp
-    integer num_si
-    double precision, dimension(:,:) :: si_area, si_ind
-    real, dimension(:,:) :: available_light
-    real, dimension(:) :: avg_irrad
+    real, dimension(:) :: perceived_irrad
+    double precision, dimension(:) :: num_fronds
+    double precision, dimension(:,:,:) :: irradiance
 
-    integer i, j, k, n
+    double precision s, numer, denom, ptilde_sum
 
-    ! TODO: THIS IS NOT CORRECT YET
+    integer k
+
+    ! Calculate the average irradiance experienced over the frond.
+    ! Has same units as irradiance.
     do k=1, grid%z%num
-       do n=1, num_si
-          available_light(k, n) = avg_irrad(k)
-       end do
+       write(*,*) ''
+       write(*,*) 'dx =', grid%x%spacing(1)
+       write(*,*) 'dy =', grid%y%spacing(1)
+       write(*,*) 'dz =', grid%z%spacing(k)
+       write(*,*) 'p_k =', p_kelp(:,:,k)
+       write(*,*) 'irrad =', irradiance(:,:,k)
+       write(*,*) 'num_fronds =', num_fronds(k)
+       write(*,*) 'ft =', frond%ft
+
+       s = sum(p_kelp(:,:,k)*irradiance(:,:,k))
+       write(*,*) 's =', s
+
+       numer = grid%x%spacing(1)*grid%y%spacing(1)*grid%z%spacing(k) * s
+       denom = (num_fronds(k)*frond%ft)
+
+       write(*,*) 'ptilde =', &
+            grid%x%spacing(1)*grid%y%spacing(1) &
+            / (num_fronds(k)*frond%ft) &
+            * p_kelp(:,:,k)
+
+       ptilde_sum = grid%x%spacing(1)*grid%y%spacing(1) &
+            / (num_fronds(k)*frond%ft) &
+            * sum(p_kelp(:,:,k))
+
+       write(*,*) 'ptilde_sum =', ptilde_sum
+
+       write(*,*) 'numer =', numer
+       write(*,*) 'denom =', denom
+
+       perceived_irrad(k) = real(numer/denom/ptilde_sum)
+
+       write(*,*) 'perceived =', perceived_irrad(k)
     end do
 
-  end subroutine calculate_available_light
+  end subroutine calculate_perceived_irrad
 
 end module light_interface_module
