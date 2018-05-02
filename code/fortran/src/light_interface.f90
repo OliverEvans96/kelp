@@ -7,7 +7,7 @@ module light_interface_module
 contains
   subroutine full_light_calculations( &
     ! OPTICAL PROPERTIES
-    abs_kelp, &
+    absorptance_kelp, & ! NOT THE SAME AS ABSORPTION COEFFICIENT
     abs_water, &
     scat, &
     num_vsf, &
@@ -45,7 +45,7 @@ contains
     ! OPTICAL PROPERTIES
     integer, intent(in) :: nx, ny, nz, ntheta, nphi
     ! Absorption and scattering coefficients
-    double precision, intent(in) :: abs_kelp, scat
+    double precision, intent(in) :: absorptance_kelp, scat
     double precision, dimension(nz), intent(in) :: abs_water
     ! Volume scattering function
     integer, intent(in) :: num_vsf
@@ -164,7 +164,7 @@ contains
     iops%num_vsf = num_vsf
     call iops%init(grid)
     write(*,*) 'IOPs'
-    iops%abs_kelp = abs_kelp
+    iops%abs_kelp = abs_kelp / frond_thickness
     iops%abs_water = abs_water
     iops%scat = scat
 
