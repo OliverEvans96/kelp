@@ -164,7 +164,7 @@ contains
     iops%num_vsf = num_vsf
     call iops%init(grid)
     write(*,*) 'IOPs'
-    iops%abs_kelp = abs_kelp / frond_thickness
+    iops%abs_kelp = absorptance_kelp / frond_thickness
     iops%abs_water = abs_water
     iops%scat = scat
 
