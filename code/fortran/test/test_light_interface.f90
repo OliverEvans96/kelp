@@ -33,7 +33,7 @@ program test_light_interface
     scat = 0.1d0
 
     num_vsf = 55
-    vsf_file = '/home/oliver/academic/research/kelp/data/vsf/nuc_vsf.txt'
+    vsf_file = '/global/homes/o/oevans/kelp/data/vsf/nuc_vsf.txt'
 
     solar_zenith = 0.d0
     solar_azimuthal = 0.d0
