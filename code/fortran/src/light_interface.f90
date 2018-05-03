@@ -184,8 +184,8 @@ contains
     ! Rescale surface radiance to match surface irradiance
     bc%bc_grid = bc%bc_grid * surface_irrad / grid%angles%integrate_points(bc%bc_grid)
 
-    write(*,*) 'bc'
-    write(*,*) bc%bc_grid
+    !write(*,*) 'bc'
+    !write(*,*) bc%bc_grid
 
     ! write(*,*) 'bc'
     ! do i=1, grid%y%num
@@ -211,12 +211,14 @@ contains
 
     ! write(*,*) 'abs_water = ', abs_water
     ! write(*,*) 'scat_water = ', scat_water
-    write(*,*) 'kelp '
-    write(*,*) p_kelp(:,:,:)
     write(*,*) 'ft =', frond%ft
+    write(*,*) 'dz=', grid%z%spacing
 
-    write(*,*) 'irrad'
-    write(*,*) light%irradiance
+    write(*,*) 'min max mean bc ', minval(bc%bc_grid), maxval(bc%bc_grid), sum(bc%bc_grid) / size(bc%bc_grid)
+
+    write(*,*) 'min max mean p_kelp ', minval(p_kelp), maxval(p_kelp), sum(p_kelp) / size(p_kelp)
+
+    write(*,*) 'min max mean irrad ', minval(light%irradiance) ,maxval(light%irradiance), sum(light%irradiance) / size(light%irradiance)
 
     write(*,*) 'avg_irrad = ', avg_irrad
     write(*,*) 'perceived_irrad = ', perceived_irrad
