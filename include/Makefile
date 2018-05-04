@@ -29,11 +29,11 @@ PFLAGS= #-g -ffpe-trap=zero,invalid,overflow,underflow -ffpe-summary=all -fcheck
 
 # Optimize performance
 #https://stackoverflow.com/questions/42386065/inlining-functions-in-fortran
-OPTFLAGS= #-Ofast -flto
+OPTFLAGS= -Ofast -flto
 
 # Doesn't work as shared? Executable gives SEGFAULT immediately.
 # But that's okay, because this works.
-FFLAGS=$(PFLAGS) -fPIC $(OPTFLAGS) #-Wall # -fopenmp
+FFLAGS=$(PFLAGS) -fPIC $(OPTFLAGS) # -Wall # -fopenmp
 # Flags for F2PY
 F2PYFLAGS=-fPIC # $(PFLAGS) $(OPTFLAGS)
 # Test flags
@@ -98,7 +98,7 @@ $(jtest_inc): %.so: $(JTEST)/%.f90
 	$(FC) $(TESTFLAGS) $< -o $@
 # For actually importing in python
 $(f2py_targets): %: $(F2PY)/%.f90
-	f2py --opt="-qopenmp" -c $(F2PY)/$@.pyf $^
+	f2py -c --opt="-qopenmp" $(F2PY)/$@.pyf $^
 	rm -f $(F2PY_INC)/$@.*.so
 	ln -s $(PWD)/$@.*.so $(F2PY_INC)
 # To test outside of python directly in fortran
