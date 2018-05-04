@@ -223,15 +223,14 @@ contains
          (k-1) * mat%z_block_size + p * mat%omega_block_size
   end function mat_ind
 
-  subroutine mat_assign(mat, ent, val, i, j, k, p)
+  subroutine mat_assign(mat, indices, ent, val, i, j, k, p)
     ! It's assumed that this is the only time this entry is defined
     class(rte_mat) mat
     double precision val
+    type(index_list) indices
     integer i, j, k, p
-    integer col_num
+    integer row_num, col_num
     integer ent
-
-    col_num = mat%ind(i, j, k, p)
 
     !mat%row(mat%ent) = row_num
     !mat%col(mat%ent) = col_num
@@ -244,10 +243,11 @@ contains
        !write(*,*) 'entry =', mat%ent
     endif
 
-    ! if(i.eq.mat%i .and. j.eq.mat%j .and. k.eq.mat%j .and. l.eq.mat%l .and. p.eq.mat%p) then
-    !    write(*,*) 'diag: ', val
-    ! endif
+    row_num = mat%ind(indices%i, indices%j, indices%k,  indices%p)
+    col_num = mat%ind(i, j, k, p)
 
+    mat%row(ent) = row_num
+    mat%col(ent) = col_num
     mat%data(ent) = val
 
     ent = ent + 1
@@ -265,11 +265,13 @@ contains
     mat%data(ent) = mat%data(ent) + val
   end subroutine mat_add
 
-  subroutine mat_assign_rhs(mat, row_num, data)
+  subroutine mat_assign_rhs(mat, indices, data)
     class(rte_mat) mat
     double precision data
+    type(index_list) indices
     integer row_num
 
+    row_num = mat%ind(indices%i, indices%j, indices%k, indices%p)
     mat%rhs(row_num) = data
   end subroutine mat_assign_rhs
 
@@ -336,8 +338,8 @@ contains
 
     val = grid%angles%sin_phi_p(p) * grid%angles%cos_theta_p(p) / (2.d0 * dx)
 
-    call mat%assign(ent,-val,i-1,j,k,p)
-    call mat%assign(ent,val,i+1,j,k,p)
+    call mat%assign(indices,ent,-val,i-1,j,k,p)
+    call mat%assign(indices,ent,val,i+1,j,k,p)
   end subroutine x_cd2
 
   subroutine x_cd2_first(mat, indices, ent)
@@ -360,8 +362,8 @@ contains
 
     val = grid%angles%sin_phi_p(p) * grid%angles%cos_theta_p(p) / (2.d0 * dx)
 
-    call mat%assign(ent,-val,nx,j,k,p)
-    call mat%assign(ent,val,i+1,j,k,p)
+    call mat%assign(indices,ent,-val,nx,j,k,p)
+    call mat%assign(indices,ent,val,i+1,j,k,p)
   end subroutine x_cd2_first
 
   subroutine x_cd2_last(mat, indices, ent)
@@ -382,8 +384,8 @@ contains
 
     val = grid%angles%sin_phi_p(p) * grid%angles%cos_theta_p(p) / (2.d0 * dx)
 
-    call mat%assign(ent,-val,i-1,j,k,p)
-    call mat%assign(ent,val,1,j,k,p)
+    call mat%assign(indices,ent,-val,i-1,j,k,p)
+    call mat%assign(indices,ent,val,1,j,k,p)
   end subroutine x_cd2_last
 
   subroutine y_cd2(mat, indices, ent)
@@ -404,8 +406,8 @@ contains
 
     val = grid%angles%sin_phi_p(p) * grid%angles%sin_theta_p(p) / (2.d0 * dy)
 
-    call mat%assign(ent,-val,i,j-1,k,p)
-    call mat%assign(ent,val,i,j+1,k,p)
+    call mat%assign(indices,ent,-val,i,j-1,k,p)
+    call mat%assign(indices,ent,val,i,j+1,k,p)
   end subroutine y_cd2
 
   subroutine y_cd2_first(mat, indices, ent)
@@ -428,8 +430,8 @@ contains
 
     val = grid%angles%sin_phi_p(p) * grid%angles%sin_theta_p(p) / (2.d0 * dy)
 
-    call mat%assign(ent,-val,i,ny,k,p)
-    call mat%assign(ent,val,i,j+1,k,p)
+    call mat%assign(indices,ent,-val,i,ny,k,p)
+    call mat%assign(indices,ent,val,i,j+1,k,p)
   end subroutine y_cd2_first
 
   subroutine y_cd2_last(mat, indices, ent)
@@ -450,8 +452,8 @@ contains
 
     val = grid%angles%sin_phi_p(p) * grid%angles%sin_theta_p(p) / (2.d0 * dy)
 
-    call mat%assign(ent,-val,i,j-1,k,p)
-    call mat%assign(ent,val,i,1,k,p)
+    call mat%assign(indices,ent,-val,i,j-1,k,p)
+    call mat%assign(indices,ent,val,i,1,k,p)
   end subroutine y_cd2_last
 
   subroutine z_cd2(mat, indices, ent)
@@ -472,8 +474,8 @@ contains
 
     val = grid%angles%cos_phi_p(p) / (2.d0 * dz)
 
-    call mat%assign(ent,-val,i,j,k-1,p)
-    call mat%assign(ent,val,i,j,k+1,p)
+    call mat%assign(indices,ent,-val,i,j,k-1,p)
+    call mat%assign(indices,ent,val,i,j,k+1,p)
   end subroutine z_cd2
 
   subroutine z_fd2(mat, indices, ent, repeat_ent)
@@ -503,8 +505,8 @@ contains
     val3 = -val
 
     call mat%add(repeat_ent, val1)
-    call mat%assign(ent,val2,i,j,k+1,p)
-    call mat%assign(ent,val3,i,j,k+2,p)
+    call mat%assign(indices,ent,val2,i,j,k+1,p)
+    call mat%assign(indices,ent,val3,i,j,k+2,p)
   end subroutine z_fd2
 
   subroutine z_bd2(mat, indices, ent, repeat_ent)
@@ -535,8 +537,8 @@ contains
     val3 = val
 
     call mat%add(repeat_ent, val1)
-    call mat%assign(ent,val2,i,j,k-1,p)
-    call mat%assign(ent,val3,i,j,k-2,p)
+    call mat%assign(indices,ent,val2,i,j,k-1,p)
+    call mat%assign(indices,ent,val3,i,j,k-2,p)
   end subroutine z_bd2
 
   subroutine angular_integral(mat, indices, ent)
@@ -551,7 +553,7 @@ contains
     do pp=1, mat%grid%angles%nomega
        ! TODO: Make sure I don't have p and pp backwards
        val = mat%iops%scat * mat%iops%vsf_integral(indices%p, pp)
-       call mat%assign(ent, val, indices%i, indices%j, indices%k, pp)
+       call mat%assign(indices,ent, val, indices%i, indices%j, indices%k, pp)
     end do
 
   end subroutine angular_integral
@@ -570,13 +572,12 @@ contains
     val1 = grid%angles%cos_phi_p(indices%p) / (5.d0 * grid%z%spacing(1))
     val2 = 7.d0 * val1
 
-    call mat%assign(ent,val1,indices%i,indices%j,2,indices%p)
+    call mat%assign(indices,ent,val1,indices%i,indices%j,2,indices%p)
     call mat%add(repeat_ent, val2)
 
     bc_val = 8.d0 * mat%surface_vals(indices%p) / (5.d0 * grid%z%spacing(1))
 
-    rhs_row = mat%ind(indices%i, indices%j, indices%k, indices%p)
-    call mat%assign_rhs(rhs_row, bc_val)
+    call mat%assign_rhs(indices, bc_val)
 
   end subroutine z_surface_bc
 
@@ -592,7 +593,7 @@ contains
     val1 = -grid%angles%cos_phi_p(indices%p) / (5.d0 * grid%z%spacing(1))
     val2 = 7.d0 * val1
 
-    call mat%assign(ent,val1,indices%i,indices%j,grid%z%num-1,indices%p)
+    call mat%assign(indices,ent,val1,indices%i,indices%j,grid%z%num-1,indices%p)
     call mat%add(repeat_ent, val2)
 
   end subroutine z_bottom_bc
