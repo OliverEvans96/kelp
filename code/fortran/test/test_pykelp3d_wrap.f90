@@ -27,8 +27,8 @@ zmax = 2
 nx = 10
 ny = 10
 nz = 10
-ntheta = 20
-nphi = 20
+ntheta = 10
+nphi = 10
 
 nomega = ntheta*(nphi-2)+2
 
@@ -59,8 +59,8 @@ tol_rel = 1.d-3
 maxiter_inner = 100
 maxiter_outer = 100
 
-num_scatters = 1
-gmres_flag = .false.
+num_scatters = 0
+gmres_flag = .true.
 
 do i=1, nx
    do j=1, ny
@@ -83,13 +83,13 @@ call calculate_light_field( &
 
 !write(*,*) 'radiance =', radiance
 
-write(*,*) 'rad min: ', minval(radiance)
-write(*,*) 'rad max: ', maxval(radiance)
-write(*,*) 'rad mean: ', sum(radiance)/size(radiance)
-write(*,*)
-write(*,*) 'irrad min: ', minval(irradiance)
-write(*,*) 'irrad max: ', maxval(irradiance)
-write(*,*) 'irrad mean: ', sum(irradiance)/size(irradiance)
+! write(*,*) 'rad min: ', minval(radiance)
+! write(*,*) 'rad max: ', maxval(radiance)
+! write(*,*) 'rad mean: ', sum(radiance)/size(radiance)
+! write(*,*)
+! write(*,*) 'irrad min: ', minval(irradiance)
+! write(*,*) 'irrad max: ', maxval(irradiance)
+! write(*,*) 'irrad mean: ', sum(irradiance)/size(irradiance)
 
 deallocate(vsf_angles)
 deallocate(vsf_vals)

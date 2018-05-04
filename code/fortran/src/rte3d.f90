@@ -65,7 +65,6 @@ subroutine whole_space_loop(mat, indices)
               ddy => y_cd2
            end if
 
-           !write(*,*) '(i,j,k) =', i, j, k
            call angle_loop(mat, indices, ddx, ddy)
         end do
         !$OMP END PARALLEL DO
@@ -205,7 +204,7 @@ subroutine surface_angle_loop(mat, indices, ddx, ddy)
   ! Upwelling
   do p=grid%angles%nomega/2+1, grid%angles%nomega
      indices%p = p
-     repeat_ent = mat%ind(indices%i, indices%j, indices%k, indices%p)
+     repeat_ent = calculate_repeat_ent(ent, p)
      call mat%angular_integral(indices, ent)
      call ddx(mat, indices, ent)
      call ddy(mat, indices, ent)

@@ -232,37 +232,23 @@ contains
     integer row_num, col_num
     integer ent
 
-    !mat%row(mat%ent) = row_num
-    !mat%col(mat%ent) = col_num
-    if(isnan(val)) then
-       write(*,*) 'ISNAN'
-       !write(*,*) 'row = ', row_num
-       write(*,*) 'col = ', col_num
-       !write(*,*) 'mat_index =', mat%i, mat%j, mat%k, mat%p
-       write(*,*) 'index =', i, j, k, p
-       !write(*,*) 'entry =', mat%ent
-    endif
-
-    row_num = mat%ind(indices%i, indices%j, indices%k,  indices%p)
-    col_num = mat%ind(i, j, k, p)
-
-    mat%row(ent) = row_num
-    mat%col(ent) = col_num
+    mat%row(ent) = mat%ind(indices%i, indices%j, indices%k,  indices%p)
+    mat%col(ent) = mat%ind(i, j, k, p)
     mat%data(ent) = val
 
     ent = ent + 1
   end subroutine mat_assign
 
-  subroutine mat_add(mat, ent, val)
+  subroutine mat_add(mat, repeat_ent, val)
     ! Use this when you know that this entry has already been assigned
     ! and you'd like to add this value to the existing value.
 
     class(rte_mat) mat
     double precision val
-    integer ent
+    integer repeat_ent
 
     ! Entry number where value is already stored
-    mat%data(ent) = mat%data(ent) + val
+    mat%data(repeat_ent) = mat%data(repeat_ent) + val
   end subroutine mat_add
 
   subroutine mat_assign_rhs(mat, indices, data)
@@ -555,7 +541,6 @@ contains
        val = mat%iops%scat * mat%iops%vsf_integral(indices%p, pp)
        call mat%assign(indices,ent, val, indices%i, indices%j, indices%k, pp)
     end do
-
   end subroutine angular_integral
 
   subroutine z_surface_bc(mat, indices, ent, repeat_ent)
