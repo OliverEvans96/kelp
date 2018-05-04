@@ -22,12 +22,6 @@ end interface
 
 contains
 
-subroutine test_sub(x)
-  integer x
-  write(*,*) 'x =', x
-end subroutine test_sub
-
-
 subroutine whole_space_loop(mat, indices)
   type(rte_mat) mat
   type(space_angle_grid) grid
@@ -39,7 +33,7 @@ subroutine whole_space_loop(mat, indices)
 
   grid = mat%grid
 
-  ! !$OMP PARALLEL DO FIRSTPRIVATE(indices)
+  !$OMP PARALLEL DO FIRSTPRIVATE(indices)
   do k=1, grid%z%num
      indices%k = k
      if(k .eq. 1) then
@@ -49,42 +43,36 @@ subroutine whole_space_loop(mat, indices)
      else
         angle_loop => interior_angle_loop
      end if
-     ! !$OMP PARALLEL DO FIRSTPRIVATE(indices)
+     !$OMP PARALLEL DO FIRSTPRIVATE(indices)
      do i=1, grid%x%num
         indices%i = i
         if(indices%i .eq. 1) then
-           write(*,*) 'x first'
            ddx => x_cd2_first
         else if(indices%i .eq. grid%x%num) then
-           write(*,*) 'x last'
            ddx => x_cd2_last
         else
-           write(*,*) 'x interior'
            ddx => x_cd2
         end if
 
-        ! !$OMP PARALLEL DO FIRSTPRIVATE(indices)
+        !$OMP PARALLEL DO FIRSTPRIVATE(indices)
         do j=1, grid%y%num
            indices%j = j
            if(indices%j .eq. 1) then
-              write(*,*) 'y first'
               ddy => y_cd2_first
            else if(indices%j .eq. grid%y%num) then
-              write(*,*) 'y last'
               ddy => y_cd2_last
            else
-              write(*,*) 'y interior'
               ddy => y_cd2
            end if
-           write(*,*) 'hi there'
 
+           !write(*,*) '(i,j,k) =', i, j, k
            call angle_loop(mat, indices, ddx, ddy)
         end do
-        ! !$OMP END PARALLEL DO
+        !$OMP END PARALLEL DO
      end do
-     ! !$OMP END PARALLEL DO
+     !$OMP END PARALLEL DO
   end do
-  ! !$OMP END PARALLEL DO
+  !$OMP END PARALLEL DO
 end subroutine whole_space_loop
 
 function calculate_start_ent(grid, indices) result(ent)
