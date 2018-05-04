@@ -13,6 +13,7 @@ interface
    end subroutine deriv_interface
    subroutine angle_loop_interface(mat, indices, ddx, ddy)
      use rte_sparse_matrices
+     import deriv_interface
      type(space_angle_grid) grid
      type(rte_mat) mat
      type(index_list) indices
