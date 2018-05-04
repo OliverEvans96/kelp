@@ -15,8 +15,7 @@ type rte_mat
    type(optical_properties) iops
    type(solver_params) params
    integer nx, ny, nz, nomega
-   integer ent, i, j, k, p
-   integer repeat_ent
+   integer i, j, k, p
    integer nonzero, n_total
    integer x_block_size, y_block_size, z_block_size, omega_block_size
 
@@ -37,7 +36,6 @@ type rte_mat
    procedure :: deinit => mat_deinit
    procedure :: calculate_size
    procedure :: set_solver_params => mat_set_solver_params
-   procedure :: set_row => mat_set_row
    procedure :: assign => mat_assign
    procedure :: add => mat_add
    procedure :: assign_rhs => mat_assign_rhs
@@ -46,7 +44,6 @@ type rte_mat
    procedure :: set_bc => mat_set_bc
    procedure :: solve => mat_solve
    procedure :: ind => mat_ind
-   procedure :: calculate_repeat_ent => mat_calculate_repeat_ent
    !procedure :: to_hdf => mat_to_hdf
    procedure attenuate
    procedure angular_integral
@@ -89,6 +86,9 @@ contains
     type(space_angle_grid) grid
     type(optical_properties) iops
     integer nnz, n_total
+    integer i
+
+    !$ integer omp_get_max_threads
 
     mat%grid = grid
     mat%iops = iops
@@ -106,9 +106,6 @@ contains
 
     call zeros(mat%rhs, n_total)
     call zeros(mat%sol, n_total)
-
-    ! Start at first entry in row, col, data vectors
-    mat%ent = 1
 
   end subroutine mat_init
 
@@ -214,17 +211,6 @@ contains
     mat%params%tol_rel = tol_rel
   end subroutine mat_set_solver_params
 
-  subroutine mat_calculate_repeat_ent(mat)
-    ! Should be called when incrementing row
-    class(rte_mat) mat
-
-    ! Index of L_{ijklp}
-    ! whose coefficient will be modified
-    ! several times per row
-    mat%repeat_ent = mat%ent + mat%p - 1
-
-  end subroutine mat_calculate_repeat_ent
-
   function mat_ind(mat, i, j, k, p) result(ind)
     ! Assuming var ordering: z, x, y, omega
     class(rte_mat) mat
@@ -237,76 +223,53 @@ contains
          (k-1) * mat%z_block_size + p * mat%omega_block_size
   end function mat_ind
 
-  subroutine mat_set_row(mat, indices)
-    ! These indices act as a row counter
-    ! Row should always be incremented in
-    ! angular_integral, which should be called
-    ! before derivatives, bcs, and attenuation
-    class(rte_mat) mat
-    type(index_list) indices
-
-    mat%i = indices%i
-    mat%j = indices%j
-    mat%k = indices%k
-    mat%p = indices%p
-
-    call mat%calculate_repeat_ent()
-
-  end subroutine mat_set_row
-
-  subroutine mat_assign(mat, val, i, j, k, p)
+  subroutine mat_assign(mat, ent, val, i, j, k, p)
     ! It's assumed that this is the only time this entry is defined
     class(rte_mat) mat
     double precision val
     integer i, j, k, p
-    integer row_num, col_num
+    integer col_num
+    integer ent
 
-    row_num = mat%ind(mat%i, mat%j, mat%k,  mat%p)
     col_num = mat%ind(i, j, k, p)
 
-    mat%row(mat%ent) = row_num
-    mat%col(mat%ent) = col_num
+    !mat%row(mat%ent) = row_num
+    !mat%col(mat%ent) = col_num
     if(isnan(val)) then
        write(*,*) 'ISNAN'
-       write(*,*) 'row = ', row_num
+       !write(*,*) 'row = ', row_num
        write(*,*) 'col = ', col_num
-       write(*,*) 'mat_index =', mat%i, mat%j, mat%k, mat%p
+       !write(*,*) 'mat_index =', mat%i, mat%j, mat%k, mat%p
        write(*,*) 'index =', i, j, k, p
-       write(*,*) 'entry =', mat%ent
+       !write(*,*) 'entry =', mat%ent
     endif
 
     ! if(i.eq.mat%i .and. j.eq.mat%j .and. k.eq.mat%j .and. l.eq.mat%l .and. p.eq.mat%p) then
     !    write(*,*) 'diag: ', val
     ! endif
 
-    mat%data(mat%ent) = val
+    mat%data(ent) = val
 
-    ! Remember where we stored information for this matrix element
-    !call mat%store_index(row_num, col_num)
-
-    mat%ent = mat%ent + 1
+    ent = ent + 1
   end subroutine mat_assign
 
-  subroutine mat_add(mat, val)
+  subroutine mat_add(mat, ent, val)
     ! Use this when you know that this entry has already been assigned
     ! and you'd like to add this value to the existing value.
 
     class(rte_mat) mat
     double precision val
-    integer index
+    integer ent
 
     ! Entry number where value is already stored
-    index = mat%repeat_ent
-
-    mat%data(index) = mat%data(index) + val
+    mat%data(ent) = mat%data(ent) + val
   end subroutine mat_add
 
-  subroutine mat_assign_rhs(mat, data)
+  subroutine mat_assign_rhs(mat, row_num, data)
     class(rte_mat) mat
     double precision data
     integer row_num
 
-    row_num = mat%ind(mat%i, mat%j, mat%k, mat%p)
     mat%rhs(row_num) = data
   end subroutine mat_assign_rhs
 
@@ -334,7 +297,7 @@ contains
   !   ! end do
   ! end function mat_find_index
 
-  subroutine attenuate(mat, indices)
+  subroutine attenuate(mat, indices, repeat_ent)
     ! Has to be called after angular_integral
     ! Because they both write to the same matrix entry
     ! And adding here is more efficient than a conditional
@@ -344,21 +307,25 @@ contains
     double precision attenuation
     type(index_list) indices
     double precision aa, bb
+    integer repeat_ent
+
     iops = mat%iops
 
     aa = iops%abs_grid(indices%i, indices%j, indices%k)
     bb = iops%scat
 
     attenuation = aa + bb*(1-iops%vsf_integral(indices%p, indices%p))
-    call mat%add(attenuation)
+    call mat%add(repeat_ent, attenuation)
   end subroutine attenuate
 
-  subroutine x_cd2(mat, indices)
+  subroutine x_cd2(mat, indices, ent)
     class(rte_mat) mat
     type(space_angle_grid) grid
     double precision val, dx
     type(index_list) indices
     integer i, j, k, p
+    integer ent
+
     i = indices%i
     j = indices%j
     k = indices%k
@@ -369,17 +336,18 @@ contains
 
     val = grid%angles%sin_phi_p(p) * grid%angles%cos_theta_p(p) / (2.d0 * dx)
 
-    call mat%assign(-val,i-1,j,k,p)
-    call mat%assign(val,i+1,j,k,p)
+    call mat%assign(ent,-val,i-1,j,k,p)
+    call mat%assign(ent,val,i+1,j,k,p)
   end subroutine x_cd2
 
-  subroutine x_cd2_first(mat, indices)
+  subroutine x_cd2_first(mat, indices, ent)
     class(rte_mat) mat
     type(space_angle_grid) grid
     double precision val, dx
     integer nx
     type(index_list) indices
     integer i, j, k, p
+    integer ent
 
     i = indices%i
     j = indices%j
@@ -392,16 +360,18 @@ contains
 
     val = grid%angles%sin_phi_p(p) * grid%angles%cos_theta_p(p) / (2.d0 * dx)
 
-    call mat%assign(-val,nx,j,k,p)
-    call mat%assign(val,i+1,j,k,p)
+    call mat%assign(ent,-val,nx,j,k,p)
+    call mat%assign(ent,val,i+1,j,k,p)
   end subroutine x_cd2_first
 
-  subroutine x_cd2_last(mat, indices)
+  subroutine x_cd2_last(mat, indices, ent)
     class(rte_mat) mat
     type(space_angle_grid) grid
     double precision val, dx
     type(index_list) indices
     integer i, j, k, p
+    integer ent
+
     i = indices%i
     j = indices%j
     k = indices%k
@@ -412,16 +382,18 @@ contains
 
     val = grid%angles%sin_phi_p(p) * grid%angles%cos_theta_p(p) / (2.d0 * dx)
 
-    call mat%assign(-val,i-1,j,k,p)
-    call mat%assign(val,1,j,k,p)
+    call mat%assign(ent,-val,i-1,j,k,p)
+    call mat%assign(ent,val,1,j,k,p)
   end subroutine x_cd2_last
 
-  subroutine y_cd2(mat, indices)
+  subroutine y_cd2(mat, indices, ent)
     class(rte_mat) mat
     type(space_angle_grid) grid
     double precision val, dy
     type(index_list) indices
     integer i, j, k, p
+    integer ent
+
     i = indices%i
     j = indices%j
     k = indices%k
@@ -432,17 +404,19 @@ contains
 
     val = grid%angles%sin_phi_p(p) * grid%angles%sin_theta_p(p) / (2.d0 * dy)
 
-    call mat%assign(-val,i,j-1,k,p)
-    call mat%assign(val,i,j+1,k,p)
+    call mat%assign(ent,-val,i,j-1,k,p)
+    call mat%assign(ent,val,i,j+1,k,p)
   end subroutine y_cd2
 
-  subroutine y_cd2_first(mat, indices)
+  subroutine y_cd2_first(mat, indices, ent)
     class(rte_mat) mat
     type(space_angle_grid) grid
     double precision val, dy
     integer ny
     type(index_list) indices
     integer i, j, k, p
+    integer ent
+
     i = indices%i
     j = indices%j
     k = indices%k
@@ -454,16 +428,18 @@ contains
 
     val = grid%angles%sin_phi_p(p) * grid%angles%sin_theta_p(p) / (2.d0 * dy)
 
-    call mat%assign(-val,i,ny,k,p)
-    call mat%assign(val,i,j+1,k,p)
+    call mat%assign(ent,-val,i,ny,k,p)
+    call mat%assign(ent,val,i,j+1,k,p)
   end subroutine y_cd2_first
 
-  subroutine y_cd2_last(mat, indices)
+  subroutine y_cd2_last(mat, indices, ent)
     class(rte_mat) mat
     type(space_angle_grid) grid
     double precision val, dy
     type(index_list) indices
     integer i, j, k, p
+    integer ent
+
     i = indices%i
     j = indices%j
     k = indices%k
@@ -474,16 +450,18 @@ contains
 
     val = grid%angles%sin_phi_p(p) * grid%angles%sin_theta_p(p) / (2.d0 * dy)
 
-    call mat%assign(-val,i,j-1,k,p)
-    call mat%assign(val,i,1,k,p)
+    call mat%assign(ent,-val,i,j-1,k,p)
+    call mat%assign(ent,val,i,1,k,p)
   end subroutine y_cd2_last
 
-  subroutine z_cd2(mat, indices)
+  subroutine z_cd2(mat, indices, ent)
     class(rte_mat) mat
     type(space_angle_grid) grid
     double precision val, dz
     type(index_list) indices
     integer i, j, k, p
+    integer ent
+
     i = indices%i
     j = indices%j
     k = indices%k
@@ -494,11 +472,11 @@ contains
 
     val = grid%angles%cos_phi_p(p) / (2.d0 * dz)
 
-    call mat%assign(-val,i,j,k-1,p)
-    call mat%assign(val,i,j,k+1,p)
+    call mat%assign(ent,-val,i,j,k-1,p)
+    call mat%assign(ent,val,i,j,k+1,p)
   end subroutine z_cd2
 
-  subroutine z_fd2(mat, indices)
+  subroutine z_fd2(mat, indices, ent, repeat_ent)
     ! Has to be called after angular_integral
     ! Because they both write to the same matrix entry
     ! And adding here is more efficient than a conditional
@@ -508,6 +486,8 @@ contains
     double precision val, val1, val2, val3, dz
     type(index_list) indices
     integer i, j, k, p
+    integer ent, repeat_ent
+
     i = indices%i
     j = indices%j
     k = indices%k
@@ -522,12 +502,12 @@ contains
     val2 = 4.d0 * val
     val3 = -val
 
-    call mat%add(val1)
-    call mat%assign(val2,i,j,k+1,p)
-    call mat%assign(val3,i,j,k+2,p)
+    call mat%add(repeat_ent, val1)
+    call mat%assign(ent,val2,i,j,k+1,p)
+    call mat%assign(ent,val3,i,j,k+2,p)
   end subroutine z_fd2
 
-  subroutine z_bd2(mat, indices)
+  subroutine z_bd2(mat, indices, ent, repeat_ent)
     ! Has to be called after angular_integral
     ! Because they both write to the same matrix entry
     ! And adding here is more efficient than a conditional
@@ -537,6 +517,8 @@ contains
     double precision val, val1, val2, val3, dz
     type(index_list) indices
     integer i, j, k, p
+    integer ent, repeat_ent
+
     i = indices%i
     j = indices%j
     k = indices%k
@@ -552,107 +534,111 @@ contains
     val2 = -4.d0 * val
     val3 = val
 
-    call mat%add(val1)
-    call mat%assign(val2,i,j,k-1,p)
-    call mat%assign(val3,i,j,k-2,p)
+    call mat%add(repeat_ent, val1)
+    call mat%assign(ent,val2,i,j,k-1,p)
+    call mat%assign(ent,val3,i,j,k-2,p)
   end subroutine z_bd2
 
-  subroutine angular_integral(mat, indices)
+  subroutine angular_integral(mat, indices, ent)
     class(rte_mat) mat
     ! Primed angular integration variables
     integer pp
     double precision val
     type(index_list) indices
-
-    call mat%set_row(indices)
+    integer ent
 
     ! Interior
     do pp=1, mat%grid%angles%nomega
        ! TODO: Make sure I don't have p and pp backwards
        val = mat%iops%scat * mat%iops%vsf_integral(indices%p, pp)
-       call mat%assign(val, indices%i, indices%j, indices%k, pp)
+       call mat%assign(ent, val, indices%i, indices%j, indices%k, pp)
     end do
 
   end subroutine angular_integral
 
-  subroutine z_surface_bc(mat, indices)
+  subroutine z_surface_bc(mat, indices, ent, repeat_ent)
     class(rte_mat) mat
     type(space_angle_grid) grid
     double precision bc_val
     type(index_list) indices
     double precision val1, val2
+    integer ent, repeat_ent
+    integer rhs_row
 
     grid = mat%grid
 
     val1 = grid%angles%cos_phi_p(indices%p) / (5.d0 * grid%z%spacing(1))
     val2 = 7.d0 * val1
 
-    call mat%assign(val1,indices%i,indices%j,2,indices%p)
-    call mat%add(val2)
+    call mat%assign(ent,val1,indices%i,indices%j,2,indices%p)
+    call mat%add(repeat_ent, val2)
 
     bc_val = 8.d0 * mat%surface_vals(indices%p) / (5.d0 * grid%z%spacing(1))
-    call mat%assign_rhs(bc_val)
+
+    rhs_row = mat%ind(indices%i, indices%j, indices%k, indices%p)
+    call mat%assign_rhs(rhs_row, bc_val)
 
   end subroutine z_surface_bc
 
-  subroutine z_bottom_bc(mat, indices)
+    subroutine z_bottom_bc(mat, indices, ent, repeat_ent)
     class(rte_mat) mat
     type(space_angle_grid) grid
     type(index_list) indices
     double precision val1, val2
+    integer ent, repeat_ent
 
     grid = mat%grid
 
     val1 = -grid%angles%cos_phi_p(indices%p) / (5.d0 * grid%z%spacing(1))
     val2 = 7.d0 * val1
 
-    call mat%assign(val1,indices%i,indices%j,grid%z%num-1,indices%p)
-    call mat%add(val2)
+    call mat%assign(ent,val1,indices%i,indices%j,grid%z%num-1,indices%p)
+    call mat%add(repeat_ent, val2)
 
   end subroutine z_bottom_bc
 
   ! Finite difference wrappers
 
-  subroutine wrap_x_cd2(mat, indices)
-    type(rte_mat) mat
-    type(index_list) indices
-    call mat%x_cd2(indices)
-  end subroutine wrap_x_cd2
+  ! subroutine wrap_x_cd2(mat, indices)
+  !   type(rte_mat) mat
+  !   type(index_list) indices
+  !   call mat%x_cd2(indices)
+  ! end subroutine wrap_x_cd2
 
-  subroutine wrap_x_cd2_last(mat, indices)
-    type(rte_mat) mat
-    type(index_list) indices
-    call mat%x_cd2_last(indices)
-  end subroutine wrap_x_cd2_last
+  ! subroutine wrap_x_cd2_last(mat, indices)
+  !   type(rte_mat) mat
+  !   type(index_list) indices
+  !   call mat%x_cd2_last(indices)
+  ! end subroutine wrap_x_cd2_last
 
-  subroutine wrap_x_cd2_first(mat, indices)
-    type(rte_mat) mat
-    type(index_list) indices
-    call mat%x_cd2_first(indices)
-  end subroutine wrap_x_cd2_first
+  ! subroutine wrap_x_cd2_first(mat, indices)
+  !   type(rte_mat) mat
+  !   type(index_list) indices
+  !   call mat%x_cd2_first(indices)
+  ! end subroutine wrap_x_cd2_first
 
-  subroutine wrap_y_cd2(mat, indices)
-    type(rte_mat) mat
-    type(index_list) indices
-    call mat%y_cd2(indices)
-  end subroutine wrap_y_cd2
+  ! subroutine wrap_y_cd2(mat, indices)
+  !   type(rte_mat) mat
+  !   type(index_list) indices
+  !   call mat%y_cd2(indices)
+  ! end subroutine wrap_y_cd2
 
-  subroutine wrap_y_cd2_last(mat, indices)
-    type(rte_mat) mat
-    type(index_list) indices
-    call mat%y_cd2_last(indices)
-  end subroutine wrap_y_cd2_last
+  ! subroutine wrap_y_cd2_last(mat, indices)
+  !   type(rte_mat) mat
+  !   type(index_list) indices
+  !   call mat%y_cd2_last(indices)
+  ! end subroutine wrap_y_cd2_last
 
-  subroutine wrap_y_cd2_first(mat, indices)
-    type(rte_mat) mat
-    type(index_list) indices
-    call mat%y_cd2_first(indices)
-  end subroutine wrap_y_cd2_first
+  ! subroutine wrap_y_cd2_first(mat, indices)
+  !   type(rte_mat) mat
+  !   type(index_list) indices
+  !   call mat%y_cd2_first(indices)
+  ! end subroutine wrap_y_cd2_first
 
-  subroutine wrap_z_cd2(mat, indices)
-    type(rte_mat) mat
-    type(index_list) indices
-    call mat%z_cd2(indices)
-  end subroutine wrap_z_cd2
+  ! subroutine wrap_z_cd2(mat, indices)
+  !   type(rte_mat) mat
+  !   type(index_list) indices
+  !   call mat%z_cd2(indices)
+  ! end subroutine wrap_z_cd2
 
 end module rte_sparse_matrices
