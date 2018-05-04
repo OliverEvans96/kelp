@@ -126,24 +126,6 @@ subroutine interior_angle_loop(mat, indices, ddx, ddy)
   integer p
   integer ent, repeat_ent
 
-  ! Allow derivative subroutines to be passed as arguments
-  ! interface
-  !    subroutine ddx(mat, indices, ent)
-  !      use sag
-  !      use rte_sparse_matrices
-  !      type(rte_mat) mat
-  !      type(index_list) indices
-  !      integer ent
-  !    end subroutine ddx
-  !    subroutine ddy(mat, indices, ent)
-  !      use sag
-  !      use rte_sparse_matrices
-  !      type(rte_mat) mat
-  !      type(index_list) indices
-  !      integer ent
-  !    end subroutine ddy
-  ! end interface
-
   grid = mat%grid
 
   ! Determine which matrix row to start at
@@ -167,23 +149,6 @@ subroutine surface_angle_loop(mat, indices, ddx, ddy)
   integer p
   procedure(deriv_interface) :: ddx, ddy
   integer ent, repeat_ent
-
-  ! ! Allow derivative subroutines to be passed as arguments
-  ! interface
-  !    subroutine ddx(mat, indices, ent)
-  !      use sag
-  !      use rte_sparse_matrices
-  !      type(rte_mat) mat
-  !      type(index_list) indices
-  !      integer
-  !    end subroutine ddx
-  !    subroutine ddy(mat, indices)
-  !      use sag
-  !      use rte_sparse_matrices
-  !      type(rte_mat) mat
-  !      type(index_list) indices
-  !    end subroutine ddy
-  ! end interface
 
   grid = mat%grid
 
@@ -221,24 +186,6 @@ subroutine bottom_angle_loop(mat, indices, ddx, ddy)
   integer p
   integer ent, repeat_ent
   procedure(deriv_interface) :: ddx, ddy
-
-  ! Allow derivative subroutines to be passed as arguments
-  ! interface
-  !    subroutine ddx(mat, indices, ent)
-  !      use sag
-  !      use rte_sparse_matrices
-  !      type(rte_mat) mat
-  !      type(index_list) indices
-  !      integer ent
-  !    end subroutine ddx
-  !    subroutine ddy(mat, indices, ent)
-  !      use sag
-  !      use rte_sparse_matrices
-  !      type(rte_mat) mat
-  !      type(index_list) indices
-  !      integer ent
-  !    end subroutine ddy
-  ! end interface
 
   grid = mat%grid
 
