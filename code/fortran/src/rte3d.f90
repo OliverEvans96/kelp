@@ -32,9 +32,19 @@ subroutine whole_space_loop(mat, indices)
   procedure(deriv_interface), pointer :: ddx, ddy
   procedure(angle_loop_interface), pointer :: angle_loop
 
+  !$ integer omp_get_num_procs
+  !$ integer num_threads_z, num_threads_x, num_threads_y
+
   grid = mat%grid
 
-  !$OMP PARALLEL DO FIRSTPRIVATE(indices)
+  ! Enable nested parallelism
+  !$ call omp_set_nested(.true.)
+  ! Use nz procs for outer loop,
+  ! or num_procs if num_procs < nz
+  !$ num_threads_z = min(omp_get_num_procs(), grid%z%num)
+  !$ write(*,*) 'ntz =', num_threads_z
+  !$ call omp_set_num_threads(num_threads_z)
+  !$omp parallel do firstprivate(indices) if(num_threads_z .gt. 1)
   do k=1, grid%z%num
      indices%k = k
      if(k .eq. 1) then
@@ -44,7 +54,12 @@ subroutine whole_space_loop(mat, indices)
      else
         angle_loop => interior_angle_loop
      end if
-     !$OMP PARALLEL DO FIRSTPRIVATE(indices)
+     ! Divide the rest of the tasks as appropriate
+     !$ num_threads_x = min( &
+     !$    omp_get_num_procs()/num_threads_z, &
+     !$    grid%x%num)
+     !$ write(*,*) 'ntx =', num_threads_x
+     !$omp parallel do firstprivate(indices) if(num_threads_x .gt. 1)
      do i=1, grid%x%num
         indices%i = i
         if(indices%i .eq. 1) then
@@ -55,7 +70,12 @@ subroutine whole_space_loop(mat, indices)
            ddx => x_cd2
         end if
 
-        !$OMP PARALLEL DO FIRSTPRIVATE(indices)
+        ! Divide the rest of the tasks as appropriate
+        !$ num_threads_y = min( &
+        !$    omp_get_num_procs()/(num_threads_z*num_threads_x), &
+        !$    grid%y%num)
+        !$ write(*,*) 'nty =', num_threads_y
+        !$omp parallel do firstprivate(indices) if(num_threads_y .gt. 1)
         do j=1, grid%y%num
            indices%j = j
            if(indices%j .eq. 1) then
@@ -68,11 +88,11 @@ subroutine whole_space_loop(mat, indices)
 
            call angle_loop(mat, indices, ddx, ddy)
         end do
-        !$OMP END PARALLEL DO
+        !$omp end parallel do
      end do
-     !$OMP END PARALLEL DO
+     !$omp end parallel do
   end do
-  !$OMP END PARALLEL DO
+  !$omp end parallel do
 end subroutine whole_space_loop
 
 function calculate_start_ent(grid, indices) result(ent)
@@ -81,7 +101,7 @@ function calculate_start_ent(grid, indices) result(ent)
   integer ent
   integer boundary_nnz, interior_nnz
   integer num_boundary, num_interior
-  integer num_this_x, num_this_y, num_this_z
+  integer num_this_x, num_this_z
 
   ! Nonzero matrix entries for an surface or bottom spatial grid cell
   ! Definitely an integer since nomega is even
