@@ -25,62 +25,72 @@ contains
 
 subroutine whole_space_loop(mat, indices)
   type(rte_mat) mat
-  type(space_angle_grid) grid
   type(index_list) indices
   integer i, j, k
 
   procedure(deriv_interface), pointer :: ddx, ddy
   procedure(angle_loop_interface), pointer :: angle_loop
 
-  !$ integer omp_get_num_procs
+  !$ integer omp_get_num_procs, omp_get_num_threads
   !$ integer num_threads_z, num_threads_x, num_threads_y
-
-  grid = mat%grid
 
   ! Enable nested parallelism
   !$ call omp_set_nested(.true.)
+
   ! Use nz procs for outer loop,
   ! or num_procs if num_procs < nz
-  !$ num_threads_z = min(omp_get_num_procs(), grid%z%num)
+  ! Divide the rest of the tasks as appropriate
+
+  !$ num_threads_z = min(omp_get_num_procs(), mat%grid%z%num)
+  !$ num_threads_x = min( &
+  !$    omp_get_num_procs()/num_threads_z, &
+  !$    mat%grid%x%num)
+  !$ num_threads_y = min( &
+  !$    omp_get_num_procs()/(num_threads_z*num_threads_x), &
+  !$    mat%grid%y%num)
+
+  !$ write(*,*) 'num_procs =', omp_get_num_procs()
   !$ write(*,*) 'ntz =', num_threads_z
-  !$ call omp_set_num_threads(num_threads_z)
-  !$omp parallel do firstprivate(indices) if(num_threads_z .gt. 1)
-  do k=1, grid%z%num
+  !$ write(*,*) 'ntx =', num_threads_x
+  !$ write(*,*) 'nty =', num_threads_y
+
+  !$omp parallel do default(none) shared(mat) &
+  !$omp private(indices,ddx,ddy,angle_loop) &
+  !$omp shared(num_threads_x,num_threads_y,num_threads_z) &
+  !$omp num_threads(num_threads_z) if(num_threads_z .gt. 1)
+  do k=1, mat%grid%z%num
+     write(*,*) 'k =', k
      indices%k = k
      if(k .eq. 1) then
         angle_loop => surface_angle_loop
-     else if(k .eq. grid%z%num) then
+     else if(k .eq. mat%grid%z%num) then
         angle_loop => bottom_angle_loop
      else
         angle_loop => interior_angle_loop
      end if
-     ! Divide the rest of the tasks as appropriate
-     !$ num_threads_x = min( &
-     !$    omp_get_num_procs()/num_threads_z, &
-     !$    grid%x%num)
-     !$ write(*,*) 'ntx =', num_threads_x
-     !$omp parallel do firstprivate(indices) if(num_threads_x .gt. 1)
-     do i=1, grid%x%num
+
+     !$omp parallel do default(none) shared(mat) &
+     !$omp firstprivate(indices,angle_loop) private(ddx,ddy) &
+     !$omp shared(num_threads_x,num_threads_y,num_threads_z) &
+     !$omp num_threads(num_threads_x) if(num_threads_x .gt. 1)
+     do i=1, mat%grid%x%num
         indices%i = i
         if(indices%i .eq. 1) then
            ddx => x_cd2_first
-        else if(indices%i .eq. grid%x%num) then
+        else if(indices%i .eq. mat%grid%x%num) then
            ddx => x_cd2_last
         else
            ddx => x_cd2
         end if
-
-        ! Divide the rest of the tasks as appropriate
-        !$ num_threads_y = min( &
-        !$    omp_get_num_procs()/(num_threads_z*num_threads_x), &
-        !$    grid%y%num)
-        !$ write(*,*) 'nty =', num_threads_y
-        !$omp parallel do firstprivate(indices) if(num_threads_y .gt. 1)
-        do j=1, grid%y%num
+        !$omp parallel do default(none) shared(mat) &
+        !$omp firstprivate(indices,ddx,ddy,angle_loop) &
+        !$omp shared(num_threads_x,num_threads_y,num_threads_z) &
+        !$omp num_threads(num_threads_y) if(num_threads_y .gt. 1)
+        do j=1, mat%grid%y%num
            indices%j = j
            if(indices%j .eq. 1) then
               ddy => y_cd2_first
-           else if(indices%j .eq. grid%y%num) then
+           else if(indices%j .eq. mat%grid%y%num) then
               ddy => y_cd2_last
            else
               ddy => y_cd2
