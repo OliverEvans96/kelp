@@ -174,28 +174,28 @@ contains
     write(*,*) 'params%maxiter_inner =', params%maxiter_inner
     write(*,*) 'params%tol_rel =', params%tol_rel
     write(*,*) 'params%tol_abs =', params%tol_abs
-    open(unit=1, file='row.txt')
-    open(unit=2, file='col.txt')
-    open(unit=3, file='data.txt')
-    open(unit=4, file='rhs.txt')
-    open(unit=5, file='sol.txt')
-    write(1,*) mat%row
-    write(2,*) mat%col
-    write(3,*) mat%data
-    write(4,*) mat%rhs
+    ! open(unit=1, file='row.txt')
+    ! open(unit=2, file='col.txt')
+    ! open(unit=3, file='data.txt')
+    ! open(unit=4, file='rhs.txt')
+    ! open(unit=5, file='sol.txt')
+    ! write(1,*) mat%row
+    ! write(2,*) mat%col
+    ! write(3,*) mat%data
+    ! write(4,*) mat%rhs
 
-    close(1)
-    close(2)
-    close(3)
-    close(4)
+    ! close(1)
+    ! close(2)
+    ! close(3)
+    ! close(4)
 
     call mat%solver(mat%n_total, mat%nonzero, &
          mat%row, mat%col, mat%data, mat%sol, mat%rhs, &
          params%maxiter_outer, params%maxiter_inner, &
          params%tol_abs, params%tol_rel)
 
-    write(5,*) mat%sol
-    close(5)
+    ! write(5,*) mat%sol
+    ! close(5)
 
   end subroutine mat_solve
 
@@ -214,10 +214,8 @@ contains
   function mat_ind(mat, i, j, k, p) result(ind)
     ! Assuming var ordering: z, x, y, omega
     class(rte_mat) mat
-    type(space_angle_grid) grid
     integer i, j, k, p
     integer ind
-    grid = mat%grid
 
     ind = (i-1) * mat%x_block_size + (j-1) * mat%y_block_size + &
          (k-1) * mat%z_block_size + p * mat%omega_block_size
