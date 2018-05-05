@@ -5,11 +5,11 @@ use light_context
 implicit none
 
 interface
-   subroutine deriv_interface(mat, indices, ent)
+   subroutine deriv_interface(mat, indices, row_num, ent)
      use rte_sparse_matrices
      class(rte_mat) mat
      type(index_list) indices
-     integer ent
+     integer row_num, ent
    end subroutine deriv_interface
    subroutine angle_loop_interface(mat, indices, ddx, ddy)
      use rte_sparse_matrices
@@ -31,7 +31,7 @@ subroutine whole_space_loop(mat, indices)
   procedure(deriv_interface), pointer :: ddx, ddy
   procedure(angle_loop_interface), pointer :: angle_loop
 
-  !$ integer omp_get_num_procs, omp_get_num_threads
+  !$ integer omp_get_num_procs
   !$ integer num_threads_z, num_threads_x, num_threads_y
 
   ! Enable nested parallelism
@@ -55,7 +55,7 @@ subroutine whole_space_loop(mat, indices)
   !$ write(*,*) 'nty =', num_threads_y
 
   !$omp parallel do default(none) shared(mat) &
-  !$omp private(indices,ddx,ddy,angle_loop) &
+  !$omp private(ddx,ddy,angle_loop, k, i, j) private(indices) &
   !$omp shared(num_threads_x,num_threads_y,num_threads_z) &
   !$omp num_threads(num_threads_z) if(num_threads_z .gt. 1)
   do k=1, mat%grid%z%num
@@ -69,8 +69,8 @@ subroutine whole_space_loop(mat, indices)
         angle_loop => interior_angle_loop
      end if
 
-     !$omp parallel do default(none) shared(mat) &
-     !$omp firstprivate(indices,angle_loop) private(ddx,ddy) &
+     !$omp parallel do default(none) shared(mat) private(i,j) &
+     !$omp firstprivate(indices,angle_loop, k) private(ddx,ddy) &
      !$omp shared(num_threads_x,num_threads_y,num_threads_z) &
      !$omp num_threads(num_threads_x) if(num_threads_x .gt. 1)
      do i=1, mat%grid%x%num
@@ -82,8 +82,8 @@ subroutine whole_space_loop(mat, indices)
         else
            ddx => x_cd2
         end if
-        !$omp parallel do default(none) shared(mat) &
-        !$omp firstprivate(indices,ddx,ddy,angle_loop) &
+        !$omp parallel do default(none) shared(mat) private(j) &
+        !$omp firstprivate(indices,ddx,ddy,angle_loop, i, k) &
         !$omp shared(num_threads_x,num_threads_y,num_threads_z) &
         !$omp num_threads(num_threads_y) if(num_threads_y .gt. 1)
         do j=1, mat%grid%y%num
@@ -150,100 +150,101 @@ function calculate_repeat_ent(ent, p) result(repeat_ent)
 end function calculate_repeat_ent
 
 subroutine interior_angle_loop(mat, indices, ddx, ddy)
-  type(space_angle_grid) grid
   type(rte_mat) mat
   type(index_list) indices
   procedure(deriv_interface) :: ddx, ddy
   integer p
   integer ent, repeat_ent
-
-  grid = mat%grid
+  integer row_num
 
   ! Determine which matrix row to start at
-  ent = calculate_start_ent(grid, indices)
+  ent = calculate_start_ent(mat%grid, indices)
+  indices%p = 1
 
-  do p=1, grid%angles%nomega
-      indices%p = p
-      repeat_ent = calculate_repeat_ent(ent, p)
-      call mat%angular_integral(indices, ent)
-      call ddx(mat, indices, ent)
-      call ddy(mat, indices, ent)
-      call mat%z_cd2(indices, ent)
-      call mat%attenuate(indices, repeat_ent)
+  row_num = mat%ind(indices%i, indices%j, indices%k, indices%p)
+  do p=1, mat%grid%angles%nomega
+     indices%p = p
+     repeat_ent = calculate_repeat_ent(ent, p)
+     call mat%angular_integral(indices, row_num, ent)
+     call ddx(mat, indices, row_num, ent)
+     call ddy(mat, indices, row_num, ent)
+     call mat%z_cd2(indices, row_num, ent)
+     call mat%attenuate(indices, repeat_ent)
+     row_num = row_num + 1
   end do
 end subroutine
 
 subroutine surface_angle_loop(mat, indices, ddx, ddy)
-  type(space_angle_grid) grid
   type(rte_mat) mat
   type(index_list) indices
   integer p
   procedure(deriv_interface) :: ddx, ddy
   integer ent, repeat_ent
-
-  grid = mat%grid
+  integer row_num
 
   ! Determine which matrix row to start at
-  ent = calculate_start_ent(grid, indices)
+  ent = calculate_start_ent(mat%grid, indices)
+  indices%p = 1
 
+  row_num = mat%ind(indices%i, indices%j, indices%k, indices%p)
   ! Downwelling
-  do p=1, grid%angles%nomega / 2
+  do p=1, mat%grid%angles%nomega / 2
      indices%p = p
      repeat_ent = calculate_repeat_ent(ent, p)
-     call mat%angular_integral(indices, ent)
-     call ddx(mat, indices, ent)
-     call ddy(mat, indices, ent)
-     call mat%z_surface_bc(indices, ent, repeat_ent)
+     call mat%angular_integral(indices, row_num, ent)
+     call ddx(mat, indices, row_num, ent)
+     call ddy(mat, indices, row_num, ent)
+     call mat%z_surface_bc(indices, row_num, ent, repeat_ent)
      call mat%attenuate(indices, repeat_ent)
+     row_num = row_num + 1
   end do
-
   ! Upwelling
-  do p=grid%angles%nomega/2+1, grid%angles%nomega
+  do p=mat%grid%angles%nomega/2+1, mat%grid%angles%nomega
      indices%p = p
      repeat_ent = calculate_repeat_ent(ent, p)
-     call mat%angular_integral(indices, ent)
-     call ddx(mat, indices, ent)
-     call ddy(mat, indices, ent)
-     call mat%z_fd2(indices, ent, repeat_ent)
+     call mat%angular_integral(indices, row_num, ent)
+     call ddx(mat, indices, row_num, ent)
+     call ddy(mat, indices, row_num, ent)
+     call mat%z_fd2(indices, row_num, ent, repeat_ent)
      call mat%attenuate(indices, repeat_ent)
+     row_num = row_num + 1
   end do
-
 end subroutine surface_angle_loop
 
 subroutine bottom_angle_loop(mat, indices, ddx, ddy)
-  type(space_angle_grid) grid
   type(rte_mat) mat
   type(index_list) indices
   integer p
-  integer ent, repeat_ent
+  integer row_num, ent, repeat_ent
   procedure(deriv_interface) :: ddx, ddy
 
-  grid = mat%grid
-
   ! Determine which matrix row to start at
-  ent = calculate_start_ent(grid, indices)
+  ent = calculate_start_ent(mat%grid, indices)
+  row_num = mat%ind(indices%i, indices%j, indices%k, indices%p)
+  indices%p = 1
 
   ! Downwelling
-  do p=1, grid%angles%nomega/2
+  do p=1, mat%grid%angles%nomega/2
      indices%p = p
      repeat_ent = calculate_repeat_ent(ent, p)
-     call mat%angular_integral(indices, ent)
-     call ddx(mat, indices, ent)
-     call ddy(mat, indices, ent)
-     call mat%z_bd2(indices, ent, repeat_ent)
+     call mat%angular_integral(indices, row_num, ent)
+     call ddx(mat, indices, row_num, ent)
+     call ddy(mat, indices, row_num, ent)
+     call mat%z_bd2(indices, row_num, ent, repeat_ent)
      call mat%attenuate(indices, repeat_ent)
+     row_num = row_num + 1
   end do
   ! Upwelling
-  do p=grid%angles%nomega/2+1, grid%angles%nomega
+  do p=mat%grid%angles%nomega/2+1, mat%grid%angles%nomega
      indices%p = p
      repeat_ent = calculate_repeat_ent(ent, p)
-     call mat%angular_integral(indices, ent)
-     call ddx(mat, indices, ent)
-     call ddy(mat, indices, ent)
-     call mat%z_bottom_bc(indices, ent, repeat_ent)
+     call mat%angular_integral(indices, row_num, ent)
+     call ddx(mat, indices, row_num, ent)
+     call ddy(mat, indices, row_num, ent)
+     call mat%z_bottom_bc(indices, row_num, ent, repeat_ent)
      call mat%attenuate(indices, repeat_ent)
+     row_num = row_num + 1
   end do
-
 end subroutine bottom_angle_loop
 
 subroutine gen_matrix(mat)
