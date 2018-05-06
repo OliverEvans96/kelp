@@ -24,11 +24,11 @@ ymax = 1
 zmin = 0
 zmax = 2
 
-nx = 10
-ny = 10
-nz = 10
-ntheta = 10
-nphi = 10
+nx = 14
+ny = 14
+nz = 14
+ntheta = 14
+nphi = 14
 
 nomega = ntheta*(nphi-2)+2
 

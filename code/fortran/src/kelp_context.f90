@@ -356,14 +356,12 @@ contains
 
   subroutine calc_vsf_on_grid(iops)
     class(optical_properties) iops
-    type(space_angle_grid) grid
     double precision th, ph, thp, php
     integer p, pp
     integer nomega
     double precision norm
 
-    grid = iops%grid
-    nomega = grid%angles%nomega
+    nomega = iops%grid%angles%nomega
 
     ! Calculate cos VSF
     iops%vsf_cos = cos(iops%vsf_angles)
@@ -378,23 +376,24 @@ contains
     ! write(*,*) 'vals: ', iops%vsf_vals
 
     do p=1, nomega
-       th = grid%angles%theta_p(p)
-       ph = grid%angles%phi_p(p)
+       th = iops%grid%angles%theta_p(p)
+       ph = iops%grid%angles%phi_p(p)
        do  pp=1, nomega
-          thp = grid%angles%theta_p(pp)
-          php = grid%angles%phi_p(pp)
+          thp = iops%grid%angles%theta_p(pp)
+          php = iops%grid%angles%phi_p(pp)
           ! TODO: Might be better to calculate average scattering
           ! from angular cell rather than only using center
           iops%vsf(p, pp) = iops%eval_vsf(angle_diff_3d(th,ph,thp,php))
        end do
 
        ! Normalize each row of VSF (midpoint rule)
-       norm = sum(iops%vsf(p,:) * grid%angles%area_p(:))
+       norm = sum(iops%vsf(p,:) * iops%grid%angles%area_p(:))
        iops%vsf(p,:) = iops%vsf(p,:) / norm
 
        ! % / meter light scattered from cell pp into direction p.
        ! TODO: Could integrate VSF instead of just using value at center
-       iops%vsf_integral(p, :) = iops%vsf(p, :) * grid%angles%area_p(:)
+       iops%vsf_integral(p, :) = iops%vsf(p, :) &
+            * iops%grid%angles%area_p(:)
        !write(*,*) 'vsf_integral (beta_pp)', p, ' = ', iops%vsf_integral(p, :)
     end do
 

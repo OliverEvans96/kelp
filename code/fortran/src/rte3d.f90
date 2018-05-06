@@ -160,8 +160,8 @@ subroutine interior_angle_loop(mat, indices, ddx, ddy)
   ! Determine which matrix row to start at
   ent = calculate_start_ent(mat%grid, indices)
   indices%p = 1
-
   row_num = mat%ind(indices%i, indices%j, indices%k, indices%p)
+
   do p=1, mat%grid%angles%nomega
      indices%p = p
      repeat_ent = calculate_repeat_ent(ent, p)
@@ -185,8 +185,8 @@ subroutine surface_angle_loop(mat, indices, ddx, ddy)
   ! Determine which matrix row to start at
   ent = calculate_start_ent(mat%grid, indices)
   indices%p = 1
-
   row_num = mat%ind(indices%i, indices%j, indices%k, indices%p)
+
   ! Downwelling
   do p=1, mat%grid%angles%nomega / 2
      indices%p = p
@@ -220,8 +220,8 @@ subroutine bottom_angle_loop(mat, indices, ddx, ddy)
 
   ! Determine which matrix row to start at
   ent = calculate_start_ent(mat%grid, indices)
-  row_num = mat%ind(indices%i, indices%j, indices%k, indices%p)
   indices%p = 1
+  row_num = mat%ind(indices%i, indices%j, indices%k, indices%p)
 
   ! Downwelling
   do p=1, mat%grid%angles%nomega/2

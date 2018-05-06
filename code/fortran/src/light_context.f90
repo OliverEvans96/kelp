@@ -106,6 +106,7 @@ contains
     class(light_state) light
     integer i, j, k
     integer nx, ny, nz
+    double precision, dimension(light%grid%angles%nomega) :: tmp_rad
 
     nx = light%grid%x%num
     ny = light%grid%y%num
@@ -114,8 +115,11 @@ contains
     do i=1, nx
        do j=1, ny
           do k=1, nz
-             light%irradiance(i,j,k) = light%grid%angles%integrate_points( &
-                  light%radiance(i,j,k,:))
+             ! Use temporary array to avoid creating one
+             ! implicitly at every spatial grid point
+             tmp_rad = light%radiance(i,j,k,:)
+             light%irradiance(i,j,k) = &
+                  light%grid%angles%integrate_points(tmp_rad)
           end do
        end do
     end do
