@@ -53,37 +53,53 @@ module asymptotics
     double precision, dimension(:,:,:,:) :: radiance, source 
     double precision, dimension(:) :: path_length, path_spacing, a_tilde, gn
     integer i, j, k, p
-    double precision surface_val
 
-    ! Downwelling light
-    do p=1, grid%angles%nomega/2
-       surface_val = bc%bc_grid(p)
+    !$ integer omp_get_num_procs
+    !$ integer num_threads_z, num_threads_x
+
+    ! Enable nested parallelism
+    !$ call omp_set_nested(.true.)
+
+    ! Use nz procs for outer loop,
+    ! or num_procs if num_procs < nz
+    ! Divide the rest of the tasks as appropriate
+
+    !$ num_threads_z = min(omp_get_num_procs(), grid%z%num)
+    !$ num_threads_x = min( &
+    !$    omp_get_num_procs()/num_threads_z, &
+    !$    grid%x%num)
+
+    !$omp parallel do default(none) private(i,j,k,p) &
+    !$omp shared(grid,iops,radiance,bc,num_threads_x) &
+    !$omp private(source,path_length,path_spacing,a_tilde,gn) &
+    !$omp num_threads(num_threads_z) if(num_threads_z .gt. 1)
+    do k=1, grid%z%num
+       !$omp parallel do default(none) private(i,j,p) &
+       !$omp firstprivate(k) shared(grid,iops,radiance,bc) &
+       !$omp private(source,path_length,path_spacing,a_tilde,gn) &
+       !$omp num_threads(num_threads_x) if(num_threads_x .gt. 1)
        do i=1, grid%x%num
           do j=1, grid%y%num
-            do k=1, grid%z%num
-               call attenuate_light_from_surface(&
+             do p=1, grid%angles%nomega/2
+                ! Downwelling light
+                call attenuate_light_from_surface(&
                     grid, iops, source, i, j, k, p,&
                     radiance, path_length, path_spacing,&
                     a_tilde, gn, bc)
-            end do
+
+                ! No upwelling light before scattering
+                radiance(i,j,k,p+grid%angles%nomega/2) = 0.d0
+             end do
           end do
        end do
+       !$omp end parallel do
      end do
-
-     ! No upwelling light before scattering
-     do p = grid%angles%nomega/2+1, grid%angles%nomega
-        do i=1, grid%x%num
-          do j=1, grid%y%num
-              do k=1, grid%z%num
-                radiance(i,j,k,p) = 0.d0
-              end do
-          end do
-        end do
-     end do
+     !$omp end parallel do
   end subroutine calculate_light_before_scattering
 
-  subroutine attenuate_light_from_surface(grid, iops, source, i, j, k, p,&
-       radiance, path_length, path_spacing, a_tilde, gn, bc)
+  subroutine attenuate_light_from_surface(&
+       grid, iops, source, i, j, k, p, radiance, &
+       path_length, path_spacing, a_tilde, gn, bc)
     type(space_angle_grid) grid
     type(boundary_condition) bc
     type(optical_properties) iops
@@ -149,10 +165,6 @@ module asymptotics
 
     call calculate_source(grid, iops, rad_scatter, source, scatter_integral)
     call advect_light(grid, iops, source, rad_scatter, path_length, path_spacing, a_tilde, gn)
-
-    write(*,*) 'A'
-    write(*,*) 'rad_scatter: ', sum(rad_scatter)/size(rad_scatter), minval(rad_scatter), maxval(rad_scatter)
-    write(*,*) 'B'
 
     deallocate(scatter_integral)
   end subroutine scatter
