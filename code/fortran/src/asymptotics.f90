@@ -54,30 +54,30 @@ module asymptotics
     double precision, dimension(:) :: path_length, path_spacing, a_tilde, gn
     integer i, j, k, p
 
-    !$ integer omp_get_num_procs
-    !$ integer num_threads_z, num_threads_x
+    ! !$ integer omp_get_num_procs
+    ! !$ integer num_threads_z, num_threads_x
 
-    ! Enable nested parallelism
-    !$ call omp_set_nested(.true.)
+    ! ! Enable nested parallelism
+    ! !$ call omp_set_nested(.true.)
 
-    ! Use nz procs for outer loop,
-    ! or num_procs if num_procs < nz
-    ! Divide the rest of the tasks as appropriate
+    ! ! Use nz procs for outer loop,
+    ! ! or num_procs if num_procs < nz
+    ! ! Divide the rest of the tasks as appropriate
 
-    !$ num_threads_z = min(omp_get_num_procs(), grid%z%num)
-    !$ num_threads_x = min( &
-    !$    omp_get_num_procs()/num_threads_z, &
-    !$    grid%x%num)
+    ! !$ num_threads_z = min(omp_get_num_procs(), grid%z%num)
+    ! !$ num_threads_x = min( &
+    ! !$    omp_get_num_procs()/num_threads_z, &
+    ! !$    grid%x%num)
 
-    !$omp parallel do default(none) private(i,j,k,p) &
-    !$omp shared(grid,iops,radiance,bc,num_threads_x) &
-    !$omp private(source,path_length,path_spacing,a_tilde,gn) &
-    !$omp num_threads(num_threads_z) if(num_threads_z .gt. 1)
+    ! !$omp parallel do default(none) private(i,j,k,p) &
+    ! !$omp shared(grid,iops,radiance,bc,num_threads_x) &
+    ! !$omp private(source,path_length,path_spacing,a_tilde,gn) &
+    ! !$omp num_threads(num_threads_z) if(num_threads_z .gt. 1)
     do k=1, grid%z%num
-       !$omp parallel do default(none) private(i,j,p) &
-       !$omp firstprivate(k) shared(grid,iops,radiance,bc) &
-       !$omp private(source,path_length,path_spacing,a_tilde,gn) &
-       !$omp num_threads(num_threads_x) if(num_threads_x .gt. 1)
+       ! !$omp parallel do default(none) private(i,j,p) &
+       ! !$omp firstprivate(k) shared(grid,iops,radiance,bc) &
+       ! !$omp private(source,path_length,path_spacing,a_tilde,gn) &
+       ! !$omp num_threads(num_threads_x) if(num_threads_x .gt. 1)
        do i=1, grid%x%num
           do j=1, grid%y%num
              do p=1, grid%angles%nomega/2
@@ -92,9 +92,9 @@ module asymptotics
              end do
           end do
        end do
-       !$omp end parallel do
+       ! !$omp end parallel do
      end do
-     !$omp end parallel do
+     ! !$omp end parallel do
   end subroutine calculate_light_before_scattering
 
   subroutine attenuate_light_from_surface(&
