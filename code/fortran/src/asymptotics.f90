@@ -150,6 +150,10 @@ module asymptotics
     call calculate_source(grid, iops, rad_scatter, source, scatter_integral)
     call advect_light(grid, iops, source, rad_scatter, path_length, path_spacing, a_tilde, gn)
 
+    write(*,*) 'A'
+    write(*,*) 'rad_scatter: ', sum(rad_scatter)/size(rad_scatter), minval(rad_scatter), maxval(rad_scatter)
+    write(*,*) 'B'
+
     deallocate(scatter_integral)
   end subroutine scatter
 
@@ -157,19 +161,44 @@ module asymptotics
   subroutine calculate_source(grid, iops, rad_scatter, source, scatter_integral)
     type(space_angle_grid) grid
     type(optical_properties) iops
-    double precision, dimension(:,:,:,:) :: rad_scatter, source, scatter_integral
+    double precision, dimension(:,:,:,:) :: rad_scatter
+    double precision, dimension(:,:,:,:) :: source
+    double precision, dimension(:,:,:,:) :: scatter_integral
     type(index_list) indices
     integer nx, ny, nz, nomega
     integer i, j, k, p
+
+    !$ integer omp_get_num_procs
+    !$ integer num_threads_z, num_threads_x
 
     nx = grid%x%num
     ny = grid%y%num
     nz = grid%z%num
     nomega = grid%angles%nomega
 
-    !$OMP PARALLEL DO FIRSTPRIVATE(indices)
+    ! Enable nested parallelism
+    !$ call omp_set_nested(.true.)
+
+    ! Use nz procs for outer loop,
+    ! or num_procs if num_procs < nz
+    ! Divide the rest of the tasks as appropriate
+
+    !$ num_threads_z = min(omp_get_num_procs(), grid%z%num)
+    !$ num_threads_x = min( &
+    !$    omp_get_num_procs()/num_threads_z, &
+    !$    grid%x%num)
+
+    !$omp parallel do default(none) private(indices) &
+    !$omp private(i,j,k,p) shared(nx,ny,nz,nomega) &
+    !$omp shared(iops, rad_scatter, scatter_integral) &
+    !$omp shared(num_threads_x) &
+    !$omp num_threads(num_threads_z) if(num_threads_z .gt. 1)
     do k=1, nz
        indices%k = k
+       !$omp parallel do default(none) firstprivate(indices,k) &
+       !$omp private(i,j,p) shared(nx,ny,nz,nomega) &
+       !$omp shared(iops, rad_scatter, scatter_integral) &
+       !$omp num_threads(num_threads_x) if(num_threads_x .gt. 1)
        do i=1, nx
          indices%i = i
          do j=1, ny
@@ -183,10 +212,13 @@ module asymptotics
              end do
           end do
        end do
+       !$omp end parallel do
     end do
-    !$OMP END PARALLEL DO
+    !$omp end parallel do
 
     source(:,:,:,:) = -rad_scatter(:,:,:,:) + scatter_integral(:,:,:,:)
+
+    write(*,*) 'source: ', sum(source)/size(source), minval(source), maxval(source)
 
   end subroutine calculate_source
 
@@ -209,38 +241,57 @@ module asymptotics
     type(optical_properties) iops
     double precision, dimension(:,:,:,:) :: rad_scatter, source
     double precision, dimension(:) :: path_length, path_spacing, a_tilde, gn
-
     integer i, j, k, p
-    integer nx, ny, nz, nomega
 
-    nx = grid%x%num
-    ny = grid%y%num
-    nz = grid%z%num
-    nomega = grid%angles%nomega
+    !$ integer omp_get_num_procs
+    !$ integer num_threads_z, num_threads_x
 
-    !$OMP PARALLEL DO FIRSTPRIVATE(i, j, p)
-    do k=1, nz
-       do i=1, nx
-         do j=1, ny
-             do p=1, nomega
+    ! Enable nested parallelism
+    !$ call omp_set_nested(.true.)
+
+    ! Use nz procs for outer loop,
+    ! or num_procs if num_procs < nz
+    ! Divide the rest of the tasks as appropriate
+
+    !$ num_threads_z = min(omp_get_num_procs(), grid%z%num)
+    !$ num_threads_x = min( &
+    !$    omp_get_num_procs()/num_threads_z, &
+    !$    grid%x%num)
+
+    !$omp parallel do default(none) &
+    !$omp private(i,j,k,p) &
+    !$omp shared(rad_scatter,source,grid,iops,num_threads_x) &
+    !$omp private(path_length,path_spacing,a_tilde,gn) &
+    !$omp num_threads(num_threads_z) if(num_threads_z .gt. 1)
+    do k=1, grid%z%num
+       !$omp parallel do default(none) &
+       !$omp firstprivate(k) private(i,j,p) &
+       !$omp shared(rad_scatter,source,grid,iops) &
+       !$omp private(path_length,path_spacing,a_tilde,gn) &
+       !$omp num_threads(num_threads_x) if(num_threads_x .gt. 1)
+       do i=1, grid%x%num
+         do j=1, grid%y%num
+             do p=1, grid%angles%nomega
                 call integrate_ray(grid, iops, source,&
                      rad_scatter, path_length, path_spacing,&
                      a_tilde, gn, i, j, k, p)
             end do
           end do
        end do
+       !$omp end parallel do
     end do
-    !$OMP END PARALLEL DO
-
+    !$omp end parallel do
   end subroutine advect_light
 
   ! New algorithm, double integral over piecewise-constant 1d funcs
   subroutine integrate_ray(grid, iops, source, rad_scatter, path_length, path_spacing, a_tilde, gn, i, j, k, p)
-    type(space_angle_grid) grid
-    type(optical_properties) iops
-    double precision, dimension(:,:,:,:) :: source, rad_scatter
+    type(space_angle_grid) :: grid
+    type(optical_properties) :: iops
+    double precision, dimension(:,:,:,:) :: source
+    double precision, dimension(:,:,:,:) :: rad_scatter
+    integer :: i, j, k, p
+    ! The following are only passed to avoid unnecessary allocation
     double precision, dimension(:) :: path_length, path_spacing, a_tilde, gn
-    integer i, j, k, p
     integer num_cells
 
     call traverse_ray(grid, iops, source, i, j, k, p, path_length, path_spacing, a_tilde, gn, num_cells)
@@ -250,10 +301,11 @@ module asymptotics
   function calculate_ray_integral(num_cells, s, ds, a_tilde, gn) result(integral)
     ! Double integral which accumulates all scattered light along the path
     ! via an angular integral and attenuates it by integrating along the path
-    integer num_cells
+    integer :: num_cells
     double precision, dimension(num_cells) :: ds, a_tilde, gn
     double precision, dimension(num_cells+1) :: s
-    double precision integral, bi, di
+    double precision :: integral
+    double precision bi, di
     integer i, j
 
     integral = 0
@@ -263,7 +315,7 @@ module asymptotics
           bi = bi - a_tilde(j)*ds(j)
        end do
 
-       ! Careful: This will overflow if a_tilde is too large.
+       ! WARNING: This will overflow if a_tilde is too large.
        if(a_tilde(i) .eq. 0) then
           di = ds(i)
        else
@@ -278,8 +330,8 @@ module asymptotics
   ! Calculate maximum number of cells a path through the grid could take
   ! This is a loose upper bound
   function calculate_max_cells(grid) result(max_cells)
-    type(space_angle_grid) grid
-    integer max_cells
+    type(space_angle_grid) :: grid
+    integer :: max_cells
     double precision dx, dy, zrange, phi_middle
 
     ! Angle that will have the longest ray
@@ -296,13 +348,14 @@ module asymptotics
   ! function values (f) along the way,
   ! as well as number of cells traversed (n).
   subroutine traverse_ray(grid, iops, source, i, j, k, p, s_array, ds, a_tilde, gn, num_cells)
-    type(space_angle_grid) grid
-    type(optical_properties) iops
-    integer i, j, k, p
+    type(space_angle_grid) :: grid
+    type(optical_properties) :: iops
     double precision, dimension(:,:,:,:) :: source
-    double precision, dimension(:), intent(out) :: s_array, ds, a_tilde, gn
+    integer :: i, j, k, p
+    double precision, dimension(:) :: s_array, ds, a_tilde, gn
+    integer :: num_cells
+
     integer t
-    integer, intent(out) :: num_cells
     double precision p0x, p0y, p0z
     double precision p1x, p1y, p1z
     double precision z0

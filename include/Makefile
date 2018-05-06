@@ -25,15 +25,18 @@ H5FC=h5fc
 # Profiling (timing) flags
 # Compile & run normally,
 # Then call gprof `executable`
-PFLAGS= -g -ffpe-trap=zero,invalid,overflow,underflow -ffpe-summary=all -fcheck=all #-O0 
+PFLAGS= -g #-ffpe-trap=zero,invalid,overflow,underflow -ffpe-summary=all -fcheck=all -O0
 
 # Optimize performance
 #https://stackoverflow.com/questions/42386065/inlining-functions-in-fortran
-OPTFLAGS= #-Ofast -flto
+# WARNING: Using -Ofast will break things due to allocating too large
+# of arrays on the stack
+# http://blog.purevirtual.net/2012/01/valgrind-client-switching-stacks.html
+OPTFLAGS= -fopenmp -flto #-Ofast
 
 # Doesn't work as shared? Executable gives SEGFAULT immediately.
 # But that's okay, because this works.
-FFLAGS=$(PFLAGS) -fPIC $(OPTFLAGS) -Wall -fopenmp
+FFLAGS=$(PFLAGS) -fPIC $(OPTFLAGS) -Wall
 # Flags for F2PY
 F2PYFLAGS=-fPIC # $(PFLAGS) $(OPTFLAGS)
 # Test flags

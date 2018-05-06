@@ -24,11 +24,11 @@ ymax = 1
 zmin = 0
 zmax = 2
 
-nx = 14
-ny = 14
-nz = 14
-ntheta = 14
-nphi = 14
+nx = 10
+ny = 10
+nz = 10
+ntheta = 10
+nphi = 10
 
 nomega = ntheta*(nphi-2)+2
 
@@ -59,7 +59,7 @@ tol_rel = 1.d-3
 maxiter_inner = 100
 maxiter_outer = 100
 
-num_scatters = 0
+num_scatters = 2
 gmres_flag = .true.
 
 do i=1, nx
