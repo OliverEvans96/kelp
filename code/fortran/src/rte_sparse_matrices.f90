@@ -513,7 +513,7 @@ contains
     ! Interior
     do pp=1, mat%grid%angles%nomega
        ! TODO: Make sure I don't have p and pp backwards
-       val = mat%iops%scat * mat%iops%vsf_integral(indices%p, pp)
+       val = -mat%iops%scat * mat%iops%vsf_integral(indices%p, pp)
        call mat%assign(row_num, ent, val, indices%i, indices%j, indices%k, pp)
     end do
   end subroutine angular_integral
