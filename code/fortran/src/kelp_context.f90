@@ -58,7 +58,7 @@ type optical_properties
 end type optical_properties
 
 type boundary_condition
-   double precision max_rad, decay, theta_s, phi_s
+   double precision I0, decay, theta_s, phi_s
    type(space_angle_grid) grid
    double precision, dimension(:), allocatable :: bc_grid
  contains
@@ -74,13 +74,13 @@ contains
     double precision theta, phi, diff
     double precision bc_gaussian
     diff = angle_diff_3d(theta, phi, bc%theta_s, bc%phi_s)
-    bc_gaussian = bc%max_rad * exp(-bc%decay * diff)
+    bc_gaussian = exp(-bc%decay * diff)
   end function bc_gaussian
 
-  subroutine bc_init(bc, grid, theta_s, phi_s, decay, max_rad)
+  subroutine bc_init(bc, grid, theta_s, phi_s, decay, I0)
     class(boundary_condition) bc
     type(space_angle_grid) grid
-    double precision theta_s, phi_s, decay, max_rad
+    double precision theta_s, phi_s, decay, I0
     integer p
     double precision theta, phi
 
@@ -89,7 +89,7 @@ contains
     bc%theta_s = theta_s
     bc%phi_s = phi_s
     bc%decay = decay
-    bc%max_rad = max_rad
+    bc%I0 = I0
 
     ! Only set BC for downwelling light
     do p=1, grid%angles%nomega/2
@@ -101,6 +101,10 @@ contains
     do p=grid%angles%nomega/2+1, grid%angles%nomega
        bc%bc_grid(p) = 0.d0
     end do
+
+    ! Normalize
+    bc%bc_grid = bc%I0 * bc%bc_grid &
+         / grid%angles%integrate_points(bc%bc_grid)
 
   end subroutine bc_init
 

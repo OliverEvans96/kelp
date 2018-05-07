@@ -289,8 +289,8 @@ contains
 
     aa = mat%iops%abs_grid(indices%i, indices%j, indices%k)
     bb = mat%iops%scat
+    attenuation = aa + bb
 
-    attenuation = aa + bb*(1-mat%iops%vsf_integral(indices%p, indices%p))
     call mat%add(repeat_ent, attenuation)
   end subroutine attenuate
 
@@ -529,12 +529,10 @@ contains
 
     val1 = mat%grid%angles%cos_phi_p(indices%p) / (5.d0 * dz)
     val2 = 7.d0 * val1
+    bc_val = 8.d0 * val1 * mat%surface_vals(indices%p)
 
     call mat%assign(row_num,ent,val1,indices%i,indices%j,2,indices%p)
     call mat%add(repeat_ent, val2)
-
-    bc_val = 8.d0 * mat%surface_vals(indices%p) / (5.d0 * dz)
-
     call mat%assign_rhs(row_num, bc_val)
 
   end subroutine z_surface_bc
