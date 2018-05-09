@@ -321,14 +321,14 @@ def nokelp_visualize(duration, date, radiance, irradiance):
     fig.anglez = -0.67 * np.pi
     ipv.show()
 
-def kelp_calculate(a_water, b, ns, na, kelp_profile, gmres_flag, num_scatters, const):
+def kelp_calculate(a_water, b, ns, na, nz, kelp_profile, absorptance_kelp, gmres_flag, num_scatters, const):
     from kelp3d_objs import f90
     import numpy as np
     from datetime import datetime
     import time
     
     # Extract constants
-    (rope_spacing, zmin, zmax, nz, I0, phi_s, theta_s, decay, xmin, xmax, ymin, ymax, absorptance_kelp,
+    (rope_spacing, zmin, zmax, I0, phi_s, theta_s, decay, xmin, xmax, ymin, ymax, 
          tol_abs, tol_rel, maxiter_inner, maxiter_outer, gmres_wrapper) = const
     
     dz = (zmax-zmin)/nz
@@ -339,7 +339,12 @@ def kelp_calculate(a_water, b, ns, na, kelp_profile, gmres_flag, num_scatters, c
     vsf_vals = 0*vsf_angles + 1/(4*np.pi)
     ns = int(ns)
     
-    nomega = int(na*(na-2)+2)
+    ntheta = na
+    nphi = int(na/2)
+    if nphi % 2 != 0:
+        nphi += 1
+    
+    nomega = int(ntheta*(nphi-2)+2)
     p_kelp = np.asfortranarray(np.zeros([ns,ns,nz]))
     radiance = np.asfortranarray(np.zeros([ns, ns, nz, nomega]))
     irradiance = np.asfortranarray(np.zeros([ns, ns, nz]))
@@ -396,7 +401,7 @@ def kelp_calculate(a_water, b, ns, na, kelp_profile, gmres_flag, num_scatters, c
         xmin, xmax,
         ymin, ymax,
         zmin, zmax,
-        na, na,
+        ntheta, nphi,
         a_water, a_kelp, b,
         vsf_angles, vsf_vals,
         theta_s, phi_s, I0, decay,
@@ -457,3 +462,28 @@ def kelp_visualize(duration, date, radiance, irradiance, p_kelp):
         ipw.Box(layout=ipw.Layout(width='10px')),
         ipw.HTML("<tt>{}<br><br>{}</tt>".format(rad_text, irrad_text))
     ]))
+    
+    
+def block_mean(large_arr, small_shape):
+    """Calculate an array of block means of `large_arr` which has the shape `small_shape`"""
+
+    if all(n_large % n_small == 0 for n_small, n_large in zip(small_shape, large_arr.shape)):
+        # Try to abstract over number of dimensions
+        avg = np.zeros(small_shape)
+        block_sizes = [n_large // n_small for n_small, n_large in zip(small_shape, large_arr.shape)]
+        #print("block_sizes = {}".format(block_sizes))
+
+        # Loop over all combinations of indices
+        for inds in it.product(*(range(n) for n in small_shape)):
+            #print("inds = {}".format(inds))
+            startinds = [ind * block_size for ind, block_size in zip(inds, block_sizes)]
+            stopinds = [(ind+1) * block_size for ind, block_size in zip(inds, block_sizes)]
+            slices = tuple(slice(startind, stopind) for startind, stopind in zip(startinds, stopinds))
+            #print("startinds = {}".format(startinds))
+            #print("stopinds = {}".format(stopinds))
+            avg[inds] = large_arr[slices].mean()
+
+        return avg
+    
+    else:
+        raise IndexError("`small_shape` must divide `large_arr.shape` elementwise.")
