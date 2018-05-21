@@ -3,18 +3,17 @@ use sag
 use kelp_context
 use mgmres
 !use hdf5_utils
-#include "lisf.h"
 implicit none
 
-type solver_opts
+type solver_params
    integer maxiter_inner, maxiter_outer
    double precision tol_abs, tol_rel
-end type solver_opts
+end type solver_params
 
 type rte_mat
    type(space_angle_grid) grid
    type(optical_properties) iops
-   type(solver_opts) params
+   type(solver_params) params
    integer nx, ny, nz, nomega
    integer i, j, k, p
    integer nonzero, n_total
@@ -25,23 +24,18 @@ type rte_mat
    ! A stored in coordinate form in row, col, data
    integer, dimension(:), allocatable :: row, col
    double precision, dimension(:), allocatable :: data
-
-   ! Lis Matrix and vectors
-   LIS_MATRIX A
-   LIS_VECTOR b, x
-   LIS_SOLVER solver
-   LIS_INTEGER ierr
-   character(len=256) solver_opts
+   ! b and x stored in rhs in full form
+   double precision, dimension(:), allocatable :: rhs, sol
 
    ! Pointer to solver subroutine
    ! Set to mgmres by default
-   !procedure(solver_interface), pointer, nopass :: solver => mgmres_st
+   procedure(solver_interface), pointer, nopass :: solver => mgmres_st
 
  contains
    procedure :: init => mat_init
    procedure :: deinit => mat_deinit
    procedure :: calculate_size
-   procedure :: set_solver_opts => mat_set_solver_opts
+   procedure :: set_solver_params => mat_set_solver_params
    procedure :: assign => mat_assign
    procedure :: add => mat_add
    procedure :: assign_rhs => mat_assign_rhs
@@ -93,61 +87,32 @@ contains
     type(optical_properties) iops
     integer nnz, n_total
 
-    LIS_INTEGER comm_world
-
-    comm_world = LIS_COMM_WORLD
-
     mat%grid = grid
     mat%iops = iops
 
     call mat%calculate_size()
 
-    mat%solver_opts = ''
-    mat%ierr = 0
-
     n_total = mat%n_total
     nnz = mat%nonzero
-
-    call lis_initialize(mat%ierr)
-
-    call lis_solver_create(mat%solver, mat%ierr)
-
-    call lis_matrix_create(comm_world, mat%A, mat%ierr)
-    call lis_vector_create(comm_world, mat%b, mat%ierr)
-    call lis_vector_create(comm_world, mat%x, mat%ierr)
-
-    call lis_matrix_set_size(mat%A, 0, n_total, mat%ierr)
-    call lis_vector_set_size(mat%b, 0, n_total, mat%ierr)
-    call lis_vector_set_size(mat%x, 0, n_total, mat%ierr)
-
-    if(mat%ierr .ne. 0) then
-       write(*,*) 'INIT ERR: ', mat%ierr
-       call exit(1)
-    end if
-
+    allocate(mat%surface_vals(grid%angles%nomega))
     allocate(mat%row(nnz))
     allocate(mat%col(nnz))
     allocate(mat%data(nnz))
-    allocate(mat%surface_vals(grid%angles%nomega))
+    allocate(mat%rhs(n_total))
+    allocate(mat%sol(n_total))
+
+    call zeros(mat%rhs, n_total)
+    call zeros(mat%sol, n_total)
+
   end subroutine mat_init
 
   subroutine mat_deinit(mat)
     class(rte_mat) mat
-
-    call lis_matrix_destroy(mat%A, mat%ierr)
-    call lis_vector_destroy(mat%b, mat%ierr)
-    call lis_vector_destroy(mat%x, mat%ierr)
-    call lis_solver_destroy(mat%solver, mat%ierr)
-    call lis_finalize(mat%ierr)
-
-    if(mat%ierr .ne. 0) then
-       write(*,*) 'DEINIT ERR: ', mat%ierr
-       call exit(1)
-    end if
-
     deallocate(mat%row)
     deallocate(mat%col)
     deallocate(mat%data)
+    deallocate(mat%rhs)
+    deallocate(mat%sol)
     deallocate(mat%surface_vals)
   end subroutine mat_deinit
 
@@ -191,73 +156,57 @@ contains
 
   subroutine mat_solve(mat)
     class(rte_mat) mat
-    character(len=24) init_opt
-    ! type(solver_opts) params
+    type(solver_params) params
 
-    !params = mat%params
+    params = mat%params
 
     write(*,*) 'mat%n_total =', mat%n_total
     write(*,*) 'mat%nonzero =', mat%nonzero
-    ! write(*,*) 'size(mat%row) =', size(mat%row)
-    ! write(*,*) 'size(mat%col) =', size(mat%col)
-    ! write(*,*) 'size(mat%data) =', size(mat%data)
-    ! write(*,*) 'size(mat%sol) =', size(mat%sol)
-    ! write(*,*) 'size(mat%rhs) =', size(mat%rhs)
-    ! write(*,*) 'params%maxiter_outer =', params%maxiter_outer
-    ! write(*,*) 'params%maxiter_inner =', params%maxiter_inner
-    ! write(*,*) 'params%tol_rel =', params%tol_rel
-    ! write(*,*) 'params%tol_abs =', params%tol_abs
-    open(unit=1, file='row.txt')
-    open(unit=2, file='col.txt')
-    open(unit=3, file='data.txt')
-    !open(unit=4, file='rhs.txt')
-    open(unit=5, file='sol.txt')
-    write(1,*) mat%row
-    write(2,*) mat%col
-    write(3,*) mat%data
-    !write(4,*) mat%rhs
+    write(*,*) 'size(mat%row) =', size(mat%row)
+    write(*,*) 'size(mat%col) =', size(mat%col)
+    write(*,*) 'size(mat%data) =', size(mat%data)
+    write(*,*) 'size(mat%sol) =', size(mat%sol)
+    write(*,*) 'size(mat%rhs) =', size(mat%rhs)
+    write(*,*) 'params%maxiter_outer =', params%maxiter_outer
+    write(*,*) 'params%maxiter_inner =', params%maxiter_inner
+    write(*,*) 'params%tol_rel =', params%tol_rel
+    write(*,*) 'params%tol_abs =', params%tol_abs
+    ! open(unit=1, file='row.txt')
+    ! open(unit=2, file='col.txt')
+    ! open(unit=3, file='data.txt')
+    ! open(unit=4, file='rhs.txt')
+    ! open(unit=5, file='sol.txt')
+    ! write(1,*) mat%row
+    ! write(2,*) mat%col
+    ! write(3,*) mat%data
+    ! write(4,*) mat%rhs
 
-    close(1)
-    close(2)
-    close(3)
-    !close(4)
+    ! close(1)
+    ! close(2)
+    ! close(3)
+    ! close(4)
 
-    ! call mat%solver(mat%n_total, mat%nonzero, &
-    !      mat%row, mat%col, mat%data, mat%sol, mat%rhs, &
-    !      params%maxiter_outer, params%maxiter_inner, &
-    !      params%tol_abs, params%tol_rel)
-
-    call lis_matrix_set_coo(mat%nonzero, mat%row, mat%col, mat%data, &
-         mat%A, mat%ierr)
-    call lis_matrix_assemble(mat%A, mat%ierr)
-
-    write(*,*) 'row =', mat%row(1:10)
-    write(*,*) 'col =', mat%col(1:10)
-    write(*,*) 'data =', mat%data(1:10)
-    write(*,*) 'b'
-    call lis_vector_print(mat%b, mat%ierr)
-    write(*,*) 'x'
-    call lis_vector_print(mat%x, mat%ierr)
-
-    write(*,*) ''
-
-    if(len(trim(mat%solver_opts)) .gt. 0) then
-       call lis_solver_set_option(mat%solver_opts, mat%solver, mat%ierr)
-    end if
-    init_opt = "-initx_zeros false"
-    call lis_solver_set_option(init_opt, mat%solver, mat%ierr)
-    call lis_solve(mat%A, mat%b, mat%x, mat%solver, mat%ierr)
+    call mat%solver(mat%n_total, mat%nonzero, &
+         mat%row, mat%col, mat%data, mat%sol, mat%rhs, &
+         params%maxiter_outer, params%maxiter_inner, &
+         params%tol_abs, params%tol_rel)
 
     ! write(5,*) mat%sol
     ! close(5)
 
   end subroutine mat_solve
 
-  subroutine mat_set_solver_opts(mat, solver_opts)
+  subroutine mat_set_solver_params(mat, maxiter_outer, &
+       maxiter_inner, tol_abs, tol_rel)
     class(rte_mat) mat
-    character(len=*) solver_opts
-    mat%solver_opts = solver_opts
-  end subroutine mat_set_solver_opts
+    integer maxiter_outer, maxiter_inner
+    double precision tol_abs, tol_rel
+
+    mat%params%maxiter_outer = maxiter_outer
+    mat%params%maxiter_inner = maxiter_inner
+    mat%params%tol_abs = tol_abs
+    mat%params%tol_rel = tol_rel
+  end subroutine mat_set_solver_params
 
   function mat_ind(mat, i, j, k, p) result(ind)
     ! Assuming var ordering: z, x, y, omega
@@ -280,11 +229,6 @@ contains
     mat%col(ent) = mat%ind(i, j, k, p)
     mat%data(ent) = val
 
-    if(ent .eq. 1) then
-       write(*,*) 'rcd =', mat%row(ent), mat%col(ent), mat%data(ent)
-       write(*,*) ':)a'
-    end if
-
     ent = ent + 1
   end subroutine mat_assign
 
@@ -298,12 +242,6 @@ contains
 
     ! Entry number where value is already stored
     mat%data(repeat_ent) = mat%data(repeat_ent) + val
-
-    if(repeat_ent .eq. 1) then
-       write(*,*) 'rcvd =', mat%row(1), mat%col(1), val, mat%data(1)
-       write(*,*) ':)b'
-    end if
-
   end subroutine mat_add
 
   subroutine mat_assign_rhs(mat, row_num, data)
@@ -311,12 +249,7 @@ contains
     double precision data
     integer row_num
 
-    call lis_vector_set_value(LIS_INS_VALUE, row_num, data, mat%b, mat%ierr)
-    if(mat%ierr .ne. 0) then
-       write(*,*) 'RHS ERR: ', mat%ierr
-       call exit(1)
-    end if
-
+    mat%rhs(row_num) = data
   end subroutine mat_assign_rhs
 
   ! subroutine mat_store_index(mat, row_num, col_num)

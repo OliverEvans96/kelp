@@ -1,4 +1,5 @@
 module light_context
+#include "lisf.h"
   use sag
   use rte_sparse_matrices
   !use hdf5
@@ -66,6 +67,11 @@ contains
     nz = light%grid%z%num
     nomega = light%grid%angles%nomega
 
+    ! call lis_vector_get_size(light%mat%x, ln, gn)
+
+    ! write(*,*) 'ln =', ln
+    ! write(*,*) 'gn =', gn
+
     index = 1
 
     ! Set initial guess from provided radiance
@@ -75,7 +81,12 @@ contains
        do i=1, nx
            do j=1, ny
              do p=1, nomega
-                light%mat%sol(index) = light%radiance(i,j,k,p)
+                call lis_vector_set_value(LIS_INS_VALUE, index, &
+                     light%radiance(i,j,k,p), light%mat%x, light%mat%ierr)
+                if(light%mat%ierr .ne. 0) then
+                   write(*,*) 'IG ERROR:', light%mat%ierr
+                end if
+
                 index = index + 1
              end do
           end do
@@ -84,7 +95,7 @@ contains
 
     !call light%mat%initial_guess()
 
-    ! Solve (MGMRES)
+    ! Solve (LIS)
     call light%mat%solve()
 
     index = 1
@@ -94,7 +105,11 @@ contains
        do i=1, nx
           do j=1, ny
              do p=1, nomega
-                light%radiance(i,j,k,p) = light%mat%sol(index)
+                call lis_vector_get_value(light%mat%x, index, &
+                     light%radiance(i,j,k,p), light%mat%ierr)
+                if(light%mat%ierr .ne. 0) then
+                   write(*,*) 'EXTRACT ERROR:', light%mat%ierr
+                end if
                 index = index + 1
              end do
           end do

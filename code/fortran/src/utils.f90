@@ -653,6 +653,58 @@ subroutine print_array(arr,nn,mm,fmtstr_in)
 
 end subroutine
 
+! Write 1D array to file
+subroutine write_vec(arr,nn,filename,fmtstr_in)
+    implicit none
+
+    ! INPUTS:
+    ! arr - array to print
+    double precision, dimension (nn), intent(in) :: arr
+    ! nn - number of data rows in file
+    ! nn - number of data columns in file
+    integer, intent(in) :: nn
+    ! filename - file to write to
+    character(len=*) filename
+    ! fmtstr - output format (no parentheses, don't specify columns)
+    ! e.g. 'E10.2', not '(2E10.2)'
+    character(len=*), optional :: fmtstr_in
+    character(len=256) fmtstr
+
+    ! NO OUTPUTS
+
+    ! BODY
+
+    ! Row counter
+    integer ii
+    ! Final format to use
+    character(len=256) finfmt
+    ! Dummy file unit to use
+    integer, parameter :: un = 20
+
+    ! Open file for writing
+    open(unit=un, file=trim(filename), status='replace', form='formatted')
+
+    ! Determine string format
+    if(present(fmtstr_in)) then
+        fmtstr = fmtstr_in
+    else
+        fmtstr = 'E10.2'
+    end if
+
+    ! Generate final format string
+    write(finfmt,'(A,A,A)') '(', trim(fmtstr), ')'
+
+    ! Loop through rows
+    do ii = 1, nn
+        ! Print entry per row
+        write(un,finfmt) arr(ii)
+    end do
+
+    ! Close file
+    close(unit=un)
+
+end subroutine
+
 ! Write 2D array to file
 subroutine write_array(arr,nn,mm,filename,fmtstr_in)
     implicit none

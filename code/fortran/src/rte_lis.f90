@@ -25,6 +25,8 @@ type rte_mat
    ! A stored in coordinate form in row, col, data
    integer, dimension(:), allocatable :: row, col
    double precision, dimension(:), allocatable :: data
+   ! b and x stored in rhs in full form
+   double precision, dimension(:), allocatable :: rhs, sol
 
    ! Lis Matrix and vectors
    LIS_MATRIX A
@@ -108,6 +110,16 @@ contains
     n_total = mat%n_total
     nnz = mat%nonzero
 
+    allocate(mat%surface_vals(grid%angles%nomega))
+    allocate(mat%row(nnz))
+    allocate(mat%col(nnz))
+    allocate(mat%data(nnz))
+    allocate(mat%rhs(n_total))
+    allocate(mat%sol(n_total))
+
+    call zeros(mat%rhs, n_total)
+    call zeros(mat%sol, n_total)
+
     call lis_initialize(mat%ierr)
 
     call lis_solver_create(mat%solver, mat%ierr)
@@ -125,14 +137,16 @@ contains
        call exit(1)
     end if
 
-    allocate(mat%row(nnz))
-    allocate(mat%col(nnz))
-    allocate(mat%data(nnz))
     allocate(mat%surface_vals(grid%angles%nomega))
   end subroutine mat_init
 
   subroutine mat_deinit(mat)
     class(rte_mat) mat
+    deallocate(mat%row)
+    deallocate(mat%col)
+    deallocate(mat%data)
+    deallocate(mat%rhs)
+    deallocate(mat%sol)
 
     call lis_matrix_destroy(mat%A, mat%ierr)
     call lis_vector_destroy(mat%b, mat%ierr)
@@ -145,9 +159,6 @@ contains
        call exit(1)
     end if
 
-    deallocate(mat%row)
-    deallocate(mat%col)
-    deallocate(mat%data)
     deallocate(mat%surface_vals)
   end subroutine mat_deinit
 
@@ -191,10 +202,12 @@ contains
 
   subroutine mat_solve(mat)
     class(rte_mat) mat
-    character(len=24) init_opt
-    ! type(solver_opts) params
+    type(solver_opts) params
 
-    !params = mat%params
+    LIS_INTEGER matrix_type
+
+    matrix_type = LIS_MATRIX_CSR
+    params = mat%params
 
     write(*,*) 'mat%n_total =', mat%n_total
     write(*,*) 'mat%nonzero =', mat%nonzero
@@ -207,45 +220,31 @@ contains
     ! write(*,*) 'params%maxiter_inner =', params%maxiter_inner
     ! write(*,*) 'params%tol_rel =', params%tol_rel
     ! write(*,*) 'params%tol_abs =', params%tol_abs
-    open(unit=1, file='row.txt')
-    open(unit=2, file='col.txt')
-    open(unit=3, file='data.txt')
-    !open(unit=4, file='rhs.txt')
-    open(unit=5, file='sol.txt')
-    write(1,*) mat%row
-    write(2,*) mat%col
-    write(3,*) mat%data
-    !write(4,*) mat%rhs
+    ! open(unit=1, file='row.txt')
+    ! open(unit=2, file='col.txt')
+    ! open(unit=3, file='data.txt')
+    ! open(unit=4, file='rhs.txt')
+    ! open(unit=5, file='sol.txt')
+    ! write(1,*) mat%row
+    ! write(2,*) mat%col
+    ! write(3,*) mat%data
+    ! write(4,*) mat%rhs
 
-    close(1)
-    close(2)
-    close(3)
-    !close(4)
+    ! close(1)
+    ! close(2)
+    ! close(3)
+    ! close(4)
 
     ! call mat%solver(mat%n_total, mat%nonzero, &
     !      mat%row, mat%col, mat%data, mat%sol, mat%rhs, &
     !      params%maxiter_outer, params%maxiter_inner, &
     !      params%tol_abs, params%tol_rel)
 
-    call lis_matrix_set_coo(mat%nonzero, mat%row, mat%col, mat%data, &
-         mat%A, mat%ierr)
+    call lis_matrix_set_type(mat%A, matrix_type, mat%ierr)
     call lis_matrix_assemble(mat%A, mat%ierr)
-
-    write(*,*) 'row =', mat%row(1:10)
-    write(*,*) 'col =', mat%col(1:10)
-    write(*,*) 'data =', mat%data(1:10)
-    write(*,*) 'b'
-    call lis_vector_print(mat%b, mat%ierr)
-    write(*,*) 'x'
-    call lis_vector_print(mat%x, mat%ierr)
-
-    write(*,*) ''
-
     if(len(trim(mat%solver_opts)) .gt. 0) then
-       call lis_solver_set_option(mat%solver_opts, mat%solver, mat%ierr)
+       call lis_solver_set_option(trim(mat%solver_opts), mat%solver, mat%ierr)
     end if
-    init_opt = "-initx_zeros false"
-    call lis_solver_set_option(init_opt, mat%solver, mat%ierr)
     call lis_solve(mat%A, mat%b, mat%x, mat%solver, mat%ierr)
 
     ! write(5,*) mat%sol
@@ -280,12 +279,8 @@ contains
     mat%col(ent) = mat%ind(i, j, k, p)
     mat%data(ent) = val
 
-    if(ent .eq. 1) then
-       write(*,*) 'rcd =', mat%row(ent), mat%col(ent), mat%data(ent)
-       write(*,*) ':)a'
-    end if
-
     ent = ent + 1
+
   end subroutine mat_assign
 
   subroutine mat_add(mat, repeat_ent, val)
@@ -299,11 +294,6 @@ contains
     ! Entry number where value is already stored
     mat%data(repeat_ent) = mat%data(repeat_ent) + val
 
-    if(repeat_ent .eq. 1) then
-       write(*,*) 'rcvd =', mat%row(1), mat%col(1), val, mat%data(1)
-       write(*,*) ':)b'
-    end if
-
   end subroutine mat_add
 
   subroutine mat_assign_rhs(mat, row_num, data)
@@ -311,6 +301,7 @@ contains
     double precision data
     integer row_num
 
+    ! LIS vectors are 0-indexed
     call lis_vector_set_value(LIS_INS_VALUE, row_num, data, mat%b, mat%ierr)
     if(mat%ierr .ne. 0) then
        write(*,*) 'RHS ERR: ', mat%ierr
@@ -343,7 +334,7 @@ contains
   !   ! end do
   ! end function mat_find_index
 
-  subroutine attenuate(mat, indices, repeat_ent)
+  subroutine attenuate(mat, indices, row_num)
     ! Has to be called after angular_integral
     ! Because they both write to the same matrix entry
     ! And adding here is more efficient than a conditional
@@ -352,21 +343,21 @@ contains
     double precision attenuation
     type(index_list) indices
     double precision aa, bb
-    integer repeat_ent
+    integer row_num
 
     aa = mat%iops%abs_grid(indices%i, indices%j, indices%k)
     bb = mat%iops%scat
     attenuation = aa + bb
 
-    call mat%add(repeat_ent, attenuation)
+    call mat%add(row_num, attenuation)
   end subroutine attenuate
 
-  subroutine x_cd2(mat, indices, row_num, ent)
+  subroutine x_cd2(mat, indices, row_num)
     class(rte_mat) mat
     double precision val, dx
     type(index_list) indices
     integer i, j, k, p
-    integer row_num, ent
+    integer row_num
 
     i = indices%i
     j = indices%j
@@ -378,17 +369,17 @@ contains
     val = mat%grid%angles%sin_phi_p(p) &
          * mat%grid%angles%cos_theta_p(p) / (2.d0 * dx)
 
-    call mat%assign(row_num,ent,-val,i-1,j,k,p)
-    call mat%assign(row_num,ent,val,i+1,j,k,p)
+    call mat%assign(row_num,-val,i-1,j,k,p)
+    call mat%assign(row_num,val,i+1,j,k,p)
   end subroutine x_cd2
 
-  subroutine x_cd2_first(mat, indices, row_num, ent)
+  subroutine x_cd2_first(mat, indices, row_num)
     class(rte_mat) mat
     double precision val, dx
     integer nx
     type(index_list) indices
     integer i, j, k, p
-    integer row_num, ent
+    integer row_num
 
     i = indices%i
     j = indices%j
@@ -401,16 +392,16 @@ contains
     val = mat%grid%angles%sin_phi_p(p) &
          * mat%grid%angles%cos_theta_p(p) / (2.d0 * dx)
 
-    call mat%assign(row_num,ent,-val,nx,j,k,p)
-    call mat%assign(row_num,ent,val,i+1,j,k,p)
+    call mat%assign(row_num,-val,nx,j,k,p)
+    call mat%assign(row_num,val,i+1,j,k,p)
   end subroutine x_cd2_first
 
-  subroutine x_cd2_last(mat, indices, row_num, ent)
+  subroutine x_cd2_last(mat, indices, row_num)
     class(rte_mat) mat
     double precision val, dx
     type(index_list) indices
     integer i, j, k, p
-    integer row_num, ent
+    integer row_num
 
     i = indices%i
     j = indices%j
@@ -422,16 +413,16 @@ contains
     val = mat%grid%angles%sin_phi_p(p) &
          * mat%grid%angles%cos_theta_p(p) / (2.d0 * dx)
 
-    call mat%assign(row_num,ent,-val,i-1,j,k,p)
-    call mat%assign(row_num,ent,val,1,j,k,p)
+    call mat%assign(row_num,-val,i-1,j,k,p)
+    call mat%assign(row_num,val,1,j,k,p)
   end subroutine x_cd2_last
 
-  subroutine y_cd2(mat, indices, row_num, ent)
+  subroutine y_cd2(mat, indices, row_num)
     class(rte_mat) mat
     double precision val, dy
     type(index_list) indices
     integer i, j, k, p
-    integer row_num, ent
+    integer row_num
 
     i = indices%i
     j = indices%j
@@ -443,17 +434,17 @@ contains
     val = mat%grid%angles%sin_phi_p(p) &
          * mat%grid%angles%sin_theta_p(p) / (2.d0 * dy)
 
-    call mat%assign(row_num,ent,-val,i,j-1,k,p)
-    call mat%assign(row_num,ent,val,i,j+1,k,p)
+    call mat%assign(row_num,-val,i,j-1,k,p)
+    call mat%assign(row_num,val,i,j+1,k,p)
   end subroutine y_cd2
 
-  subroutine y_cd2_first(mat, indices, row_num, ent)
+  subroutine y_cd2_first(mat, indices, row_num)
     class(rte_mat) mat
     double precision val, dy
     integer ny
     type(index_list) indices
     integer i, j, k, p
-    integer row_num, ent
+    integer row_num
 
     i = indices%i
     j = indices%j
@@ -466,16 +457,16 @@ contains
     val = mat%grid%angles%sin_phi_p(p) &
          * mat%grid%angles%sin_theta_p(p) / (2.d0 * dy)
 
-    call mat%assign(row_num,ent,-val,i,ny,k,p)
-    call mat%assign(row_num,ent,val,i,j+1,k,p)
+    call mat%assign(row_num,-val,i,ny,k,p)
+    call mat%assign(row_num,val,i,j+1,k,p)
   end subroutine y_cd2_first
 
-  subroutine y_cd2_last(mat, indices, row_num, ent)
+  subroutine y_cd2_last(mat, indices, row_num)
     class(rte_mat) mat
     double precision val, dy
     type(index_list) indices
     integer i, j, k, p
-    integer row_num, ent
+    integer row_num
 
     i = indices%i
     j = indices%j
@@ -487,16 +478,16 @@ contains
     val = mat%grid%angles%sin_phi_p(p) &
          * mat%grid%angles%sin_theta_p(p) / (2.d0 * dy)
 
-    call mat%assign(row_num,ent,-val,i,j-1,k,p)
-    call mat%assign(row_num,ent,val,i,1,k,p)
+    call mat%assign(row_num,-val,i,j-1,k,p)
+    call mat%assign(row_num,val,i,1,k,p)
   end subroutine y_cd2_last
 
-  subroutine z_cd2(mat, indices, row_num, ent)
+  subroutine z_cd2(mat, indices, row_num)
     class(rte_mat) mat
     double precision val, dz
     type(index_list) indices
     integer i, j, k, p
-    integer row_num, ent
+    integer row_num
 
     i = indices%i
     j = indices%j
@@ -507,11 +498,11 @@ contains
 
     val = mat%grid%angles%cos_phi_p(p) / (2.d0 * dz)
 
-    call mat%assign(row_num,ent,-val,i,j,k-1,p)
-    call mat%assign(row_num,ent,val,i,j,k+1,p)
+    call mat%assign(row_num,-val,i,j,k-1,p)
+    call mat%assign(row_num,val,i,j,k+1,p)
   end subroutine z_cd2
 
-  subroutine z_fd2(mat, indices, row_num, ent, repeat_ent)
+  subroutine z_fd2(mat, indices, row_num)
     ! Has to be called after angular_integral
     ! Because they both write to the same matrix entry
     ! And adding here is more efficient than a conditional
@@ -520,7 +511,7 @@ contains
     double precision val, val1, val2, val3, dz
     type(index_list) indices
     integer i, j, k, p
-    integer row_num, ent, repeat_ent
+    integer row_num
 
     i = indices%i
     j = indices%j
@@ -535,12 +526,12 @@ contains
     val2 = 4.d0 * val
     val3 = -val
 
-    call mat%add(repeat_ent, val1)
-    call mat%assign(row_num,ent,val2,i,j,k+1,p)
-    call mat%assign(row_num,ent,val3,i,j,k+2,p)
+    call mat%add(row_num, val1)
+    call mat%assign(row_num,val2,i,j,k+1,p)
+    call mat%assign(row_num,val3,i,j,k+2,p)
   end subroutine z_fd2
 
-  subroutine z_bd2(mat, indices, row_num, ent, repeat_ent)
+  subroutine z_bd2(mat, indices, row_num)
     ! Has to be called after angular_integral
     ! Because they both write to the same matrix entry
     ! And adding here is more efficient than a conditional
@@ -549,7 +540,7 @@ contains
     double precision val, val1, val2, val3, dz
     type(index_list) indices
     integer i, j, k, p
-    integer row_num, ent, repeat_ent
+    integer row_num
 
     i = indices%i
     j = indices%j
@@ -564,33 +555,33 @@ contains
     val2 = -4.d0 * val
     val3 = val
 
-    call mat%add(repeat_ent, val1)
-    call mat%assign(row_num,ent,val2,i,j,k-1,p)
-    call mat%assign(row_num,ent,val3,i,j,k-2,p)
+    call mat%add(row_num, val1)
+    call mat%assign(row_num,val2,i,j,k-1,p)
+    call mat%assign(row_num,val3,i,j,k-2,p)
   end subroutine z_bd2
 
-  subroutine angular_integral(mat, indices, row_num, ent)
+  subroutine angular_integral(mat, indices, row_num)
     class(rte_mat) mat
     ! Primed angular integration variables
     integer pp
     double precision val
     type(index_list) indices
-    integer row_num, ent
+    integer row_num
 
     ! Interior
     do pp=1, mat%grid%angles%nomega
        ! TODO: Make sure I don't have p and pp backwards
        val = -mat%iops%scat * mat%iops%vsf_integral(indices%p, pp)
-       call mat%assign(row_num, ent, val, indices%i, indices%j, indices%k, pp)
+       call mat%assign(row_num, val, indices%i, indices%j, indices%k, pp)
     end do
   end subroutine angular_integral
 
-  subroutine z_surface_bc(mat, indices, row_num, ent, repeat_ent)
+  subroutine z_surface_bc(mat, indices, row_num)
     class(rte_mat) mat
     double precision bc_val
     type(index_list) indices
     double precision val1, val2, dz
-    integer row_num, ent, repeat_ent
+    integer row_num
 
     dz = mat%grid%z%spacing(1)
 
@@ -598,18 +589,18 @@ contains
     val2 = 7.d0 * val1
     bc_val = 8.d0 * val1 * mat%surface_vals(indices%p)
 
-    call mat%assign(row_num,ent,val1,indices%i,indices%j,2,indices%p)
-    call mat%add(repeat_ent, val2)
+    call mat%assign(row_num,val1,indices%i,indices%j,2,indices%p)
+    call mat%add(row_num, val2)
     call mat%assign_rhs(row_num, bc_val)
 
   end subroutine z_surface_bc
 
-    subroutine z_bottom_bc(mat, indices, row_num, ent, repeat_ent)
+    subroutine z_bottom_bc(mat, indices, row_num)
     class(rte_mat) mat
     type(index_list) indices
     double precision val1, val2, dz
     integer nz
-    integer row_num, ent, repeat_ent
+    integer row_num
 
     dz = mat%grid%z%spacing(1)
     nz = mat%grid%z%num
@@ -617,8 +608,8 @@ contains
     val1 = -mat%grid%angles%cos_phi_p(indices%p) / (5.d0 * dz)
     val2 = 7.d0 * val1
 
-    call mat%assign(row_num,ent,val1,indices%i,indices%j,nz-1,indices%p)
-    call mat%add(repeat_ent, val2)
+    call mat%assign(row_num,val1,indices%i,indices%j,nz-1,indices%p)
+    call mat%add(row_num, val2)
 
   end subroutine z_bottom_bc
 
