@@ -61,8 +61,8 @@ program test_light_interface
     do k=1, nz
        abs_water(k) = 0.0
        do i=1, num_si
-          si_area(k, i) = 1000.d0
-          si_ind(k, i) = 1000
+          si_area(k, i) = 100.d0
+          si_ind(k, i) = 10
        end do
 
        current_speeds(k) = 0.d0

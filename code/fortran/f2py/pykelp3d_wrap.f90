@@ -130,12 +130,14 @@ contains
       call gen_matrix(mat)
 
       ! Set sparse solver and params
-      if(present(solver_callback)) then
-         mat%solver => solver_callback
-      end if
-      call mat%set_solver_params( &
-           maxiter_outer, maxiter_inner, &
-           tol_abs, tol_rel)
+      !if(present(solver_callback)) then
+      !   mat%solver => solver_callback
+      !end if
+      ! call mat%set_solver_params( &
+      !      maxiter_outer, maxiter_inner, &
+      !      tol_abs, tol_rel)
+
+      !call mat%set_solver_opts("-i gmres")
 
       ! Initialize & set initial guess
       write(*,*) 'Light'
