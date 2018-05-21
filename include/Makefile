@@ -25,7 +25,7 @@ H5FC=h5fc
 # Profiling (timing) flags
 # Compile & run normally,
 # Then call gprof `executable`
-PFLAGS= -g #-ffpe-trap=zero,invalid,overflow,underflow -ffpe-summary=all -fcheck=all -O0
+PFLAGS= -g -ffpe-trap=zero,invalid,overflow,underflow -ffpe-summary=all -fcheck=all -O0
 
 # Optimize performance
 #https://stackoverflow.com/questions/42386065/inlining-functions-in-fortran
