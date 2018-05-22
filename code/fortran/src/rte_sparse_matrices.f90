@@ -120,6 +120,9 @@ contains
     call lis_vector_set_size(mat%b, 0, n_total, mat%ierr)
     call lis_vector_set_size(mat%x, 0, n_total, mat%ierr)
 
+    call lis_vector_set_all(0.0d0, mat%x, mat%ierr)
+    call lis_vector_set_all(0.0d0, mat%b, mat%ierr)
+
     if(mat%ierr .ne. 0) then
        write(*,*) 'INIT ERR: ', mat%ierr
        call exit(1)
@@ -192,6 +195,8 @@ contains
   subroutine mat_solve(mat)
     class(rte_mat) mat
     character(len=24) init_opt
+    LIS_VECTOR res
+
     ! type(solver_opts) params
 
     !params = mat%params
@@ -230,6 +235,11 @@ contains
     call lis_matrix_set_coo(mat%nonzero, mat%row, mat%col, mat%data, &
          mat%A, mat%ierr)
     call lis_matrix_assemble(mat%A, mat%ierr)
+
+    write(*,*) 'MM'
+    call lis_matvec(mat%A, mat%x, res, mat%ierr)
+    write(*,*) 'Q'
+    call lis_vector_print(res, mat%ierr)
 
     write(*,*) 'row =', mat%row(1:10)
     write(*,*) 'col =', mat%col(1:10)
