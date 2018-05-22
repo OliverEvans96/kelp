@@ -112,14 +112,17 @@ contains
     call lis_vector_create(comm_world, mat%b, mat%ierr)
     call lis_vector_create(comm_world, mat%x, mat%ierr)
 
-    call lis_matrix_set_size(mat%A, 0, n_total, mat%ierr)
-    call lis_vector_set_size(mat%b, 0, n_total, mat%ierr)
-    call lis_vector_set_size(mat%x, 0, n_total, mat%ierr)
+    call lis_matrix_set_size(mat%A, n_total, n_total, mat%ierr)
+    call lis_vector_set_size(mat%b, n_total, n_total, mat%ierr)
+    call lis_vector_set_size(mat%x, n_total, n_total, mat%ierr)
 
     if(mat%ierr .ne. 0) then
        write(*,*) 'INIT ERR: ', mat%ierr
        call exit(1)
     end if
+
+    call lis_vector_set_all(0.d0, mat%b, mat%ierr)
+    call lis_vector_set_all(0.d0, mat%x, mat%ierr)
 
     allocate(mat%surface_vals(grid%angles%nomega))
   end subroutine mat_init
@@ -182,10 +185,8 @@ contains
   subroutine mat_solve(mat)
     class(rte_mat) mat
     type(solver_opts) params
+    character(len=64) :: opt1, opt2
 
-    LIS_INTEGER matrix_type
-
-    matrix_type = LIS_MATRIX_CSR
     params = mat%params
 
     write(*,*) 'mat%n_total =', mat%n_total
@@ -219,11 +220,15 @@ contains
     !      params%maxiter_outer, params%maxiter_inner, &
     !      params%tol_abs, params%tol_rel)
 
-    call lis_matrix_set_type(mat%A, matrix_type, mat%ierr)
+    call lis_matrix_set_type(mat%A, LIS_MATRIX_CSR, mat%ierr)
     call lis_matrix_assemble(mat%A, mat%ierr)
-    if(len(trim(mat%solver_opts)) .gt. 0) then
-       call lis_solver_set_option(trim(mat%solver_opts), mat%solver, mat%ierr)
-    end if
+    ! if(len(trim(mat%solver_opts)) .gt. 0) then
+    !    call lis_solver_set_option(trim(mat%solver_opts), mat%solver, mat%ierr)
+    ! end if
+    opt1 = "-maxiter 100000 -tol 1e-2 -print out"
+    opt2 = "-i gmres -restart 10 -initx_zeros false"
+    call lis_solver_set_option(opt1, mat%solver, mat%ierr)
+    call lis_solver_set_option(opt2, mat%solver, mat%ierr)
     call lis_solve(mat%A, mat%b, mat%x, mat%solver, mat%ierr)
 
     ! write(5,*) mat%sol
@@ -258,8 +263,11 @@ contains
     ! write(*,*) 'row_num =', row_num
     ! write(*,*) 'col_num =', col_num
     ! write(*,*) 'val =', val
+
+    !$omp critical
     call lis_matrix_set_value(LIS_INS_VALUE, &
          row_num, col_num, val, mat%A, mat%ierr)
+    !$omp end critical
 
     if(mat%ierr .ne. 0) then
        write(*,*) 'ASSIGN ERR: ', mat%ierr
@@ -277,8 +285,10 @@ contains
     integer row_num
 
     ! Repeats all occur along main diagonal
+    !$omp critical
     call lis_matrix_set_value(LIS_ADD_VALUE, &
          row_num, row_num, val, mat%A, mat%ierr)
+    !$omp end critical
 
     if(mat%ierr .ne. 0) then
        write(*,*) 'ADD ERR: ', mat%ierr
