@@ -321,15 +321,45 @@ contains
     double precision, dimension(:,:,:) :: p_kelp
     real, dimension(:) :: perceived_irrad
     double precision, dimension(:,:,:) :: irradiance
+    double precision total_kelp
+    integer center_i1, center_i2, center_j1, center_j2
 
     integer k
 
     ! Calculate the average irradiance experienced over the frond.
     ! Has same units as irradiance.
+    ! If no kelp, then just take the irradiance at the center
+    ! of the grid.
     do k=1, grid%z%num
-       perceived_irrad(k) = real( &
-            sum(p_kelp(:,:,k)*irradiance(:,:,k)) &
-            / sum(p_kelp(:,:,k)))
+       total_kelp = sum(p_kelp(:,:,k))
+       if(total_kelp .eq. 0) then
+          center_i1 = int(ceiling(grid%x%num / 2.d0))
+          center_j1 = int(ceiling(grid%y%num / 2.d0))
+          ! For even grid, use average of center two cells
+          ! For odd grid, just use center cell
+          if(mod(grid%x%num, 2) .eq. 0) then
+             center_i2 = center_i2
+          else
+             center_i2 = center_i1 + 1
+          end if
+          if(mod(grid%y%num, 2) .eq. 0) then
+             center_j2 = center_j2
+          else
+             center_j2 = center_j1 + 1
+          end if
+
+
+          ! Irradiance at the center of the grid (at the rope)
+          perceived_irrad(k) = real(sum(irradiance( &
+               center_i1:center_i2, &
+               center_j1:center_j2, k)) &
+               / ((center_i2-center_i1+1) * (center_j2-center_j1+1)))
+       else
+          ! Average irradiance weighted by kelp distribution
+          perceived_irrad(k) = real( &
+              sum(p_kelp(:,:,k)*irradiance(:,:,k)) &
+              / total_kelp)
+       end if
     end do
 
   end subroutine calculate_perceived_irrad
