@@ -26,7 +26,7 @@ LISFLAGS=-cpp -llis -lm -Wl,-rpath=$(LIB)
 lisobj=$(LIB)/liblis.a
 
 $(lisobj):
-	git submodule update --init # Get submodule if not present
+	git submodule update --init --progress # Get submodule if not present
 	cd $(LIS) && ./configure --prefix=$(PWD)/.. --enable-omp --enable-fortran --enable-saamg
 	cd $(LIS) && make -j5
 	cd $(LIS) && make install
