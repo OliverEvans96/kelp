@@ -20,3 +20,4 @@ callgrind*
 *.png
 *.so
 *.pyc
+share

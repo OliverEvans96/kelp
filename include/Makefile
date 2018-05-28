@@ -2,26 +2,35 @@
 
 # Project directories
 BASE=..
+INC=.
 BIN=$(BASE)/bin
 FTN=$(BASE)/code/fortran
 SRC=$(FTN)/src
+LIB=$(BASE)/lib
 EXT=$(FTN)/external
 HDF5=$(FTN)/hdf5
 TEST=$(FTN)/test
 TEST_MOD=$(TEST)/mod
 F2PY=$(FTN)/f2py
 JTEST=$(TEST)/for_julia
-INC=.
 PYDIR=$(BASE)/code/python
 JULIA=$(BASE)/code/julia
 # F2PY .o directory
 F2PY_INC=$(PYDIR)/fortran_wrappers
 
-# LIS location (iterative solver)
-LISPREFIX=$(HOME)/local
-LISLIB=$(LISPREFIX)/lib
-LISINC=$(LISPREFIX)/include
-LISFLAGS=-cpp -I$(LISINC) -L$(LISLIB) -llis -lm
+
+## LIS (iterative solver)
+# LIS location
+LIS=$(BASE)/lis
+LISFLAGS=-cpp -llis -lm -Wl,-rpath=$(LIB)
+lisobj=$(LIB)/liblis.a
+
+$(lisobj):
+	cd $(LIS) && ./configure --prefix=$(PWD)/.. --enable-omp --enable-fortran --enable-saamg
+	cd $(LIS) && make -j5
+	cd $(LIS) && make install
+
+$()
 
 # Fortran Compiler
 FC=gfortran
@@ -44,7 +53,7 @@ OPTFLAGS= -flto -fopenmp #-Ofast
 
 # Doesn't work as shared? Executable gives SEGFAULT immediately.
 # But that's okay, because this works.
-FFLAGS=$(PFLAGS) -fPIC $(OPTFLAGS) -Wall $(LISFLAGS)
+FFLAGS=$(PFLAGS) -fPIC $(OPTFLAGS) -Wall $(LISFLAGS) -I$(INC) -L$(LIB)
 # Flags for F2PY
 F2PYFLAGS=-fPIC # $(PFLAGS) $(OPTFLAGS)
 # Test flags
@@ -76,7 +85,7 @@ f2py_targets = $(f2py_src:$(F2PY)/%.f90=%)
 # GROUPS #
 ##########
 
-.PHONY: all clean $(test_bin) $(f2py_targets)
+.PHONY: all clean cleanlis cleanall $(test_bin) $(f2py_targets)
 
 # Default target makes all objects
 all: $(f90_inc)
@@ -127,7 +136,7 @@ rte_core.o: utils.o
 sag.o: utils.o fastgl.o
 kelp_context.o: sag.o prob.o
 kelp3d.o: kelp_context.o
-rte_sparse_matrices.o: sag.o kelp_context.o mgmres.o
+rte_sparse_matrices.o: sag.o kelp_context.o mgmres.o $(lisobj)
 light_context.o: sag.o rte_sparse_matrices.o
 rte3d.o: kelp_context.o rte_sparse_matrices.o light_context.o
 asymptotics.o: kelp_context.o rte_sparse_matrices.o light_context.o
@@ -202,3 +211,9 @@ test_vsf: rte_core.o utils.o
 
 clean:
 	rm -f *.mod *.so *.o $(F2PY_INC)/*.so $(BIN)/*
+
+cleanlis:
+	rm -f $(LIB)/*.a $(LIB)/*.la $(LIB)/*.so
+	rm -f $(INC)/*.h
+
+cleanall: clean cleanlis
