@@ -1,4 +1,3 @@
 [submodule "lis"]
 	path = lis
-	url = git@github.com:anishida/lis.git
-	ignore = dirty
+	url = https://github.com/anishida/lis.git
