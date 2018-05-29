@@ -120,7 +120,7 @@ $(jtest_inc): %.so: $(JTEST)/%.f90
 	$(FC) $(TESTFLAGS) $< -o $@
 # For actually importing in python
 $(f2py_targets): %: $(F2PY)/%.f90
-	LDFLAGS='-Wl,-rpath,$(LIB)' f2py -c $(F2PY)/$@.pyf $^ -llis -lm -L$(LIB)/../lib -I$(INC) --verbose
+	LDFLAGS='-Wl,-rpath,$(LIB)' f2py -c $(F2PY)/$@.pyf $^ -llis -lm -L$(LIB)/../lib -I$(INC)
 	rm -f $(F2PY_INC)/$@.*.so
 	ln -s $(PWD)/$@.*.so $(F2PY_INC)
 # To test outside of python directly in fortran
