@@ -6,7 +6,7 @@ INC=.
 BIN=$(BASE)/bin
 FTN=$(BASE)/code/fortran
 SRC=$(FTN)/src
-LIB=$(BASE)/lib
+LIB=$(PWD)/../lib
 EXT=$(FTN)/external
 HDF5=$(FTN)/hdf5
 TEST=$(FTN)/test
@@ -27,14 +27,14 @@ lisobj=$(LIB)/liblis.a
 
 $(lisobj):
 	git submodule update --init --progress # Get submodule if not present
-	cd $(LIS) && ./configure --prefix=$(PWD)/.. --enable-omp --enable-fortran --enable-saamg
+	cd $(LIS) && ./configure --prefix=$(PWD)/.. --enable-shared --enable-omp --enable-fortran --enable-saamg --with-pic
 	cd $(LIS) && make -j5
 	cd $(LIS) && make install
 
-$()
+lis: $(lisobj)
 
 # Fortran Compiler
-FC=gfortran
+FC=ftn
 # HDF5 Fortan Compiler
 H5FC=h5fc
 # MPI Fortran Compiler
@@ -54,7 +54,7 @@ OPTFLAGS= -flto -fopenmp #-Ofast
 
 # Doesn't work as shared? Executable gives SEGFAULT immediately.
 # But that's okay, because this works.
-FFLAGS=$(PFLAGS) -fPIC $(OPTFLAGS) -Wall $(LISFLAGS) -I$(INC) -L$(LIB)
+FFLAGS=-fPIC -qopenmp $(LISFLAGS) -I$(INC) -L$(LIB) # $(PFLAGS) $(OPTFLAGS) -Wall 
 # Flags for F2PY
 F2PYFLAGS=-fPIC # $(PFLAGS) $(OPTFLAGS)
 # Test flags
@@ -86,7 +86,7 @@ f2py_targets = $(f2py_src:$(F2PY)/%.f90=%)
 # GROUPS #
 ##########
 
-.PHONY: all clean cleanlis cleanall $(test_bin) $(f2py_targets)
+.PHONY: all lis clean cleanlis cleanall $(test_bin) $(f2py_targets)
 
 # Default target makes all objects
 all: $(f90_inc)
@@ -120,7 +120,7 @@ $(jtest_inc): %.so: $(JTEST)/%.f90
 	$(FC) $(TESTFLAGS) $< -o $@
 # For actually importing in python
 $(f2py_targets): %: $(F2PY)/%.f90
-	f2py -c $(F2PY)/$@.pyf $^
+	LDFLAGS='-Wl,-rpath,$(LIB)' f2py -c $(F2PY)/$@.pyf $^ -llis -lm -L$(LIB)/../lib -I$(INC) --verbose
 	rm -f $(F2PY_INC)/$@.*.so
 	ln -s $(PWD)/$@.*.so $(F2PY_INC)
 # To test outside of python directly in fortran
@@ -214,6 +214,7 @@ clean:
 	rm -f *.mod *.so *.o $(F2PY_INC)/*.so $(BIN)/*
 
 cleanlis:
+	cd $(LIS) && make clean
 	rm -f $(LIB)/*.a $(LIB)/*.la $(LIB)/*.so
 	rm -f $(INC)/*.h
 
