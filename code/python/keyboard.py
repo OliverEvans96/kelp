@@ -18,4 +18,4 @@ def keyboard(banner=None):
     try:
         code.interact(banner=banner, local=namespace)
     except SystemExit:
-        return 
+        return

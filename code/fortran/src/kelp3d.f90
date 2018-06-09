@@ -13,7 +13,7 @@ implicit none
 contains
 
 subroutine generate_grid(xmin, xmax, nx, ymin, ymax, ny, zmin, zmax, nz, ntheta, nphi, grid, p_kelp)
-  double precision xmin, xmax, ymin, ymax, zmin, zmax 
+  double precision xmin, xmax, ymin, ymax, zmin, zmax
   integer nx, ny, nz, ntheta, nphi
   type(space_angle_grid) grid
   double precision, dimension(:,:,:), allocatable :: p_kelp
@@ -52,7 +52,7 @@ subroutine calculate_kelp_on_grid(grid, p_kelp, frond, rope, quadrature_degree)
 
   do k=1, nz
     z = grid%z%vals(k)
-    call depth%set_depth(rope, grid, k) 
+    call depth%set_depth(rope, grid, k)
     do i=1, nx
       x = grid%x%vals(i)
       do j=1, ny
@@ -173,16 +173,16 @@ end function min_shading_length
 ! ! r_f(\theta)
 !   double precision, intent(in) :: theta, theta_f, L, fs, fr
 !   double precision, intent(out) :: frond_edge
-! 
+!
 !   frond_edge = relative_frond_edge(theta - theta_f + pi/2.d0)
-! 
+!
 ! end function frond_edge
-! 
+!
 ! function relative_frond_edge(theta_prime, L, fs, fr)
 ! ! r_f'(\theta')
 !   double precision, intent(in) :: theta_prime, L, fs, fr
 !   double precision, intent(out) :: relative_frond_edge
-! 
+!
 !   relative_frond_edge = L / (sin(theta_prime) + angular_sign(theta_prime * alpha(fs, fr) * cos(theta_prime)))
 ! end function relative_frond_edge
 

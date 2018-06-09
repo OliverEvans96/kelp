@@ -1,7 +1,7 @@
 !    -*- f90 -*-
 ! Note: the context of this file is case sensitive.
 
-python module pykelp3d_wrap ! in 
+python module pykelp3d_wrap ! in
     interface  ! in :pykelp3d_wrap
         module pykelp3d_wrap ! in :pykelp3d_wrap:pykelp3d_wrap.f90
             use rte3d
@@ -57,7 +57,7 @@ python module pykelp3d_wrap ! in
                 character*(*) :: lis_options
             end subroutine calculate_light_field
         end module pykelp3d_wrap
-    end interface 
+    end interface
 end python module pykelp3d_wrap
 
 ! This file was auto-generated with f2py (version:2).

@@ -1003,7 +1003,7 @@ subroutine pmgmres_ilu_cr ( n, nz_num, ia, ja, a, x, rhs, itr_max, mr, &
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -1054,10 +1054,10 @@ subroutine pmgmres_ilu_cr ( n, nz_num, ia, ja, a, x, rhs, itr_max, mr, &
 !
 !    Input, real ( kind = 8 ) RHS(N), the right hand side of the linear system.
 !
-!    Input, integer ( kind = 4 ) ITR_MAX, the maximum number of (outer) 
+!    Input, integer ( kind = 4 ) ITR_MAX, the maximum number of (outer)
 !    iterations to take.
 !
-!    Input, integer ( kind = 4 ) MR, the maximum number of (inner) iterations 
+!    Input, integer ( kind = 4 ) MR, the maximum number of (inner) iterations
 !    to take.  MR must be less than N.
 !
 !    Input, real ( kind = 8 ) TOL_ABS, an absolute tolerance applied to the
@@ -1146,7 +1146,7 @@ subroutine pmgmres_ilu_cr ( n, nz_num, ia, ja, a, x, rhs, itr_max, mr, &
 
       k_copy = k
 
-      call ax_cr ( n, nz_num, ia, ja, a, v(1:n,k), v(1:n,k+1) ) 
+      call ax_cr ( n, nz_num, ia, ja, a, v(1:n,k), v(1:n,k+1) )
 
       call lus_cr ( n, nz_num, ia, ja, l, ua, v(1:n,k+1), v(1:n,k+1) )
 

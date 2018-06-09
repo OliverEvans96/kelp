@@ -47,7 +47,7 @@ class ParamSpanRemoteConfig(object):
     def __init__(self):
         #self.init_db()
         self.init_engines()
-    
+
     # def init_db(self):
     #     # Collect database info
     #     db_host = 'localhost'
@@ -56,7 +56,7 @@ class ParamSpanRemoteConfig(object):
     #     self.store = Arctic('mongodb://{}:{}'.format(db_host, db_port))
     #     self.store.initialize_library(lib_name)
     #     self.library = self.store[lib_name]
-# 
+#
     #     # Package database info to send to engines
     #     self.db_info = [
     #         db_host,
@@ -73,14 +73,14 @@ class ParamSpanRemoteConfig(object):
         # Establish views
         self.dview = self.ipp_client.direct_view()
         self.lview = self.ipp_client.load_balanced_view()
-            
+
         # Tell engines their ids
         for i, engine in enumerate(self.ipp_client):
             engine.push({'engine_id': i})
-            
+
         # Distribute database information
         # self.dview.push({'db_info': self.db_info})
-        
+
         # def load_library():
         #     global store, library
         #     from arctic import Arctic
@@ -107,7 +107,7 @@ class ParamSpanWidget(ipw.VBox):
 
     def init_executor(self):
         self.executor = cf.ThreadPoolExecutor()
-        
+
     def load_remote_config(self):
         self.ipp_client = self.remote_config.ipp_client
         self.dview = self.remote_config.dview
@@ -116,7 +116,7 @@ class ParamSpanWidget(ipw.VBox):
         #self.store = self.remote_config.store
         #self.library = self.remote_config.library
         self.lview = self.remote_config.lview
-        
+
     def init_widgets(self):
         if not self.output_layout:
             self.output_layout = ipw.Layout(height='500px', border='1px solid', overflow_x='scroll', overflow_y='scroll')
@@ -153,13 +153,13 @@ class ParamSpanWidget(ipw.VBox):
         fut = self.lview.apply(self.compute_func, **paramset)
         self.compute_futures[paramset_id] = fut
         self.results[paramset_id] = fut.result()
-        
+
     def submit_computations(self, *change):
         # def compute_wrapper(compute_func, name, paramset_id, params, library):
         #     """Perform computation and send results to MongoDB for one set of params"""
         #     results = compute_func(**params)
-        #     
-        #     
+        #
+        #
         #     Index collection by paramset_id and paramspan name
         #     record_label = '{}-{}'.format(name, paramset_id)
         #     library.write(
@@ -214,17 +214,17 @@ class ParamSpanWidget(ipw.VBox):
             def wrapper():
                 self.vis_func(**compute_results)
             wrapper()
-        
+
         else:
             @self.output.capture(clear_output=True, wait=True)
             def wrapper():
                 print("Task {} not done: {}".format(paramset_id, self.compute_futures[paramset_id]))
             wrapper()
-            
+
     def get_entries(self):
         """Get all results stored in database from parameter spans with this name"""
         return [entry for entry in self.library.list_symbols() if entry[:len(self.name)+1] == self.name+'-']
-      
+
 #     def delete_results(self):
 #         """This will delete all results from parameter spans with this name!"""
 #         for entry in self.get_entries():
@@ -247,7 +247,7 @@ def exp_compute(N, mean, std, color):
         'realstd': realstd,
         'color': color
     }
-    
+
 def exp_viz(engine_id, date, x, N, realmean, realstd, color):
     print("Computed on engine {} at {}".format(engine_id, date))
     plt.figure(figsize=[8,5])
@@ -263,25 +263,25 @@ def nokelp_calculate(a_water, b, ns, na, const, num_threads=1):
     import numpy as np
     from datetime import datetime
     import time
-    
+
     # Extract constants
     (rope_spacing, zmin, zmax, nz, I0, phi_s, theta_s, decay, xmin, xmax, ymin, ymax, absortpance_kelp,
          num_scatters, gmres_flag, gmres_flag, lis_options) = const
     a_kelp = a_water
-    
+
     num_vsf = na
     vsf_angles = np.linspace(0,np.pi, na)
     vsf_vals = 0*vsf_angles + 1/(4*np.pi)
     ns = int(ns)
-    
+
     nomega = int(na*(na-2)+2)
     p_kelp = np.asfortranarray(np.zeros([ns,ns,nz]))
     radiance = np.asfortranarray(np.zeros([ns, ns, nz, nomega]))
     irradiance = np.asfortranarray(np.zeros([ns, ns, nz]))
-    
+
     # Start timer
     tic = time.time()
-    
+
     # Calculate light field
     f90.calculate_light_field(
         xmin, xmax,
@@ -294,11 +294,11 @@ def nokelp_calculate(a_water, b, ns, na, const, num_threads=1):
         p_kelp, radiance, irradiance,
         num_scatters, gmres_flag, lic_options,
     )
-    
+
     # End timer
     toc = time.time()
     date = datetime.now().ctime()
-    
+
     return {
         'duration': toc - tic,
         'date': date,
@@ -313,7 +313,7 @@ def nokelp_visualize(duration, date, radiance, irradiance):
         warnings.simplefilter("ignore")
         fig = ipv.figure()
         ipv.volshow(irradiance.T, controls=False)
-    
+
     # Set initial angle
     fig.anglex = 0.85 * np.pi
     fig.angley = -0.30 * np.pi
@@ -325,36 +325,36 @@ def kelp_calculate(a_water, b, ns, na, nz, kelp_profile, absorptance_kelp, gmres
     import numpy as np
     from datetime import datetime
     import time
-    
+
     # Extract constants
-    (rope_spacing, zmin, zmax, I0, phi_s, theta_s, decay, xmin, xmax, ymin, ymax, 
+    (rope_spacing, zmin, zmax, I0, phi_s, theta_s, decay, xmin, xmax, ymin, ymax,
          lic_options) = const
-    
+
     dz = (zmax-zmin)/nz
     print("dz = {}".format(dz))
-    
+
     num_vsf = na
     vsf_angles = np.linspace(0,np.pi, na)
     vsf_vals = 0*vsf_angles + 1/(4*np.pi)
     ns = int(ns)
-    
+
     ntheta = na
     nphi = int(na/2)
     if nphi % 2 != 0:
         nphi += 1
-    
+
     nomega = int(ntheta*(nphi-2)+2)
     p_kelp = np.asfortranarray(np.zeros([ns,ns,nz]))
     radiance = np.asfortranarray(np.zeros([ns, ns, nz, nomega]))
     irradiance = np.asfortranarray(np.zeros([ns, ns, nz]))
-    
+
     # z grid centers
     z = np.linspace(zmin+0.5*dz, zmax-0.5*dz, nz)
-    
+
     # Start timer
     tic = time.time()
-    
-    
+
+
     # Kelp distribution profiles
     frond_length_funcs = {
         'top-heavy': 3.0 * z**2 * np.exp(-z) + 0.5,
@@ -362,7 +362,7 @@ def kelp_calculate(a_water, b, ns, na, nz, kelp_profile, absorptance_kelp, gmres
         'uniform': 0*z + 1.0,
         'none': 0*z
     }
-    
+
     # Top-heavy
     frond_lengths = frond_length_funcs[kelp_profile]
     #frond_lengths = np.ones(nz)
@@ -370,15 +370,15 @@ def kelp_calculate(a_water, b, ns, na, nz, kelp_profile, absorptance_kelp, gmres
     num_fronds = 10 * np.ones(nz)
     water_speeds = 0.5 * np.ones(nz)
     water_angles = 2*np.pi / zmax * (z-zmin)
-    
+
     fs = 0.5
     fr = 0.5
     ft = 1e-2
-    
+
     print("theoretical max_kelp = {}".format(num_fronds.max()*ft/dz))
-    
+
     a_kelp = absorptance_kelp / ft
-    
+
     # Generate kelp
     f90.gen_kelp(
         xmin, xmax,
@@ -392,9 +392,9 @@ def kelp_calculate(a_water, b, ns, na, nz, kelp_profile, absorptance_kelp, gmres
         fs, fr, ft,
         p_kelp
     )
-    
+
     print("Max kelp = {}".format(p_kelp.max()))
-    
+
     # Calculate light field
     f90.calculate_light_field(
         xmin, xmax,
@@ -407,11 +407,11 @@ def kelp_calculate(a_water, b, ns, na, nz, kelp_profile, absorptance_kelp, gmres
         p_kelp, radiance, irradiance,
         num_scatters, gmres_flag, lic_options,
     )
-    
+
     # End timer
     toc = time.time()
     date = datetime.now().ctime()
-    
+
     return {
         'duration': toc - tic,
         'date': date,
@@ -431,37 +431,37 @@ def kelp_visualize(duration, date, radiance, irradiance, p_kelp):
         kelpfig.anglex = 0.85 * np.pi
         kelpfig.angley = -0.30 * np.pi
         kelpfig.anglez = -0.67 * np.pi
-        
+
         irradfig = ipv.figure()
         ipv.volshow(irradiance.T, controls=False)
         # set initial angle
         irradfig.anglex = 0.85 * np.pi
         irradfig.angley = -0.30 * np.pi
         irradfig.anglez = -0.67 * np.pi
-        
-        
+
+
     rad_text = "Rad Stats<br>---------<br>min: {:.3e}<br>max: {:.3e}<br>mean: {:.3e}<br>std: {:.3e}".format(
         radiance.min(),
         radiance.max(),
         radiance.mean(),
         radiance.std()
     )
-        
+
     irrad_text = "Irrad Stats<br>-----------<br>min: {:.3e}<br>max: {:.3e}<br>mean: {:.3e}<br>std: {:.3e}".format(
         irradiance.min(),
         irradiance.max(),
         irradiance.mean(),
         irradiance.std()
     )
-        
+
     display(ipw.HBox([
-        kelpfig, 
+        kelpfig,
         irradfig,
         ipw.Box(layout=ipw.Layout(width='10px')),
         ipw.HTML("<tt>{}<br><br>{}</tt>".format(rad_text, irrad_text))
     ]))
-    
-    
+
+
 def block_mean(large_arr, small_shape):
     """Calculate an array of block means of `large_arr` which has the shape `small_shape`"""
 
@@ -482,6 +482,6 @@ def block_mean(large_arr, small_shape):
             avg[inds] = large_arr[slices].mean()
 
         return avg
-    
+
     else:
         raise IndexError("`small_shape` must divide `large_arr.shape` elementwise.")

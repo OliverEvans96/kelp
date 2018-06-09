@@ -214,7 +214,7 @@ class Kelp(tr.HasTraits):
 
     def volume_plot(self):
         "Transform so that the new y is the old -z for IPyVolume."
-        return ipv.quickvolshow(np.swapaxes(self.p_kelp[:,:,::-1], 1, 2)) 
+        return ipv.quickvolshow(np.swapaxes(self.p_kelp[:,:,::-1], 1, 2))
 
     def gen_kelp(self, *args):
         # Grid

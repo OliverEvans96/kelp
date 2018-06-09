@@ -220,7 +220,7 @@ contains
   !   integer, parameter :: num_bounds = 6
   !   integer(hid_t) :: file_id
   !   integer error
-  !   double precision, dimension(num_bounds) :: bounds 
+  !   double precision, dimension(num_bounds) :: bounds
   !   integer(hsize_t), dimension(1) :: data_dims
 
   !   data_dims(1) = num_bounds
@@ -232,7 +232,7 @@ contains
   !   integer, parameter :: num_nums = 5
   !   integer(hid_t) :: file_id
   !   integer error
-  !   integer, dimension(num_nums) :: nums 
+  !   integer, dimension(num_nums) :: nums
   !   integer(hsize_t), dimension(1) :: data_dims
 
   !   data_dims(1) = num_nums
@@ -244,7 +244,7 @@ contains
   !   integer, parameter :: num_spacings = 5
   !   integer(hid_t) :: file_id
   !   integer error
-  !   double precision, dimension(num_spacings) :: spacings 
+  !   double precision, dimension(num_spacings) :: spacings
   !   integer(hsize_t), dimension(1) :: data_dims
 
   !   array_dim(1) = num_spacings

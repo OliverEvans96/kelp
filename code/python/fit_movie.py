@@ -29,7 +29,7 @@ def sci_not(xx,digits=2):
     return r'{}\cdot 10^{}'.format(base,expnt)
 
 # Name of this run of fit_movie.py
-# Useful for trying different parameters 
+# Useful for trying different parameters
 # and saving cases separately
 try:
     run_name = argv[1]
@@ -194,7 +194,7 @@ for dataset_num,dataset in enumerate(dataset_array):
         label='data',color=dataset_colors[dataset_num])[0])
     fit_lines.append(semilogx(zeros_like(zz),-zz,'--',
         label='model',color=dataset_colors[dataset_num])[0])
-    
+
     # Create legend
     legend(bbox_to_anchor=(1,1),loc='lower right',borderpad=0)
 
@@ -286,7 +286,7 @@ for step_num,step_dt in enumerate(dt_array):
 
         # Relative step number
         rsn = step_num - offsets[dataset_num]
-        
+
         # Check whether this dataset is active, adjust flags
         if(0 <= rsn and rsn < n_steps_list[dataset_num]):
             if active_flag[dataset_num]:

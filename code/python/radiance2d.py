@@ -98,7 +98,7 @@ for m in range(maxiter):
                     L_new = (L_star - dLdx*cos(theta[k]) - dLdy*sin(theta[k])) / c
                 # FD2 for j = 1
                 else:
-                    L_new = ( (-4*L[i,j+1,k] + L[i,j+2,k]) / (2*dy) 
+                    L_new = ( (-4*L[i,j+1,k] + L[i,j+2,k]) / (2*dy)
                             + (L_star - dLdx*cos(theta[k])) / sin(theta[k]) ) \
                             / (-3/(2*dy) + c/sin(theta[k]))
 

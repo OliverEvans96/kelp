@@ -756,7 +756,7 @@ subroutine benford_cdf ( x, cdf )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) X, the string of significant digits to be 
+!    Input, integer ( kind = 4 ) X, the string of significant digits to be
 !    checked.  If X is 1, then we are asking for the Benford probability that
 !    a value will have first digit 1.  If X is 123, we are asking for
 !    the probability that the first three digits will be 123, and so on.
@@ -1262,7 +1262,7 @@ subroutine birthday_sample ( n, seed, value )
 !
   call i4vec_unique_count ( n - 1, b(1:n-1), u1 )
 
-  if ( u1 < n - 1 ) then 
+  if ( u1 < n - 1 ) then
     value = 0
     return
   end if
@@ -2150,8 +2150,8 @@ subroutine bessel_i1_values ( n_data, x, fx )
 !
 !  Parameters:
 !
-!    Input/output, integer ( kind = 4 ) N_DATA.  The user sets N_DATA to 0 
-!    before the first call.  On each call, the routine increments N_DATA by 1, 
+!    Input/output, integer ( kind = 4 ) N_DATA.  The user sets N_DATA to 0
+!    before the first call.  On each call, the routine increments N_DATA by 1,
 !    and returns the corresponding data; when there is no more data, the
 !    output value of N_DATA will be 0 again.
 !
@@ -2328,7 +2328,7 @@ subroutine beta_binomial_cdf_inv ( cdf, a, b, c, x )
 !    Input, integer ( kind = 4 ) C, a parameter of the PDF.
 !    0 <= C.
 !
-!    Output, integer ( kind = 4 ) X, the smallest X whose cumulative density 
+!    Output, integer ( kind = 4 ) X, the smallest X whose cumulative density
 !    function is greater than or equal to CDF.
 !
   implicit none
@@ -2604,7 +2604,7 @@ subroutine beta_binomial_sample ( a, b, c, seed, x )
 !    Input, integer ( kind = 4 ) C, a parameter of the PDF.
 !    0 <= C.
 !
-!    Input/output, integer ( kind = 4 ) SEED, a seed for the random 
+!    Input/output, integer ( kind = 4 ) SEED, a seed for the random
 !    number generator.
 !
 !    Output, integer ( kind = 4 ) X, a sample of the PDF.
@@ -2813,7 +2813,7 @@ subroutine beta_cdf_inv ( cdf, p, q, x )
     return
   end if
 !
-!  Return immediately if the answer is easy to determine.  
+!  Return immediately if the answer is easy to determine.
 !
   if ( cdf == 0.0D+00  ) then
     x = 0.0D+00
@@ -3291,7 +3291,7 @@ subroutine beta_cdf_values ( n_data, a, b, x, fx )
      2.0D+00, &
      2.0D+00, &
     11.7562D+00, &
-    11.7562D+00, & 
+    11.7562D+00, &
     11.7562D+00 /)
   real ( kind = 8 ) fx
   real ( kind = 8 ), save, dimension ( n_max ) :: fx_vec = (/ &
@@ -3812,7 +3812,7 @@ subroutine beta_inc_values ( n_data, a, b, x, fx )
      2.0D+00, &
      2.0D+00, &
     11.7562D+00, &
-    11.7562D+00, & 
+    11.7562D+00, &
     11.7562D+00 /)
   real ( kind = 8 ) fx
   real ( kind = 8 ), save, dimension ( n_max ) :: fx_vec = (/ &
@@ -4055,7 +4055,7 @@ subroutine beta_sample ( a, b, seed, x )
 !    0.0 < A,
 !    0.0 < B.
 !
-!    Input/output, integer ( kind = 4 ) SEED, a seed for the random 
+!    Input/output, integer ( kind = 4 ) SEED, a seed for the random
 !    number generator.
 !
 !    Output, real ( kind = 8 ) X, a sample of the PDF.
@@ -4638,7 +4638,7 @@ subroutine binomial_sample ( a, b, seed, x )
 !    Input, real ( kind = 8 ) B, the probability of success on one trial.
 !    0.0 <= B <= 1.0.
 !
-!    Input/output, integer ( kind = 4 ) SEED, a seed for the random 
+!    Input/output, integer ( kind = 4 ) SEED, a seed for the random
 !    number generator.
 !
 !    Output, integer ( kind = 4 ) X, a sample of the PDF.
@@ -4974,7 +4974,7 @@ subroutine bradford_sample ( a, b, c, seed, x )
 !    A < B,
 !    0.0 < C.
 !
-!    Input/output, integer ( kind = 4 ) SEED, a seed for the random 
+!    Input/output, integer ( kind = 4 ) SEED, a seed for the random
 !    number generator.
 !
 !    Output, real ( kind = 8 ) X, a sample of the PDF.
@@ -5154,7 +5154,7 @@ function buffon_box_sample ( a, b, l, trial_num, seed )
 !
 !  Discussion:
 !
-!    In the Buffon-Laplace needle experiment, we suppose that the plane has 
+!    In the Buffon-Laplace needle experiment, we suppose that the plane has
 !    been tiled into a grid of rectangles of width A and height B, and that a
 !    needle of length L is dropped "at random" onto this grid.
 !
@@ -5231,7 +5231,7 @@ function buffon_box_sample ( a, b, l, trial_num, seed )
 !    Input, integer ( kind = 4 ) TRIAL_NUM, the number of times the needle is
 !    to be dropped onto the grid.
 !
-!    Input/output, integer ( kind = 4 ) SEED, a seed for the random 
+!    Input/output, integer ( kind = 4 ) SEED, a seed for the random
 !    number generator.
 !
 !    Output, integer ( kind = 4 ) BUFFON_BOX_SAMPLE, the number of times
@@ -5805,7 +5805,7 @@ subroutine burr_sample ( a, b, c, d, seed, x )
 !    0 < B,
 !    0 < C.
 !
-!    Input/output, integer ( kind = 4 ) SEED, a seed for the random 
+!    Input/output, integer ( kind = 4 ) SEED, a seed for the random
 !    number generator.
 !
 !    Output, real ( kind = 8 ) X, a sample of the PDF.
@@ -5901,7 +5901,7 @@ subroutine c8_normal_01_sample ( seed, x )
 !
 !  Parameters:
 !
-!    Input/output, integer ( kind = 4 ) SEED, a seed for the random 
+!    Input/output, integer ( kind = 4 ) SEED, a seed for the random
 !    number generator.
 !
 !    Output, complex ( kind = 8 ) X, a sample of the PDF.
@@ -6214,7 +6214,7 @@ subroutine cardioid_sample ( a, b, seed, x )
 !    Input, real ( kind = 8 ) A, B, the parameters of the PDF.
 !    -0.5 <= B <= 0.5.
 !
-!    Input/output, integer ( kind = 4 ) SEED, a seed for the random 
+!    Input/output, integer ( kind = 4 ) SEED, a seed for the random
 !    number generator.
 !
 !    Output, real ( kind = 8 ) X, a sample of the PDF.
@@ -6398,8 +6398,8 @@ subroutine cauchy_cdf_values ( n_data, mu, sigma, x, fx )
 !
 !  Parameters:
 !
-!    Input/output, integer ( kind = 4 ) N_DATA.  The user sets N_DATA to 0 
-!    before the first call.  On each call, the routine increments N_DATA by 1, 
+!    Input/output, integer ( kind = 4 ) N_DATA.  The user sets N_DATA to 0
+!    before the first call.  On each call, the routine increments N_DATA by 1,
 !    and returns the corresponding data; when there is no more data, the
 !    output value of N_DATA will be 0 again.
 !
@@ -6649,7 +6649,7 @@ subroutine cauchy_sample ( a, b, seed, x )
 !    Input, real ( kind = 8 ) A, B, the parameters of the PDF.
 !    0.0 < B.
 !
-!    Input/output, integer ( kind = 4 ) SEED, a seed for the random 
+!    Input/output, integer ( kind = 4 ) SEED, a seed for the random
 !    number generator.
 !
 !    Output, real ( kind = 8 ) X, a sample of the PDF.
@@ -7422,7 +7422,7 @@ subroutine chi_sample ( a, b, c, seed, x )
 !    0 < B,
 !    0 < C.
 !
-!    Input/output, integer ( kind = 4 ) SEED, a seed for the random 
+!    Input/output, integer ( kind = 4 ) SEED, a seed for the random
 !    number generator.
 !
 !    Output, real ( kind = 8 ) X, a sample of the PDF.
@@ -7825,8 +7825,8 @@ subroutine chi_square_cdf_values ( n_data, a, x, fx )
 !
 !  Parameters:
 !
-!    Input/output, integer ( kind = 4 ) N_DATA.  The user sets N_DATA to 0 
-!    before the first call.  On each call, the routine increments N_DATA by 1, 
+!    Input/output, integer ( kind = 4 ) N_DATA.  The user sets N_DATA to 0
+!    before the first call.  On each call, the routine increments N_DATA by 1,
 !    and returns the corresponding data; when there is no more data, the
 !    output value of N_DATA will be 0 again.
 !
@@ -8064,7 +8064,7 @@ subroutine chi_square_sample ( a, seed, x )
 !    Input, real ( kind = 8 ) A, the parameter of the PDF.
 !    1 <= A.
 !
-!    Input/output, integer ( kind = 4 ) SEED, a seed for the random 
+!    Input/output, integer ( kind = 4 ) SEED, a seed for the random
 !    number generator.
 !
 !    Output, real ( kind = 8 ) X, a sample of the PDF.
@@ -8231,7 +8231,7 @@ subroutine chi_square_noncentral_cdf_values ( n_data, df, lambda, x, cdf )
 !  Parameters:
 !
 !    Input/output, integer ( kind = 4 ) N_DATA.  The user sets N_DATA to 0
-!    before the first call.  On each call, the routine increments N_DATA by 1, 
+!    before the first call.  On each call, the routine increments N_DATA by 1,
 !    and returns the corresponding data; when there is no more data, the
 !    output value of N_DATA will be 0 again.
 !
@@ -8436,7 +8436,7 @@ subroutine chi_square_noncentral_sample ( a, b, seed, x )
 !    Input, real ( kind = 8 ) B, the noncentrality parameter of the PDF.
 !    0.0 <= B.
 !
-!    Input/output, integer ( kind = 4 ) SEED, a seed for the random 
+!    Input/output, integer ( kind = 4 ) SEED, a seed for the random
 !    number generator.
 !
 !    Output, real ( kind = 8 ) X, a sample of the PDF.
@@ -8591,7 +8591,7 @@ subroutine circular_normal_01_sample ( seed, x )
 !
 !  Parameters:
 !
-!    Input/output, integer ( kind = 4 ) SEED, a seed for the random 
+!    Input/output, integer ( kind = 4 ) SEED, a seed for the random
 !    number generator.
 !
 !    Output, real ( kind = 8 ) X(2), a sample of the PDF.
@@ -8688,7 +8688,7 @@ subroutine circular_normal_pdf ( x, a, b, pdf )
 !
 !  Discussion:
 !
-!    PDF(X) = EXP ( - 0.5D+00 * ( ( (X(1)-A(1))^2 + (X(2)-A(2))^2 ) / B^2 ) 
+!    PDF(X) = EXP ( - 0.5D+00 * ( ( (X(1)-A(1))^2 + (X(2)-A(2))^2 ) / B^2 )
 !      / ( 2 * PI * B^2 )
 !
 !  Licensing:
@@ -8752,7 +8752,7 @@ subroutine circular_normal_sample ( a, b, seed, x )
 !
 !    Input, real ( kind = 8 ) B, a parameter of the PDF, the standard deviation.
 !
-!    Input/output, integer ( kind = 4 ) SEED, a seed for the random 
+!    Input/output, integer ( kind = 4 ) SEED, a seed for the random
 !    number generator.
 !
 !    Output, real ( kind = 8 ) X(2), a sample of the PDF.
@@ -9132,7 +9132,7 @@ subroutine cosine_sample ( a, b, seed, x )
 !    Input, real ( kind = 8 ) A, B, the parameters of the PDF.
 !    0.0 < B.
 !
-!    Input/output, integer ( kind = 4 ) SEED, a seed for the random 
+!    Input/output, integer ( kind = 4 ) SEED, a seed for the random
 !    number generator.
 !
 !    Output, real ( kind = 8 ) X, a sample of the PDF.
@@ -10777,11 +10777,11 @@ subroutine dirichlet_mix_sample ( comp_num, elem_num, a, &
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) COMP_NUM, the number of components in the 
+!    Input, integer ( kind = 4 ) COMP_NUM, the number of components in the
 !    Dirichlet mixture density, that is, the number of distinct Dirichlet PDF's
 !    that are mixed together.
 !
-!    Input, integer ( kind = 4 ) ELEM_NUM, the number of elements of 
+!    Input, integer ( kind = 4 ) ELEM_NUM, the number of elements of
 !    an observation.
 !
 !    Input, real ( kind = 8 ) A(ELEM_NUM,COMP_NUM), the probabilities for
@@ -10793,10 +10793,10 @@ subroutine dirichlet_mix_sample ( comp_num, elem_num, a, &
 !    given component is the relative probability that that component will
 !    be used to generate the sample.
 !
-!    Input/output, integer ( kind = 4 ) SEED, a seed for the random 
+!    Input/output, integer ( kind = 4 ) SEED, a seed for the random
 !    number generator.
 !
-!    Output, integer ( kind = 4 ) COMP, the index of the component of the 
+!    Output, integer ( kind = 4 ) COMP, the index of the component of the
 !    Dirichlet mixture that was chosen to generate the sample.
 !
 !    Output, real ( kind = 8 ) X(ELEM_NUM), a sample of the PDF.
@@ -11073,7 +11073,7 @@ subroutine dirichlet_sample ( n, a, seed, x )
 !    Each A(I) should be nonnegative, and at least one should be
 !    positive.
 !
-!    Input/output, integer ( kind = 4 ) SEED, a seed for the random 
+!    Input/output, integer ( kind = 4 ) SEED, a seed for the random
 !    number generator.
 !
 !    Output, real ( kind = 8 ) X(N), a sample of the PDF.  The entries
@@ -11449,7 +11449,7 @@ subroutine discrete_sample ( a, b, seed, x )
 !    Input, real ( kind = 8 ) B(A), the relative probabilities of
 !    outcomes 1 through A.  Each entry must be nonnegative.
 !
-!    Input/output, integer ( kind = 4 ) SEED, a seed for the random 
+!    Input/output, integer ( kind = 4 ) SEED, a seed for the random
 !    number generator.
 !
 !    Output, integer ( kind = 4 ) X, a sample of the PDF.
@@ -11590,7 +11590,7 @@ subroutine disk_sample ( a, b, c, seed, x1, x2 )
 !    The disk is centered at (A,B) and has radius C.
 !    0.0 < C.
 !
-!    Input/output, integer ( kind = 4 ) SEED, a seed for the random 
+!    Input/output, integer ( kind = 4 ) SEED, a seed for the random
 !    number generator.
 !
 !    Output, real ( kind = 8 ) X1, X2, a sampled point of the disk.
@@ -12053,7 +12053,7 @@ subroutine empirical_discrete_sample ( a, b, c, seed, x )
 !    Input, real ( kind = 8 ) C(A), the values.
 !    The values must be distinct and in ascending order.
 !
-!    Input/output, integer ( kind = 4 ) SEED, a seed for the random 
+!    Input/output, integer ( kind = 4 ) SEED, a seed for the random
 !    number generator.
 !
 !    Output, real ( kind = 8 ) X, a sample of the PDF.
@@ -12333,7 +12333,7 @@ subroutine english_letter_sample ( seed, c )
 !
 !    Output, character C, a sample of the PDF.
 !
-!    Output, integer ( kind = 4 ) SEED, an updated seed for the random 
+!    Output, integer ( kind = 4 ) SEED, an updated seed for the random
 !    number generator.
 !
   implicit none
@@ -12779,7 +12779,7 @@ subroutine english_sentence_length_pdf ( x, pdf )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) X, the sentence length whose probability 
+!    Input, integer ( kind = 4 ) X, the sentence length whose probability
 !    is desired.
 !
 !    Output, real ( kind = 8 ) PDF, the value of the PDF.
@@ -12906,7 +12906,7 @@ subroutine english_sentence_length_sample ( seed, x )
 !
 !  Parameters:
 !
-!    Input/output, integer ( kind = 4 ) SEED, a seed for the random 
+!    Input/output, integer ( kind = 4 ) SEED, a seed for the random
 !    number generator.
 !
 !    Output, integer ( kind = 4 ) X, a sample of the PDF.
@@ -13331,7 +13331,7 @@ subroutine english_word_length_pdf ( x, pdf )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) X, the word length whose probability 
+!    Input, integer ( kind = 4 ) X, the word length whose probability
 !    is desired.
 !
 !    Output, real ( kind = 8 ) PDF, the value of the PDF.
@@ -13406,7 +13406,7 @@ subroutine english_word_length_sample ( seed, x )
 !
 !  Parameters:
 !
-!    Input/output, integer ( kind = 4 ) SEED, a seed for the random 
+!    Input/output, integer ( kind = 4 ) SEED, a seed for the random
 !    number generator.
 !
 !    Output, integer ( kind = 4 ) X, a sample of the PDF.
@@ -13847,7 +13847,7 @@ subroutine erlang_sample ( a, b, c, seed, x )
 !    0.0 < B.
 !    0 < C.
 !
-!    Input/output, integer ( kind = 4 ) SEED, a seed for the random 
+!    Input/output, integer ( kind = 4 ) SEED, a seed for the random
 !    number generator.
 !
 !    Output, real ( kind = 8 ) X, a sample of the PDF.
@@ -14120,7 +14120,7 @@ subroutine exponential_01_sample ( seed, x )
 !
 !  Parameters:
 !
-!    Input/output, integer ( kind = 4 ) SEED, a seed for the random 
+!    Input/output, integer ( kind = 4 ) SEED, a seed for the random
 !    number generator.
 !
 !    Output, real ( kind = 8 ) X, a sample of the PDF.
@@ -14297,8 +14297,8 @@ subroutine exponential_cdf_values ( n_data, lambda, x, fx )
 !
 !  Parameters:
 !
-!    Input/output, integer ( kind = 4 ) N_DATA.  The user sets N_DATA to 0 
-!    before the first call.  On each call, the routine increments N_DATA by 1, 
+!    Input/output, integer ( kind = 4 ) N_DATA.  The user sets N_DATA to 0
+!    before the first call.  On each call, the routine increments N_DATA by 1,
 !    and returns the corresponding data; when there is no more data, the
 !    output value of N_DATA will be 0 again.
 !
@@ -14533,7 +14533,7 @@ subroutine exponential_sample ( a, b, seed, x )
 !    Input, real ( kind = 8 ) A, B, the parameters of the PDF.
 !    0.0 < B.
 !
-!    Input/output, integer ( kind = 4 ) SEED, a seed for the random 
+!    Input/output, integer ( kind = 4 ) SEED, a seed for the random
 !    number generator.
 !
 !    Output, real ( kind = 8 ) X, a sample of the PDF.
@@ -14972,7 +14972,7 @@ subroutine extreme_values_sample ( a, b, seed, x )
 !    Input, real ( kind = 8 ) A, B, the parameters of the PDF.
 !    0.0 < B.
 !
-!    Input/output, integer ( kind = 4 ) SEED, a seed for the random 
+!    Input/output, integer ( kind = 4 ) SEED, a seed for the random
 !    number generator.
 !
 !    Output, real ( kind = 8 ) X, a sample of the PDF.
@@ -15445,7 +15445,7 @@ subroutine f_sample ( m, n, seed, x )
 !    1 <= M,
 !    1 <= N.
 !
-!    Input/output, integer ( kind = 4 ) SEED, a seed for the random 
+!    Input/output, integer ( kind = 4 ) SEED, a seed for the random
 !    number generator.
 !
 !    Output, real ( kind = 8 ) X, a sample of the PDF.
@@ -16111,7 +16111,7 @@ subroutine fisher_sample ( kappa, mu, n, seed, xyz )
 !
 !    Input, integer ( kind = 4 ) N, the number of samples to choose.
 !
-!    Input/output, integer ( kind = 4 ) SEED, a seed for the random 
+!    Input/output, integer ( kind = 4 ) SEED, a seed for the random
 !    number generator.
 !
 !    Output, real ( kind = 8 ) XYZ(3,N), a sample of the Fisher distribution.
@@ -16479,7 +16479,7 @@ subroutine fisk_sample ( a, b, c, seed, x )
 !    0.0 < B,
 !    0.0 < C.
 !
-!    Input/output, integer ( kind = 4 ) SEED, a seed for the random 
+!    Input/output, integer ( kind = 4 ) SEED, a seed for the random
 !    number generator.
 !
 !    Output, real ( kind = 8 ) X, a sample of the PDF.
@@ -16891,7 +16891,7 @@ subroutine folded_normal_sample ( a, b, seed, x )
 !    0.0 <= A,
 !    0.0 < B.
 !
-!    Input/output, integer ( kind = 4 ) SEED, a seed for the random 
+!    Input/output, integer ( kind = 4 ) SEED, a seed for the random
 !    number generator.
 !
 !    Output, real ( kind = 8 ) X, a sample of the PDF.
@@ -17170,7 +17170,7 @@ subroutine frechet_sample ( alpha, seed, x )
 !    Input, real ( kind = 8 ) ALPHA, the parameter.
 !    It is required that 0.0 < ALPHA.
 !
-!    Input/output, integer ( kind = 4 ) SEED, a seed for the random 
+!    Input/output, integer ( kind = 4 ) SEED, a seed for the random
 !    number generator.
 !
 !    Output, real ( kind = 8 ) X, a sample of the PDF.
@@ -21315,7 +21315,7 @@ subroutine inverse_gaussian_sample ( a, b, seed, x )
 !    0.0 < A,
 !    0.0 < B.
 !
-!    Input/output, integer ( kind = 4 ) SEED, a seed for the random 
+!    Input/output, integer ( kind = 4 ) SEED, a seed for the random
 !    number generator.
 !
 !    Output, real ( kind = 8 ) X, a sample of the PDF.
@@ -21761,7 +21761,7 @@ subroutine laplace_sample ( a, b, seed, x )
 !    Input, real ( kind = 8 ) A, B, the parameters of the PDF.
 !    0.0 < B.
 !
-!    Input/output, integer ( kind = 4 ) SEED, a seed for the random 
+!    Input/output, integer ( kind = 4 ) SEED, a seed for the random
 !    number generator.
 !
 !    Output, real ( kind = 8 ) X, a sample of the PDF.
@@ -22093,7 +22093,7 @@ subroutine levy_sample ( a, b, seed, x )
 !    Input, real ( kind = 8 ) A, B, the parameters of the PDF.
 !    0.0 < B.
 !
-!    Input/output, integer ( kind = 4 ) SEED, a seed for the random 
+!    Input/output, integer ( kind = 4 ) SEED, a seed for the random
 !    number generator.
 !
 !    Output, real ( kind = 8 ) X, a sample of the PDF.
@@ -22483,7 +22483,7 @@ subroutine logistic_sample ( a, b, seed, x )
 !    Input, real ( kind = 8 ) A, B, the parameters of the PDF.
 !    0.0 < B.
 !
-!    Input/output, integer ( kind = 4 ) SEED, a seed for the random 
+!    Input/output, integer ( kind = 4 ) SEED, a seed for the random
 !    number generator.
 !
 !    Output, real ( kind = 8 ) X, a sample of the PDF.
@@ -24955,7 +24955,7 @@ subroutine multivariate_normal_sample ( n, mean, covar_factor, seed, x )
 !
 !  Discussion:
 !
-!    PDF ( Mean(1:N), S(1:N,1:N); X(1:N) ) = 
+!    PDF ( Mean(1:N), S(1:N,1:N); X(1:N) ) =
 !      1 / ( 2 * pi ) ^ ( N / 2 ) * 1 / det ( S )
 !      * exp ( - ( X - Mean )' * inverse ( S ) * ( X - Mean ) / 2 )
 !
@@ -32230,7 +32230,7 @@ function r8poly_value_horner ( m, c, x )
 !
 !  Discussion:
 !
-!    The polynomial 
+!    The polynomial
 !
 !      p(x) = c0 + c1 * x + c2 * x^2 + ... + cm * x^m
 !
@@ -32252,7 +32252,7 @@ function r8poly_value_horner ( m, c, x )
 !
 !    Input, integer ( kind = 4 ) M, the degree.
 !
-!    Input, real ( kind = 8 ) C(0:M), the polynomial coefficients.  
+!    Input, real ( kind = 8 ) C(0:M), the polynomial coefficients.
 !    C(I) is the coefficient of X^I.
 !
 !    Input, real ( kind = 8 ) X, the evaluation point.
@@ -33524,7 +33524,7 @@ subroutine rayleigh_sample ( a, seed, x )
 !    Input, real ( kind = 8 ) A, the parameter of the PDF.
 !    0.0 < A.
 !
-!    Input/output, integer ( kind = 4 ) SEED, a seed for the random 
+!    Input/output, integer ( kind = 4 ) SEED, a seed for the random
 !    number generator.
 !
 !    Output, real ( kind = 8 ) X, a sample of the PDF.
@@ -33829,7 +33829,7 @@ subroutine reciprocal_sample ( a, b, seed, x )
 !    Input, real ( kind = 8 ) A, B, the parameters of the PDF.
 !    0.0 < A <= B.
 !
-!    Input/output, integer ( kind = 4 ) SEED, a seed for the random 
+!    Input/output, integer ( kind = 4 ) SEED, a seed for the random
 !    number generator.
 !
 !    Output, real ( kind = 8 ) X, a sample of the PDF.
@@ -34670,7 +34670,7 @@ subroutine runs_sample ( m, n, seed, r )
 !
 !    Input, integer ( kind = 4 ) M, N, the parameters of the PDF.
 !
-!    Input/output, integer ( kind = 4 ) SEED, a seed for the random 
+!    Input/output, integer ( kind = 4 ) SEED, a seed for the random
 !    number generator.
 !
 !    Output, integer ( kind = 4 ) R, the number of runs.
@@ -34712,7 +34712,7 @@ subroutine runs_simulate ( m, n, seed, a )
 !
 !    Input, integer ( kind = 4 ) M, N, the parameters of the PDF.
 !
-!    Input/output, integer ( kind = 4 ) SEED, a seed for the random 
+!    Input/output, integer ( kind = 4 ) SEED, a seed for the random
 !    number generator.
 !
 !    Output, integer ( kind = 4 ) A(M+N), a sequence of M 0's and N 1's chosen
@@ -35063,7 +35063,7 @@ subroutine sech_sample ( a, b, seed, x )
 !    Input, real ( kind = 8 ) A, B, the parameters of the PDF.
 !    0.0 < B.
 !
-!    Input/output, integer ( kind = 4 ) SEED, a seed for the random 
+!    Input/output, integer ( kind = 4 ) SEED, a seed for the random
 !    number generator.
 !
 !    Output, real ( kind = 8 ) X, a sample of the PDF.
@@ -35437,7 +35437,7 @@ subroutine semicircular_sample ( a, b, seed, x )
 !    Input, real ( kind = 8 ) A, B, the parameters of the PDF.
 !    0.0 < B.
 !
-!    Input/output, integer ( kind = 4 ) SEED, a seed for the random 
+!    Input/output, integer ( kind = 4 ) SEED, a seed for the random
 !    number generator.
 !
 !    Output, real ( kind = 8 ) X, a sample of the PDF.
@@ -35610,7 +35610,7 @@ function sphere_unit_area_nd ( dim_num )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -36154,7 +36154,7 @@ subroutine student_sample ( a, b, c, seed, x )
 !    integer, but that is not essential.  It is required that
 !    C be strictly positive.
 !
-!    Input/output, integer ( kind = 4 ) SEED, a seed for the random 
+!    Input/output, integer ( kind = 4 ) SEED, a seed for the random
 !    number generator.
 !
 !    Output, real ( kind = 8 ) X, a sample of the PDF.
@@ -37116,7 +37116,7 @@ subroutine triangle_sample ( a, b, c, seed, x )
 !    Input, real ( kind = 8 ) A, B, C, the parameters of the PDF.
 !    A <= B <= C and A < C.
 !
-!    Input/output, integer ( kind = 4 ) SEED, a seed for the random 
+!    Input/output, integer ( kind = 4 ) SEED, a seed for the random
 !    number generator.
 !
 !    Output, real ( kind = 8 ) X, a sample of the PDF.
@@ -37424,7 +37424,7 @@ subroutine triangular_sample ( a, b, seed, x )
 !    Input, real ( kind = 8 ) A, B, the parameters of the PDF.
 !    A < B.
 !
-!    Input/output, integer ( kind = 4 ) SEED, a seed for the random 
+!    Input/output, integer ( kind = 4 ) SEED, a seed for the random
 !    number generator.
 !
 !    Output, real ( kind = 8 ) X, a sample of the PDF.
@@ -37724,7 +37724,7 @@ subroutine uniform_01_order_sample ( n, seed, x )
 !
 !    Input, integer ( kind = 4 ) N, the number of elements in the sample.
 !
-!    Input/output, integer ( kind = 4 ) SEED, a seed for the random 
+!    Input/output, integer ( kind = 4 ) SEED, a seed for the random
 !    number generator.
 !
 !    Output, real ( kind = 8 ) X(N), N samples of the Uniform 01 PDF, in
@@ -37822,7 +37822,7 @@ function uniform_01_sample ( seed )
 !    generate the output random number, and updated in preparation for the
 !    next one.  SEED should not be zero.
 !
-!    Output, real ( kind = 8 ) UNIFORM_01_SAMPLE, a random value between 0 
+!    Output, real ( kind = 8 ) UNIFORM_01_SAMPLE, a random value between 0
 !    and 1.
 !
 !  Local parameters:
@@ -38159,7 +38159,7 @@ subroutine uniform_sample ( a, b, seed, x )
 !    Input, real ( kind = 8 ) A, B, the parameters of the PDF.
 !    A < B.
 !
-!    Input/output, integer ( kind = 4 ) SEED, a seed for the random 
+!    Input/output, integer ( kind = 4 ) SEED, a seed for the random
 !    number generator.
 !
 !    Output, real ( kind = 8 ) X, a sample of the PDF.
@@ -38469,7 +38469,7 @@ subroutine uniform_discrete_sample ( a, b, seed, x )
 !    Input, integer ( kind = 4 ) A, B, the parameters of the PDF.
 !    A <= B.
 !
-!    Input/output, integer ( kind = 4 ) SEED, a seed for the random 
+!    Input/output, integer ( kind = 4 ) SEED, a seed for the random
 !    number generator.
 !
 !    Output, integer ( kind = 4 ) X, a sample of the PDF.
@@ -38552,7 +38552,7 @@ subroutine uniform_nsphere_sample ( n, seed, x )
 !
 !    Input, integer ( kind = 4 ) N, the dimension of the sphere.
 !
-!    Input/output, integer ( kind = 4 ) SEED, a seed for the random 
+!    Input/output, integer ( kind = 4 ) SEED, a seed for the random
 !    number generator.
 !
 !    Output, real ( kind = 8 ) X(N), a point on the unit N sphere, chosen
@@ -39297,7 +39297,7 @@ subroutine von_mises_sample ( a, b, seed, x )
 !    of probability near A.
 !    0.0 <= B.
 !
-!    Input/output, integer ( kind = 4 ) SEED, a seed for the random 
+!    Input/output, integer ( kind = 4 ) SEED, a seed for the random
 !    number generator.
 !
 !    Output, real ( kind = 8 ) X, a sample of the PDF.
@@ -39758,7 +39758,7 @@ subroutine weibull_sample ( a, b, c, seed, x )
 !    0.0 < B,
 !    0.0 < C.
 !
-!    Input/output, integer ( kind = 4 ) SEED, a seed for the random 
+!    Input/output, integer ( kind = 4 ) SEED, a seed for the random
 !    number generator.
 !
 !    Output, real ( kind = 8 ) X, a sample of the PDF.
@@ -40041,7 +40041,7 @@ subroutine weibull_discrete_sample ( a, b, seed, x )
 !    0.0 <= A <= 1.0D+00,
 !    0.0 < B.
 !
-!    Input/output, integer ( kind = 4 ) SEED, a seed for the random 
+!    Input/output, integer ( kind = 4 ) SEED, a seed for the random
 !    number generator.
 !
 !    Output, integer ( kind = 4 ) X, a sample of the PDF.
@@ -40395,7 +40395,7 @@ subroutine zipf_sample ( a, seed, x )
 !    Input, real ( kind = 8 ) A, the parameter of the PDF.
 !    1.0D+00 < A.
 !
-!    Input/output, integer ( kind = 4 ) SEED, a seed for the random 
+!    Input/output, integer ( kind = 4 ) SEED, a seed for the random
 !    number generator.
 !
 !    Output, integer ( kind = 4 ) X, a sample of the PDF.

@@ -594,7 +594,7 @@ contains
   !   call grid%z%set_num_from_spacing()
 
   ! end subroutine sag_set_num_from_spacing
-  
+
   subroutine sag_deinit(grid)
     class(space_angle_grid) :: grid
     call grid%x%deinit()

@@ -97,9 +97,9 @@ subroutine test_easy()
   allocate(rhs(n))
 
   call zeros(x, n)
-  
+
   call create_test_equation(row, col, data, rhs, x_true)
-  
+
   call mgmres_st(n, nnz, row, col, data, x, rhs, itr_max, mr, tol_abs, tol_rel)
 
   call print_array(x, n, 1)

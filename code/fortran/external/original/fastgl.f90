@@ -121,7 +121,7 @@ subroutine besselj1squared ( k, z )
 !    J1 function at the K-th zero of the Bessel J0 function.
 !
   implicit none
- 
+
   real ( kind = 8 ), dimension ( 21 ) :: j1 = (/ &
     0.269514123941916926139021992911D+00, &
     0.115780138582203695807812836182D+00, &
@@ -179,7 +179,7 @@ subroutine glpair ( n, k, theta, weight, x )
 !
 !    If N <= 100, GLPAIRTABULATED is called, otherwise GLPAIR is called.
 !
-!    Theta values of the zeros are in [0,pi], and monotonically increasing. 
+!    Theta values of the zeros are in [0,pi], and monotonically increasing.
 !
 !  Licensing:
 !
@@ -209,7 +209,7 @@ subroutine glpair ( n, k, theta, weight, x )
 !    Input, integer ( kind = 4 ) K, the index of the point to be returned.
 !    1 <= K <= N.
 !
-!    Output, real ( kind = 8 ) THETA, WEIGHT, X, the theta coordinate, weight, 
+!    Output, real ( kind = 8 ) THETA, WEIGHT, X, the theta coordinate, weight,
 !    and x coordinate of the point.
 !
   implicit none
@@ -236,7 +236,7 @@ subroutine glpair ( n, k, theta, weight, x )
 
   if ( n < 101 ) then
     call glpairtabulated ( n, k, theta, weight, x )
-  else 
+  else
     call glpairs ( n, k, theta, weight, x )
   end if
 
@@ -280,7 +280,7 @@ subroutine glpairs ( n, k, theta, weight, x )
 !    Input, integer ( kind = 4 ) K, the index of the point to be returned.
 !    1 <= K <= N.
 !
-!    Output, real ( kind = 8 ) THETA, WEIGHT, X, the theta coordinate, weight, 
+!    Output, real ( kind = 8 ) THETA, WEIGHT, X, the theta coordinate, weight,
 !    and x coordinate of the point.
 !
   implicit none
@@ -343,9 +343,9 @@ subroutine glpairs ( n, k, theta, weight, x )
 !
   sf1t = ((((( &
     - 1.29052996274280508473467968379D-12 * y &
-    + 2.40724685864330121825976175184D-10 ) * y & 
+    + 2.40724685864330121825976175184D-10 ) * y &
     - 3.13148654635992041468855740012D-08 ) * y &
-    + 0.275573168962061235623801563453D-05 ) * y & 
+    + 0.275573168962061235623801563453D-05 ) * y &
     - 0.148809523713909147898955880165D-03 ) * y &
     + 0.416666666665193394525296923981D-02 ) * y &
     - 0.416666666666662959639712457549D-01
@@ -361,8 +361,8 @@ subroutine glpairs ( n, k, theta, weight, x )
 
   sf3t = ((((( &
     - 2.97058225375526229899781956673D-08 * y &
-    + 5.55845330223796209655886325712D-07 ) * y &  
-    - 0.567797841356833081642185432056D-05 ) * y & 
+    + 5.55845330223796209655886325712D-07 ) * y &
+    - 0.567797841356833081642185432056D-05 ) * y &
     + 0.418498100329504574443885193835D-04 ) * y &
     - 0.251395293283965914823026348764D-03 ) * y &
     + 0.128654198542845137196151147483D-02 ) * y &
@@ -391,7 +391,7 @@ subroutine glpairs ( n, k, theta, weight, x )
     + 0.465969530694968391417927388162D-04 ) * y &
     - 0.407297185611335764191683161117D-03 ) * y &
     + 0.268959435694729660779984493795D-02 ) * y &
-    - 0.111111111111214923138249347172D-01 
+    - 0.111111111111214923138249347172D-01
 
   wsf3t = ((((((( &
     + 2.01826791256703301806643264922D-09 * y &
@@ -410,7 +410,7 @@ subroutine glpairs ( n, k, theta, weight, x )
   bnuosin = b * nuosin
   winvsinc = w * w * nuosin
   wis2 = winvsinc * winvsinc
-! 
+!
 !  Finally compute the node and the weight.
 !
   theta = w * ( nu + theta * winvsinc &
@@ -464,7 +464,7 @@ subroutine glpairtabulated ( l, k, theta, weight, x )
 !    Input, integer ( kind = 4 ) K, the index of the point to be returned.
 !    1 <= K <= L.
 !
-!    Output, real ( kind = 8 ) THETA, WEIGHT, X, the theta coordinate, weight, 
+!    Output, real ( kind = 8 ) THETA, WEIGHT, X, the theta coordinate, weight,
 !    and x coordinate of the point.
 !
   implicit none
@@ -492,7 +492,7 @@ subroutine glpairtabulated ( l, k, theta, weight, x )
   call legendre_theta ( l, k, theta )
   call legendre_weight ( l, k, weight )
 
-  x = cos ( theta )    
+  x = cos ( theta )
 
   return
 end
@@ -1863,7 +1863,7 @@ subroutine legendre_theta ( l, k, theta )
     0.8610639001623934211634967D-01, &
     0.5492592372249737419414775D-01, &
     0.2392851379957687254895331D-01 /)
-  
+
   real ( kind = 8 ) :: OddThetaZero1(1) = (/ &
     0.6847192030022829138880982D+00 /)
   real ( kind = 8 ) :: OddThetaZero2(2) = (/ &
@@ -3138,7 +3138,7 @@ subroutine legendre_theta ( l, k, theta )
     0.8697177361567243680812898D-01, &
     0.5547793843128156580348541D-01, &
     0.2416899936118312040170588D-01 /)
- 
+
   integer ( kind = 4 ) k
   integer ( kind = 4 ) kcopy
   integer ( kind = 4 ) l
@@ -4853,7 +4853,7 @@ subroutine legendre_weight ( l, k, weight )
     0.2683925371553482419437272D-02, &
     0.1709392653518105239533969D-02, &
     0.7346344905056717304142370D-03 /)
-  
+
   real ( kind = 8 ) :: OddW1(1) = (/ &
     0.5555555555555555555555555D+00  /)
   real ( kind = 8 ) :: OddW2(2) = (/ &
@@ -6128,7 +6128,7 @@ subroutine legendre_weight ( l, k, weight )
     0.2738075873626878091327392D-02, &
     0.1743906958219244938639563D-02, &
     0.7494736467374053633626714D-03 /)
- 
+
   integer ( kind = 4 ) k
   integer ( kind = 4 ) kcopy
   integer ( kind = 4 ) l

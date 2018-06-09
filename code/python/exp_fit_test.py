@@ -25,9 +25,9 @@ def least_squares_fit(x,y):
     print("y: {}".format(y))
     print("A: {}".format(A))
     print("b: {}".format(b))
-    # Note that linalg.lstsq is matrix equation solver from NumPy 
+    # Note that linalg.lstsq is matrix equation solver from NumPy
     return linalg.lstsq(A,b)[0]
-    
+
 # Load data from light_data.py
 with open('../data/Data HOBO/light_attenuation_data.pickle','rb') as pickle_file:
     str_array = pickle.load(pickle_file)

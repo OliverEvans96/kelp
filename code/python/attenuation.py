@@ -8,8 +8,8 @@
 # For each time step, use least squares to perform exponential regression to model
 # intensity as a function of depth. The two parameters from the fit are k (kk),
 # the exponential decay factor and I0, surface intensity. For each time step, plot
-# a point in k-I0 space to show the results of the fit. Color the point with the 
-# timestep. Also, plot the distributions of k and I0. Also, plot the r_squareds 
+# a point in k-I0 space to show the results of the fit. Color the point with the
+# timestep. Also, plot the distributions of k and I0. Also, plot the r_squareds
 # as a function of time
 
 from numpy import *
@@ -40,11 +40,11 @@ def least_squares_fit(x,y):
     A = array([[sum(x**2),sum(x)],[sum(x),N]])
     b = array([sum(x*y),sum(y)])
 
-    # Note that linalg.lstsq is matrix equation solver from NumPy 
+    # Note that linalg.lstsq is matrix equation solver from NumPy
     return linalg.lstsq(A,b)[0]
 
 # Name of this run of attenuation.py
-# Useful for trying different parameters 
+# Useful for trying different parameters
 # and saving cases separately
 try:
     run_name = argv[1]
@@ -112,7 +112,7 @@ param_limits = [[[0.1,0.4],[0,50000]],
 #n_param_bins = 10
 #
 ## Bins to use for each parameter for each dataset
-#param_bins = [[arange(*param_limits[ii][jj],n_param_bins) 
+#param_bins = [[arange(*param_limits[ii][jj],n_param_bins)
 #    for jj in range(2)] for ii in range(n_datasets)]
 
 # Colors to use for datasets
@@ -141,14 +141,14 @@ for dataset_num,data in enumerate(dataset_array):
 
         # Model values for ln(I)
         yy = log(I0) - kk*zz
-        
+
         # Sum of squares error
         SSE = sum((log(II) - yy)**2)
         # Sum of squares total
         SST = sum((log(II) - mean(log(II)))**2)
 
         # Coefficient of determination
-        # "Proportion of observed y variation that can be 
+        # "Proportion of observed y variation that can be
         # explained by the simple linear regression model"
         # - Devore: Prob & Stats for Engineering..., p. 485
         r_squared = 1 - SSE/SST
@@ -187,7 +187,7 @@ for dataset_num,data in enumerate(dataset_array):
 
     # Time plot of parameters
     time=data[:,0,0]
-    # Plot distributions 
+    # Plot distributions
     for fig_num in range(n_quantities-1):
         # Time plots
         figure(fig_num*2+2,figsize=[7,3])

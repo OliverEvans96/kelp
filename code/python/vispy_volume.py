@@ -151,7 +151,7 @@ class Canvas(scene.SceneCanvas):
             face='FreeSerif',
             color='k',
             parent=self._view.scene)
-                
+
         #Draw y axis
         self._yax=scene.Axis(
             pos=[[self._xlim[self._axpos[1,0]],
@@ -287,12 +287,12 @@ class Canvas(scene.SceneCanvas):
     def position_axes(self):
         azim=self._view.camera.get_state()['azimuth']
         elev=self._view.camera.get_state()['elevation']
-        
+
         if elev >= 0:
             self._axpos[:,2]=0
         else:
             self._axpos[:,2]=1
-        
+
         if 0 < azim:
             self._axpos[:,0]=[0,1,0]
         else:

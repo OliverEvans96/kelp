@@ -50,7 +50,7 @@ module asymptotics
     type(space_angle_grid) grid
     type(boundary_condition) bc
     type(optical_properties) iops
-    double precision, dimension(:,:,:,:) :: radiance, source 
+    double precision, dimension(:,:,:,:) :: radiance, source
     double precision, dimension(:) :: path_length, path_spacing, a_tilde, gn
     integer i, j, k, p
 

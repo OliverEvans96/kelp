@@ -135,15 +135,15 @@ end function mod1
 function sgn_int(x)
   integer x, sgn_int
   ! Standard signum function
-  sgn_int = sign(1,x) 
-  if(x .eq. 0.) sgn_int = 0 
+  sgn_int = sign(1,x)
+  if(x .eq. 0.) sgn_int = 0
 end function sgn_int
 
 function sgn(x)
   double precision x, sgn
   ! Standard signum function
-  sgn = sign(1.d0,x) 
-  if(x .eq. 0.) sgn = 0 
+  sgn = sign(1.d0,x)
+  if(x .eq. 0.) sgn = 0
 end function sgn
 
 ! Interpolate single point from 1D data

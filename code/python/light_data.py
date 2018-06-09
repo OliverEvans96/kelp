@@ -8,15 +8,15 @@
 
 ## IMPORTANT NOTE ##
 # The data contains some zero values in the 1-kelp and 2-kelp datasets,
-# presumably because the light intensity fell below the minimum intensity 
-# threshold of the HOBO loggers used 
+# presumably because the light intensity fell below the minimum intensity
+# threshold of the HOBO loggers used
 # (http://www.onsetcomp.com/products/data-loggers/ua-002-08)
 # In the 1-kelp and 2-kelp, the lowest non-zero value is 10.8.
 # Shane recommended using ~10% of the lowest value, so I will replace
 # all zero-values with a value of 1.
 
 ##############
-## Imports  ## 
+## Imports  ##
 ##############
 
 from numpy import *
@@ -73,7 +73,7 @@ def extract_datasets(time,intensities,interval_list):
 
     # Loop through datasets in the string
     for dataset_num in range(n_datasets):
-        
+
         # Extract start and end times
         start_time = str_to_datetime(interval_list[2*dataset_num])
         end_time = str_to_datetime(interval_list[2*dataset_num+1])
@@ -197,7 +197,7 @@ for str_num,file_list in enumerate(str_files):
         # and date_time is inserted as the first column
 
         # Strip second column (index)
-        # Strip last column (Only entry in this column is the word 
+        # Strip last column (Only entry in this column is the word
         # 'Logged' on last line + header string on 2nd line)
         df_strings = df_strings.iloc[:,[0,2]]
 
@@ -235,7 +235,7 @@ for str_num,file_list in enumerate(str_files):
             matlab_df_datasets['date_time'] = datenum(df_datasets['date_time'])
 
             # Save dataset DataFrame to dictionary as NumPy array for Matlab and Python
-            matlab_name_datasets = ( dataset_filenames[total_dataset_num] 
+            matlab_name_datasets = ( dataset_filenames[total_dataset_num]
                 + "_" + depth )
             matlab_dict_datasets[matlab_name_datasets] = array(matlab_df_datasets)
             dataset_dicts[total_dataset_num][depth] = df_datasets
@@ -289,9 +289,9 @@ for dataset_num,dataset_dict in enumerate(dataset_dicts):
 print("After")
 
 # Number of timesteps for each array
-n_steps_list_strings = [str_dicts[ii]['1m'].shape[0] 
+n_steps_list_strings = [str_dicts[ii]['1m'].shape[0]
     for ii in range(len(str_dicts))]
-n_steps_list_datasets = [dataset_dicts[ii]['1m'].shape[0] 
+n_steps_list_datasets = [dataset_dicts[ii]['1m'].shape[0]
     for ii in range(len(dataset_dicts))]
 
 # For each string, convert dictionary of 2d arrays to a 3d array
