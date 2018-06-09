@@ -266,7 +266,7 @@ def nokelp_calculate(a_water, b, ns, na, const, num_threads=1):
     
     # Extract constants
     (rope_spacing, zmin, zmax, nz, I0, phi_s, theta_s, decay, xmin, xmax, ymin, ymax, absortpance_kelp,
-         num_scatters, gmres_flag, tol_abs, tol_rel, maxiter_inner, maxiter_outer, gmres_flag, gmres_wrapper) = const
+         num_scatters, gmres_flag, gmres_flag, lis_options) = const
     a_kelp = a_water
     
     num_vsf = na
@@ -291,9 +291,8 @@ def nokelp_calculate(a_water, b, ns, na, const, num_threads=1):
         a_water, a_kelp, b,
         vsf_angles, vsf_vals,
         theta_s, phi_s, I0, decay,
-        tol_abs, tol_rel, maxiter_inner, maxiter_outer,
         p_kelp, radiance, irradiance,
-        num_scatters, gmres_flag, gmres_wrapper,
+        num_scatters, gmres_flag, lic_options,
     )
     
     # End timer
@@ -329,7 +328,7 @@ def kelp_calculate(a_water, b, ns, na, nz, kelp_profile, absorptance_kelp, gmres
     
     # Extract constants
     (rope_spacing, zmin, zmax, I0, phi_s, theta_s, decay, xmin, xmax, ymin, ymax, 
-         tol_abs, tol_rel, maxiter_inner, maxiter_outer, gmres_wrapper) = const
+         lic_options) = const
     
     dz = (zmax-zmin)/nz
     print("dz = {}".format(dz))
@@ -405,9 +404,8 @@ def kelp_calculate(a_water, b, ns, na, nz, kelp_profile, absorptance_kelp, gmres
         a_water, a_kelp, b,
         vsf_angles, vsf_vals,
         theta_s, phi_s, I0, decay,
-        tol_abs, tol_rel, maxiter_inner, maxiter_outer,
         p_kelp, radiance, irradiance,
-        num_scatters, gmres_flag, gmres_wrapper,
+        num_scatters, gmres_flag, lic_options,
     )
     
     # End timer

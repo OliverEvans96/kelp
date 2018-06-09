@@ -60,9 +60,8 @@ contains
        xmin, xmax, nx, ymin, ymax, ny, zmin, zmax, nz, ntheta, nphi, &
        a_w, a_k, b, num_vsf, vsf_angles, vsf_vals, &
        theta_s, phi_s, max_rad, decay, &
-       tol_abs, tol_rel, maxiter_inner, maxiter_outer, &
        p_kelp, radiance, irradiance, num_scatters, &
-       sparse_flag, solver_callback)
+       sparse_flag, lis_options)
 
     integer nx, ny, nz, ntheta, nphi
     double precision xmin, xmax, ymin, ymax, zmin, zmax
@@ -73,14 +72,12 @@ contains
     double precision, dimension(nx, ny, nz) :: p_kelp
     double precision, dimension(nx, ny, nz, ntheta*(nphi-2)+2) :: radiance
     double precision, dimension(nx, ny, nz) :: irradiance
-    double precision tol_abs, tol_rel
-    integer maxiter_inner, maxiter_outer
+    character*(*) :: lis_options
 
     integer num_scatters
     ! Rely on external function to solve sparse matrix
     ! (e.g. from Julia or Python)
     logical sparse_flag
-    procedure(solver_interface), optional :: solver_callback
 
     type(space_angle_grid) grid
     type(rte_mat) mat
@@ -130,12 +127,14 @@ contains
       call gen_matrix(mat)
 
       ! Set sparse solver and params
-      if(present(solver_callback)) then
-         mat%solver => solver_callback
-      end if
-      call mat%set_solver_params( &
-           maxiter_outer, maxiter_inner, &
-           tol_abs, tol_rel)
+      !if(present(solver_callback)) then
+      !   mat%solver => solver_callback
+      !end if
+      ! call mat%set_solver_params( &
+      !      maxiter_outer, maxiter_inner, &
+      !      tol_abs, tol_rel)
+
+      call mat%set_solver_opts(lis_options)
 
       ! Initialize & set initial guess
       write(*,*) 'Light'

@@ -54,7 +54,7 @@ module asymptotics
     double precision, dimension(:) :: path_length, path_spacing, a_tilde, gn
     integer i, j, k, p
 
-    ! !$ integer omp_get_num_procs
+    ! !$ integer omp_get_max_threads
     ! !$ integer num_threads_z, num_threads_x
 
     ! ! Enable nested parallelism
@@ -64,9 +64,9 @@ module asymptotics
     ! ! or num_procs if num_procs < nz
     ! ! Divide the rest of the tasks as appropriate
 
-    ! !$ num_threads_z = min(omp_get_num_procs(), grid%z%num)
+    ! !$ num_threads_z = min(omp_get_max_threads(), grid%z%num)
     ! !$ num_threads_x = min( &
-    ! !$    omp_get_num_procs()/num_threads_z, &
+    ! !$    omp_get_max_threads()/num_threads_z, &
     ! !$    grid%x%num)
 
     ! !$omp parallel do default(none) private(i,j,k,p) &
@@ -180,7 +180,7 @@ module asymptotics
     integer nx, ny, nz, nomega
     integer i, j, k, p
 
-    !$ integer omp_get_num_procs
+    !$ integer omp_get_max_threads
     !$ integer num_threads_z, num_threads_x
 
     nx = grid%x%num
@@ -195,9 +195,9 @@ module asymptotics
     ! or num_procs if num_procs < nz
     ! Divide the rest of the tasks as appropriate
 
-    !$ num_threads_z = min(omp_get_num_procs(), grid%z%num)
+    !$ num_threads_z = min(omp_get_max_threads(), grid%z%num)
     !$ num_threads_x = min( &
-    !$    omp_get_num_procs()/num_threads_z, &
+    !$    omp_get_max_threads()/num_threads_z, &
     !$    grid%x%num)
 
     !$omp parallel do default(none) private(indices) &
@@ -255,7 +255,7 @@ module asymptotics
     double precision, dimension(:) :: path_length, path_spacing, a_tilde, gn
     integer i, j, k, p
 
-    !$ integer omp_get_num_procs
+    !$ integer omp_get_max_threads
     !$ integer num_threads_z, num_threads_x
 
     ! Enable nested parallelism
@@ -265,9 +265,9 @@ module asymptotics
     ! or num_procs if num_procs < nz
     ! Divide the rest of the tasks as appropriate
 
-    !$ num_threads_z = min(omp_get_num_procs(), grid%z%num)
+    !$ num_threads_z = min(omp_get_max_threads(), grid%z%num)
     !$ num_threads_x = min( &
-    !$    omp_get_num_procs()/num_threads_z, &
+    !$    omp_get_max_threads()/num_threads_z, &
     !$    grid%x%num)
 
     !$omp parallel do default(none) &

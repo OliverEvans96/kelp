@@ -2,47 +2,66 @@
 
 # Project directories
 BASE=..
+INC=.
 BIN=$(BASE)/bin
 FTN=$(BASE)/code/fortran
 SRC=$(FTN)/src
+LIB=$(PWD)/../lib
 EXT=$(FTN)/external
 HDF5=$(FTN)/hdf5
 TEST=$(FTN)/test
 TEST_MOD=$(TEST)/mod
 F2PY=$(FTN)/f2py
 JTEST=$(TEST)/for_julia
-INC=.
 PYDIR=$(BASE)/code/python
 JULIA=$(BASE)/code/julia
 # F2PY .o directory
 F2PY_INC=$(PYDIR)/fortran_wrappers
 
+
+## LIS (iterative solver)
+# LIS location
+LIS=$(BASE)/lis
+LISFLAGS=-cpp -llis -lm -Wl,-rpath=$(LIB)
+lisobj=$(LIB)/liblis.a
+
+$(lisobj):
+	git submodule update --init --progress # Get submodule if not present
+	cd $(LIS) && ./configure --prefix=$(PWD)/.. --enable-shared --enable-omp --enable-fortran --enable-saamg --with-pic
+	cd $(LIS) && make -j5
+	cd $(LIS) && make install
+
+lis: $(lisobj)
+
 # Fortran Compiler
-FC=gfortran
+FC=ftn
 # HDF5 Fortan Compiler
 H5FC=h5fc
+# MPI Fortran Compiler
+MPIFC=mpif90
 
 # Profiling (timing) flags
 # Compile & run normally,
 # Then call gprof `executable`
-PFLAGS= -g #-ffpe-trap=zero,invalid,overflow,underflow -ffpe-summary=all -fcheck=all -O0
+PFLAGS= -g -ffpe-trap=zero,invalid,overflow,underflow -ffpe-summary=all -fcheck=all -O0
 
 # Optimize performance
 #https://stackoverflow.com/questions/42386065/inlining-functions-in-fortran
 # WARNING: Using -Ofast will break things due to allocating too large
 # of arrays on the stack
 # http://blog.purevirtual.net/2012/01/valgrind-client-switching-stacks.html
-OPTFLAGS= -fopenmp -flto #-Ofast
+OPTFLAGS= -flto -fopenmp #-Ofast
 
 # Doesn't work as shared? Executable gives SEGFAULT immediately.
 # But that's okay, because this works.
-FFLAGS=$(PFLAGS) -fPIC $(OPTFLAGS) -Wall
+FFLAGS=-fPIC -qopenmp $(LISFLAGS) -I$(INC) -L$(LIB) # $(PFLAGS) $(OPTFLAGS) -Wall 
 # Flags for F2PY
 F2PYFLAGS=-fPIC # $(PFLAGS) $(OPTFLAGS)
 # Test flags
 TESTMODFLAGS=-shared -fPIC $(FFLAGS)
 # Export LD_LIBRARY_PATH for tests
 TESTEXP=export LD_LIBRARY_PATH=$(INC):$(LD_LIBRARY_PATH)
+
 
 # All source files in each directory
 f90_src = $(wildcard $(SRC)/*.f90)
@@ -67,7 +86,7 @@ f2py_targets = $(f2py_src:$(F2PY)/%.f90=%)
 # GROUPS #
 ##########
 
-.PHONY: all clean $(test_bin) $(f2py_targets)
+.PHONY: all lis clean cleanlis cleanall $(test_bin) $(f2py_targets)
 
 # Default target makes all objects
 all: $(f90_inc)
@@ -88,25 +107,25 @@ f2py: $(f2py_targets)
 # Declare which .o files depend on which .f90 files
 # and provide the actual compilation command
 $(f90_inc): %.o: $(SRC)/%.f90
-	$(FC) -c $(FFLAGS) $< -o $@
+	$(FC) -c $< $(FFLAGS) -o $@
 $(ext_inc): %.o: $(EXT)/%.f90
-	$(FC) -c $(FFLAGS) $< -o $@
+	$(FC) -c $< $(FFLAGS) -o $@
 $(hdf5_inc): %.o: $(HDF5)/%.f90
-	$(H5FC) -c $(FFLAGS) $< -o $@
+	$(H5FC) -c $< $(FFLAGS) -o $@
 $(test_bin): %: $(TEST)/%.f90
-	$(FC) $(FFLAGS) $^ -o $(BIN)/$@
+	$(FC) $^ $(FFLAGS) -o $(BIN)/$@
 $(test_mod_inc): %.o: $(TEST_MOD)/%.f90
-	$(FC) -c $(FFLAGS) $< -o $@
+	$(FC) -c $< $(FFLAGS) -o $@
 $(jtest_inc): %.so: $(JTEST)/%.f90
 	$(FC) $(TESTFLAGS) $< -o $@
 # For actually importing in python
 $(f2py_targets): %: $(F2PY)/%.f90
-	f2py -c $(F2PY)/$@.pyf $^
+	LDFLAGS='-Wl,-rpath,$(LIB)' f2py -c $(F2PY)/$@.pyf $^ -llis -lm -L$(LIB)/../lib -I$(INC)
 	rm -f $(F2PY_INC)/$@.*.so
 	ln -s $(PWD)/$@.*.so $(F2PY_INC)
 # To test outside of python directly in fortran
 $(f2py_inc): %.o: $(F2PY)/%.f90
-	$(FC) -c $(FFLAGS) $< -o $@
+	$(FC) -c $< $(FFLAGS) -o $@
 
 
 ################
@@ -118,7 +137,7 @@ rte_core.o: utils.o
 sag.o: utils.o fastgl.o
 kelp_context.o: sag.o prob.o
 kelp3d.o: kelp_context.o
-rte_sparse_matrices.o: sag.o kelp_context.o mgmres.o
+rte_sparse_matrices.o: sag.o kelp_context.o mgmres.o $(lisobj)
 light_context.o: sag.o rte_sparse_matrices.o
 rte3d.o: kelp_context.o rte_sparse_matrices.o light_context.o
 asymptotics.o: kelp_context.o rte_sparse_matrices.o light_context.o
@@ -193,3 +212,10 @@ test_vsf: rte_core.o utils.o
 
 clean:
 	rm -f *.mod *.so *.o $(F2PY_INC)/*.so $(BIN)/*
+
+cleanlis:
+	cd $(LIS) && make clean
+	rm -f $(LIB)/*.a $(LIB)/*.la $(LIB)/*.so
+	rm -f $(INC)/*.h
+
+cleanall: clean cleanlis

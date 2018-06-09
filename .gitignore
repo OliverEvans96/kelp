@@ -13,7 +13,11 @@ row.txt
 col.txt
 rhs.txt
 sol.txt
+ptr.txt
+vgcore*
+callgrind*
 .#*
 *.png
 *.so
 *.pyc
+share

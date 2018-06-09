@@ -1,44 +1,12 @@
 !    -*- f90 -*-
 ! Note: the context of this file is case sensitive.
 
-python module calculate_light_field__user__routines 
-    interface calculate_light_field_user_interface 
-        subroutine solver_callback(n_total,nonzero,row,col,data,sol,rhs,maxiter_outer,maxiter_inner,tol_abs,tol_rel) ! in :pykelp3d_wrap:pykelp3d_wrap.f90:pykelp3d_wrap:calculate_light_field:unknown_interface
-            integer :: n_total
-            integer :: nonzero
-            integer dimension(nonzero) :: row
-            integer dimension(nonzero) :: col
-            double precision dimension(nonzero) :: data
-            double precision dimension(n_total) :: sol
-            double precision dimension(n_total) :: rhs
-            integer :: maxiter_outer
-            integer :: maxiter_inner
-            double precision :: tol_abs
-            double precision :: tol_rel
-        end subroutine solver_callback
-    end interface calculate_light_field_user_interface
-end python module calculate_light_field__user__routines
 python module pykelp3d_wrap ! in 
     interface  ! in :pykelp3d_wrap
         module pykelp3d_wrap ! in :pykelp3d_wrap:pykelp3d_wrap.f90
             use rte3d
-            use asymptotics
             use kelp3d
-            interface  ! in :pykelp3d_wrap:pykelp3d_wrap.f90:pykelp3d_wrap
-                subroutine mysolver_interface(n_total,nonzero,row,col,data,sol,rhs,maxiter_outer,maxiter_inner,tol_abs,tol_rel) ! in :pykelp3d_wrap:pykelp3d_wrap.f90:pykelp3d_wrap:unknown_interface
-                    integer, optional,check(len(rhs)>=n_total),depend(rhs) :: n_total=len(rhs)
-                    integer, optional,check(len(row)>=nonzero),depend(row) :: nonzero=len(row)
-                    integer dimension(nonzero) :: row
-                    integer dimension(nonzero),depend(nonzero) :: col
-                    double precision dimension(nonzero),depend(nonzero) :: data
-                    double precision dimension(nonzero),depend(nonzero) :: sol
-                    double precision dimension(n_total) :: rhs
-                    integer :: maxiter_outer
-                    integer :: maxiter_inner
-                    double precision :: tol_abs
-                    double precision :: tol_rel
-                end subroutine mysolver_interface
-            end interface 
+            use asymptotics
             subroutine gen_kelp(xmin,xmax,nx,ymin,ymax,ny,zmin,zmax,nz,frond_lengths,frond_stds,num_fronds,water_speeds,water_angles,fs,fr,ft,p_kelp) ! in :pykelp3d_wrap:pykelp3d_wrap.f90:pykelp3d_wrap
                 double precision :: xmin
                 double precision :: xmax
@@ -59,8 +27,7 @@ python module pykelp3d_wrap ! in
                 double precision :: ft
                 double precision dimension(nx,ny,nz),depend(nz) :: p_kelp
             end subroutine gen_kelp
-            subroutine calculate_light_field(xmin,xmax,nx,ymin,ymax,ny,zmin,zmax,nz,ntheta,nphi,a_w,a_k,b,num_vsf,vsf_angles,vsf_vals,theta_s,phi_s,max_rad,decay,tol_abs,tol_rel,maxiter_inner,maxiter_outer,p_kelp,radiance,irradiance,num_scatters,sparse_flag,solver_callback) ! in :pykelp3d_wrap:pykelp3d_wrap.f90:pykelp3d_wrap
-                use calculate_light_field__user__routines
+            subroutine calculate_light_field(xmin,xmax,nx,ymin,ymax,ny,zmin,zmax,nz,ntheta,nphi,a_w,a_k,b,num_vsf,vsf_angles,vsf_vals,theta_s,phi_s,max_rad,decay,p_kelp,radiance,irradiance,num_scatters,sparse_flag,lis_options) ! in :pykelp3d_wrap:pykelp3d_wrap.f90:pykelp3d_wrap
                 double precision :: xmin
                 double precision :: xmax
                 integer, optional,check(shape(p_kelp,0)==nx),depend(p_kelp) :: nx=shape(p_kelp,0)
@@ -82,16 +49,12 @@ python module pykelp3d_wrap ! in
                 double precision :: phi_s
                 double precision :: max_rad
                 double precision :: decay
-                double precision :: tol_abs
-                double precision :: tol_rel
-                integer :: maxiter_inner
-                integer :: maxiter_outer
                 double precision dimension(nx,ny,nz) :: p_kelp
                 double precision dimension(nx,ny,nz,ntheta*(nphi-2)+2),depend(nx,ny,nz,ntheta,nphi) :: radiance
                 double precision dimension(nx,ny,nz),depend(nx,ny,nz) :: irradiance
                 integer :: num_scatters
                 logical :: sparse_flag
-                external solver_callback
+                character*(*) :: lis_options
             end subroutine calculate_light_field
         end module pykelp3d_wrap
     end interface 

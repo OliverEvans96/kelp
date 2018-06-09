@@ -5,11 +5,11 @@ use light_context
 implicit none
 
 interface
-   subroutine deriv_interface(mat, indices, row_num, ent)
+   subroutine deriv_interface(mat, indices, ent)
      use rte_sparse_matrices
      class(rte_mat) mat
      type(index_list) indices
-     integer row_num, ent
+     integer ent
    end subroutine deriv_interface
    subroutine angle_loop_interface(mat, indices, ddx, ddy)
      use rte_sparse_matrices
@@ -165,10 +165,11 @@ subroutine interior_angle_loop(mat, indices, ddx, ddy)
   do p=1, mat%grid%angles%nomega
      indices%p = p
      repeat_ent = calculate_repeat_ent(ent, p)
-     call mat%angular_integral(indices, row_num, ent)
-     call ddx(mat, indices, row_num, ent)
-     call ddy(mat, indices, row_num, ent)
-     call mat%z_cd2(indices, row_num, ent)
+     call mat%set_row(ent, row_num)
+     call mat%angular_integral(indices, ent)
+     call ddx(mat, indices, ent)
+     call ddy(mat, indices, ent)
+     call mat%z_cd2(indices, ent)
      call mat%attenuate(indices, repeat_ent)
      row_num = row_num + 1
   end do
@@ -191,9 +192,10 @@ subroutine surface_angle_loop(mat, indices, ddx, ddy)
   do p=1, mat%grid%angles%nomega / 2
      indices%p = p
      repeat_ent = calculate_repeat_ent(ent, p)
-     call mat%angular_integral(indices, row_num, ent)
-     call ddx(mat, indices, row_num, ent)
-     call ddy(mat, indices, row_num, ent)
+     call mat%set_row(ent, row_num)
+     call mat%angular_integral(indices, ent)
+     call ddx(mat, indices, ent)
+     call ddy(mat, indices, ent)
      call mat%z_surface_bc(indices, row_num, ent, repeat_ent)
      call mat%attenuate(indices, repeat_ent)
      row_num = row_num + 1
@@ -202,10 +204,11 @@ subroutine surface_angle_loop(mat, indices, ddx, ddy)
   do p=mat%grid%angles%nomega/2+1, mat%grid%angles%nomega
      indices%p = p
      repeat_ent = calculate_repeat_ent(ent, p)
-     call mat%angular_integral(indices, row_num, ent)
-     call ddx(mat, indices, row_num, ent)
-     call ddy(mat, indices, row_num, ent)
-     call mat%z_fd2(indices, row_num, ent, repeat_ent)
+     call mat%set_row(ent, row_num)
+     call mat%angular_integral(indices, ent)
+     call ddx(mat, indices, ent)
+     call ddy(mat, indices, ent)
+     call mat%z_fd2(indices, ent, repeat_ent)
      call mat%attenuate(indices, repeat_ent)
      row_num = row_num + 1
   end do
@@ -227,10 +230,11 @@ subroutine bottom_angle_loop(mat, indices, ddx, ddy)
   do p=1, mat%grid%angles%nomega/2
      indices%p = p
      repeat_ent = calculate_repeat_ent(ent, p)
-     call mat%angular_integral(indices, row_num, ent)
-     call ddx(mat, indices, row_num, ent)
-     call ddy(mat, indices, row_num, ent)
-     call mat%z_bd2(indices, row_num, ent, repeat_ent)
+     call mat%set_row(ent, row_num)
+     call mat%angular_integral(indices, ent)
+     call ddx(mat, indices, ent)
+     call ddy(mat, indices, ent)
+     call mat%z_bd2(indices, ent, repeat_ent)
      call mat%attenuate(indices, repeat_ent)
      row_num = row_num + 1
   end do
@@ -238,10 +242,11 @@ subroutine bottom_angle_loop(mat, indices, ddx, ddy)
   do p=mat%grid%angles%nomega/2+1, mat%grid%angles%nomega
      indices%p = p
      repeat_ent = calculate_repeat_ent(ent, p)
-     call mat%angular_integral(indices, row_num, ent)
-     call ddx(mat, indices, row_num, ent)
-     call ddy(mat, indices, row_num, ent)
-     call mat%z_bottom_bc(indices, row_num, ent, repeat_ent)
+     call mat%set_row(ent, row_num)
+     call mat%angular_integral(indices, ent)
+     call ddx(mat, indices, ent)
+     call ddy(mat, indices, ent)
+     call mat%z_bottom_bc(indices, ent, repeat_ent)
      call mat%attenuate(indices, repeat_ent)
      row_num = row_num + 1
   end do
