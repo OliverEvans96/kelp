@@ -203,17 +203,17 @@ contains
     class(rte_mat) mat
     character(len=64) init_opt
 
-    write(*,*) 'mat%n_total =', mat%n_total
-    write(*,*) 'mat%nonzero =', mat%nonzero
-    open(unit=1, file='ptr.txt')
-    open(unit=2, file='col.txt')
-    open(unit=3, file='data.txt')
-    write(1,*) mat%ptr
-    write(2,*) mat%col
-    write(3,*) mat%data
-    close(1)
-    close(2)
-    close(3)
+    ! write(*,*) 'mat%n_total =', mat%n_total
+    ! write(*,*) 'mat%nonzero =', mat%nonzero
+    ! open(unit=1, file='ptr.txt')
+    ! open(unit=2, file='col.txt')
+    ! open(unit=3, file='data.txt')
+    ! write(1,*) mat%ptr
+    ! write(2,*) mat%col
+    ! write(3,*) mat%data
+    ! close(1)
+    ! close(2)
+    ! close(3)
 
     ! Create matrix
     call lis_matrix_set_csr(mat%nonzero, mat%ptr, mat%col, mat%data, mat%A, mat%ierr)
@@ -234,6 +234,7 @@ contains
   subroutine mat_set_solver_opts(mat, solver_opts)
     class(rte_mat) mat
     character(len=*) solver_opts
+    write(*,*) "Setting solver opts: '", solver_opts, "'"
     mat%solver_opts = solver_opts
   end subroutine mat_set_solver_opts
 
