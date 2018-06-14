@@ -61,7 +61,7 @@ contains
        a_w, a_k, b, num_vsf, vsf_angles, vsf_vals, &
        theta_s, phi_s, max_rad, decay, &
        p_kelp, radiance, irradiance, num_scatters, &
-       sparse_flag, lis_options)
+       fd_flag, lis_opts, lis_iter, lis_time, lis_resid)
 
     integer nx, ny, nz, ntheta, nphi
     double precision xmin, xmax, ymin, ymax, zmin, zmax
@@ -72,12 +72,14 @@ contains
     double precision, dimension(nx, ny, nz) :: p_kelp
     double precision, dimension(nx, ny, nz, ntheta*(nphi-2)+2) :: radiance
     double precision, dimension(nx, ny, nz) :: irradiance
-    character*(*) :: lis_options
+    character*(*) :: lis_opts
+    integer lis_iter
+    double precision :: lis_time, lis_resid
 
     integer num_scatters
     ! Rely on external function to solve sparse matrix
     ! (e.g. from Julia or Python)
-    logical sparse_flag
+    logical fd_flag
 
     type(space_angle_grid) grid
     type(rte_mat) mat
@@ -117,7 +119,7 @@ contains
     write(*,*) 'Scatter'
     call calculate_light_with_scattering(grid, bc, iops, radiance, num_scatters)
 
-    if(sparse_flag) then
+    if(fd_flag) then
 
       ! INIT MAT
       write(*,*) 'Sparse Matrix'
@@ -134,7 +136,7 @@ contains
       !      maxiter_outer, maxiter_inner, &
       !      tol_abs, tol_rel)
 
-      call mat%set_solver_opts(lis_options)
+      call mat%set_solver_opts(lis_opts)
 
       ! Initialize & set initial guess
       write(*,*) 'Light'
@@ -156,6 +158,8 @@ contains
 
     radiance = light%radiance
     irradiance = light%irradiance
+
+    ! TODO: Get lis_iter, lis_time, lis_resid
 
     write(*,*) 'deinit'
     call bc%deinit()

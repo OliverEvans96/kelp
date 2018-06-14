@@ -54,9 +54,9 @@ OPTFLAGS= -flto -fopenmp #-Ofast
 
 # Doesn't work as shared? Executable gives SEGFAULT immediately.
 # But that's okay, because this works.
-FFLAGS=-fPIC -qopenmp $(LISFLAGS) -I$(INC) -L$(LIB) # $(PFLAGS) $(OPTFLAGS) -Wall 
+FFLAGS=-fPIC $(LISFLAGS) -I$(INC) -L$(LIB) $(OPTFLAGS) # $(PFLAGS) -Wall 
 # Flags for F2PY
-F2PYFLAGS=-fPIC # $(PFLAGS) $(OPTFLAGS)
+F2PYFLAGS=-fPIC $(OPTFLAGS) # $(PFLAGS) 
 # Test flags
 TESTMODFLAGS=-shared -fPIC $(FFLAGS)
 # Export LD_LIBRARY_PATH for tests
@@ -120,7 +120,7 @@ $(jtest_inc): %.so: $(JTEST)/%.f90
 	$(FC) $(TESTFLAGS) $< -o $@
 # For actually importing in python
 $(f2py_targets): %: $(F2PY)/%.f90
-	LDFLAGS='-Wl,-rpath,$(LIB)' f2py -c $(F2PY)/$@.pyf $^ -llis -lm -L$(LIB)/../lib -I$(INC)
+	LDFLAGS='-Wl,-rpath -Wl,$(LIB)' f2py -c --f90flags="$(F2PYFLAGS)" $(F2PY)/$@.pyf $^ -llis -lm -L$(LIB)/../lib -I$(INC)
 	rm -f $(F2PY_INC)/$@.*.so
 	ln -s $(PWD)/$@.*.so $(F2PY_INC)
 # To test outside of python directly in fortran
