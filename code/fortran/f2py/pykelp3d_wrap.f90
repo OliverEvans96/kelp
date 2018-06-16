@@ -56,6 +56,7 @@ contains
 
   end subroutine gen_kelp
 
+  ! TODO: max_rad -> surface_irrad
   subroutine calculate_light_field( &
        xmin, xmax, nx, ymin, ymax, ny, zmin, zmax, nz, ntheta, nphi, &
        a_w, a_k, b, num_vsf, vsf_angles, vsf_vals, &

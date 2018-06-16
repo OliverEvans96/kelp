@@ -325,6 +325,78 @@ def slice_1d(n_list, best_ind, irrad_dict, pos, label):
     plt.tight_layout()
     plt.show()
 
+# TODO: args
+def grid_study_analyze():
+    """
+    Analyze results from grid_study_compute.
+    Compare all to best, calculate errors.
+    """
+    ns_max = max(ns_list)
+    nz_max = max(nz_list)
+    na_max = max(na_list)
+
+    print("ns_max = {}".format(ns_max))
+    print("nz_max = {}".format(nz_max))
+    print("na_max = {}".format(na_max))
+
+    # best solution (no kelp, no scattering)
+    best_results = lv.apply(kelp_param.kelp_calculate,
+        a_water,
+        b,
+        ns_max,
+        na_max,
+        nz_max,
+        kelp_profile,
+        absorptance_kelp,
+        gmres_flag=True,
+        num_scatters=4,
+        const=const
+    ).result()
+
+    perceived_irrad_dict = {}
+    duration_dict = {}
+    abs_err_arr = np.zeros([len(ns_list),len(nz_list),len(na_list)])
+    rel_err_arr = np.zeros([len(ns_list),len(nz_list),len(na_list)])
+
+    p_kelp = best_results['p_kelp']
+    best_irrad = best_results['irradiance']
+    best_perceived_irrad = np.sum(p_kelp*best_irrad, axis=(0,1)) / np.sum(p_kelp, axis=(0,1))
+    perceived_irrad_dict[(ns_max,nz_max,na_max)] = best_perceived_irrad
+
+    # Vary nz
+    ns = ns_max
+    na = na_max
+    for i, nz in enumerate(nz_list[:-1]):
+        perceived_irrad, abs_err, rel_err, duration = compute_err(ns, nz, na, best_perceived_irrad, a_water, b, kelp_profile, absorptance_kelp, const)
+        perceived_irrad_dict[(ns, nz, na)] = perceived_irrad
+        duration_dict[(ns, nz, na)] = duration
+        abs_err_arr[i, -1, -1] = abs_err
+        rel_err_arr[i, -1, -1] = rel_err
+
+    # Vary ns
+    nz = nz_max
+    na = na_max
+    for i, ns in enumerate(ns_list[:-1]):
+        perceived_irrad, abs_err, rel_err, duration = compute_err(ns, nz, na, best_perceived_irrad, a_water, b, kelp_profile, absorptance_kelp, const)
+        perceived_irrad_dict[(ns, nz, na)] = perceived_irrad
+        duration_dict[(ns, nz, na)] = duration
+        abs_err_arr[-1, i, -1] = abs_err
+        rel_err_arr[-1, i, -1] = rel_err
+
+    # Vary na
+    ns = ns_max
+    nz = nz_max
+    for i, na in enumerate(na_list[:-1]):
+        perceived_irrad, abs_err, rel_err, duration = compute_err(ns, nz, na, best_perceived_irrad, a_water, b, kelp_profile, absorptance_kelp, const)
+        perceived_irrad_dict[(ns, nz, na)] = perceived_irrad
+        duration_dict[(ns, nz, na)] = duration
+        abs_err_arr[-1, -1, i] = abs_err
+        rel_err_arr[-1, -1, i] = rel_err
+
+    return perceived_irrad_dict, abs_err_arr, rel_err_arr, duration_dict
+
+
+
 # Plot Convergence Curves
 def grid_study_plot(ns_list, nz_list, na_list, irrad_dict, abs_err_arr, rel_err_arr):
     ns_max = max(ns_list)

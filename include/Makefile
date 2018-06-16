@@ -120,7 +120,9 @@ $(jtest_inc): %.so: $(JTEST)/%.f90
 	$(FC) $(TESTFLAGS) $< -o $@
 # For actually importing in python
 $(f2py_targets): %: $(F2PY)/%.f90
-	LDFLAGS='-Wl,-rpath -Wl,$(LIB)' f2py -c --f90flags="$(F2PYFLAGS)" $(F2PY)/$@.pyf $^ -llis -lm -L$(LIB)/../lib -I$(INC)
+# TODO: This is sloppy & adds patchelf (Nix) dependency
+	f2py -c $^ -m $@ --f90flags="$(F2PYFLAGS)" -llis -lm -L$(LIB)/../lib -I$(INC)
+	patchelf --set-rpath $(LIB) $(PWD)/$@.*.so
 	rm -f $(F2PY_INC)/$@.*.so
 	ln -s $(PWD)/$@.*.so $(F2PY_INC)
 # To test outside of python directly in fortran
