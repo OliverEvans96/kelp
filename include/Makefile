@@ -168,7 +168,7 @@ test_pyasymptotics_wrap: asymptotics.o rte_sparse_matrices.o mgmres.o rte3d.o pr
 # F2PY #
 ########
 
-pykelp3d_wrap: prob.o fastgl.o sag.o utils.o kelp3d.o kelp_context.o mgmres.o rte_sparse_matrices.o light_context.o rte3d.o asymptotics.o
+pykelp3d_wrap: light_interface.o prob.o fastgl.o sag.o utils.o kelp3d.o kelp_context.o mgmres.o rte_sparse_matrices.o light_context.o rte3d.o asymptotics.o
 
 #########
 # Tests #

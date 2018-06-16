@@ -76,7 +76,8 @@ contains
     double precision, dimension(nx, ny, nz) :: p_kelp
     double precision, dimension(nx, ny, nz, ntheta*(nphi-2)+2) :: radiance
     double precision, dimension(nx, ny, nz) :: irradiance
-    double precision, dimension(nz) :: avg_irrad, perceived_irrad
+    ! This is sloppy, but these functions need reals.
+    real, dimension(nz) :: avg_irrad, perceived_irrad
     character*(*) :: lis_opts
     integer lis_iter
     double precision :: lis_time, lis_resid
