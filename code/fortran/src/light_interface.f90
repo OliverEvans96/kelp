@@ -1,4 +1,4 @@
-module light_interface_module
+module light_interface
   use rte3d
   use kelp3d
   use asymptotics
@@ -364,4 +364,4 @@ contains
 
   end subroutine calculate_perceived_irradiance
 
-end module light_interface_module
+end module light_interface
