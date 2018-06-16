@@ -256,7 +256,7 @@ def nokelp_calculate(a_water, b, ns, na, const, num_threads=1):
     import time
 
     # Extract constants
-    (rope_spacing, zmin, zmax, nz, I0, phi_s, theta_s, decay, xmin, xmax, ymin, ymax, absortpance_kelp,
+    (rope_spacing, zmin, zmax, nz, I0, phi_s, theta_s, decay, xmin, xmax, ymin, ymax, absorptance_kelp,
          num_scatters, gmres_flag, gmres_flag, lis_options) = const
     a_kelp = a_water
 
@@ -352,6 +352,7 @@ def kelp_calculate_full(base_dir, db_path, table_name, absorptance_kelp, a_water
     # a_kelp = absorption coefficient = %/m (units 1/m).
     a_kelp = absorptance_kelp / ft
 
+    print("a_kelp = {}".format(a_kelp))
     print("xmin = {}".format(xmin))
     print("xmax = {}".format(xmax))
     print("nx = {}".format(nx))
@@ -405,6 +406,7 @@ def kelp_calculate_full(base_dir, db_path, table_name, absorptance_kelp, a_water
     )
 
     avg_irrad = np.mean(irrad, axis=(0,1))
+    # TODO: Account for zero kelp
     perc_irrad = np.sum(p_kelp*irrad, axis=(0,1)) / np.sum(p_kelp, axis=(0,1))
 
     # End timer
@@ -472,7 +474,6 @@ def kelp_calculate_full(base_dir, db_path, table_name, absorptance_kelp, a_water
         **params,
     }
     data_path = create_nc(db_path, **nc_dict)
-
 
     # Save to DB
     db_dict = {

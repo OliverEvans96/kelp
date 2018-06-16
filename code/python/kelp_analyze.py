@@ -1,5 +1,7 @@
 # 3rd party
+import sqlite3
 import netCDF4 as nc
+import numpy as np
 import pandas as pd
 
 def table_to_df(conn, table_name):
@@ -33,7 +35,7 @@ def query_results(conn, table_name, **kwargs):
 
     # Execute query
     cursor = conn.execute(query)
-    results_list = [x for x in cursor]
+    results_list = cursor.fetchall()
 
     # Extract matching datasets
     datasets = [nc.Dataset(results[-1]) for results in results_list]
@@ -209,31 +211,28 @@ def compute_block_err(ns, nz, na, best_irrad, a_water, b, kelp_profile, absorpta
     rel_err = np.mean(np.abs((irrad-block_best_irrad)/block_best_irrad))
     return irrad, abs_err, rel_err
 
-def compute_err(ns, nz, na, best_perceived_irrad, a_water, b, kelp_profile, absorptance_kelp, const):
+def compute_err(conn, table_name, ns, nz, na, best_perceived_irrad):
     print("ns={}, nz={}, na={}".format(ns,nz,na))
 
-    compute_results = lv.apply(kelp_param.kelp_calculate,
-        a_water,
-        b,
-        ns,
-        na,
-        nz,
-        kelp_profile,
-        absorptance_kelp,
-        gmres_flag=True,
-        num_scatters=4,
-        const=const
-    ).result()
+    compute_results = query_results(
+        conn,
+        table_name,
+        ns=ns,
+        nz=nz,
+        na=na
+    )[0]
 
-    p_kelp = compute_results['p_kelp']
-    irrad = compute_results['irradiance']
+    zmin = 0
+    zmax = compute_results['zmax'][:].data
+    p_kelp = compute_results['p_kelp'][:].data
+    irrad = compute_results['irrad'][:].data
     # Perceived irradiance for each depth layer
     perceived_irrad = np.sum(p_kelp*irrad, axis=(0,1)) / np.sum(p_kelp, axis=(0,1))
     # If p_kelp is 0, then so is perceied_irrad
     perceived_irrad[np.isnan(perceived_irrad)] = 0
     abs_err = abs_err_uneven(zmin, zmax, best_perceived_irrad, perceived_irrad)
     rel_err = rel_err_uneven(zmin, zmax, best_perceived_irrad, perceived_irrad)
-    return perceived_irrad, abs_err, rel_err, compute_results['duration']
+    return perceived_irrad, abs_err, rel_err, compute_results['compute_time']
 
 def slice_1d(n_list, best_ind, irrad_dict, pos, label):
     ns_max, nz_max, na_max = best_ind
@@ -326,40 +325,44 @@ def slice_1d(n_list, best_ind, irrad_dict, pos, label):
     plt.show()
 
 # TODO: args
-def grid_study_analyze():
+def grid_study_analyze(db_path, table_name):
     """
     Analyze results from grid_study_compute.
     Compare all to best, calculate errors.
     """
+    conn = sqlite3.connect(db_path)
+
+    cursor = conn.execute('''
+    SELECT ns, nz, na
+    FROM {table_name}
+    '''.format(table_name=table_name))
+
+    # Get all unique values of ns, nz, na
+    ns_list, nz_list, na_list = (
+        sorted(set(z)) for z in zip(*cursor.fetchall())
+    )
+
     ns_max = max(ns_list)
     nz_max = max(nz_list)
     na_max = max(na_list)
 
-    print("ns_max = {}".format(ns_max))
-    print("nz_max = {}".format(nz_max))
-    print("na_max = {}".format(na_max))
-
-    # best solution (no kelp, no scattering)
-    best_results = lv.apply(kelp_param.kelp_calculate,
-        a_water,
-        b,
-        ns_max,
-        na_max,
-        nz_max,
-        kelp_profile,
-        absorptance_kelp,
-        gmres_flag=True,
-        num_scatters=4,
-        const=const
-    ).result()
+    # Assume there's only one run
+    # that matches largest grid
+    best_results = query_results(
+        conn,
+        table_name,
+        ns=ns_max,
+        nz=nz_max,
+        na=na_max
+    )[0]
 
     perceived_irrad_dict = {}
     duration_dict = {}
     abs_err_arr = np.zeros([len(ns_list),len(nz_list),len(na_list)])
     rel_err_arr = np.zeros([len(ns_list),len(nz_list),len(na_list)])
 
-    p_kelp = best_results['p_kelp']
-    best_irrad = best_results['irradiance']
+    p_kelp = best_results['p_kelp'][:].data
+    best_irrad = best_results['irrad'][:].data
     best_perceived_irrad = np.sum(p_kelp*best_irrad, axis=(0,1)) / np.sum(p_kelp, axis=(0,1))
     perceived_irrad_dict[(ns_max,nz_max,na_max)] = best_perceived_irrad
 
@@ -367,7 +370,7 @@ def grid_study_analyze():
     ns = ns_max
     na = na_max
     for i, nz in enumerate(nz_list[:-1]):
-        perceived_irrad, abs_err, rel_err, duration = compute_err(ns, nz, na, best_perceived_irrad, a_water, b, kelp_profile, absorptance_kelp, const)
+        perceived_irrad, abs_err, rel_err, duration = compute_err(conn, table_name, ns, nz, na, best_perceived_irrad)
         perceived_irrad_dict[(ns, nz, na)] = perceived_irrad
         duration_dict[(ns, nz, na)] = duration
         abs_err_arr[i, -1, -1] = abs_err
@@ -377,7 +380,7 @@ def grid_study_analyze():
     nz = nz_max
     na = na_max
     for i, ns in enumerate(ns_list[:-1]):
-        perceived_irrad, abs_err, rel_err, duration = compute_err(ns, nz, na, best_perceived_irrad, a_water, b, kelp_profile, absorptance_kelp, const)
+        perceived_irrad, abs_err, rel_err, duration = compute_err(conn, table_name, ns, nz, na, best_perceived_irrad)
         perceived_irrad_dict[(ns, nz, na)] = perceived_irrad
         duration_dict[(ns, nz, na)] = duration
         abs_err_arr[-1, i, -1] = abs_err
@@ -387,15 +390,13 @@ def grid_study_analyze():
     ns = ns_max
     nz = nz_max
     for i, na in enumerate(na_list[:-1]):
-        perceived_irrad, abs_err, rel_err, duration = compute_err(ns, nz, na, best_perceived_irrad, a_water, b, kelp_profile, absorptance_kelp, const)
+        perceived_irrad, abs_err, rel_err, duration = compute_err(conn, table_name, ns, nz, na, best_perceived_irrad)
         perceived_irrad_dict[(ns, nz, na)] = perceived_irrad
         duration_dict[(ns, nz, na)] = duration
         abs_err_arr[-1, -1, i] = abs_err
         rel_err_arr[-1, -1, i] = rel_err
 
     return perceived_irrad_dict, abs_err_arr, rel_err_arr, duration_dict
-
-
 
 # Plot Convergence Curves
 def grid_study_plot(ns_list, nz_list, na_list, irrad_dict, abs_err_arr, rel_err_arr):
