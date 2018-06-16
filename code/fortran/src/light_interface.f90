@@ -202,7 +202,7 @@ contains
 
     ! Calculate output variables
     call calculate_average_irradiance(grid, light, avg_irrad)
-    call calculate_perceived_irrad(grid, p_kelp, &
+    call calculate_perceived_irradiance(grid, p_kelp, &
          perceived_irrad, light%irradiance)
 
     !write(*,*) 'vsf_angles = ', iops%vsf_angles
@@ -315,7 +315,7 @@ contains
     end do
   end subroutine calculate_average_irradiance
 
-  subroutine calculate_perceived_irrad(grid, p_kelp, &
+  subroutine calculate_perceived_irradiance(grid, p_kelp, &
        perceived_irrad, irradiance)
     type(space_angle_grid) grid
     double precision, dimension(:,:,:) :: p_kelp
@@ -362,6 +362,6 @@ contains
        end if
     end do
 
-  end subroutine calculate_perceived_irrad
+  end subroutine calculate_perceived_irradiance
 
 end module light_interface_module
