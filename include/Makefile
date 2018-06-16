@@ -158,7 +158,7 @@ test_grid_mod.o: sag.o
 test_asymptotics.o: asymptotics.o light_context.o rte_sparse_matrices.o mgmres.o rte3d.o
 test_asymptotics_mod.o: asymptotics.o prob.o fastgl.o sag.o utils.o rte3d.o kelp_context.o light_context.o rte_sparse_matrices.o asymptotics.o
 # F2PY test w/o python
-pykelp3d_wrap.o: asymptotics.o rte_sparse_matrices.o mgmres.o rte3d.o prob.o fastgl.o sag.o utils.o kelp3d.o kelp_context.o light_context.o
+pykelp3d_wrap.o: light_interface.o asymptotics.o rte_sparse_matrices.o mgmres.o rte3d.o prob.o fastgl.o sag.o utils.o kelp3d.o kelp_context.o light_context.o
 
 # F2PY Test
 test_pykelp3d_wrap: pykelp3d_wrap.o asymptotics.o rte_sparse_matrices.o mgmres.o rte3d.o prob.o fastgl.o sag.o utils.o kelp3d.o kelp_context.o light_context.o

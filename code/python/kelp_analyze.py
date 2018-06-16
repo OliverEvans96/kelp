@@ -3,6 +3,8 @@ import sqlite3
 import netCDF4 as nc
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
+from scipy.interpolate import interp1d
 
 def table_to_df(conn, table_name):
     select_cmd = 'SELECT * FROM {table_name}'.format(table_name=table_name)
@@ -41,9 +43,9 @@ def query_results(conn, table_name, **kwargs):
     datasets = [nc.Dataset(results[-1]) for results in results_list]
     return datasets
 
-def nokelp_visualize(duration, date, radiance, irradiance):
+def nokelp_visualize(compute_time, date, radiance, irradiance):
     print("Computation finished {}".format(date))
-    print("Took {:.2f} seconds".format(duration))
+    print("Took {:.2f} seconds".format(compute_time))
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         fig = ipv.figure()
@@ -56,9 +58,9 @@ def nokelp_visualize(duration, date, radiance, irradiance):
     ipv.show()
 
 
-def kelp_visualize(duration, date, radiance, irradiance, p_kelp):
+def kelp_visualize(compute_time, date, radiance, irradiance, p_kelp):
     print("Computation finished {}".format(date))
-    print("Took {:.2f} seconds".format(duration))
+    print("Took {:.2f} seconds".format(compute_time))
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         kelpfig = ipv.figure()
@@ -234,13 +236,15 @@ def compute_err(conn, table_name, ns, nz, na, best_perceived_irrad):
     rel_err = rel_err_uneven(zmin, zmax, best_perceived_irrad, perceived_irrad)
     return perceived_irrad, abs_err, rel_err, compute_results['compute_time']
 
-def slice_1d(n_list, best_ind, irrad_dict, pos, label):
+def plot_slice_1d(n_list, best_ind, irrad_dict, pos, label, zmin, zmax):
     ns_max, nz_max, na_max = best_ind
     n_max = best_ind[pos]
     best_perceived_irrad = irrad_dict[(ns_max,nz_max,na_max)]
 
     dz = (zmax-zmin)/nz_max
     z_best = np.linspace(zmin+0.5*dz, zmax-0.5*dz, nz_max)
+
+    print(label)
 
     plt.figure(figsize=[8,6])
 
@@ -260,7 +264,7 @@ def slice_1d(n_list, best_ind, irrad_dict, pos, label):
     #plt.ylim(1e-2, I0)
     #plt.legend()
     plt.xlabel('z (depth)')
-    plt.ylabel(r'Average Irradiance ($\mbox{W/m}^2)')
+    plt.ylabel(r'Average Irradiance ($\mathrm{W/m}^2$)')
 
     # Linear Average Irradiance
     ind = best_ind[:]
@@ -278,7 +282,7 @@ def slice_1d(n_list, best_ind, irrad_dict, pos, label):
     #plt.ylim(0, I0)
     plt.legend(loc='upper left', bbox_to_anchor=(1.1,1))
     plt.xlabel('z (depth)')
-    plt.ylabel(r'Average Irradiance ($\mbox{W/m}^2)')
+    plt.ylabel(r'Average Irradiance ($\mathrm{W/m}^2$)')
 
     # Absolute Error vs depth
     ind = best_ind[:]
@@ -324,7 +328,6 @@ def slice_1d(n_list, best_ind, irrad_dict, pos, label):
     plt.tight_layout()
     plt.show()
 
-# TODO: args
 def grid_study_analyze(db_path, table_name):
     """
     Analyze results from grid_study_compute.
@@ -339,7 +342,7 @@ def grid_study_analyze(db_path, table_name):
 
     # Get all unique values of ns, nz, na
     ns_list, nz_list, na_list = (
-        sorted(set(z)) for z in zip(*cursor.fetchall())
+        sorted(map(int, set(z))) for z in zip(*cursor.fetchall())
     )
 
     ns_max = max(ns_list)
@@ -357,7 +360,7 @@ def grid_study_analyze(db_path, table_name):
     )[0]
 
     perceived_irrad_dict = {}
-    duration_dict = {}
+    compute_time_dict = {}
     abs_err_arr = np.zeros([len(ns_list),len(nz_list),len(na_list)])
     rel_err_arr = np.zeros([len(ns_list),len(nz_list),len(na_list)])
 
@@ -370,9 +373,9 @@ def grid_study_analyze(db_path, table_name):
     ns = ns_max
     na = na_max
     for i, nz in enumerate(nz_list[:-1]):
-        perceived_irrad, abs_err, rel_err, duration = compute_err(conn, table_name, ns, nz, na, best_perceived_irrad)
+        perceived_irrad, abs_err, rel_err, compute_time = compute_err(conn, table_name, ns, nz, na, best_perceived_irrad)
         perceived_irrad_dict[(ns, nz, na)] = perceived_irrad
-        duration_dict[(ns, nz, na)] = duration
+        compute_time_dict[(ns, nz, na)] = compute_time
         abs_err_arr[i, -1, -1] = abs_err
         rel_err_arr[i, -1, -1] = rel_err
 
@@ -380,9 +383,9 @@ def grid_study_analyze(db_path, table_name):
     nz = nz_max
     na = na_max
     for i, ns in enumerate(ns_list[:-1]):
-        perceived_irrad, abs_err, rel_err, duration = compute_err(conn, table_name, ns, nz, na, best_perceived_irrad)
+        perceived_irrad, abs_err, rel_err, compute_time = compute_err(conn, table_name, ns, nz, na, best_perceived_irrad)
         perceived_irrad_dict[(ns, nz, na)] = perceived_irrad
-        duration_dict[(ns, nz, na)] = duration
+        compute_time_dict[(ns, nz, na)] = compute_time
         abs_err_arr[-1, i, -1] = abs_err
         rel_err_arr[-1, i, -1] = rel_err
 
@@ -390,27 +393,32 @@ def grid_study_analyze(db_path, table_name):
     ns = ns_max
     nz = nz_max
     for i, na in enumerate(na_list[:-1]):
-        perceived_irrad, abs_err, rel_err, duration = compute_err(conn, table_name, ns, nz, na, best_perceived_irrad)
+        perceived_irrad, abs_err, rel_err, compute_time = compute_err(conn, table_name, ns, nz, na, best_perceived_irrad)
         perceived_irrad_dict[(ns, nz, na)] = perceived_irrad
-        duration_dict[(ns, nz, na)] = duration
+        compute_time_dict[(ns, nz, na)] = compute_time
         abs_err_arr[-1, -1, i] = abs_err
         rel_err_arr[-1, -1, i] = rel_err
 
-    return perceived_irrad_dict, abs_err_arr, rel_err_arr, duration_dict
+    return perceived_irrad_dict, abs_err_arr, rel_err_arr, compute_time_dict
 
 # Plot Convergence Curves
-def grid_study_plot(ns_list, nz_list, na_list, irrad_dict, abs_err_arr, rel_err_arr):
+def grid_study_plot(irrad_dict, abs_err_arr, rel_err_arr, compute_time_dict, zmin, zmax):
+    # TODO: plot compute_time_dict
+
+    # Get all unique values of ns, nz, na from dict keys
+    ns_list, nz_list, na_list = (
+        sorted(map(int, set(z))) for z in zip(*irrad_dict.keys())
+    )
+
     ns_max = max(ns_list)
     nz_max = max(nz_list)
     na_max = max(na_list)
 
-    nz = ns_max
-    ns = ns_max
-
     best_ind = [ns_max, nz_max, na_max]
-    for pos, (label,n_list) in enumerate(zip(['ns','nz','na'],(ns_list,nz_list,na_list))):
-        slice_1d(n_list, best_ind, irrad_dict, pos, label)
+    for pos, (label, n_list) in enumerate(zip(['ns','nz','na'],(ns_list,nz_list,na_list))):
+        plot_slice_1d(n_list, best_ind, irrad_dict, pos, label, zmin, zmax)
 
+    print("together")
     # Relative error vs resolution
     fig, ax1 = plt.subplots()
     ax1.plot(ns_list[:-1], rel_err_arr[:-1,-1,-1], 'o-', label='ns')

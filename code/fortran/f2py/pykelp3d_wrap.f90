@@ -5,6 +5,7 @@ module pykelp3d_wrap
   use rte3d
   use kelp3d
   use asymptotics
+  use light_interface
   implicit none
 
 contains
@@ -57,12 +58,14 @@ contains
   end subroutine gen_kelp
 
   ! TODO: max_rad -> surface_irrad
+  ! TODO: Calculate avg_irrad, perceied_irrad
+  ! using functions from light_interface.f90
   subroutine calculate_light_field( &
        xmin, xmax, nx, ymin, ymax, ny, zmin, zmax, nz, ntheta, nphi, &
        a_w, a_k, b, num_vsf, vsf_angles, vsf_vals, &
        theta_s, phi_s, max_rad, decay, &
-       p_kelp, radiance, irradiance, num_scatters, &
-       fd_flag, lis_opts, lis_iter, lis_time, lis_resid)
+       p_kelp, radiance, irradiance, avg_irrad, perceived_irrad, &
+       num_scatters, fd_flag, lis_opts, lis_iter, lis_time, lis_resid)
 
     integer nx, ny, nz, ntheta, nphi
     double precision xmin, xmax, ymin, ymax, zmin, zmax
@@ -73,6 +76,7 @@ contains
     double precision, dimension(nx, ny, nz) :: p_kelp
     double precision, dimension(nx, ny, nz, ntheta*(nphi-2)+2) :: radiance
     double precision, dimension(nx, ny, nz) :: irradiance
+    double precision, dimension(nz) :: avg_irrad, perceived_irrad
     character*(*) :: lis_opts
     integer lis_iter
     double precision :: lis_time, lis_resid
@@ -160,7 +164,14 @@ contains
     radiance = light%radiance
     irradiance = light%irradiance
 
-    ! TODO: Get lis_iter, lis_time, lis_resid
+    ! TODO: Make sure this works
+    call lis_solver_get_iters(mat%solver, lis_iter)
+    call lis_solver_get_time(mat%solver, lis_time)
+    call lis_solver_get_residualnorm(mat%solver, lis_resid)
+
+    call calculate_average_irradiacnce(grid, light, avg_irrad)
+    call calculate_perceived_irradiance(grid, p_kelp, &
+         perceived_irrad, irradiance)
 
     write(*,*) 'deinit'
     call bc%deinit()

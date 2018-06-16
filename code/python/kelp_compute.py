@@ -400,14 +400,10 @@ def kelp_calculate_full(base_dir, db_path, table_name, absorptance_kelp, a_water
         a_water, a_kelp, b,
         vsf_angles, vsf_vals,
         theta_s, phi_s, I0, decay,
-        p_kelp, rad, irrad,
+        p_kelp, rad, irrad, avg_irrad, perc_irrad,
         num_scatters, fd_flag, lis_opts,
         lis_iter, lis_time, lis_resid
     )
-
-    avg_irrad = np.mean(irrad, axis=(0,1))
-    # TODO: Account for zero kelp
-    perc_irrad = np.sum(p_kelp*irrad, axis=(0,1)) / np.sum(p_kelp, axis=(0,1))
 
     # End timer
     toc = time.time()
