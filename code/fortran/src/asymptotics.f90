@@ -318,7 +318,11 @@ module asymptotics
     double precision, dimension(num_cells+1) :: s
     double precision :: integral
     double precision bi, di
+    double precision cutoff
     integer i, j
+
+    ! Maximum absorption coefficient suitable for numerical computation
+    cutoff = 10.d0
 
     integral = 0
     do i=1, num_cells
@@ -327,14 +331,18 @@ module asymptotics
           bi = bi - a_tilde(j)*ds(j)
        end do
 
-       ! WARNING: This will overflow if a_tilde is too large.
-       if(a_tilde(i) .eq. 0) then
-          di = ds(i)
-       else
-          di = (exp(a_tilde(i)*s(i+1))-exp(a_tilde(i)*s(i)))/a_tilde(i)
+       ! Without this conditional, overflow occurs.
+       ! Which is unnecessary, because large absorption
+       ! means very small light added to the ray
+       ! at this grid cell.
+       if(a_tilde(i) .lt. cutoff) then
+          if(a_tilde(i) .eq. 0) then
+              di = ds(i)
+          else
+              di = (exp(a_tilde(i)*s(i+1))-exp(a_tilde(i)*s(i)))/a_tilde(i)
+          end if
+          integral = integral + gn(i)*di * exp(bi)
        end if
-
-       integral = integral + gn(i)*di * exp(bi)
     end do
 
   end function calculate_ray_integral
