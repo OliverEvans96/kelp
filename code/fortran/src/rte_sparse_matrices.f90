@@ -52,6 +52,7 @@ type rte_mat
    !procedure :: find_index => mat_find_index
    procedure :: set_bc => mat_set_bc
    procedure :: solve => mat_solve
+   procedure :: get_solver_stats
    procedure :: ind => mat_ind
    !procedure :: to_hdf => mat_to_hdf
    procedure attenuate
@@ -230,6 +231,17 @@ contains
     call lis_solve(mat%A, mat%b, mat%x, mat%solver, mat%ierr)
 
   end subroutine mat_solve
+
+  subroutine get_solver_stats(mat, lis_iter, lis_time, lis_resid)
+    class(rte_mat) mat
+    integer lis_iter
+    double precision lis_time
+    double precision lis_resid
+
+    call lis_solver_get_iter(mat%solver, lis_iter, mat%ierr)
+    call lis_solver_get_time(mat%solver, lis_time, mat%ierr)
+    call lis_solver_get_residualnorm(mat%solver, lis_resid, mat%ierr)
+  end subroutine get_solver_stats
 
   subroutine mat_set_solver_opts(mat, solver_opts)
     class(rte_mat) mat

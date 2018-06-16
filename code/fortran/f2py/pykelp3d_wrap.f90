@@ -153,6 +153,8 @@ contains
       write(*,*) 'Calculate Radiance'
       call light%calculate_radiance()
 
+      ! TODO: Make sure this works
+      call mat%get_solver_stats(lis_iter, lis_time, lis_resid)
       call mat%deinit()
     else
        call light%init_grid(grid)
@@ -164,15 +166,6 @@ contains
 
     radiance = light%radiance
     irradiance = light%irradiance
-
-    ! TODO: Make sure this works
-    call lis_solver_get_iters(mat%solver, lis_iter)
-    call lis_solver_get_time(mat%solver, lis_time)
-    call lis_solver_get_residualnorm(mat%solver, lis_resid)
-
-    call calculate_average_irradiacnce(grid, light, avg_irrad)
-    call calculate_perceived_irradiance(grid, p_kelp, &
-         perceived_irrad, irradiance)
 
     write(*,*) 'deinit'
     call bc%deinit()
