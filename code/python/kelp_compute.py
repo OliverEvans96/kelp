@@ -5,11 +5,13 @@ import subprocess
 import multiprocessing
 import itertools as it
 import os
+import time
 
 # 3rd party
 import netCDF4 as nc
 import tempfile
 import ipyparallel as ipp
+import numpy as np
 
 ###############
 # Misc. utils #
@@ -85,6 +87,10 @@ def create_table(table_name, prefix='.'):
 
     conn = sqlite3.connect(db_path)
     conn.execute(create_table_template.format(table_name=table_name))
+
+    # Enable WAL for concurrent writing
+    # See https://stackoverflow.com/questions/4060772/sqlite-concurrent-access
+    # conn.execute("PRAGMA journal_mode=WAL;")
     conn.close()
 
     return base_dir, db_path, table_name
@@ -137,14 +143,37 @@ def insert_run(db_path, table_name=None, **params):
 
     insert_cmd = insert_template.format(table_name=table_name, **params)
 
-    # Execute SQL command
-    conn = sqlite3.connect(db_path)
-    cursor = conn.execute(insert_cmd)
-    # Save changes
-    conn.commit()
-    print("Executed SQL:")
-    print(insert_cmd)
-    conn.close()
+    # Extra layer of protection to make sure database is closed.
+    try:
+        # Open database connection
+        conn = sqlite3.connect(db_path)
+
+        # Concurrent writes may result in failure.
+        # In that case: try, try again.
+        max_retries = 20
+        write_success = False
+        for i in range(max_retries):
+            try:
+                # Execute SQL command
+                cursor = conn.execute(insert_cmd)
+                # Save changes
+                conn.commit()
+                write_success = True
+                break
+            except sqlite3.OperationalError:
+                wait = 0.5 + np.random.rand()
+                print("Failure. Trying again in {:.2f} seconds.".format(wait))
+                time.sleep(wait)
+
+
+        if write_success:
+            print("Executed SQL:")
+            print(insert_cmd)
+        else:
+            raise sqlite3.OperationalError("Could not write after {} tries.".format(max_retries))
+
+    finally:
+        conn.close()
 
 def create_nc(db_path, **results):
     """Create netCDF file to store results"""
@@ -333,6 +362,8 @@ def kelp_calculate_full(base_dir, db_path, table_name, absorptance_kelp, a_water
     p_kelp = np.asfortranarray(np.zeros([nx, ny, nz]))
     rad = np.asfortranarray(np.zeros([nx, ny, nz, nomega]))
     irrad = np.asfortranarray(np.zeros([nx, ny, nz]))
+    avg_irrad = np.asfortranarray(np.zeros([nz]))
+    perc_irrad = np.asfortranarray(np.zeros([nz]))
 
     # Start timer
     tic = time.time()
@@ -504,7 +535,7 @@ def kelp_calculate(base_dir, db_path, table_name, a_water, b, ns, nz, na, kelp_d
     length_std = 0.2 * max_length
 
     zmax = 10 # Max. vertical
-    rope_spacing = 10 # Horizontal
+    rope_spacing = 15 # Horizontal
 
     # Fairly sunny day
     I0 = 50.0
@@ -537,7 +568,7 @@ def grid_study_compute(study_name, a_water, b, kelp_dist, ns_list, nz_list, na_l
     Store results in sqlite database
     `study_name` will be database name
     Database file located at {study_dir}/{study_name}/{study_name.db}
-    Other data files located at {study_dir}/{study_name}
+    Other data files located at {study_dir}/{study_name}/data/*.nc
     """
     # Create database
     base_dir, db_path, table_name = create_table(study_name, study_dir)
