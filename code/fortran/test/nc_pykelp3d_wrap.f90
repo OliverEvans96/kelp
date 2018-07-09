@@ -33,6 +33,8 @@ double precision max_length
 
 character(len=256) :: nc_path
 integer ncid, varid
+integer, dimension(1) :: dimids
+integer str_len
 integer nc_err
 double precision dz
 
@@ -119,8 +121,10 @@ nc_err = nf90_get_var(ncid, varid, ft)
 write(*,*) "READ: ft = ", ft
 
 nc_err = nf90_inq_varid(ncid, "kelp_dist", varid)
-nc_err = nf90_get_var(ncid, varid, kelp_dist, count=(/ 9 /))
-write(*,*) "READ: kelp_dist = ", kelp_dist
+nc_err = nf90_inquire_variable(ncid, varid, dimids=dimids)
+nc_err = nf90_inquire_dimension(ncid, dimids(1), len=str_len)
+nc_err = nf90_get_var(ncid, varid, kelp_dist, count=(/ str_len /))
+write(*,*) "READ: kelp_dist = '", trim(kelp_dist), "'"
 
 nc_err = nf90_inq_varid(ncid, "max_length", varid)
 nc_err = nf90_get_var(ncid, varid, max_length)
@@ -139,8 +143,10 @@ nc_err = nf90_get_var(ncid, varid, fd_flag_int)
 write(*,*) "READ: fd_flag = ", fd_flag
 
 nc_err = nf90_inq_varid(ncid, "lis_opts", varid)
-nc_err = nf90_get_var(ncid, varid, lis_opts)
-write(*,*) "READ: lis_opts = ", lis_opts
+nc_err = nf90_inquire_variable(ncid, varid, dimids=dimids)
+nc_err = nf90_inquire_dimension(ncid, dimids(1), len=str_len)
+nc_err = nf90_get_var(ncid, varid, lis_opts, count=(/ str_len /))
+write(*,*) "READ: lis_opts = '", trim(lis_opts), "'"
 
 ! Close dataset
 nc_err = nf90_close(ncid)
