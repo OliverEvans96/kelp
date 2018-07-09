@@ -54,14 +54,14 @@ OPTFLAGS= -flto -fopenmp #-Ofast
 
 # Doesn't work as shared? Executable gives SEGFAULT immediately.
 # But that's okay, because this works.
-FFLAGS=-fPIC $(LISFLAGS) -I$(INC) -L$(LIB) $(OPTFLAGS) # $(PFLAGS) -Wall 
+FFLAGS=-fPIC $(LISFLAGS) -I$(INC) -L$(LIB) $(OPTFLAGS) $(PFLAGS) -Wall 
 # Flags for F2PY
 F2PYFLAGS=-fPIC $(OPTFLAGS) # $(PFLAGS) 
 # Test flags
 TESTMODFLAGS=-shared -fPIC $(FFLAGS)
 # Export LD_LIBRARY_PATH for tests
 TESTEXP=export LD_LIBRARY_PATH=$(INC):$(LD_LIBRARY_PATH)
-
+TEST_FLAGS=-I/usr/include -L/usr/lib -lnetcdff
 
 # All source files in each directory
 f90_src = $(wildcard $(SRC)/*.f90)
@@ -113,7 +113,7 @@ $(ext_inc): %.o: $(EXT)/%.f90
 $(hdf5_inc): %.o: $(HDF5)/%.f90
 	$(H5FC) -c $< $(FFLAGS) -o $@
 $(test_bin): %: $(TEST)/%.f90
-	$(FC) $^ $(FFLAGS) -o $(BIN)/$@
+	$(FC) $^ $(TEST_FLAGS) $(FFLAGS) -o $(BIN)/$@
 $(test_mod_inc): %.o: $(TEST_MOD)/%.f90
 	$(FC) -c $< $(FFLAGS) -o $@
 $(jtest_inc): %.so: $(JTEST)/%.f90
@@ -162,6 +162,7 @@ pykelp3d_wrap.o: light_interface.o asymptotics.o rte_sparse_matrices.o mgmres.o 
 
 # F2PY Test
 test_pykelp3d_wrap: pykelp3d_wrap.o asymptotics.o rte_sparse_matrices.o mgmres.o rte3d.o prob.o fastgl.o sag.o utils.o kelp3d.o kelp_context.o light_context.o
+nc_pykelp3d_wrap: pykelp3d_wrap.o asymptotics.o rte_sparse_matrices.o mgmres.o rte3d.o prob.o fastgl.o sag.o utils.o kelp3d.o kelp_context.o light_context.o
 test_pyasymptotics_wrap: asymptotics.o rte_sparse_matrices.o mgmres.o rte3d.o prob.o fastgl.o sag.o utils.o kelp3d.o kelp_context.o light_context.o
 
 ########

@@ -1,5 +1,6 @@
 program test_pykelp3d_wrap
 use pykelp3d_wrap
+implicit none
 
 double precision xmin, xmax, ymin, ymax, zmin, zmax
 integer nx, ny, nz, ntheta, nphi, nomega
@@ -12,8 +13,12 @@ integer maxiter_inner, maxiter_outer
 double precision, dimension(:,:,:), allocatable :: p_kelp
 double precision, dimension(:,:,:,:), allocatable :: radiance
 double precision, dimension(:,:,:), allocatable :: irradiance
+real, dimension(:), allocatable :: avg_irrad, perceived_irrad
 integer num_scatters
-logical gmres_flag
+logical fd_flag
+character(len=256) :: lis_opts
+integer lis_iter
+double precision :: lis_time, lis_resid
 
 integer i, j, k, p
 
@@ -24,11 +29,11 @@ ymax = 1
 zmin = 0
 zmax = 2
 
-nx = 4
-ny = 4
-nz = 4
-ntheta = 4
-nphi = 4
+nx = 20
+ny = 20
+nz = 20
+ntheta = 20
+nphi = 20
 
 nomega = ntheta*(nphi-2)+2
 
@@ -39,6 +44,8 @@ allocate(vsf_vals(num_vsf))
 allocate(p_kelp(nx, ny, nz))
 allocate(radiance(nx, ny, nz, nomega))
 allocate(irradiance(nx, ny, nz))
+allocate(avg_irrad(nz))
+allocate(perceived_irrad(nz))
 
 a_w = 1.d0
 a_k = 0.d0
@@ -59,8 +66,10 @@ tol_rel = 1.d-3
 maxiter_inner = 100
 maxiter_outer = 100
 
-num_scatters = 3
-gmres_flag = .true.
+lis_opts = "-i gmres -restart 10000 -tol 1e-4"
+
+num_scatters = 1
+fd_flag = .false.
 
 do i=1, nx
    do j=1, ny
@@ -78,8 +87,8 @@ call calculate_light_field( &
      xmin, xmax, nx, ymin, ymax, ny, zmin, zmax, nz, ntheta, nphi, &
      a_w, a_k, b, num_vsf, vsf_angles, vsf_vals, &
      theta_s, phi_s, max_rad, decay, &
-     tol_abs, tol_rel, maxiter_inner, maxiter_outer, &
-     p_kelp, radiance, irradiance, num_scatters, gmres_flag)
+     p_kelp, radiance, irradiance, avg_irrad, perceived_irrad, &
+     num_scatters, fd_flag, lis_opts, lis_iter, lis_time, lis_resid)
 
 !write(*,*) 'radiance =', radiance
 
@@ -96,6 +105,8 @@ deallocate(vsf_vals)
 deallocate(p_kelp)
 deallocate(radiance)
 deallocate(irradiance)
+deallocate(avg_irrad)
+deallocate(perceived_irrad)
 
 end program test_pykelp3d_wrap
 

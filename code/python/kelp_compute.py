@@ -187,7 +187,7 @@ def create_nc(db_path, **results):
     )
 
     # Create file
-    rootgrp = nc.Dataset(data_path, 'w', format='NETCDF4')
+    rootgrp = nc.Dataset(data_path, 'w', format='NETCDF4_CLASSIC')
 
     # Get dimension sizes
     nx = results['nx']
@@ -235,9 +235,28 @@ def create_nc(db_path, **results):
 
     # Assume all others are scalar metadata
     for var_name, val in results.items():
-        print("{}: {} ({})".format(var_name, val, type(val)))
-        var = rootgrp.createVariable(var_name, type(val))
-        var[...] = val
+        var_type = type(val)
+        print("{}: {} ({})".format(var_name, val, var_type))
+        # String handling for interoperability with fortran:
+        # https://stackoverflow.com/a/37091930
+        if var_type == str:
+            # Strings treated as character arrays
+            dim_name = '{}_dim'.format(var_name)
+            char_dim = rootgrp.createDimension(dim_name, len(val))
+
+            type_str = 'S{}'.format(len(val))
+            char_val = nc.stringtochar(np.array([val], type_str))
+            print("CREATE STR VAR: ('{}', '{}', '{}')".format(var_name, type_str, dim_name))
+            var = rootgrp.createVariable(var_name, 'S1', (dim_name,))
+            var[...] = char_val
+        else:
+            # Scalar int or float
+            if var_type == float:
+                type_str = 'f4'
+            elif var_type == int:
+                type_str = 'i4'
+            var = rootgrp.createVariable(var_name, type_str)
+            var[...] = val
 
     # Close file
     rootgrp.close()
