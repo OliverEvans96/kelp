@@ -6,7 +6,7 @@ implicit none
 double precision xmin, xmax, ymin, ymax, zmin, zmax
 double precision rope_spacing
 integer nx, ny, nz, ntheta, nphi, nomega
-double precision a_w, a_k, b
+double precision a_w, a_k, b, absorptance_kelp
 double precision fr, fs, ft
 double precision num_dens
 integer num_vsf
@@ -80,13 +80,13 @@ nc_err = nf90_inq_varid(ncid, "nphi", varid)
 nc_err = nf90_get_var(ncid, varid, nphi)
 write(*,*) "READ: nphi = ", nphi
 
-nc_err = nf90_inq_varid(ncid, "a_w", varid)
+nc_err = nf90_inq_varid(ncid, "a_water", varid)
 nc_err = nf90_get_var(ncid, varid, a_w)
 write(*,*) "READ: a_w = ", a_w
 
-nc_err = nf90_inq_varid(ncid, "a_k", varid)
-nc_err = nf90_get_var(ncid, varid, a_k)
-write(*,*) "READ: a_k = ", a_k
+nc_err = nf90_inq_varid(ncid, "absorptance_kelp", varid)
+nc_err = nf90_get_var(ncid, varid, absorptance_kelp)
+write(*,*) "READ: absorptance_kelp = ", absorptance_kelp
 
 nc_err = nf90_inq_varid(ncid, "b", varid)
 nc_err = nf90_get_var(ncid, varid, b)
@@ -140,6 +140,12 @@ write(*,*) "READ: num_scatters = ", num_scatters
 
 nc_err = nf90_inq_varid(ncid, "fd_flag", varid)
 nc_err = nf90_get_var(ncid, varid, fd_flag_int)
+! fd_flag (convert integer -> logical)
+if(fd_flag_int .eq. 0) then
+   fd_flag = .false.
+else
+   fd_flag = .true.
+end if
 write(*,*) "READ: fd_flag = ", fd_flag
 
 nc_err = nf90_inq_varid(ncid, "lis_opts", varid)
@@ -153,13 +159,6 @@ nc_err = nf90_close(ncid)
 
 ! Construct options for `calculate_light_field` from .nc values
 
-! fd_flag (convert integer -> logical)
-if(fd_flag_int .eq. 0) then
-   fd_flag = .false.
-else
-   fd_flag = .true.
-end if
-
 ! x-y limits
 xmin = -rope_spacing / 2
 xmax = rope_spacing / 2
@@ -169,6 +168,10 @@ zmin = 0
 
 ! ntheta, nphi specified.
 nomega = ntheta*(nphi-2)+2
+num_vsf = ntheta
+
+! Absorption coefficient
+a_k = absorptance_kelp / ft
 
 allocate(frond_lengths(nz))
 allocate(frond_stds(nz))
@@ -185,7 +188,6 @@ allocate(avg_irrad(nz))
 allocate(perceived_irrad(nz))
 
 ! Mimicking what kelp_compute.py does
-num_vsf = ntheta
 do i=1, num_vsf
    vsf_angles(i) = dble(i-1) * pi / dble(num_vsf - 1)
    vsf_vals(i) = 1.d0/(4.d0*pi)
@@ -235,6 +237,12 @@ call calculate_light_field( &
 ! write(*,*) 'irrad max: ', maxval(irradiance)
 ! write(*,*) 'irrad mean: ', sum(irradiance)/size(irradiance)
 
+deallocate(frond_lengths)
+deallocate(frond_stds)
+deallocate(water_angles)
+deallocate(water_speeds)
+deallocate(num_fronds)
+
 deallocate(vsf_angles)
 deallocate(vsf_vals)
 deallocate(p_kelp)
@@ -242,12 +250,6 @@ deallocate(radiance)
 deallocate(irradiance)
 deallocate(avg_irrad)
 deallocate(perceived_irrad)
-deallocate(frond_lengths)
-deallocate(frond_stds)
-deallocate(water_angles)
-deallocate(water_speeds)
-deallocate(num_fronds)
-! TODO: Double-check deallocation
 
 end program nc_pykelp3d_wrap
 
@@ -286,7 +288,7 @@ subroutine get_kelp_dist(kelp_dist, max_length, zmin, zmax, nz, frond_lengths, f
         frond_lengths(k) = 0.d0
      end if
 
-     frond_stds(k) = 0.d0
+     frond_stds(k) = 1d-4 !0.d0
      water_speeds(k) = 0.5d0
      water_angles(k) = 2*pi / zmax * (z-zmin)
   end do
