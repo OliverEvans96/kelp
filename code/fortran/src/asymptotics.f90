@@ -317,7 +317,7 @@ module asymptotics
     double precision, dimension(num_cells) :: ds, a_tilde, gn
     double precision, dimension(num_cells+1) :: s
     double precision :: integral
-    double precision bi, di
+    double precision bi, di_exp_bi
     double precision cutoff
     integer i, j
 
@@ -331,17 +331,29 @@ module asymptotics
           bi = bi - a_tilde(j)*ds(j)
        end do
 
-       ! Without this conditional, overflow occurs.
-       ! Which is unnecessary, because large absorption
-       ! means very small light added to the ray
-       ! at this grid cell.
-       if(a_tilde(i) .lt. cutoff) then
-          if(a_tilde(i) .eq. 0) then
-              di = ds(i)
-          else
-              di = (exp(a_tilde(i)*s(i+1))-exp(a_tilde(i)*s(i)))/a_tilde(i)
-          end if
-          integral = integral + gn(i)*di * exp(bi)
+       ! In this case, so much absorption has occurred
+       ! previously on the path that we don't need
+       ! to continue, and we might get underflow if we do.
+       if(bi .lt. -100.d0) then
+          di_exp_bi = 0.d0
+       else
+
+         ! Without this conditional, overflow occurs.
+         ! Which is unnecessary, because large absorption
+         ! means very small light added to the ray
+         ! at this grid cell.
+         if(a_tilde(i) .lt. cutoff) then
+             if(a_tilde(i) .eq. 0) then
+                 di_exp_bi = ds(i) * exp(bi)
+             else
+                ! In an attempt to avoid overflow
+                ! and reduce compute time,
+                ! I'm combining exponentials.
+                ! di*exp(bi) -> di_exp_bi
+                di_exp_bi = (exp(a_tilde(i)*s(i+1) + bi) - exp(a_tilde(i)*s(i) + bi))/a_tilde(i)
+             end if
+             integral = integral + gn(i)*di_exp_bi
+         end if
        end if
     end do
 
