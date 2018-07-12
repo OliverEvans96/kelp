@@ -4,8 +4,11 @@ from datetime import datetime
 import subprocess
 import multiprocessing
 import itertools as it
-import os
+import functools as ft
+import threading
 import time
+import os
+import re
 
 # 3rd party
 import netCDF4 as nc
@@ -18,7 +21,7 @@ import numpy as np
 ###############
 
 def get_random_unused_filename(dir='.', prefix='', suffix=''):
-    with tempfile.NamedTemporaryFile(dir=dir, prefix=prefix, suffix=suffix) as fh:
+    with tempfile.NamedTemporaryFile(dir=dir, prefix=prefix, suffix=suffix, delete=False) as fh:
         filename = fh.name
 
     return filename
@@ -28,12 +31,19 @@ def get_git_commit_hash():
     return subprocess.check_output(['git','rev-parse','HEAD']).decode().strip()
     return filename
 
+def print_call(run_func, run_args, run_kwargs):
+    func_name = run_func.__name__
+    args_str = ', '.join([arg.__repr__() for arg in run_args])
+    kwargs_str = ', '.join(['{}={}'.format(k,v.__repr__()) for k,v in run_kwargs.items()])
+    sig_str = ', '.join([args_str, kwargs_str])
+    print("Calling {}({})".format(func_name, sig_str))
+
 
 #######################
 # Kelp-specific funcs #
 #######################
 
-def create_table(table_name, prefix='.'):
+def create_table(conn, table_name, prefix='.'):
     """
     Create sqlite db file, create table, and return connection.
     Assume table_name is unique (e.g. includes date.)
@@ -78,113 +88,95 @@ def create_table(table_name, prefix='.'):
         )
     '''
 
-    base_dir = os.path.join(prefix, table_name)
-    data_dir = os.path.join(base_dir, 'data')
-    db_path = os.path.join(base_dir, table_name+'.db')
-    # Will fail if `table_name` is not unique in `prefix`
-    os.mkdir(base_dir)
-    os.mkdir(data_dir)
-
-    conn = sqlite3.connect(db_path)
     conn.execute(create_table_template.format(table_name=table_name))
+    conn.commit()
 
-    # Enable WAL for concurrent writing
-    # See https://stackoverflow.com/questions/4060772/sqlite-concurrent-access
-    # conn.execute("PRAGMA journal_mode=WAL;")
-    conn.close()
-
-    return base_dir, db_path, table_name
+def create_dirs(study_dir):
+    os.mkdir(study_dir)
+    os.mkdir(os.path.join(study_dir, 'data'))
 
 def get_table_names(conn):
     cursor = conn.execute("SELECT name FROM sqlite_master WHERE type='table'")
     return cursor.fetchall()
 
-def insert_run(db_path, table_name=None, **params):
+def insert_run(conn, table_name=None, **params):
     insert_template = '''
     INSERT INTO {table_name} VALUES (
         NULL, /* id (autoincrement) */
-        {absorptance_kelp},
-        {a_water},
-        {b},
-        {ns},
-        {nz},
-        {na},
-        {num_dens},
-        '{kelp_dist}',
-        {fs},
-        {fr},
-        {ft},
-        {max_length},
-        {length_std},
-        {zmax},
-        {rope_spacing},
-        {I0},
-        {phi_s},
-        {theta_s},
-        {decay},
-        {num_cores},
-        {num_scatters},
-        {fd_flag},
-        '{lis_opts}',
-        '{date}',
-        '{git_commit}',
-        {compute_time},
-        {lis_iter},
-        {lis_time},
-        {lis_resid},
-        '{data_path}'
-        )
-    '''
+        :absorptance_kelp,
+        :a_water,
+        :b,
+        :ns,
+        :nz,
+        :na,
+        :num_dens,
+        :kelp_dist,
+        :fs,
+        :fr,
+        :ft,
+        :max_length,
+        :length_std,
+        :zmax,
+        :rope_spacing,
+        :I0,
+        :phi_s,
+        :theta_s,
+        :decay,
+        :num_cores,
+        :num_scatters,
+        :fd_flag,
+        :lis_opts,
+        :date,
+        :git_commit,
+        :compute_time,
+        :lis_iter,
+        :lis_time,
+        :lis_resid,
+        :data_path
+        );'''
 
     # If table_name is not provided,
     # just use the first one we find
     if not table_name:
         table_name = get_table_names(conn)[0]
 
-    insert_cmd = insert_template.format(table_name=table_name, **params)
-
-    # Extra layer of protection to make sure database is closed.
+    insert_command = insert_template.format(table_name=table_name)
     try:
-        # Open database connection
-        conn = sqlite3.connect(db_path)
+        conn.execute(insert_command, params)
+    except sqlite3.OperationalError as e:
+        print('FAILURE WITH:')
+        print("'{}'".format(insert_command))
+        raise e
 
-        # Concurrent writes may result in failure.
-        # In that case: try, try again.
-        max_retries = 20
-        write_success = False
-        for i in range(max_retries):
-            try:
-                # Execute SQL command
-                cursor = conn.execute(insert_cmd)
-                # Save changes
-                conn.commit()
-                write_success = True
-                break
-            except sqlite3.OperationalError:
-                wait = 0.5 + np.random.rand()
-                print("Failure. Trying again in {:.2f} seconds.".format(wait))
-                time.sleep(wait)
+def combine_dbs(study_dir, table_name):
+    data_dir = os.path.join(study_dir, 'data')
+    dbs = [
+        os.path.join(data_dir, f)
+        for f in os.listdir(data_dir) if re.match('.*\.db$', f)
+    ]
 
+    combined_db = os.path.join(study_dir, '{}.db'.format(table_name))
+    combined_conn = sqlite3.connect(combined_db)
+    create_table(combined_conn, table_name)
 
-        if write_success:
-            print("Executed SQL:")
-            print(insert_cmd)
-        else:
-            raise sqlite3.OperationalError("Could not write after {} tries.".format(max_retries))
-
-    finally:
+    for db in dbs:
+        # Read from individual tables
+        conn = sqlite3.connect(db)
+        print("Combining {} (tables: {})".format(db, get_table_names(conn)))
+        cursor = conn.execute('SELECT * FROM {}'.format(table_name))
+        print("read.")
+        columns = [tup[0] for tup in cursor.description]
+        # Write to combined table
+        for row_tuple in cursor:
+            row_dict = dict(zip(columns, row_tuple))
+            insert_run(combined_conn, table_name, **row_dict)
         conn.close()
 
-def create_nc(db_path, **results):
-    """Create netCDF file to store results"""
-    # Use directory containing DB
-    base_dir = os.path.dirname(db_path)
+    combined_conn.commit()
+    combined_conn.close()
 
-    # Generate random name in correct directory
-    data_path = get_random_unused_filename(
-        dir=os.path.join(base_dir, 'data'),
-        suffix='.nc'
-    )
+def create_nc(data_path, **results):
+    """Create netCDF file to store results"""
 
     # Create file
     rootgrp = nc.Dataset(data_path, 'w', format='NETCDF4_CLASSIC')
@@ -292,66 +284,128 @@ def get_kelp_dist(kelp_dist, max_length, zmin, zmax, nz):
 
     return frond_lengths, frond_stds, water_speeds, water_angles
 
+###############
 
+def study_decorator(study_func):
+    """Create directories before execution and
+    merge dbs afterwards.
+
+    Should be applied to functions like grid_study, etc.
+
+    Function sholud return func_list, args_list, kwargs_list.
+    Each of these will be applied via executor.apply().
+
+    executor should be something like `ipp.Client().load_balanced_view()`
+    with an `apply` method.
+
+    Store results in sqlite database
+    `study_name` will be database name
+    Database file located at {base_dir}/{study_name}/{study_name.db}
+    Other data files located at {base_dir}/{study_name}/data/*.nc
+    """
+    @ft.wraps(study_func)
+    def wrapper(study_name, *study_args, base_dir=os.curdir, executor=None, **study_kwargs):
+
+        study_dir = os.path.join(base_dir, study_name)
+        if not executor:
+            executor = ipp.Client().load_balanced_view()
+
+        create_dirs(study_dir)
+        study_calls = study_func(*study_args, **study_kwargs)
+
+        run_futures = []
+
+        # Execute function calls from study function
+        for run_func, run_args, run_kwargs in it.zip_longest(*study_calls):
+            # Make args, kwargs optional
+            if not run_args:
+                run_args = ()
+            if not run_kwargs:
+                run_kwargs = {}
+
+            run_kwargs = {
+                'study_dir': study_dir,
+                'study_name': study_name,
+                **run_kwargs
+            }
+
+            #print_call(run_func, run_args, run_kwargs)
+            run_futures.append(executor.apply(run_func, *run_args, **run_kwargs))
+
+        # Once all functions have run, combine the results
+        def wait_and_combine():
+            for future in run_futures:
+                future.wait()
+                print("{} futures done.".format(sum([f.done() for f in run_futures])))
+            combine_dbs(study_dir, study_name)
+        combine_thread = threading.Thread(target=wait_and_combine)
+        combine_thread.start()
+
+        # This will be returned immediately.
+        # It can be probed with combined_thread.isAlive()
+        return combine_thread, run_futures
+
+    return wrapper
+
+def run_decorator(run_func):
+    """Run function and save results to database.
+    The function is expected to return a dictionary
+    of all values to be stored in the database.
+
+    The .nc file will be written to data/`filename`.nc,
+    and the temporary .db file will be written to `filename`.db,
+    where `filename` is randomly generated.
+    All .db files should later be merged into one db per directory.
+    """
+    @ft.wraps(run_func)
+    def wrapper(*args, study_dir=None, study_name=None, **kwargs):
+        input_params, results = run_func(*args, **kwargs)
+
+        if not study_dir:
+            raise ValueError("kwarg `study_dir` required for functions wrapped by `run_decorator`")
+        if not study_name:
+            raise ValueError("kwarg `study_name` required for functions wrapped by `run_decorator`")
+
+        # Generate random name in correct directory
+        data_path = get_random_unused_filename(
+            dir=os.path.join(study_dir, 'data'),
+            suffix='.nc'
+        )
+        # Change suffix from .nc to .db for db path.
+        db_path = re.sub('\.nc$', '.db', data_path)
+
+        # SQL has no bool type
+        for var_name, val in input_params.items():
+            if type(val) == bool:
+                input_params[var_name] = int(val)
+
+        # Create data file containing results
+        nc_dict = {
+            **input_params,
+            **results
+        }
+        data_path = create_nc(data_path, **nc_dict)
+        # TODO: Remove arrays for DB
+
+        # Save to DB
+        db_dict = {
+            'data_path': data_path,
+            **input_params
+        }
+
+        conn = sqlite3.connect(db_path)
+        create_table(conn, study_name)
+        insert_run(conn, study_name, **db_dict)
+        conn.commit()
+        conn.close()
+
+    return wrapper
 
 ###############
 
-# TODO: This is not right anymore, but it doesn't matter much
-def nokelp_calculate(a_water, b, ns, na, const, num_threads=1):
-    from kelp3d_objs import f90
-    import numpy as np
-    from datetime import datetime
-    import time
-
-    # Extract constants
-    (rope_spacing, zmin, zmax, nz, I0, phi_s, theta_s, decay, xmin, xmax, ymin, ymax, absorptance_kelp,
-         num_scatters, gmres_flag, gmres_flag, lis_options) = const
-    a_kelp = a_water
-
-    num_vsf = na
-    vsf_angles = np.linspace(0,np.pi, na)
-    vsf_vals = 0*vsf_angles + 1/(4*np.pi)
-    ns = int(ns)
-
-    nomega = int(na*(na-2)+2)
-    p_kelp = np.asfortranarray(np.zeros([ns,ns,nz]))
-    radiance = np.asfortranarray(np.zeros([ns, ns, nz, nomega]))
-    irradiance = np.asfortranarray(np.zeros([ns, ns, nz]))
-
-    # Start timer
-    tic = time.time()
-
-    # Calculate light field
-    f90.calculate_light_field(
-        xmin, xmax,
-        ymin, ymax,
-        zmin, zmax,
-        na, na,
-        a_water, a_kelp, b,
-        vsf_angles, vsf_vals,
-        theta_s, phi_s, I0, decay,
-        p_kelp, radiance, irradiance,
-        num_scatters, gmres_flag, lic_options,
-    )
-
-    # End timer
-    toc = time.time()
-    date = datetime.now().ctime()
-
-    return {
-        'duration': toc - tic,
-        'date': date,
-        'radiance': radiance,
-        'irradiance': irradiance,
-        'p_kelp': p_kelp
-    }
-
-
-
-def kelp_calculate_full(base_dir, db_path, table_name, absorptance_kelp, a_water, b, ns, nz, na, num_dens, kelp_dist, fs, fr, ft, max_length, length_std, zmax, rope_spacing, I0, phi_s, theta_s, decay, num_cores, num_scatters, fd_flag, lis_opts):
+def kelp_calculate_full(absorptance_kelp, a_water, b, ns, nz, na, num_dens, kelp_dist, fs, fr, ft, max_length, length_std, zmax, rope_spacing, I0, phi_s, theta_s, decay, num_cores, num_scatters, fd_flag, lis_opts):
     # TODO: num_cores doesn't do anything yet.
 
-    # TODO: Remove imports?
     from kelp3d_objs import f90
     import numpy as np
     from datetime import datetime
@@ -402,6 +456,7 @@ def kelp_calculate_full(base_dir, db_path, table_name, absorptance_kelp, a_water
     # a_kelp = absorption coefficient = %/m (units 1/m).
     a_kelp = absorptance_kelp / ft
 
+    # TODO: Remove?
     print("a_kelp = {}".format(a_kelp))
     print("xmin = {}".format(xmin))
     print("xmax = {}".format(xmax))
@@ -466,12 +521,10 @@ def kelp_calculate_full(base_dir, db_path, table_name, absorptance_kelp, a_water
     lis_time = lis_time[0]
     lis_resid = lis_resid[0]
 
-    # TODO: Separate DB stuff into another function/wrapper?
-    params = {
+    input_params = {
         'absorptance_kelp': absorptance_kelp,
         'a_water': a_water,
         'b': b,
-        # TODO: Should I choose either ns or nx, not both?
         'ns': ns,
         'na': na,
         'nx': nx,
@@ -505,33 +558,21 @@ def kelp_calculate_full(base_dir, db_path, table_name, absorptance_kelp, a_water
         'lis_resid': lis_resid,
     }
 
-    # SQL has no bool type
-    for var_name, val in params.items():
-        if type(val) == bool:
-            params[var_name] = int(val)
-
-    # Create data file containing results
-    nc_dict = {
+    results = {
         'p_kelp': p_kelp,
         'rad': rad,
         'irrad': irrad,
         'avg_irrad': avg_irrad,
         'perc_irrad': perc_irrad,
-        **params,
     }
-    data_path = create_nc(db_path, **nc_dict)
 
-    # Save to DB
-    db_dict = {
-        'data_path': data_path,
-        **params
-    }
-    insert_run(db_path, table_name, **db_dict)
+    # TODO: This isn't working?
+    return input_params, results
 
-def kelp_calculate(base_dir, db_path, table_name, a_water, b, ns, nz, na, kelp_dist, num_scatters, fd_flag, lis_opts='', num_cores=None):
-    """kelp_calculate_full, but with some sensible defaults"""
+@run_decorator
+def kelp_calculate(a_water, b, ns, nz, na, kelp_dist, num_scatters, fd_flag, lis_opts='', num_cores=None):
+    """kelp_calculate_full, but with some sensible defaults, saving results to .db/.nc due to wrapper"""
 
-    # TODO: Remove imports?
     from kelp3d_objs import f90
     import numpy as np
     from datetime import datetime
@@ -567,7 +608,6 @@ def kelp_calculate(base_dir, db_path, table_name, a_water, b, ns, nz, na, kelp_d
         num_cores = multiprocessing.cpu_count()
 
     return kelp_calculate_full(
-        base_dir, db_path, table_name,
         absorptance_kelp, a_water, b,
         ns, nz, na, num_dens, kelp_dist,
         fs, fr, ft, max_length, length_std,
@@ -580,41 +620,33 @@ def kelp_calculate(base_dir, db_path, table_name, a_water, b, ns, nz, na, kelp_d
 ###############################
 # Grid study
 
-def grid_study_compute(study_name, a_water, b, kelp_dist, ns_list, nz_list, na_list, lis_opts, study_dir='.'):
+@study_decorator
+def grid_study_compute(a_water, b, kelp_dist, ns_list, nz_list, na_list, lis_opts):
     """
     Do grid study with Cartesian product of given resolutions.
-
-    Store results in sqlite database
-    `study_name` will be database name
-    Database file located at {study_dir}/{study_name}/{study_name.db}
-    Other data files located at {study_dir}/{study_name}/data/*.nc
     """
-    # Create database
-    base_dir, db_path, table_name = create_table(study_name, study_dir)
 
-    # TODO: Take `lv` as arg?
-    lv = ipp.Client().load_balanced_view()
-
-    # TODO: Should I choose either ns or nx, not both?
-    # Constant values
     # One scatter before FD
     num_scatters = 1
+
     # TODO: THIS DEFEATS THE POINT OF THE GRID STUDY
     fd_flag = False
 
-    # Futures from all computations
-    # TODO: Are they necessary? (maybe for tracking progress)
-    fut_dict = {}
+    # Actual calling will be performed by decorator.
+    # Functions to be called
+    func_list = []
+    # Arguments to be passed
+    args_list = [] # tuples/lists
+    kwargs_list = [] # dictionaries
 
     # Loop through grid
-    # TODO: Is db_path necessary
     for ns, nz, na in it.product(ns_list, nz_list, na_list):
-        fut_dict[(ns, nz, na)] = lv.apply(
-            kelp_calculate,
-            base_dir, db_path, table_name,
+        func_list.append(kelp_calculate)
+        args_list.append((
             a_water, b,
             ns, nz, na,
             kelp_dist, num_scatters,
-            fd_flag, lis_opts)
+            fd_flag, lis_opts
+        ))
 
-    return fut_dict, db_path, table_name
+    return func_list, args_list, kwargs_list
