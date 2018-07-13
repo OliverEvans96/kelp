@@ -359,7 +359,7 @@ def run_decorator(run_func):
     """
     @ft.wraps(run_func)
     def wrapper(*args, study_dir=None, study_name=None, **kwargs):
-        input_params, results = run_func(*args, **kwargs)
+        scalar_params, results = run_func(*args, **kwargs)
 
         if not study_dir:
             raise ValueError("kwarg `study_dir` required for functions wrapped by `run_decorator`")
@@ -375,22 +375,21 @@ def run_decorator(run_func):
         db_path = re.sub('\.nc$', '.db', data_path)
 
         # SQL has no bool type
-        for var_name, val in input_params.items():
+        for var_name, val in scalar_params.items():
             if type(val) == bool:
-                input_params[var_name] = int(val)
+                scalar_params[var_name] = int(val)
 
         # Create data file containing results
         nc_dict = {
-            **input_params,
+            **scalar_params,
             **results
         }
         data_path = create_nc(data_path, **nc_dict)
-        # TODO: Remove arrays for DB
 
         # Save to DB
         db_dict = {
             'data_path': data_path,
-            **input_params
+            **scalar_params
         }
 
         conn = sqlite3.connect(db_path)
@@ -435,8 +434,8 @@ def kelp_calculate_full(absorptance_kelp, a_water, b, ns, nz, na, num_dens, kelp
     p_kelp = np.asfortranarray(np.zeros([nx, ny, nz]))
     rad = np.asfortranarray(np.zeros([nx, ny, nz, nomega]))
     irrad = np.asfortranarray(np.zeros([nx, ny, nz]))
-    avg_irrad = np.asfortranarray(np.zeros([nz]))
-    perc_irrad = np.asfortranarray(np.zeros([nz]))
+    avg_irrad = np.asfortranarray(np.zeros([nz], dtype=np.float32))
+    perc_irrad = np.asfortranarray(np.zeros([nz], dtype=np.float32))
 
     # Start timer
     tic = time.time()
@@ -517,11 +516,11 @@ def kelp_calculate_full(absorptance_kelp, a_water, b, ns, nz, na, num_dens, kelp
     compute_time = toc - tic
 
     # Extract values from arrays
-    lis_iter = lis_iter[0]
-    lis_time = lis_time[0]
-    lis_resid = lis_resid[0]
+    lis_iter = int(lis_iter)
+    lis_time = float(lis_time)
+    lis_resid = float(lis_resid)
 
-    input_params = {
+    scalar_params = {
         'absorptance_kelp': absorptance_kelp,
         'a_water': a_water,
         'b': b,
@@ -566,8 +565,7 @@ def kelp_calculate_full(absorptance_kelp, a_water, b, ns, nz, na, num_dens, kelp
         'perc_irrad': perc_irrad,
     }
 
-    # TODO: This isn't working?
-    return input_params, results
+    return scalar_params, results
 
 @run_decorator
 def kelp_calculate(a_water, b, ns, nz, na, kelp_dist, num_scatters, fd_flag, lis_opts='', num_cores=None):
@@ -629,8 +627,7 @@ def grid_study_compute(a_water, b, kelp_dist, ns_list, nz_list, na_list, lis_opt
     # One scatter before FD
     num_scatters = 1
 
-    # TODO: THIS DEFEATS THE POINT OF THE GRID STUDY
-    fd_flag = False
+    fd_flag = True
 
     # Actual calling will be performed by decorator.
     # Functions to be called

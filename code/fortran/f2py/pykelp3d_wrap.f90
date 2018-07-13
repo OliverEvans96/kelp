@@ -58,7 +58,7 @@ contains
   end subroutine gen_kelp
 
   ! TODO: max_rad -> surface_irrad
-  ! TODO: Calculate avg_irrad, perceied_irrad
+  ! TODO: Calculate avg_irrad, perceived_irrad
   ! using functions from light_interface.f90
   subroutine calculate_light_field( &
        xmin, xmax, nx, ymin, ymax, ny, zmin, zmax, nz, ntheta, nphi, &
@@ -67,20 +67,20 @@ contains
        p_kelp, radiance, irradiance, avg_irrad, perceived_irrad, &
        num_scatters, fd_flag, lis_opts, lis_iter, lis_time, lis_resid)
 
-    integer nx, ny, nz, ntheta, nphi
-    double precision xmin, xmax, ymin, ymax, zmin, zmax
-    double precision a_w, a_k, b
-    integer num_vsf
-    double precision, dimension(num_vsf) :: vsf_angles, vsf_vals
-    double precision theta_s, phi_s, max_rad, decay
-    double precision, dimension(nx, ny, nz) :: p_kelp
-    double precision, dimension(nx, ny, nz, ntheta*(nphi-2)+2) :: radiance
-    double precision, dimension(nx, ny, nz) :: irradiance
+    integer, intent(in) :: nx, ny, nz, ntheta, nphi
+    double precision, intent(in) :: xmin, xmax, ymin, ymax, zmin, zmax
+    double precision, intent(in) :: a_w, a_k, b
+    integer, intent(in) ::num_vsf
+    double precision, dimension(num_vsf), intent(in) :: vsf_angles, vsf_vals
+    double precision, intent(in) :: theta_s, phi_s, max_rad, decay
+    double precision, dimension(nx, ny, nz), intent(in) :: p_kelp
+    double precision, dimension(nx, ny, nz, ntheta*(nphi-2)+2), intent(inout) :: radiance
+    double precision, dimension(nx, ny, nz), intent(inout) :: irradiance
     ! This is sloppy, but these functions need reals.
-    real, dimension(nz) :: avg_irrad, perceived_irrad
-    character*(*) :: lis_opts
-    integer lis_iter
-    double precision :: lis_time, lis_resid
+    real, dimension(nz), intent(inout) :: avg_irrad, perceived_irrad
+    character*(*), intent(in) :: lis_opts
+    integer, intent(inout) :: lis_iter
+    double precision, intent(inout) :: lis_time, lis_resid
 
     integer num_scatters
     ! Rely on external function to solve sparse matrix
