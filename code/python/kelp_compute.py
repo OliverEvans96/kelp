@@ -1,11 +1,12 @@
 # stdlib
-import sqlite3
 from datetime import datetime
-import subprocess
-import multiprocessing
 import itertools as it
 import functools as ft
+import multiprocessing
+import subprocess
 import threading
+import inspect
+import sqlite3
 import time
 import os
 import re
@@ -15,6 +16,7 @@ import netCDF4 as nc
 import tempfile
 import ipyparallel as ipp
 import numpy as np
+
 
 ###############
 # Misc. utils #
@@ -92,8 +94,16 @@ def create_table(conn, table_name, prefix='.'):
     conn.commit()
 
 def create_dirs(study_dir):
-    os.mkdir(study_dir)
-    os.mkdir(os.path.join(study_dir, 'data'))
+    try:
+        os.mkdir(study_dir)
+    except FileExistsError:
+        print("Appending existing study directory.")
+    except OSError as err:
+        raise err
+    else:
+        print("Creating new study directory.")
+
+    os.makedirs(os.path.join(study_dir, 'data'), exist_ok=True)
 
 def get_table_names(conn):
     cursor = conn.execute("SELECT name FROM sqlite_master WHERE type='table'")
@@ -284,6 +294,70 @@ def get_kelp_dist(kelp_dist, max_length, zmin, zmax, nz):
 
     return frond_lengths, frond_stds, water_speeds, water_angles
 
+###################
+# DB Run-checking #
+###################
+
+def dict_from_args(func, args, kwargs={}):
+    # Get function signature
+    sig = inspect.signature(func)
+    params = list(sig.parameters)
+
+    arg_dict = dict(zip(params, args))
+    return {**arg_dict, **kwargs}
+
+# TODO: It's fairly slow to open all DB connections
+# Not sure if there's a better option?
+def run_not_present(study_dir, run_func, run_args, run_kwargs):
+    data_dir = os.path.join(study_dir, 'data')
+
+    # Combine args and kwargs
+    run_dict = dict_from_args(run_func, run_args, run_kwargs)
+
+    # Assume this is the first time
+    # until proven otherwise
+    run_present = False
+    # Look in each db file in data dir
+    for filename in [fn for fn in os.listdir(data_dir) if re.match('.*\.db', fn)]:
+        db_path = os.path.join(data_dir, filename)
+
+        # Open database
+        conn = sqlite3.connect(db_path)
+        table_name = get_table_names(conn)[0][0]
+        table_cursor = conn.execute('select * from {}'.format(table_name))
+        cols = [d[0] for d in table_cursor.description]
+
+        # Check each run already recorded
+        # Should only be one per file, but just in case
+        for row_num, row_list in enumerate(table_cursor):
+            # Create dictionary from row
+            row_dict = dict(zip(cols, row_list))
+
+            # Assume row matches until
+            # a difference is found
+            row_found = True
+
+            # Check each function parameter
+            # (assume they have the same names as db columns),
+            # only need to check params in signature since
+            # therer are probably more db columns than parameters.
+            for param, run_val in run_dict.items():
+                # Not a match if db value doesn't equal run value
+                if row_dict[param] != run_val:
+                    row_found = False
+                    break
+
+            # Stop looking through rows if we found a match
+            if row_found:
+                run_present = True
+                break
+
+        if run_present:
+            break
+
+    return not run_present
+
+
 ###############
 
 def study_decorator(study_func):
@@ -323,21 +397,38 @@ def study_decorator(study_func):
             if not run_kwargs:
                 run_kwargs = {}
 
-            run_kwargs = {
+            # Add these keyword arguments for `run_wrapper`
+            # Don't overwrite run_kwargs so as not to
+            # confuse `run_not_present` with kwargs which
+            # are not db columns
+            appended_run_kwargs = {
                 'study_dir': study_dir,
                 'study_name': study_name,
                 **run_kwargs
             }
 
-            #print_call(run_func, run_args, run_kwargs)
-            run_futures.append(executor.apply(run_func, *run_args, **run_kwargs))
+            # called with these args
+            if run_not_present(study_dir, run_func, run_args, run_kwargs):
+                # Print function call before executing
+                # print_call(run_func, run_args, appended_run_kwargs)
+
+                # Execute the function (pass to executor)
+                run_futures.append(executor.apply(run_func, *run_args, **appended_run_kwargs))
+            # else:
+                # print("NOT ", end='')
+                # print_call(run_func, run_args, appended_run_kwargs)
+
+            # print()
+
 
         # Once all functions have run, combine the results
         def wait_and_combine():
+            return
             for future in run_futures:
                 future.wait()
-                print("{} futures done.".format(sum([f.done() for f in run_futures])))
+                #print("{} futures done.".format(sum([f.done() for f in run_futures])))
             combine_dbs(study_dir, study_name)
+
         combine_thread = threading.Thread(target=wait_and_combine)
         combine_thread.start()
 
