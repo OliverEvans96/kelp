@@ -225,9 +225,9 @@ def compute_err(conn, table_name, ns, nz, na, best_perceived_irrad):
     )[0]
 
     zmin = 0
-    zmax = compute_results['zmax'][:].data
-    p_kelp = compute_results['p_kelp'][:].data
-    irrad = compute_results['irrad'][:].data
+    zmax = compute_results['zmax'][:]
+    p_kelp = compute_results['p_kelp'][:]
+    irrad = compute_results['irrad'][:]
     # Perceived irradiance for each depth layer
     perceived_irrad = np.sum(p_kelp*irrad, axis=(0,1)) / np.sum(p_kelp, axis=(0,1))
     # If p_kelp is 0, then so is perceied_irrad
@@ -364,8 +364,8 @@ def grid_study_analyze(db_path, table_name):
     abs_err_arr = np.zeros([len(ns_list),len(nz_list),len(na_list)])
     rel_err_arr = np.zeros([len(ns_list),len(nz_list),len(na_list)])
 
-    p_kelp = best_results['p_kelp'][:].data
-    best_irrad = best_results['irrad'][:].data
+    p_kelp = best_results['p_kelp'][:]
+    best_irrad = best_results['irrad'][:]
     best_perceived_irrad = np.sum(p_kelp*best_irrad, axis=(0,1)) / np.sum(p_kelp, axis=(0,1))
     perceived_irrad_dict[(ns_max,nz_max,na_max)] = best_perceived_irrad
 
