@@ -57,13 +57,11 @@ contains
 
   end subroutine gen_kelp
 
-  ! TODO: max_rad -> surface_irrad
-  ! TODO: Calculate avg_irrad, perceived_irrad
   ! using functions from light_interface.f90
   subroutine calculate_light_field( &
        xmin, xmax, nx, ymin, ymax, ny, zmin, zmax, nz, ntheta, nphi, &
        a_w, a_k, b, num_vsf, vsf_angles, vsf_vals, &
-       theta_s, phi_s, max_rad, decay, &
+       theta_s, phi_s, I0, decay, &
        p_kelp, radiance, irradiance, avg_irrad, perceived_irrad, &
        num_scatters, fd_flag, lis_opts, lis_iter, lis_time, lis_resid)
 
@@ -72,7 +70,7 @@ contains
     double precision, intent(in) :: a_w, a_k, b
     integer, intent(in) ::num_vsf
     double precision, dimension(num_vsf), intent(in) :: vsf_angles, vsf_vals
-    double precision, intent(in) :: theta_s, phi_s, max_rad, decay
+    double precision, intent(in) :: theta_s, phi_s, I0, decay
     double precision, dimension(nx, ny, nz), intent(in) :: p_kelp
     double precision, dimension(nx, ny, nz, ntheta*(nphi-2)+2), intent(inout) :: radiance
     double precision, dimension(nx, ny, nz), intent(inout) :: irradiance
@@ -120,7 +118,7 @@ contains
     write(*,*) 'max loc =', maxloc(iops%abs_grid)
 
     write(*,*) 'BC'
-    call bc%init(grid, theta_s, phi_s, decay, max_rad)
+    call bc%init(grid, theta_s, phi_s, decay, I0)
 
     write(*,*) 'Scatter'
     call calculate_light_with_scattering(grid, bc, iops, radiance, num_scatters)
@@ -153,7 +151,6 @@ contains
       write(*,*) 'Calculate Radiance'
       call light%calculate_radiance()
 
-      ! TODO: Make sure this works
       call mat%get_solver_stats(lis_iter, lis_time, lis_resid)
       call mat%deinit()
     else
