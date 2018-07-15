@@ -93,6 +93,23 @@ def create_table(conn, table_name, prefix='.'):
     conn.execute(create_table_template.format(table_name=table_name))
     conn.commit()
 
+
+def update_col(conn, table_name, col_name, re_from, re_to):
+    cur = conn.execute('select * from {}'.format(table_name))
+    for row in cur:
+        row_id = row[0]
+        columns = [c[0] for c in cur.description]
+        col_num = columns.index(col_name)
+        col_in = row[col_num]
+        col_out = re.sub(re_from, re_to, col_in)
+        print("{}: '{}' -> '{}'".format(row_id, col_in, col_out))
+        conn.execute(
+            'UPDATE {} SET {}=? WHERE id=?'.format(table_name, col_name),
+            (col_out, row_id)
+        )
+    conn.commit()
+    print("Done!")
+
 def create_dirs(study_dir):
     try:
         os.mkdir(study_dir)
@@ -323,7 +340,16 @@ def run_not_present(study_dir, run_func, run_args, run_kwargs):
 
         # Open database
         conn = sqlite3.connect(db_path)
-        table_name = get_table_names(conn)[0][0]
+        # If db was created but table was not, this will fail
+        try:
+            table_name = get_table_names(conn)[0][0]
+        except IndexError:
+            # (in which case we should skip to the next file)
+            continue
+        # Same action if DB is corrupt/not fully written
+        except sqlite3.DatabaseError:
+            continue
+
         table_cursor = conn.execute('select * from {}'.format(table_name))
         cols = [d[0] for d in table_cursor.description]
 
