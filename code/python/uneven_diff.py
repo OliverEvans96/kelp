@@ -1,9 +1,12 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy.interpolate import interp1d
 
 def maxind1d(bool_arr):
     """Return largest True index"""
     return max(np.where(bool_arr)[0])
+
+## Piecewise-constant interpolation
 
 def merge_diff_grids(xmin, xmax, y1, y2):
     n1 = len(y1)
@@ -104,4 +107,29 @@ def discrete_err(xmin, xmax, y1, y2):
     e3, z1, z2 = merge_diff_grids(xmin, xmax, y1, y2)
     abs_err = np.sum(np.abs(z1-z2)*np.diff(e3))
     rel_err = abs_err / np.sum(z1*np.diff(e3))
+    return abs_err, rel_err
+
+## Linear interpolation
+
+def merge_linear(x1, x2, y1, y2):
+    """
+    Linearly interpolate y1 and y2 onto
+    the union of x1 and x2.
+    """
+    
+    # Use interp1d instead of griddata to enable 'extrapolate'
+    x3 = np.sort([*x1, *x2])
+    f1 = np.vectorize(interp1d(x1, y1, kind='linear', fill_value='extrapolate'))
+    f2 = np.vectorize(interp1d(x2, y2, kind='linear', fill_value='extrapolate'))
+    z1 = f1(x3)
+    z2 = f2(x3)
+    return x3, z1, z2 
+
+def err_linear(x1, x2, y1, y2):
+    x3, z1, z2 = merge_linear(x1, x2, y1, y2)
+    abs_err = np.trapz(
+        x=x3,
+        y=np.abs(z1-z2) 
+    )
+    rel_err = np.abs(abs_err / np.trapz(x=x3, y=z1))
     return abs_err, rel_err
