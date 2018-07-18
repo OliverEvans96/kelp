@@ -6,6 +6,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from scipy.interpolate import interp1d
 
+from uneven_diff import *
+
 def table_to_df(conn, table_name):
     select_cmd = 'SELECT * FROM {table_name}'.format(table_name=table_name)
     cursor = conn.execute(select_cmd)
@@ -125,93 +127,9 @@ def block_mean(large_arr, small_shape):
         raise IndexError("`small_shape` must divide `large_arr.shape` elementwise.")
 
 
-#######################
-## Grid Study
-
-def merge_diff_grid(xmin, xmax, y1, y2):
-    """Cast discrete quantities with different spacings to a common grid.
-    Piecewise constant interpolation.
-    """
-    n1 = len(y1)
-    n2 = len(y2)
-    d1 = (xmax-xmin)/n1
-    d2 = (xmax-xmin)/n2
-    # Grid centers
-    x1 = np.linspace(xmin+d1/2, xmax-d1/2, n1)
-    x2 = np.linspace(xmin+d2/2, xmax-d2/2, n2)
-
-    # Edges
-    e1 = np.linspace(xmin, xmax, n1+1)
-    e2 = np.linspace(xmin, xmax, n2+1)
-
-    i_sort = np.argsort(np.concatenate([x1,x2]))
-    i1 = i_sort<n1
-    i2 = i_sort>=n1
-
-    x3 = np.zeros(n1+n2)
-    x3[i1] = x1
-    x3[i2] = x2
-
-    z1 = np.zeros_like(x3)
-    z2 = np.zeros_like(x3)
-
-    #z1[i1] = y1
-    #z2[i2] = y2
-
-    z1[x3<(x1[0]+x1[1])/2]
-    for i in range(n1):
-        wh = np.logical_and(
-            e1[i]<=x3,
-            x3<e1[i+1]
-        )
-        z1[wh] = y1[i]
-
-    for i in range(n2):
-        wh = np.logical_and(
-            e2[i]<=x3,
-            x3<e2[i+1]
-        )
-        z2[wh] = y2[i]
-
-    return x3, z1, z2
-
-def abs_err_uneven(xmin, xmax, y1, y2):
-    "Integral of absolute difference between discrete quantities with different spacings."
-    x, z1, z2 = merge_diff_grid(xmin, xmax, y1, y2)
-
-    return np.sum(np.abs(
-        (z1-z2) * np.diff(np.concatenate([x,[xmax]]))
-    ))
-
-def rel_err_uneven(xmin, xmax, y1, y2):
-    "Integral of absolute difference between discrete quantities with different spacings."
-    x, z1, z2 = merge_diff_grid(xmin, xmax, y1, y2)
-
-    return np.sum(np.abs(
-        (z1-z2)/z1 * np.diff(np.concatenate([x,[xmax]]))
-    ))
-
-
-def compute_block_err(ns, nz, na, best_irrad, a_water, b, kelp_profile, absorptance_kelp, const):
-    #print("ns={}, nz={}, na={}".format(ns,nz,na))
-    compute_results = lv.apply(kelp_param.kelp_calculate,
-        a_water,
-        b,
-        ns,
-        na,
-        nz,
-        kelp_profile,
-        absorptance_kelp,
-        gmres_flag=True,
-        num_scatters=4,
-        const=const
-    ).result()
-
-    irrad = compute_results['irradiance'].mean(axis=(0,1))
-    block_best_irrad = kelp_param.block_mean(best_irrad, irrad.shape)
-    abs_err = np.mean(np.abs(irrad-block_best_irrad))
-    rel_err = np.mean(np.abs((irrad-block_best_irrad)/block_best_irrad))
-    return irrad, abs_err, rel_err
+################
+## Grid Study ##
+################
 
 def compute_err(conn, table_name, ns, nz, na, best_perceived_irrad):
     #print("ns={}, nz={}, na={}".format(ns,nz,na))
@@ -230,6 +148,7 @@ def compute_err(conn, table_name, ns, nz, na, best_perceived_irrad):
     irrad = compute_results['irrad'][:]
     # Perceived irradiance for each depth layer
     perceived_irrad = np.sum(p_kelp*irrad, axis=(0,1)) / np.sum(p_kelp, axis=(0,1))
+    # TODO: Not true.
     # If p_kelp is 0, then so is perceied_irrad
     perceived_irrad[np.isnan(perceived_irrad)] = 0
     abs_err = abs_err_uneven(zmin, zmax, best_perceived_irrad, perceived_irrad)

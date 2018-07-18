@@ -1,0 +1,107 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+def maxind1d(bool_arr):
+    """Return largest True index"""
+    return max(np.where(bool_arr)[0])
+
+def merge_diff_grids(xmin, xmax, y1, y2):
+    n1 = len(y1)
+    n2 = len(y2)
+    d1 = (xmax-xmin)/n1
+    d2 = (xmax-xmin)/n2
+
+    # Edges
+    e1 = np.linspace(xmin, xmax, n1+1)
+    e2 = np.linspace(xmin, xmax, n2+1)
+
+    # Merge e1 and e2
+    i_sort = np.argsort(np.concatenate([e1, e2]))
+    i1 = i_sort<n1+1
+    i2 = i_sort>=n1+1
+    e3 = np.zeros(n1+n2+2)
+    e3[i1] = e1
+    e3[i2] = e2
+    # Remove duplicate extreme endpoints (xmin, xmax)
+    e3 = e3[1:-1]
+
+    # Heights of new edges
+    z1 = np.zeros(n1+n2-1)
+    z2 = np.zeros(n1+n2-1)
+
+    # Loop over edges, excluding xmax
+    for j in range(n1+n2-1):
+        k1 = maxind1d(e1<=e3[j])
+        k2 = maxind1d(e2<=e3[j])
+        z1[j] = y1[k1]
+        z2[j] = y2[k2]
+
+    return e3, z1, z2
+
+def plot_discrete_diff(xmin, xmax, y1, y2):
+    plt.figure(figsize=[10,8])
+
+    n1 = len(y1)
+    n2 = len(y2)
+    
+    e1 = np.linspace(xmin, xmax, n1+1)
+    e2 = np.linspace(xmin, xmax, n2+1)
+    
+    x1 = e1[:-1] + np.diff(e1)/2
+    x2 = e2[:-1] + np.diff(e2)/2
+
+    e3, z1, z2 = merge_diff_grids(xmin, xmax, y1, y2)
+    
+    # Difference
+    plt.bar(
+        e3[:-1], np.abs(z2-z1), np.diff(e3),
+        bottom=np.min([z2,z1], axis=0),
+        align='edge', ec=(0,0,1),
+        fc=(0,0,1,0.5), lw=2, label='diff'
+    )
+
+
+    # Original
+    plt.bar(
+        e1[:-1], y1, np.diff(e1),
+        align='edge',
+        fc=(0,0,0,0), ec='C1', lw=2, label='y1'
+    )
+    plt.bar(
+        e2[:-1], y2, np.diff(e2), 
+        align='edge',
+        fc=(0,0,0,0), ec='C2', lw=2, label='y2'
+    )
+
+    # Points
+    plt.plot(x1, y1, 'C1o')
+    plt.plot(x2, y2, 'C2o')
+
+    # Combined (1st attempt)
+    # plt.plot(x3, z1, 'C3o-', label='z1')
+    # plt.plot(x3, z2, 'C4o-', label='z2')
+
+    plt.legend()
+    
+def get_bin_centers(xmin, xmax, n1, n2):
+    """n1, n2 are number of bins (n1+1, n2+1 edges)"""
+    # Edges
+    e1 = np.linspace(xmin, xmax, n1+1)
+    e2 = np.linspace(xmin, xmax, n2+1)
+
+    # Bin centers
+    x1 = e1[:-1] + np.diff(e1)/2
+    x2 = e2[:-1] + np.diff(e2)/2
+    
+    return x1, x2
+
+def discrete_err(xmin, xmax, y1, y2):
+    """
+    Positive area between two piecewise constant curves
+    of different uniform partitions of [xmin, xmax].
+    Relative error is divided by norm of y1.
+    """
+    e3, z1, z2 = merge_diff_grids(xmin, xmax, y1, y2)
+    abs_err = np.sum(np.abs(z1-z2)*np.diff(e3))
+    rel_err = abs_err / np.sum(z1*np.diff(e3))
+    return abs_err, rel_err
