@@ -1,3 +1,6 @@
+# stdlib
+import os
+
 # 3rd party
 import sqlite3
 import netCDF4 as nc
@@ -6,7 +9,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from scipy.interpolate import interp1d
 
-from uneven_diff import *
+# local
+import uneven_diff
 
 def table_to_df(conn, table_name):
     select_cmd = 'SELECT * FROM {table_name}'.format(table_name=table_name)
@@ -131,6 +135,14 @@ def block_mean(large_arr, small_shape):
 ## Grid Study ##
 ################
 
+def calculate_perceived_irrad(p_kelp, irrad):
+    perceived_irrad = np.sum(p_kelp*irrad, axis=(0,1)) / np.sum(p_kelp, axis=(0,1))
+    # TODO: Not true.
+    # If p_kelp is 0, then so is perceied_irrad
+    perceived_irrad[np.isnan(perceived_irrad)] = 0
+    
+    return perceived_irrad
+
 def compute_err(conn, table_name, ns, nz, na, best_perceived_irrad):
     #print("ns={}, nz={}, na={}".format(ns,nz,na))
 
@@ -141,19 +153,98 @@ def compute_err(conn, table_name, ns, nz, na, best_perceived_irrad):
         nz=nz,
         na=na
     )[0]
+    # Best
+    nz_best = len(best_perceived_irrad)
+    dz_best = (zmax - zmin) / nz_best
+    z_best = dz_best * (np.arange(nz_best) + 0.5)
 
+    # This one (not best)
     zmin = 0
     zmax = compute_results['zmax'][:]
     p_kelp = compute_results['p_kelp'][:]
     irrad = compute_results['irrad'][:]
-    # Perceived irradiance for each depth layer
-    perceived_irrad = np.sum(p_kelp*irrad, axis=(0,1)) / np.sum(p_kelp, axis=(0,1))
-    # TODO: Not true.
-    # If p_kelp is 0, then so is perceied_irrad
-    perceived_irrad[np.isnan(perceived_irrad)] = 0
-    abs_err = abs_err_uneven(zmin, zmax, best_perceived_irrad, perceived_irrad)
-    rel_err = rel_err_uneven(zmin, zmax, best_perceived_irrad, perceived_irrad)
+    perceived_irrad = calculate_perceived_irrad(p_kelp, irrad)
+    dz = (zmax - zmin) / nz
+    z = dz * (np.arange(nz) + 0.5)
+    
+    # Piecewise-constant error
+    #abs_err, rel_err = uneven_diff.discrete_err(zmin, zmax, best_perceived_irrad, perceived_irrad)
+    
+    # Linear interpolation error
+    abs_err, rel_err = uneven_diff.err_linear(
+        z_best, z,
+        best_perceived_irrad, 
+        perceived_irrad
+    )
+    
+    
     return perceived_irrad, abs_err, rel_err, compute_results['compute_time']
+
+def cori_plot_two_avg_irrads(study_name, grid1, grid2):
+    """
+    Plot both perceived_irrads. rel_err is w.r.t. tup1.
+    """
+    base_dir = os.path.join(os.environ['SCRATCH'], 'kelp-results')
+    study_dir = os.path.join(base_dir, study_name)
+    db_path = os.path.join(study_dir, '{}.db'.format(study_name))
+    
+    conn = sqlite3.connect(db_path)
+    
+    results1 = query_results(
+        conn, 
+        study_name, 
+        **grid1
+    )[0]
+    results2 = query_results(
+        conn, 
+        study_name, 
+        **grid2
+    )[0]
+    
+    conn.close()
+    
+    zmin = 0
+    zmax = results1['zmax'][:]
+    
+    p_kelp1 = results1['p_kelp'][:]
+    irrad1 = results1['irrad'][:]
+    perceived_irrad1 = calculate_perceived_irrad(p_kelp1, irrad1)
+    
+    p_kelp2 = results2['p_kelp'][:]
+    irrad2 = results2['irrad'][:]
+    perceived_irrad2 = calculate_perceived_irrad(p_kelp2, irrad2)
+    
+    nz1 = grid1['nz']
+    dz1 = (zmax - zmin) / nz1
+    z1 = dz1 * (np.arange(nz1) + 0.5)
+    
+    nz2 = grid2['nz']
+    dz2 = (zmax - zmin) / nz2
+    z2 = dz2 * (np.arange(nz2) + 0.5)
+    
+    # # Piecewise-constant interpolation
+    # abs_err, rel_err = uneven_diff.discrete_err(
+    #     zmin, zmax,
+    #     perceived_irrad1,
+    #     perceived_irrad2,
+    #     verbose=True
+    # )
+    
+    # Linear interpolation
+    abs_err, rel_err = uneven_diff.err_linear(
+        z1, z2,
+        perceived_irrad1,
+        perceived_irrad2,
+    )
+    
+    plt.plot(z1, perceived_irrad1, 'o-', label='perc_irrad1')
+    plt.plot(z2, perceived_irrad2, 'o-', label='perc_irrad2')
+    plt.xlabel('z')
+    plt.ylabel('perceived irradiance')
+    plt.legend()
+    
+    print("abs_err = {:.3e}".format(abs_err))
+    print("rel_err = {:.3e}".format(rel_err))
 
 def plot_slice_1d(n_list, best_ind, irrad_dict, pos, label, zmin, zmax):
     ns_max, nz_max, na_max = best_ind

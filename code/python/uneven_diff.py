@@ -98,14 +98,23 @@ def get_bin_centers(xmin, xmax, n1, n2):
     
     return x1, x2
 
-def discrete_err(xmin, xmax, y1, y2):
+def discrete_err(xmin, xmax, y1, y2, verbose=False):
     """
     Positive area between two piecewise constant curves
     of different uniform partitions of [xmin, xmax].
     Relative error is divided by norm of y1.
     """
     e3, z1, z2 = merge_diff_grids(xmin, xmax, y1, y2)
-    abs_err = np.sum(np.abs(z1-z2)*np.diff(e3))
+    abs_diff = np.abs(z1-z2)
+    interval_widths = np.diff(e3)
+    if(verbose):
+        print("diff, widths:\n", '\n'.join(
+            map(
+                lambda tup: '({:.2e}, {:.2e})'.format(*tup),
+                zip(abs_diff, interval_widths)
+            )
+        ), sep='')
+    abs_err = np.sum(abs_diff * interval_widths)
     rel_err = abs_err / np.sum(z1*np.diff(e3))
     return abs_err, rel_err
 
