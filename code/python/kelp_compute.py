@@ -183,9 +183,11 @@ def combine_dbs(study_dir, table_name):
     ]
 
     combined_db = os.path.join(study_dir, '{}.db'.format(table_name))
+    print("Opening combined db: {}".format(combined_db))
     combined_conn = sqlite3.connect(combined_db)
     create_table(combined_conn, table_name)
 
+    print("Connected.")
     for db in dbs:
         # Read from individual tables
         conn = sqlite3.connect(db)
@@ -764,3 +766,54 @@ def grid_study_compute(a_water, b, kelp_dist, ns_list, nz_list, na_list, lis_opt
         ))
 
     return func_list, args_list, kwargs_list
+
+@study_decorator
+def asymptotics_study_compute(a_water_list, b_list, kelp_dist, ns, nz, na, num_scatters_list, lis_opts):
+    """
+    For a grid of IOPs (`a_water` and `b` values), compute FD solution
+    and compare to asymptotics solution for a range of `num_scatters`.
+    """
+
+    # One scatter before FD
+    pre_fd_num_scatters = 1
+
+    # Actual calling will be performed by decorator.
+    # Functions to be called
+    func_list = []
+    # Arguments to be passed
+    args_list = [] # tuples/lists
+    kwargs_list = [] # dictionaries
+
+    # Loop through IOP grid
+    for a_water in a_water_list:
+        for b in b_list:
+            # FD solution
+            func_list.append(kelp_calculate)
+            args_list.append((
+                a_water, b,
+                ns, nz, na,
+                kelp_dist
+            ))
+            kwargs_list.append({
+                'num_scatters': 1,
+                'fd_flag': True,
+                'lis_opts': lis_opts
+            })
+
+            # Asymptotics solutions
+            for num_scatters in num_scatters_list:
+                func_list.append(kelp_calculate)
+                args_list.append((
+                    a_water, b,
+                    ns, nz, na,
+                    kelp_dist
+                ))
+                kwargs_list.append({
+                    'num_scatters': num_scatters,
+                    'fd_flag': False,
+                    'lis_opts': lis_opts
+                })
+
+    return func_list, args_list, kwargs_list
+
+
