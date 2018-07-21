@@ -98,24 +98,33 @@ def get_bin_centers(xmin, xmax, n1, n2):
     
     return x1, x2
 
-def discrete_err(xmin, xmax, y1, y2, verbose=False):
+def discrete_err(xmin, xmax, y1, y2, verbose=False, net=False):
     """
     Positive area between two piecewise constant curves
     of different uniform partitions of [xmin, xmax].
     Relative error is divided by norm of y1.
+
+    If net=True, calculate net area between curves.
+    Otherwise, use absolute area between curves.
     """
     e3, z1, z2 = merge_diff_grids(xmin, xmax, y1, y2)
-    abs_diff = np.abs(z1-z2)
+    diff = z1-z2 if net else np.abs(z1-z2)
     interval_widths = np.diff(e3)
     if(verbose):
         print("diff, widths:\n", '\n'.join(
             map(
                 lambda tup: '({:.2e}, {:.2e})'.format(*tup),
-                zip(abs_diff, interval_widths)
+                zip(diff, interval_widths)
             )
         ), sep='')
-    abs_err = np.sum(abs_diff * interval_widths)
-    rel_err = abs_err / np.sum(z1*np.diff(e3))
+    tot_abs_err = abs(np.sum(diff * interval_widths))
+    tot_rel_err = abs_err / np.sum(z1*np.diff(e3))
+
+    avg_abs_err, avg_rel_err = map(
+        lambda tot_err: tot_err / np.sum(interval_widths),
+        (tot_abs_err, tot_rel_err)
+    )
+
     return abs_err, rel_err
 
 ## Linear interpolation
@@ -134,11 +143,21 @@ def merge_linear(x1, x2, y1, y2):
     z2 = f2(x3)
     return x3, z1, z2 
 
-def err_linear(x1, x2, y1, y2):
+def err_linear(xmin, xmax, x1, x2, y1, y2, net=False):
+    """
+    If net=True, calculate net area between curves.
+    Otherwise, use absolute area between curves.
+    """
     x3, z1, z2 = merge_linear(x1, x2, y1, y2)
-    abs_err = np.trapz(
+    diff = z1-z2 if net else np.abs(z1-z2)
+    tot_abs_err = abs(np.trapz(
         x=x3,
-        y=np.abs(z1-z2) 
+        y=diff
+    ))
+    tot_rel_err = abs(tot_abs_err / np.trapz(x=x3, y=z1))
+    avg_abs_err, avg_rel_err = map(
+        lambda tot_err: tot_err / np.sum(interval_widths),
+        (tot_abs_err, tot_rel_err)
     )
-    rel_err = np.abs(abs_err / np.trapz(x=x3, y=z1))
     return abs_err, rel_err
+
