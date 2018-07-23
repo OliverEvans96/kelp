@@ -49,7 +49,7 @@ if __name__ == '__main__':
         os.environ['SCRATCH'],
         'kelp-results',
     )
-    study_name = 'as_n12_9ax9b'
+    study_name = 'as_single_tol12'
     study_dir = os.path.join(base_dir, study_name)
     # Rewrite individual dbs.
     rewrite_num_scatters(base_dir, study_name)

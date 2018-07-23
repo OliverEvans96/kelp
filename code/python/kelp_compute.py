@@ -304,11 +304,15 @@ def get_kelp_dist(kelp_dist, max_length, zmin, zmax, nz):
         'top-heavy': (3.0 * z**2 * np.exp(-z) + 0.5) / maxval,
         'bottom-heavy': (3.0 * (zmax-z)**2 * np.exp((z-zmax)) + 0.5) / maxval,
         'uniform': 0*z + 1.0,
+        'huge': 0*z + 20,
         'none': 0*z
     }
     frond_lengths = max_length * frond_length_funcs[kelp_dist]
     frond_stds = 0.0 * np.ones_like(z)
     water_speeds = 0.5 * np.ones_like(z)
+    if kelp_dist == 'huge':
+        water_speeds *= 20
+        
     water_angles = 2*np.pi / zmax * (z-zmin)
 
     return frond_lengths, frond_stds, water_speeds, water_angles
@@ -438,15 +442,15 @@ def study_decorator(study_func):
             # called with these args
             if run_not_present(study_dir, run_func, run_args, run_kwargs):
                 # Print function call before executing
-                # print_call(run_func, run_args, appended_run_kwargs)
+                print_call(run_func, run_args, appended_run_kwargs)
 
                 # Execute the function (pass to executor)
                 run_futures.append(executor.apply(run_func, *run_args, **appended_run_kwargs))
-            # else:
-                # print("NOT ", end='')
-                # print_call(run_func, run_args, appended_run_kwargs)
+            else:
+                print("NOT ", end='')
+                print_call(run_func, run_args, appended_run_kwargs)
 
-            # print()
+            print()
 
 
         # Once all functions have run, combine the results
@@ -744,7 +748,7 @@ def grid_study_compute(a_water, b, kelp_dist, ns_list, nz_list, na_list, lis_opt
     """
 
     # One scatter before FD
-    num_scatters = 1
+    num_scatters = 0
 
     fd_flag = True
 
@@ -768,6 +772,55 @@ def grid_study_compute(a_water, b, kelp_dist, ns_list, nz_list, na_list, lis_opt
     return func_list, args_list, kwargs_list
 
 @study_decorator
+def grid_study_compute_onespace(a_water, b, kelp_dist, ns_list, na_list, lis_opts):
+    """
+    Do grid study with Cartesian product of given resolutions.
+    """
+
+    # One scatter before FD
+    num_scatters = 0
+
+    fd_flag = True
+
+    # Actual calling will be performed by decorator.
+    # Functions to be called
+    func_list = []
+    # Arguments to be passed
+    args_list = [] # tuples/lists
+    kwargs_list = [] # dictionaries
+
+    # Loop through grid
+    # using nz = ns
+    for ns, na in it.product(ns_list, na_list):
+        # FD
+        func_list.append(kelp_calculate)
+        args_list.append((
+            a_water, b,
+            ns, ns, na,
+            kelp_dist
+        ))
+        kwargs_list.append({
+            'num_scatters': num_scatters,
+            'fd_flag': True,
+            'lis_opts': lis_opts
+        })
+        
+        # No scattering
+        func_list.append(kelp_calculate)
+        args_list.append((
+            a_water, b,
+            ns, ns, na,
+            kelp_dist
+        ))
+        kwargs_list.append({
+            'num_scatters': 0,
+            'fd_flag': False,
+            'lis_opts': lis_opts
+        })
+
+    return func_list, args_list, kwargs_list
+
+@study_decorator
 def asymptotics_study_compute(a_water_list, b_list, kelp_dist, ns, nz, na, num_scatters_list, lis_opts):
     """
     For a grid of IOPs (`a_water` and `b` values), compute FD solution
@@ -775,7 +828,7 @@ def asymptotics_study_compute(a_water_list, b_list, kelp_dist, ns, nz, na, num_s
     """
 
     # One scatter before FD
-    pre_fd_num_scatters = 1
+    pre_fd_num_scatters = 0
 
     # Actual calling will be performed by decorator.
     # Functions to be called
@@ -795,7 +848,7 @@ def asymptotics_study_compute(a_water_list, b_list, kelp_dist, ns, nz, na, num_s
                 kelp_dist
             ))
             kwargs_list.append({
-                'num_scatters': 1,
+                'num_scatters': pre_fd_num_scatters,
                 'fd_flag': True,
                 'lis_opts': lis_opts
             })
@@ -809,7 +862,7 @@ def asymptotics_study_compute(a_water_list, b_list, kelp_dist, ns, nz, na, num_s
                     kelp_dist
                 ))
                 kwargs_list.append({
-                    'num_scatters': num_scatters,
+                    'num_scatters': int(num_scatters),
                     'fd_flag': False,
                     'lis_opts': lis_opts
                 })

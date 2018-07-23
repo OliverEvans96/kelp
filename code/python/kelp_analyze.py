@@ -22,24 +22,35 @@ def table_to_df(conn, table_name):
     return df
 
 def query_results(conn, table_name, **kwargs):
-    # Sanitize string values
     for key, val in kwargs.items():
+        # Sanitize string values
         if isinstance(val, str):
             kwargs[key] = '"{}"'.format(val)
+        
+        # Sanitize bool values (convert to int)
+        if isinstance(val, bool):
+            kwargs[key] = '{}'.format(int(val))
 
     # Form SQL WHERE clause
-    where_clause = ' AND '.join([
+    where_condition = ' AND '.join([
         '{}={}'.format(key, value)
         for key, value in kwargs.items()
     ])
-
+    if where_condition:
+        where_clause = 'WHERE ' + where_condition
+    else:
+        where_clause = ''
+        
     # Form entire query
-    query = '''SELECT data_path FROM {table_name}
-    WHERE {where_clause}
-    '''.format(
+    query = ' '.join([
+        'SELECT data_path FROM {table_name}',
+        '{where_clause}'
+    ]).format(
         table_name=table_name,
         where_clause=where_clause
     )
+    
+    #print("query: '{}'".format(query))
 
     # Execute query
     cursor = conn.execute(query)
@@ -172,6 +183,7 @@ def compute_err(conn, table_name, ns, nz, na, best_perceived_irrad):
     
     # Linear interpolation error
     abs_err, rel_err = uneven_diff.err_linear(
+        zmin, zmax,
         z_best, z,
         best_perceived_irrad, 
         perceived_irrad
@@ -232,6 +244,7 @@ def cori_plot_two_avg_irrads(study_name, grid1, grid2):
     
     # Linear interpolation
     abs_err, rel_err = uneven_diff.err_linear(
+        zmin, zmax,
         z1, z2,
         perceived_irrad1,
         perceived_irrad2,
