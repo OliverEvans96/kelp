@@ -2,6 +2,7 @@ import ipyvolume as ipv
 from scipy.ndimage import zoom
 import numpy as np
 import matplotlib.pyplot as plt
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 def imshow_with_contours(x_list, y_list, f, imshow_kwargs={}, contour_kwargs={}, cbar_kwargs={}):
     # imshow
@@ -40,24 +41,35 @@ def imshow_with_contours_and_zoom(x_list, y_list, f, zoom_factor, imshow_kwargs=
     new_f = double_n(f, zoom_factor)
     
     # extent
+    # extent = (
+    #     min(x_list)-dx/2, 
+    #     max(x_list)+dx/2, 
+    #     min(y_list)-dy/2, 
+    #     max(y_list)+dy/2
+    # )
+    
     extent = (
-        min(x_list)-dx/2, 
-        max(x_list)+dx/2, 
-        min(y_list)-dy/2, 
-        max(y_list)+dy/2
+        0, len(x_list),
+        0, len(y_list)
     )
     
     # imshow
-    plt.imshow(new_f.T, origin='lower', extent=extent, **imshow_kwargs)
-    cbar = plt.colorbar(**cbar_kwargs)
+    ax = plt.gca()
+    im = plt.imshow(new_f.T, origin='lower', extent=extent, **imshow_kwargs)
+    divider = make_axes_locatable(ax)
+    cax = divider.append_axes("right", size="5%", pad=0.05)
+    
+    cbar = plt.colorbar(cax=cax, **cbar_kwargs)
     
     # contours
-    cont = plt.contour(new_f.T, cmap='magma_r', extent=extent, **contour_kwargs)
+    cont = ax.contour(new_f.T, cmap='magma_r', extent=extent, **contour_kwargs)
     cbar.add_lines(cont)
     
     # Ticks
-    plt.xticks(x_list)
-    plt.yticks(y_list)
+    ax.set_xticks(np.arange(len(x_list))+0.5)
+    ax.set_xticklabels(x_list)
+    ax.set_yticks(np.arange(len(y_list))+0.5)
+    ax.set_yticklabels(y_list)
 
 # Due to a bug in IPyVolume (#117, fixed but not released),
 # there are two versions: One with the correct scale
