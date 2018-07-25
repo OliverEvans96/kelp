@@ -154,22 +154,16 @@ def calculate_perceived_irrad(p_kelp, irrad):
     
     return perceived_irrad
 
-def compute_err(conn, table_name, ns, nz, na, best_perceived_irrad):
+def compute_err(conn, table_name, best_perceived_irrad, **run_dict):
     #print("ns={}, nz={}, na={}".format(ns,nz,na))
 
     compute_results = query_results(
         conn,
         table_name,
-        ns=ns,
-        nz=nz,
-        na=na
+        **run_dict
     )[0]
-    # Best
-    nz_best = len(best_perceived_irrad)
-    dz_best = (zmax - zmin) / nz_best
-    z_best = dz_best * (np.arange(nz_best) + 0.5)
-
     # This one (not best)
+    nz = int(compute_results['nz'][:])
     zmin = 0
     zmax = compute_results['zmax'][:]
     p_kelp = compute_results['p_kelp'][:]
@@ -177,6 +171,11 @@ def compute_err(conn, table_name, ns, nz, na, best_perceived_irrad):
     perceived_irrad = calculate_perceived_irrad(p_kelp, irrad)
     dz = (zmax - zmin) / nz
     z = dz * (np.arange(nz) + 0.5)
+    
+    # Best
+    nz_best = len(best_perceived_irrad)
+    dz_best = (zmax - zmin) / nz_best
+    z_best = dz_best * (np.arange(nz_best) + 0.5)
     
     # Piecewise-constant error
     #abs_err, rel_err = uneven_diff.discrete_err(zmin, zmax, best_perceived_irrad, perceived_irrad)
@@ -258,7 +257,12 @@ def cori_plot_two_avg_irrads(study_name, grid1, grid2):
     
     print("abs_err = {:.3e}".format(abs_err))
     print("rel_err = {:.3e}".format(rel_err))
-
+    
+def cori_plot_two_avg_irrads_onespace(study_name, grid1, grid2):
+    grid1['nz'] = grid1['ns']
+    grid2['nz'] = grid2['ns']
+    cori_plot_two_avg_irrads(study_name, grid1, grid2)
+    
 def plot_slice_1d(n_list, best_ind, irrad_dict, pos, label, zmin, zmax):
     ns_max, nz_max, na_max = best_ind
     n_max = best_ind[pos]
@@ -379,7 +383,8 @@ def grid_study_analyze_full(db_path, table_name):
         table_name,
         ns=ns_max,
         nz=nz_max,
-        na=na_max
+        na=na_max,
+        fd_flag=True
     )[0]
 
     perceived_irrad_dict = {}
@@ -395,13 +400,81 @@ def grid_study_analyze_full(db_path, table_name):
     for i, ns in enumerate(ns_list):
         for j, nz in enumerate(nz_list):
             for k, na in enumerate(na_list):
-                perceived_irrad, abs_err, rel_err, compute_time = compute_err(conn, table_name, ns, nz, na, best_perceived_irrad)
+                perceived_irrad, abs_err, rel_err, compute_time = compute_err(
+                    conn, 
+                    table_name, 
+                    best_perceived_irrad,
+                    ns=ns,
+                    nz=nz,
+                    na=na
+                )
                 perceived_irrad_dict[(ns, nz, na)] = perceived_irrad
                 compute_time_dict[(ns, nz, na)] = compute_time
                 abs_err_arr[i, j, k] = abs_err
                 rel_err_arr[i, j, k] = rel_err
     return perceived_irrad_dict, abs_err_arr, rel_err_arr, compute_time_dict
 
+def grid_study_analyze_onespace(db_path, table_name):
+    """
+    Analyze results from grid_study_compute.
+    Compare all to best, calculate errors.
+    """
+    conn = sqlite3.connect(db_path)
+
+    cursor = conn.execute('''
+    SELECT ns, na
+    FROM {table_name}
+    '''.format(table_name=table_name))
+
+    # Get all unique values of ns, nz, na
+    ns_list, na_list = (
+        sorted(map(int, set(z))) for z in zip(*cursor.fetchall())
+    )
+
+    ns_max = max(ns_list)
+    na_max = max(na_list)
+
+    # Assume there's only one run
+    # that matches largest grid + FD
+    best_results = query_results(
+        conn,
+        table_name,
+        ns=ns_max,
+        na=na_max,
+        fd_flag=True
+    )[0]
+
+    perceived_irrad_dict = {}
+    compute_time_dict = {}
+    abs_err_arr = np.zeros([len(ns_list),len(na_list)])
+    rel_err_arr = np.zeros([len(ns_list),len(na_list)])
+
+    p_kelp = best_results['p_kelp'][:]
+    best_irrad = best_results['irrad'][:]
+    best_perceived_irrad = np.sum(p_kelp*best_irrad, axis=(0,1)) / np.sum(p_kelp, axis=(0,1))
+    perceived_irrad_dict[(ns_max,na_max)] = best_perceived_irrad
+
+    for i, ns in enumerate(ns_list):
+        for k, na in enumerate(na_list):
+            perceived_irrad, abs_err, rel_err, compute_time = compute_err(
+                conn, 
+                table_name, 
+                best_perceived_irrad,
+                ns=ns,
+                na=na,
+                fd_flag=True
+            )
+            perceived_irrad_dict[(ns, na)] = perceived_irrad
+            compute_time_dict[(ns, na)] = compute_time
+            abs_err_arr[i, k] = abs_err
+            rel_err_arr[i, k] = rel_err
+            
+    # Set errors for finest grid to NaN 
+    # (since there's nothing to compare it to)
+    abs_err_arr[-1, -1] = np.nan
+    rel_err_arr[-1, -1] = np.nan
+    
+    return perceived_irrad_dict, abs_err_arr, rel_err_arr, compute_time_dict
 
 def grid_study_analyze_edges(db_path, table_name):
     """
@@ -448,7 +521,15 @@ def grid_study_analyze_edges(db_path, table_name):
     ns = ns_max
     na = na_max
     for i, nz in enumerate(nz_list[:-1]):
-        perceived_irrad, abs_err, rel_err, compute_time = compute_err(conn, table_name, ns, nz, na, best_perceived_irrad)
+        perceived_irrad, abs_err, rel_err, compute_time = compute_err(
+            conn, 
+            table_name, 
+            best_perceived_irrad,
+            ns=ns,
+            nz=nz,
+            na=na,
+            fd_flag=True
+        )
         perceived_irrad_dict[(ns, nz, na)] = perceived_irrad
         compute_time_dict[(ns, nz, na)] = compute_time
         abs_err_arr[i, -1, -1] = abs_err
@@ -458,7 +539,14 @@ def grid_study_analyze_edges(db_path, table_name):
     nz = nz_max
     na = na_max
     for i, ns in enumerate(ns_list[:-1]):
-        perceived_irrad, abs_err, rel_err, compute_time = compute_err(conn, table_name, ns, nz, na, best_perceived_irrad)
+        perceived_irrad, abs_err, rel_err, compute_time = compute_err(
+            conn, 
+            table_name, 
+            best_perceived_irrad,
+            ns=ns,
+            nz=nz,
+            na=na
+        )
         perceived_irrad_dict[(ns, nz, na)] = perceived_irrad
         compute_time_dict[(ns, nz, na)] = compute_time
         abs_err_arr[-1, i, -1] = abs_err
@@ -468,7 +556,14 @@ def grid_study_analyze_edges(db_path, table_name):
     ns = ns_max
     nz = nz_max
     for i, na in enumerate(na_list[:-1]):
-        perceived_irrad, abs_err, rel_err, compute_time = compute_err(conn, table_name, ns, nz, na, best_perceived_irrad)
+        perceived_irrad, abs_err, rel_err, compute_time = compute_err(
+            conn, 
+            table_name, 
+            best_perceived_irrad,
+            ns=ns,
+            nz=nz,
+            na=na
+        )
         perceived_irrad_dict[(ns, nz, na)] = perceived_irrad
         compute_time_dict[(ns, nz, na)] = compute_time
         abs_err_arr[-1, -1, i] = abs_err
