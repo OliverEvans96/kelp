@@ -147,11 +147,46 @@ def block_mean(large_arr, small_shape):
 ################
 
 def calculate_perceived_irrad(p_kelp, irrad):
-    perceived_irrad = np.sum(p_kelp*irrad, axis=(0,1)) / np.sum(p_kelp, axis=(0,1))
-    # TODO: Not true.
-    # If p_kelp is 0, then so is perceied_irrad
-    perceived_irrad[np.isnan(perceived_irrad)] = 0
-    
+    """
+    Calculate the average irradiance experienced over the frond.
+    Has same units as irradiance.
+    If no kelp, then just take the irradiance at the center
+    of the grid.
+    """
+
+    nx, ny, nz = p_kelp.shape
+    perceived_irrad = np.zeros(nz)
+
+    for k in range(nz):
+        total_kelp = np.sum(p_kelp[:,:,k])
+        if total_kelp == 0:
+            center_i1 = int(np.floor(nx/2))
+            center_j1 = int(np.floor(ny/2))
+            # For even grid, use average of center two cells
+            # For odd grid, just use center cell
+            if nx % 2 == 0:
+                center_i2 = center_i1 + 2
+            else:
+                center_i2 = center_i1 + 1
+
+            if ny % 2 == 0:
+                center_j2 = center_j1 + 1
+            else:
+                center_j2 = center_j1 + 1
+
+            # Irradiance at the center of the grid (at the rope)
+            perceived_irrad[k] = (
+                np.sum(irrad[center_i1:center_i2,center_j1:center_j2, k])
+                / ((center_i2-center_i1+1) * (center_j2-center_j1+1))
+            )
+
+        else:
+            # Average irradiance weighted by kelp distribution
+            perceived_irrad[k] = (
+                np.sum(p_kelp[:,:,k]*irrad[:,:,k])
+                / np.sum(p_kelp[:,:,k])
+            )
+
     return perceived_irrad
 
 def compute_err(conn, table_name, best_perceived_irrad, **run_dict):
