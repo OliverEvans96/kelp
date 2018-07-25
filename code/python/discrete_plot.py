@@ -3,16 +3,16 @@ from scipy.ndimage import zoom
 import numpy as np
 import matplotlib.pyplot as plt
 
-def imshow_with_contours(x_list, y_list, f):
+def imshow_with_contours(x_list, y_list, f, imshow_kwargs={}, contour_kwargs={}, cbar_kwargs={}):
     # imshow
     extent = (min(x_list), max(x_list), min(y_list), max(y_list))
-    plt.imshow(f.T, origin='lower')
+    plt.imshow(f.T, origin='lower', **imshow_kwargs)
     cbar = plt.colorbar()
     
     # contours
     x_grid, y_grid = np.meshgrid(x_list, y_list, indexing='ij')
-    cont = plt.contour(f.T, cmap='magma_r')
-    cbar.add_lines(cont)
+    cont = plt.contour(f.T, cmap='magma_r', **contour_kwargs)
+    cbar.add_lines(cont, **cbar_kwargs)
     
     # Ticks
     xpos = np.arange(len(x_list))
@@ -27,7 +27,7 @@ def double_n(arr, n):
         arr = zoom(arr, 2, order=0)
     return arr
 
-def imshow_with_contours_and_zoom(x_list, y_list, f, zoom_factor):
+def imshow_with_contours_and_zoom(x_list, y_list, f, zoom_factor, imshow_kwargs={}, contour_kwargs={}, cbar_kwargs={}):
     # zoom_factor is the number of times the grid is doubled
     # (actually a zoom by 2 ** zoom_factor)
     
@@ -48,11 +48,11 @@ def imshow_with_contours_and_zoom(x_list, y_list, f, zoom_factor):
     )
     
     # imshow
-    plt.imshow(new_f.T, origin='lower', extent=extent)
-    cbar = plt.colorbar()
+    plt.imshow(new_f.T, origin='lower', extent=extent, **imshow_kwargs)
+    cbar = plt.colorbar(**cbar_kwargs)
     
     # contours
-    cont = plt.contour(new_f.T, cmap='magma_r', extent=extent)
+    cont = plt.contour(new_f.T, cmap='magma_r', extent=extent, **contour_kwargs)
     cbar.add_lines(cont)
     
     # Ticks
