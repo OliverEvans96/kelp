@@ -156,8 +156,8 @@ def err_linear(xmin, xmax, x1, x2, y1, y2, net=False):
     ))
     tot_rel_err = abs(tot_abs_err / np.trapz(x=x3, y=z1))
     avg_abs_err, avg_rel_err = map(
-        lambda tot_err: tot_err / np.sum(interval_widths),
+        lambda tot_err: tot_err / (xmax - xmin),
         (tot_abs_err, tot_rel_err)
     )
-    return abs_err, rel_err
+    return avg_abs_err, avg_rel_err
 
