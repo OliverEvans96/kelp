@@ -338,14 +338,14 @@ contains
           ! For even grid, use average of center two cells
           ! For odd grid, just use center cell
           if(mod(grid%x%num, 2) .eq. 0) then
-             center_i2 = center_i2
-          else
              center_i2 = center_i1 + 1
+          else
+             center_i2 = center_i1
           end if
           if(mod(grid%y%num, 2) .eq. 0) then
-             center_j2 = center_j2
-          else
              center_j2 = center_j1 + 1
+          else
+             center_j2 = center_j1
           end if
 
 
