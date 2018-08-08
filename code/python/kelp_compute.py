@@ -312,7 +312,7 @@ def get_kelp_dist(kelp_dist, max_length, zmin, zmax, nz):
     water_speeds = 0.5 * np.ones_like(z)
     if kelp_dist == 'huge':
         water_speeds *= 20
-        
+
     water_angles = 2*np.pi / zmax * (z-zmin)
 
     return frond_lengths, frond_stds, water_speeds, water_angles
@@ -341,7 +341,7 @@ def run_not_present(completed_run_list, run_func, run_args, run_kwargs):
     # Assume this is the first time
     # until proven otherwise
     run_present = False
-    
+
     # Check each run already recorded
     # Should only be one per file, but just in case
     for row_dict in completed_run_list:
@@ -373,7 +373,7 @@ def get_completed_run_list(study_dir):
     determining whether to perform a run (don't want to redo work.)
     """
     data_dir = os.path.join(study_dir, 'data')
-    
+
     completed_run_list = []
 
     # Look in each db file in data dir
@@ -394,12 +394,12 @@ def get_completed_run_list(study_dir):
 
         table_cursor = conn.execute('select * from {}'.format(table_name))
         cols = [d[0] for d in table_cursor.description]
-        
+
         completed_run_list += [
             dict(zip(cols, row_list))
             for row_list in table_cursor
         ]
-        
+
     return completed_run_list
 
 
@@ -433,7 +433,7 @@ def study_decorator(study_func):
         study_calls = study_func(*study_args, **study_kwargs)
 
         run_futures = []
-        
+
         # Read all .dbs first, then check each run against the list
         # (keeping all in memory is way better than reading every .db
         # every time, especially when there are lots of .dbs)
@@ -719,11 +719,11 @@ def kelp_calculate(a_water, b, ns, nz, na, kelp_dist, num_scatters, fd_flag, lis
     from datetime import datetime
     import time
 
-    absorptance_kelp = 0.8
+    absorptance_kelp = 0.7
 
     # Broch 2013
     # 150 individuals/meter
-    num_dens = 150
+    num_dens = 120
 
     fs = 0.5
     # Handa figure 5
@@ -736,7 +736,7 @@ def kelp_calculate(a_water, b, ns, nz, na, kelp_dist, num_scatters, fd_flag, lis
     length_std = 0.2 * max_length
 
     zmax = 10 # Max. vertical
-    rope_spacing = 15 # Horizontal
+    rope_spacing = 10 # Horizontal
 
     # Fairly sunny day
     I0 = 50.0
@@ -824,7 +824,7 @@ def grid_study_compute_onespace(a_water, b, kelp_dist, ns_list, na_list, lis_opt
             'fd_flag': True,
             'lis_opts': lis_opts
         })
-        
+
         # No scattering
         func_list.append(kelp_calculate)
         args_list.append((
@@ -841,7 +841,7 @@ def grid_study_compute_onespace(a_water, b, kelp_dist, ns_list, na_list, lis_opt
     return func_list, args_list, kwargs_list
 
 @study_decorator
-def asymptotics_study_compute(a_water_list, b_list, kelp_dist, ns, nz, na, num_scatters_list, lis_opts):
+def asymptotics_study_compute(a_water_list, b_list, kelp_dist, fd_ns, fd_nz, fd_na, as_ns, as_nz, as_na, num_scatters_list, lis_opts):
     """
     For a grid of IOPs (`a_water` and `b` values), compute FD solution
     and compare to asymptotics solution for a range of `num_scatters`.
@@ -864,7 +864,7 @@ def asymptotics_study_compute(a_water_list, b_list, kelp_dist, ns, nz, na, num_s
             func_list.append(kelp_calculate)
             args_list.append((
                 a_water, b,
-                ns, nz, na,
+                fd_ns, fd_nz, fd_na,
                 kelp_dist
             ))
             kwargs_list.append({
@@ -878,7 +878,7 @@ def asymptotics_study_compute(a_water_list, b_list, kelp_dist, ns, nz, na, num_s
                 func_list.append(kelp_calculate)
                 args_list.append((
                     a_water, b,
-                    ns, nz, na,
+                    as_ns, as_nz, as_na,
                     kelp_dist
                 ))
                 kwargs_list.append({
@@ -888,5 +888,3 @@ def asymptotics_study_compute(a_water_list, b_list, kelp_dist, ns, nz, na, num_s
                 })
 
     return func_list, args_list, kwargs_list
-
-
