@@ -116,9 +116,15 @@ contains
 
     write(*,*) 'max abs =', maxval(iops%abs_grid)
     write(*,*) 'max loc =', maxloc(iops%abs_grid)
+    write(*,*) 'min abs =', maxval(iops%abs_grid)
+    write(*,*) 'mean abs =', sum(iops%abs_grid)/size(iops%abs_grid)
+    !write(*,*) 'full abs:'
+    !write(*,*) iops%abs_grid
 
     write(*,*) 'BC'
     call bc%init(grid, theta_s, phi_s, decay, I0)
+
+    !write(*,*) 'bc_grid = ', bc%bc_grid
 
     write(*,*) 'Scatter'
     call calculate_light_with_scattering(grid, bc, iops, radiance, num_scatters)
