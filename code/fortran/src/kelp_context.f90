@@ -84,7 +84,7 @@ contains
     integer p
     double precision theta, phi
 
-    allocate(bc%bc_grid(grid%angles%nomega))
+    allocate(bc%bc_grid(grid%angles%nomega/2))
 
     bc%theta_s = theta_s
     bc%phi_s = phi_s
@@ -96,10 +96,6 @@ contains
        theta = grid%angles%theta_p(p)
        phi = grid%angles%phi_p(p)
        bc%bc_grid(p) = bc%bc_gaussian(theta, phi)
-    end do
-    ! Zero upwelling light specified at surface
-    do p=grid%angles%nomega/2+1, grid%angles%nomega
-       bc%bc_grid(p) = 0.d0
     end do
 
     ! Normalize

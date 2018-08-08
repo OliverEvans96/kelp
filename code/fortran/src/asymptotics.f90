@@ -5,15 +5,20 @@ module asymptotics
   implicit none
   contains
 
-  subroutine calculate_light_with_scattering(grid, bc, iops, radiance, num_scatters)
+  subroutine calculate_asymptotic_light_field(grid, bc, iops, source, radiance, num_scatters)
     type(space_angle_grid) grid
     type(boundary_condition) bc
     type(optical_properties) iops
     double precision, dimension(:,:,:,:) :: radiance
-    double precision, dimension(:,:,:,:), allocatable :: source
+    double precision, dimension(:,:,:,:), allocatable :: rad_scatter
+    double precision, dimension(:,:,:,:) :: source
     integer num_scatters
     integer nx, ny, nz, nomega
     integer max_cells
+    integer n
+    logical bc_flag
+
+    double precision bb
 
     double precision, dimension(:), allocatable :: path_length, path_spacing, a_tilde, gn
 
@@ -28,76 +33,34 @@ module asymptotics
     allocate(path_spacing(max_cells))
     allocate(a_tilde(max_cells))
     allocate(gn(max_cells))
-    allocate(source(nx, ny, nz, nomega))
+    allocate(rad_scatter(grid%x%num, grid%y%num, grid%z%num, grid%angles%nomega))
+    rad_scatter = radiance
+    bb = iops%scat
 
-    call calculate_light_before_scattering(grid, bc, iops, source, radiance, path_length, path_spacing, a_tilde, gn)
+    write(*,*) 'advect source + bc'
+    bc_flag = .true.
+    call advect_light( &
+         grid, iops, source, rad_scatter, &
+         path_length, path_spacing, &
+         a_tilde, gn, bc_flag, bc)
 
-    if (num_scatters .gt. 0) then
-       call calculate_light_after_scattering(&
-            grid, iops, source, radiance, &
-            num_scatters, path_length, path_spacing, &
-            a_tilde, gn)
-    end if
+    do n=1, num_scatters
+       write(*,*) 'scatter #', n
+       call scatter(grid, iops, source, rad_scatter, path_length, path_spacing, a_tilde, gn)
+       radiance = radiance + bb**n * rad_scatter
+    end do
+
+    write(*,*) 'asymptotics complete'
 
     deallocate(path_length)
     deallocate(path_spacing)
     deallocate(a_tilde)
     deallocate(gn)
-    deallocate(source)
-  end subroutine calculate_light_with_scattering
+    deallocate(rad_scatter)
+  end subroutine calculate_asymptotic_light_field
 
-  subroutine calculate_light_before_scattering(grid, bc, iops, source, radiance, path_length, path_spacing, a_tilde, gn)
-    type(space_angle_grid) grid
-    type(boundary_condition) bc
-    type(optical_properties) iops
-    double precision, dimension(:,:,:,:) :: radiance, source
-    double precision, dimension(:) :: path_length, path_spacing, a_tilde, gn
-    integer i, j, k, p
-
-    ! !$ integer omp_get_max_threads
-    ! !$ integer num_threads_z, num_threads_x
-
-    ! ! Enable nested parallelism
-    ! !$ call omp_set_nested(.true.)
-
-    ! ! Use nz procs for outer loop,
-    ! ! or num_procs if num_procs < nz
-    ! ! Divide the rest of the tasks as appropriate
-
-    ! !$ num_threads_z = min(omp_get_max_threads(), grid%z%num)
-    ! !$ num_threads_x = min( &
-    ! !$    omp_get_max_threads()/num_threads_z, &
-    ! !$    grid%x%num)
-
-    ! !$omp parallel do default(none) private(i,j,k,p) &
-    ! !$omp shared(grid,iops,radiance,bc,num_threads_x) &
-    ! !$omp private(source,path_length,path_spacing,a_tilde,gn) &
-    ! !$omp num_threads(num_threads_z) if(num_threads_z .gt. 1)
-    do k=1, grid%z%num
-       ! !$omp parallel do default(none) private(i,j,p) &
-       ! !$omp firstprivate(k) shared(grid,iops,radiance,bc) &
-       ! !$omp private(source,path_length,path_spacing,a_tilde,gn) &
-       ! !$omp num_threads(num_threads_x) if(num_threads_x .gt. 1)
-       do i=1, grid%x%num
-          do j=1, grid%y%num
-             do p=1, grid%angles%nomega/2
-                ! Downwelling light
-                call attenuate_light_from_surface(&
-                    grid, iops, source, i, j, k, p,&
-                    radiance, path_length, path_spacing,&
-                    a_tilde, gn, bc)
-
-                ! No upwelling light before scattering
-                radiance(i,j,k,p+grid%angles%nomega/2) = 0.d0
-             end do
-          end do
-       end do
-       ! !$omp end parallel do
-     end do
-     ! !$omp end parallel do
-  end subroutine calculate_light_before_scattering
-
-  subroutine attenuate_light_from_surface(&
+  ! Add attenuated surface light to existing radiance
+  subroutine advect_surface_bc(&
        grid, iops, source, i, j, k, p, radiance, &
        path_length, path_spacing, a_tilde, gn, bc)
     type(space_angle_grid) grid
@@ -116,36 +79,9 @@ module asymptotics
     atten = sum(path_spacing(1:num_cells) * a_tilde(1:num_cells))
     ! Avoid underflow
     if(atten .lt. 100.d0) then
-       radiance(i,j,k,p) = bc%bc_grid(p) * exp(-atten)
-    else
-       radiance(i,j,k,p) = 0.d0
+       radiance(i,j,k,p) = radiance(i,j,k,p) + bc%bc_grid(p) * exp(-atten)
     end if
-
-  end subroutine attenuate_light_from_surface
-
-  subroutine calculate_light_after_scattering(grid, iops, source, radiance,&
-       num_scatters, path_length, path_spacing, a_tilde, gn)
-    type(space_angle_grid) grid
-    type(optical_properties) iops
-    double precision, dimension(:,:,:,:) :: radiance, source
-    integer num_scatters
-    double precision, dimension(:) :: path_length, path_spacing, a_tilde, gn
-    double precision, dimension(:,:,:,:), allocatable :: rad_scatter
-    integer n
-    double precision bb
-
-    allocate(rad_scatter(grid%x%num, grid%y%num, grid%z%num, grid%angles%nomega))
-    rad_scatter = radiance
-    bb = iops%scat
-
-    do n=1, num_scatters
-       write(*,*) 'scatter #', n
-       call scatter(grid, iops, source, rad_scatter, path_length, path_spacing, a_tilde, gn)
-       radiance = radiance + bb**n * rad_scatter
-    end do
-
-    deallocate(rad_scatter)
-  end subroutine calculate_light_after_scattering
+  end subroutine advect_surface_bc
 
   ! Perform one scattering event
   subroutine scatter(grid, iops, source, rad_scatter, path_length, path_spacing, a_tilde, gn)
@@ -155,16 +91,18 @@ module asymptotics
     double precision, dimension(:,:,:,:), allocatable :: scatter_integral
     double precision, dimension(:) :: path_length, path_spacing, a_tilde, gn
     integer nx, ny, nz, nomega
+    logical bc_flag
 
     nx = grid%x%num
     ny = grid%y%num
     nz = grid%z%num
     nomega = grid%angles%nomega
+    bc_flag = .false.
 
     allocate(scatter_integral(nx, ny, nz, nomega))
 
     call calculate_source(grid, iops, rad_scatter, source, scatter_integral)
-    call advect_light(grid, iops, source, rad_scatter, path_length, path_spacing, a_tilde, gn)
+    call advect_light(grid, iops, source, rad_scatter, path_length, path_spacing, a_tilde, gn, bc_flag)
 
     deallocate(scatter_integral)
   end subroutine scatter
@@ -230,7 +168,9 @@ module asymptotics
 
     source(:,:,:,:) = -rad_scatter(:,:,:,:) + scatter_integral(:,:,:,:)
 
-    write(*,*) 'source: ', sum(source)/size(source), minval(source), maxval(source)
+    write(*,*) 'source min: ', minval(source)
+    write(*,*) 'source max: ', maxval(source)
+    write(*,*) 'source mean: ', sum(source)/size(source)
 
   end subroutine calculate_source
 
@@ -248,11 +188,13 @@ module asymptotics
 
   end subroutine calculate_scatter_integral
 
-  subroutine advect_light(grid, iops, source, rad_scatter, path_length, path_spacing, a_tilde, gn)
+  subroutine advect_light(grid, iops, source, rad_scatter, path_length, path_spacing, a_tilde, gn, bc_flag, bc)
     type(space_angle_grid) grid
     type(optical_properties) iops
     double precision, dimension(:,:,:,:) :: rad_scatter, source
     double precision, dimension(:) :: path_length, path_spacing, a_tilde, gn
+    logical bc_flag
+    type(boundary_condition), intent(in), optional :: bc
     integer i, j, k, p
 
     !$ integer omp_get_max_threads
@@ -272,13 +214,13 @@ module asymptotics
 
     !$omp parallel do default(none) &
     !$omp private(i,j,k,p) &
-    !$omp shared(rad_scatter,source,grid,iops,num_threads_x) &
+    !$omp shared(rad_scatter,source,grid,iops,num_threads_x,bc_flag,bc) &
     !$omp private(path_length,path_spacing,a_tilde,gn) &
     !$omp num_threads(num_threads_z) if(num_threads_z .gt. 1)
     do k=1, grid%z%num
        !$omp parallel do default(none) &
        !$omp firstprivate(k) private(i,j,p) &
-       !$omp shared(rad_scatter,source,grid,iops) &
+       !$omp shared(rad_scatter,source,grid,iops,bc_flag,bc) &
        !$omp private(path_length,path_spacing,a_tilde,gn) &
        !$omp num_threads(num_threads_x) if(num_threads_x .gt. 1)
        do i=1, grid%x%num
@@ -286,7 +228,7 @@ module asymptotics
              do p=1, grid%angles%nomega
                 call integrate_ray(grid, iops, source,&
                      rad_scatter, path_length, path_spacing,&
-                     a_tilde, gn, i, j, k, p)
+                     a_tilde, gn, i, j, k, p, bc_flag, bc)
             end do
           end do
        end do
@@ -296,7 +238,7 @@ module asymptotics
   end subroutine advect_light
 
   ! New algorithm, double integral over piecewise-constant 1d funcs
-  subroutine integrate_ray(grid, iops, source, rad_scatter, path_length, path_spacing, a_tilde, gn, i, j, k, p)
+  subroutine integrate_ray(grid, iops, source, rad_scatter, path_length, path_spacing, a_tilde, gn, i, j, k, p, bc_flag, bc)
     type(space_angle_grid) :: grid
     type(optical_properties) :: iops
     double precision, dimension(:,:,:,:) :: source
@@ -304,10 +246,21 @@ module asymptotics
     integer :: i, j, k, p
     ! The following are only passed to avoid unnecessary allocation
     double precision, dimension(:) :: path_length, path_spacing, a_tilde, gn
+    logical bc_flag
+    type(boundary_condition), intent(in), optional :: bc
+
     integer num_cells
 
     call traverse_ray(grid, iops, source, i, j, k, p, path_length, path_spacing, a_tilde, gn, num_cells)
     rad_scatter(i,j,k,p) = calculate_ray_integral(num_cells, path_length, path_spacing, a_tilde, gn)
+
+    if(bc_flag) then
+       call advect_surface_bc(&
+            grid, iops, source, &
+            i, j, k, p, rad_scatter, &
+            path_length, path_spacing, &
+            a_tilde, gn, bc)
+    end if
   end subroutine integrate_ray
 
   function calculate_ray_integral(num_cells, s, ds, a_tilde, gn) result(integral)
