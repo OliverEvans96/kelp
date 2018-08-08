@@ -143,35 +143,39 @@ def merge_linear(x1, x2, y1, y2):
     z2 = f2(x3)
     return x3, z1, z2 
 
-def err_linear(xmin, xmax, x1, x2, y1, y2, net=False, return_diffs=False):
+def err_linear(xmin, xmax, x1, x2, y1, y2, net=False):
     """
     If net=True, calculate net area between curves.
     Otherwise, use absolute area between curves.
     
-    If return_diffs as well, return the pointwise abs. & rel. err.
+    absolute error: average difference between curves
+    relative error: average difference between curves 
+                    divided by average height of first curve
+    
     """
     x3, z1, z2 = merge_linear(x1, x2, y1, y2)
-    abs_diff = z1-z2 if net else np.abs(z1-z2)
-    # rel_diff = abs_diff / z1
-    rel_diff = abs_diff / np.trapz(x=x3, y=z1)
-    tot_abs_err = abs(np.trapz(
-        x=x3,
-        y=abs_diff
-    ))
-    # Global-relative error
-    tot_rel_err = abs(tot_abs_err / np.trapz(x=x3, y=z1))
-    # Pointwise-relative error
-    # tot_rel_err = abs(np.trapz(
-    #     x=x3,
-    #     y=rel_diff
-    # ))
-    avg_abs_err, avg_rel_err = map(
-        lambda tot_err: tot_err / (xmax - xmin),
-        (tot_abs_err, tot_rel_err)
-    )
     
-    if return_diffs:
-        return avg_abs_err, avg_rel_err, x3, abs_diff, rel_diff
-    else:
-        return avg_abs_err, avg_rel_err
+    diff = z1-z2 if net else np.abs(z1-z2)
+    avg_abs_err = abs(np.trapz(
+        x=x3,
+        y=diff
+    ) / (xmax - xmin))
+    
+    # Global version:
+    avg_rel_err = abs(np.trapz(
+        x=x3,
+        y=diff
+    ) / np.trapz(
+        x=x1,
+        y=y1
+    ))
+    
+    # # Pointwise version:
+    # avg_rel_err = abs(np.trapz(
+    #     x=x3,
+    #     y=(diff / z1)
+    # ))
+    
+    
+    return avg_abs_err, avg_rel_err
 

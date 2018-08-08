@@ -156,6 +156,11 @@ def calculate_perceived_irrad(p_kelp, irrad):
 
     nx, ny, nz = p_kelp.shape
     perceived_irrad = np.zeros(nz)
+    
+    # Clip negative irradiances, since
+    # they are numerical errors and are
+    # probably supposed to be very small.
+    pos_irrad = np.maximum(irrad, 0)
 
     for k in range(nz):
         total_kelp = np.sum(p_kelp[:,:,k])
@@ -165,29 +170,82 @@ def calculate_perceived_irrad(p_kelp, irrad):
             # For even grid, use average of center two cells
             # For odd grid, just use center cell
             if nx % 2 == 0:
-                center_i2 = center_i1 + 2
-            else:
                 center_i2 = center_i1 + 1
+            else:
+                center_i2 = center_i1
 
             if ny % 2 == 0:
                 center_j2 = center_j1 + 1
             else:
-                center_j2 = center_j1 + 1
+                center_j2 = center_j1
 
             # Irradiance at the center of the grid (at the rope)
             perceived_irrad[k] = (
-                np.sum(irrad[center_i1:center_i2,center_j1:center_j2, k])
+                np.sum(pos_irrad[center_i1:center_i2+1,center_j1:center_j2+1, k])
                 / ((center_i2-center_i1+1) * (center_j2-center_j1+1))
             )
 
         else:
             # Average irradiance weighted by kelp distribution
             perceived_irrad[k] = (
-                np.sum(p_kelp[:,:,k]*irrad[:,:,k])
+                np.sum(p_kelp[:,:,k]*pos_irrad[:,:,k])
                 / np.sum(p_kelp[:,:,k])
             )
 
     return perceived_irrad
+
+def calculate_flux(perceived_irrad, p_kelp, ft, rope_spacing, zmin, zmax):
+    """
+    Total radiant flux through kelp in Watts.
+    
+    Not sure whether to multiply by 2 for two sides of kelp.
+    Currently not.
+    """
+    
+    ns, _, nz = p_kelp.shape
+    
+    ds = rope_spacing / ns
+    dz = (zmax - zmin) / nz
+    
+    z_centers = zmin + dz * (np.arange(nz) + 0.5)
+    z_with_endpoints = np.concatenate([
+        [zmin],
+        z_centers,
+        [zmax]
+    ])
+    
+    # Frond area per meter rope in each depth layer (m^2/m)
+    frond_area_per_meter = ds**2 / ft * np.sum(p_kelp, axis=(0,1))
+    
+    # TODO: Trapezoid rule instead of midpoint rule?
+    # (with linear extrapolation)
+    # Linear extrapolation
+    
+    # Extrapolate to get values at endpoints for trapezoid rule
+    pi_interp = np.vectorize(
+        interp1d(
+            z_centers, 
+            perceived_irrad,
+            fill_value='extrapolate'
+        )
+    )
+    fa_interp = np.vectorize(
+        interp1d(
+            z_centers, 
+            frond_area_per_meter,
+            fill_value='extrapolate'
+        )
+    )
+    
+    fa_with_endpoints = fa_interp(z_with_endpoints)
+    pi_with_endpoints = pi_interp(z_with_endpoints)
+    
+    # Radiant flux through kelp, integrated over depth.
+    flux = np.trapz(
+        x=z_with_endpoints,
+        y=pi_with_endpoints*fa_with_endpoints
+    )
+    return z_with_endpoints, fa_with_endpoints, pi_with_endpoints, flux
 
 def compute_err(conn, table_name, best_perceived_irrad, **run_dict):
     #print("ns={}, nz={}, na={}".format(ns,nz,na))
@@ -197,15 +255,20 @@ def compute_err(conn, table_name, best_perceived_irrad, **run_dict):
         table_name,
         **run_dict
     )[0]
+    
     # This one (not best)
     nz = int(compute_results['nz'][:])
     zmin = 0
     zmax = compute_results['zmax'][:]
-    p_kelp = compute_results['p_kelp'][:]
-    irrad = compute_results['irrad'][:]
-    perceived_irrad = calculate_perceived_irrad(p_kelp, irrad)
+    rope_spacing = compute_results['rope_spacing'][:]
     dz = (zmax - zmin) / nz
     z = dz * (np.arange(nz) + 0.5)
+    
+    p_kelp = compute_results['p_kelp'][:]
+    irrad = compute_results['irrad'][:]
+    ft = compute_results['ft'][:]
+    perceived_irrad = calculate_perceived_irrad(p_kelp, irrad)
+    _, _, _, flux = calculate_flux(perceived_irrad, p_kelp, ft, rope_spacing, zmin, zmax)
     
     # Best
     nz_best = len(best_perceived_irrad)
@@ -224,9 +287,9 @@ def compute_err(conn, table_name, best_perceived_irrad, **run_dict):
     )
     
     
-    return perceived_irrad, abs_err, rel_err, compute_results['compute_time']
+    return perceived_irrad, flux, abs_err, rel_err, compute_results['compute_time']
 
-def cori_plot_two_avg_irrads(study_name, grid1, grid2, plot_err=False, log_data=True, log_err=True):
+def cori_plot_two_avg_irrads(study_name, grid1, grid2, log_data=True, log_err=True):
     """
     Plot both perceived_irrads. rel_err is w.r.t. grid1.
     Also plot pointwise errors.
@@ -278,20 +341,19 @@ def cori_plot_two_avg_irrads(study_name, grid1, grid2, plot_err=False, log_data=
     # )
     
     # Linear interpolation
-    abs_err, rel_err, z_merged, abs_diff, rel_diff = uneven_diff.err_linear(
+    abs_err, rel_err = uneven_diff.err_linear(
         zmin, zmax,
         z1, z2,
         perceived_irrad1,
         perceived_irrad2,
-        return_diffs=True
     )
     
     plt.figure(figsize=(10,4))
     
-    if plot_err:
-        ax1 = plt.subplot(1,2,1)
-    else:
-        ax1 = plt.subplot(1,1,1)
+    # if plot_err:
+    #     ax1 = plt.subplot(1,2,1)
+    # else:
+    ax1 = plt.subplot(1,1,1)
     ax1.plot(z1, perceived_irrad1, 'o-', label='perc_irrad1')
     ax1.plot(z2, perceived_irrad2, 'o-', label='perc_irrad2')
     ax1.set_xlabel('z')
@@ -300,20 +362,20 @@ def cori_plot_two_avg_irrads(study_name, grid1, grid2, plot_err=False, log_data=
     if log_data:
         ax1.set_yscale('log')
     
-    if plot_err:
-        ax2 = plt.subplot(1,2,2)
-        ax2.plot(z_merged, abs_diff, 'C0-', label='abs_err')
-        ax2.set_xlabel('z')
-        ax2.set_ylabel('Pointwise Absolute Error')
-        # ax2.legend(loc='upper right')
-        
-        ax3 = ax2.twinx()
-        ax3.plot(z_merged, rel_diff, 'C1o-', label='rel_err')
-        ax3.set_ylabel('Pointwise Relative Error')
-        # ax3.legend(loc='right')
-        if log_err:
-            ax2.set_yscale('log')
-            ax3.set_yscale('log')
+    # if plot_err:
+    #     ax2 = plt.subplot(1,2,2)
+    #     ax2.plot(z_merged, abs_diff, 'C0-', label='abs_err')
+    #     ax2.set_xlabel('z')
+    #     ax2.set_ylabel('Pointwise Absolute Error')
+    #     # ax2.legend(loc='upper right')
+    #     
+    #     ax3 = ax2.twinx()
+    #     ax3.plot(z_merged, rel_diff, 'C1o-', label='rel_err')
+    #     ax3.set_ylabel('Pointwise Relative Error')
+    #     # ax3.legend(loc='right')
+    #     if log_err:
+    #         ax2.set_yscale('log')
+    #         ax3.set_yscale('log')
 
     plt.tight_layout()
     
@@ -462,7 +524,7 @@ def grid_study_analyze_full(db_path, table_name):
     for i, ns in enumerate(ns_list):
         for j, nz in enumerate(nz_list):
             for k, na in enumerate(na_list):
-                perceived_irrad, abs_err, rel_err, compute_time = compute_err(
+                perceived_irrad, flux, abs_err, rel_err, compute_time = compute_err(
                     conn, 
                     table_name, 
                     best_perceived_irrad,
@@ -514,11 +576,21 @@ def grid_study_analyze_fd_vs_noscat_onespace(db_path, table_name):
     p_kelp = noscat_results['p_kelp'][:]
     noscat_irrad = noscat_results['irrad'][:]
     noscat_perceived_irrad = calculate_perceived_irrad(p_kelp, noscat_irrad)
-    perceived_irrad_dict[(ns_max,na_max)] = noscat_perceived_irrad
+    #perceived_irrad_dict[(ns_max,na_max)] = noscat_perceived_irrad
+    
+    nz = int(noscat_results['nz'][:])
+    zmin = 0
+    zmax = noscat_results['zmax'][:]
+    rope_spacing = noscat_results['rope_spacing'][:]
+    ft = noscat_results['ft'][:]
+    dz = (zmax - zmin) / nz
+    z = dz * (np.arange(nz) + 0.5)
+    
+    _, _, _, noscat_flux = calculate_flux(noscat_perceived_irrad, p_kelp, ft, rope_spacing, zmin, zmax)
 
     for i, ns in enumerate(ns_list):
         for k, na in enumerate(na_list):
-            perceived_irrad, abs_err, rel_err, compute_time = compute_err(
+            perceived_irrad, flux, abs_err, rel_err, compute_time = compute_err(
                 conn, 
                 table_name, 
                 noscat_perceived_irrad,
@@ -526,6 +598,10 @@ def grid_study_analyze_fd_vs_noscat_onespace(db_path, table_name):
                 na=na,
                 fd_flag=True
             )
+            # Use flux error instead of perc_irrad integrals
+            abs_err = np.abs(noscat_flux - flux)
+            rel_err = np.abs(abs_err / noscat_flux)
+            
             perceived_irrad_dict[(ns, na)] = perceived_irrad
             compute_time_dict[(ns, na)] = compute_time
             abs_err_arr[i, k] = abs_err
@@ -576,7 +652,7 @@ def grid_study_analyze_fd_vs_best_onespace(db_path, table_name):
 
     for i, ns in enumerate(ns_list):
         for k, na in enumerate(na_list):
-            perceived_irrad, abs_err, rel_err, compute_time = compute_err(
+            perceived_irrad, flux, abs_err, rel_err, compute_time = compute_err(
                 conn, 
                 table_name, 
                 best_perceived_irrad,
@@ -641,7 +717,7 @@ def grid_study_analyze_edges(db_path, table_name):
     ns = ns_max
     na = na_max
     for i, nz in enumerate(nz_list[:-1]):
-        perceived_irrad, abs_err, rel_err, compute_time = compute_err(
+        perceived_irrad, flux, abs_err, rel_err, compute_time = compute_err(
             conn, 
             table_name, 
             best_perceived_irrad,
@@ -659,7 +735,7 @@ def grid_study_analyze_edges(db_path, table_name):
     nz = nz_max
     na = na_max
     for i, ns in enumerate(ns_list[:-1]):
-        perceived_irrad, abs_err, rel_err, compute_time = compute_err(
+        perceived_irrad, flux, abs_err, rel_err, compute_time = compute_err(
             conn, 
             table_name, 
             best_perceived_irrad,
@@ -676,7 +752,7 @@ def grid_study_analyze_edges(db_path, table_name):
     ns = ns_max
     nz = nz_max
     for i, na in enumerate(na_list[:-1]):
-        perceived_irrad, abs_err, rel_err, compute_time = compute_err(
+        perceived_irrad, flux, abs_err, rel_err, compute_time = compute_err(
             conn, 
             table_name, 
             best_perceived_irrad,

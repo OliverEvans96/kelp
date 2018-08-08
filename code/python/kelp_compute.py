@@ -719,11 +719,11 @@ def kelp_calculate(a_water, b, ns, nz, na, kelp_dist, num_scatters, fd_flag, lis
     from datetime import datetime
     import time
 
-    absorptance_kelp = 0.8
+    absorptance_kelp = 0.7
 
     # Broch 2013
     # 150 individuals/meter
-    num_dens = 150
+    num_dens = 120
 
     fs = 0.5
     # Handa figure 5
@@ -736,7 +736,7 @@ def kelp_calculate(a_water, b, ns, nz, na, kelp_dist, num_scatters, fd_flag, lis
     length_std = 0.2 * max_length
 
     zmax = 10 # Max. vertical
-    rope_spacing = 15 # Horizontal
+    rope_spacing = 10 # Horizontal
 
     # Fairly sunny day
     I0 = 50.0
@@ -841,7 +841,7 @@ def grid_study_compute_onespace(a_water, b, kelp_dist, ns_list, na_list, lis_opt
     return func_list, args_list, kwargs_list
 
 @study_decorator
-def asymptotics_study_compute(a_water_list, b_list, kelp_dist, ns, nz, na, num_scatters_list, lis_opts):
+def asymptotics_study_compute(a_water_list, b_list, kelp_dist, fd_ns, fd_nz, fd_na, as_ns, as_nz, as_na, num_scatters_list, lis_opts):
     """
     For a grid of IOPs (`a_water` and `b` values), compute FD solution
     and compare to asymptotics solution for a range of `num_scatters`.
@@ -864,7 +864,7 @@ def asymptotics_study_compute(a_water_list, b_list, kelp_dist, ns, nz, na, num_s
             func_list.append(kelp_calculate)
             args_list.append((
                 a_water, b,
-                ns, nz, na,
+                fd_ns, fd_nz, fd_na,
                 kelp_dist
             ))
             kwargs_list.append({
@@ -878,7 +878,7 @@ def asymptotics_study_compute(a_water_list, b_list, kelp_dist, ns, nz, na, num_s
                 func_list.append(kelp_calculate)
                 args_list.append((
                     a_water, b,
-                    ns, nz, na,
+                    as_ns, as_nz, as_na,
                     kelp_dist
                 ))
                 kwargs_list.append({

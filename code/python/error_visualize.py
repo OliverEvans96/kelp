@@ -5,17 +5,17 @@ from matplotlib.colors import LogNorm
 import kelp_analyze
 import discrete_plot
 
-def plot_two_edges(rel_err_arr, abs_err_arr, ns_list, na_list, ylim=None):
+def plot_two_edges(rel_err_arr, abs_err_arr, q1_list, q2_list, q1_label='ns', q2_label='na', ylim=None):
     plt.figure(figsize=(6,6))
     
     ax1 = plt.subplot(1,1,1)
-    ax1.semilogy(na_list, rel_err_arr[-1,:], 'C1o-', label='na')
-    ax1.set_xlabel('na')
+    ax1.loglog(q1_list, rel_err_arr[:,-1], 'C1o-', label=q1_label)
+    ax1.set_xlabel(q1_label)
     ax1.legend(loc='right')
 
     ax2 = ax1.twiny()
-    ax2.semilogy(ns_list, rel_err_arr[:,-1], 'C0o-', label='ns')
-    ax2.set_xlabel('ns')
+    ax2.loglog(q2_list, rel_err_arr[-1,:], 'C0o-', label=q2_label)
+    ax2.set_xlabel(q2_label)
     ax2.legend(loc='upper right')
     
     ax1.set_ylabel('Average relative error (Perceived Irradiance)')
@@ -55,7 +55,7 @@ def plot_2d_resolution_grid(rel_err_arr, abs_err_arr, ns_list, na_list, vlim=Non
         zoom_factor=4,
         imshow_kwargs=imshow_kwargs,
         contour_kwargs={
-            #'levels': np.logspace(-3,0,7),
+            'levels': np.logspace(-1,0,5),
             'norm': LogNorm()
         },
         cbar_kwargs={

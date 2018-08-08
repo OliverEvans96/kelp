@@ -12,14 +12,16 @@ def imshow_with_contours(x_list, y_list, f, imshow_kwargs={}, contour_kwargs={},
     
     # contours
     x_grid, y_grid = np.meshgrid(x_list, y_list, indexing='ij')
-    cont = plt.contour(f.T, cmap='magma_r', **contour_kwargs)
+    contour_kwargs = {'cmap':'magma_r', **contour_kwargs}
+    cont = plt.contour(f.T, **contour_kwargs)
     cbar.add_lines(cont, **cbar_kwargs)
     
     # Ticks
     xpos = np.arange(len(x_list))
-    xlabels = map(str, x_list)
+    convert_to_str = lambda x: '{:.2f}'.format(x) if isinstance(x, float) else str(x)
+    xlabels = map(convert_to_str, x_list)
     ypos = np.arange(len(y_list))
-    ylabels = map(str, y_list)
+    ylabels = map(convert_to_str, y_list)
     plt.xticks(xpos, xlabels)
     plt.yticks(ypos, ylabels)
 
@@ -28,7 +30,7 @@ def double_n(arr, n):
         arr = zoom(arr, 2, order=0)
     return arr
 
-def imshow_with_contours_and_zoom(x_list, y_list, f, zoom_factor, imshow_kwargs={}, contour_kwargs={}, cbar_kwargs={}):
+def imshow_with_contours_and_zoom(x_list, y_list, f, zoom_factor, imshow_kwargs={}, contour_kwargs={}, cbar_kwargs={}, log_data=False):
     # zoom_factor is the number of times the grid is doubled
     # (actually a zoom by 2 ** zoom_factor)
     
@@ -62,15 +64,22 @@ def imshow_with_contours_and_zoom(x_list, y_list, f, zoom_factor, imshow_kwargs=
     cbar = plt.colorbar(cax=cax, **cbar_kwargs)
     
     # contours
-    cont = ax.contour(new_f.T, cmap='magma_r', extent=extent, **contour_kwargs)
+    contour_kwargs = {'cmap':'magma_r', **contour_kwargs}
+    cont = ax.contour(new_f.T, extent=extent, **contour_kwargs)
     cbar.add_lines(cont)
     
     # Ticks
+    convert_to_str = lambda x: '{:.2f}'.format(x) if isinstance(x, float) else str(x)
+    x_labels = map(convert_to_str, x_list)
+    y_labels = map(convert_to_str, y_list)
     ax.set_xticks(np.arange(len(x_list))+0.5)
-    ax.set_xticklabels(x_list)
+    ax.set_xticklabels(x_labels)
     ax.set_yticks(np.arange(len(y_list))+0.5)
-    ax.set_yticklabels(y_list)
+    ax.set_yticklabels(y_labels)
 
+    if log_data:
+        plt.yscale('log')
+        
 # Due to a bug in IPyVolume (#117, fixed but not released),
 # there are two versions: One with the correct scale
 # and one with isosurfaces.
@@ -105,7 +114,7 @@ def volshow_with_isoplanes_and_zoom(x_list, y_list, z_list, f, zoom_factor):
     
     ipv.show()
 
-def volshow_zoom_correct_scale(x_list, y_list, z_list, f, zoom_factor):
+def volshow_zoom_correct_scale(x_list, y_list, z_list, f, zoom_factor=0):
     # zoom_factor is the number of times the grid is doubled
     # (actually a zoom by 2 ** zoom_factor)
     
