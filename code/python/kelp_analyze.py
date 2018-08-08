@@ -170,18 +170,18 @@ def calculate_perceived_irrad(p_kelp, irrad):
             # For even grid, use average of center two cells
             # For odd grid, just use center cell
             if nx % 2 == 0:
-                center_i2 = center_i1 + 2
-            else:
                 center_i2 = center_i1 + 1
+            else:
+                center_i2 = center_i1
 
             if ny % 2 == 0:
                 center_j2 = center_j1 + 1
             else:
-                center_j2 = center_j1 + 1
+                center_j2 = center_j1
 
             # Irradiance at the center of the grid (at the rope)
             perceived_irrad[k] = (
-                np.sum(irrad[center_i1:center_i2,center_j1:center_j2, k])
+                np.sum(pos_irrad[center_i1:center_i2+1,center_j1:center_j2+1, k])
                 / ((center_i2-center_i1+1) * (center_j2-center_j1+1))
             )
 
