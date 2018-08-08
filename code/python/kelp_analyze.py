@@ -26,7 +26,7 @@ def query_results(conn, table_name, **kwargs):
         # Sanitize string values
         if isinstance(val, str):
             kwargs[key] = '"{}"'.format(val)
-        
+
         # Sanitize bool values (convert to int)
         if isinstance(val, bool):
             kwargs[key] = '{}'.format(int(val))
@@ -40,7 +40,7 @@ def query_results(conn, table_name, **kwargs):
         where_clause = 'WHERE ' + where_condition
     else:
         where_clause = ''
-        
+
     # Form entire query
     query = ' '.join([
         'SELECT data_path FROM {table_name}',
@@ -49,7 +49,7 @@ def query_results(conn, table_name, **kwargs):
         table_name=table_name,
         where_clause=where_clause
     )
-    
+
     #print("query: '{}'".format(query))
 
     # Execute query
@@ -157,6 +157,11 @@ def calculate_perceived_irrad(p_kelp, irrad):
     nx, ny, nz = p_kelp.shape
     perceived_irrad = np.zeros(nz)
 
+    # Clip negative irradiances, since
+    # they are numerical errors and are
+    # probably supposed to be very small.
+    pos_irrad = np.maximum(irrad, 0)
+
     for k in range(nz):
         total_kelp = np.sum(p_kelp[:,:,k])
         if total_kelp == 0:
@@ -183,7 +188,7 @@ def calculate_perceived_irrad(p_kelp, irrad):
         else:
             # Average irradiance weighted by kelp distribution
             perceived_irrad[k] = (
-                np.sum(p_kelp[:,:,k]*irrad[:,:,k])
+                np.sum(p_kelp[:,:,k]*pos_irrad[:,:,k])
                 / np.sum(p_kelp[:,:,k])
             )
 
