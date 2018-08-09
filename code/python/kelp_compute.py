@@ -767,6 +767,54 @@ def solve_rte_with_callbacks_full(ns, nz, na, rope_spacing, zmax, b, abs_func, s
     import numpy as np
     from datetime import datetime
     import time
+    import sympy as sp
+
+    # Get symbolic expressions for callbacks as strings
+    space = sp.var('x, y, z')
+    x, y, z = space
+    angle = sp.var('theta, phi')
+    theta, phi = angle
+    delta = sp.var('Delta')
+
+    abs_func_str = str(abs_func(*space))
+    source_func_str = str(source_func(*space, *angle))
+    bc_func_str = str(bc_func(*angle))
+    vsf_func_str = str(vsf_func(delta))
+
+    # Convert callbacks to numpy functions
+    abs_func_N = np.vectorize(
+        sp.lambdify(
+            space,
+            abs_func(*space),
+            modules=("numpy",)
+        )
+    )
+
+    source_func_N = np.vectorize(
+        sp.lambdify(
+            (*space, *angle),
+            source_func(*space, *angle),
+            modules=("numpy",)
+        )
+    )
+
+
+    bc_func_N = np.vectorize(
+        sp.lambdify(
+            angle,
+            bc_func(*angle),
+            modules=("numpy",)
+        )
+    )
+
+    vsf_func_N = np.vectorize(
+        sp.lambdify(
+            (theta,),
+            vsf_func(theta),
+            modules=("numpy",)
+        )
+    )
+
 
     zmin = 0
     dz = (zmax-zmin)/nz
@@ -802,7 +850,7 @@ def solve_rte_with_callbacks_full(ns, nz, na, rope_spacing, zmax, b, abs_func, s
         ymin, ymax,
         zmin, zmax,
         ntheta, nphi,
-        b, abs_func, source_func, bc_func, vsf_func,
+        b, abs_func_N, source_func_N, bc_func_N, vsf_func_N,
         rad, irrad,
         num_scatters, fd_flag, lis_opts,
         lis_iter, lis_time, lis_resid
@@ -844,6 +892,10 @@ def solve_rte_with_callbacks_full(ns, nz, na, rope_spacing, zmax, b, abs_func, s
     }
 
     results = {
+        'abs_func': abs_func_str,
+        'source_func': source_func_str,
+        'bc_func': bc_func_str,
+        'vsf_func': vsf_func_str,
         'rad': rad,
         'irrad': irrad,
     }
