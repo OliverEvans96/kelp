@@ -782,39 +782,31 @@ def solve_rte_with_callbacks_full(ns, nz, na, rope_spacing, zmax, b, abs_func, s
     vsf_func_str = str(vsf_func(delta))
 
     # Convert callbacks to numpy functions
-    abs_func_N = np.vectorize(
-        sp.lambdify(
-            space,
-            abs_func(*space),
-            modules=("numpy",)
-        )
+    abs_func_N = sp.lambdify(
+        space,
+        abs_func(*space),
+        modules=("numpy",)
     )
 
-    source_func_N = np.vectorize(
-        sp.lambdify(
-            (*space, *angle),
-            source_func(*space, *angle),
-            modules=("numpy",)
-        )
+    source_func_N = sp.lambdify(
+        (*space, *angle),
+        source_func(*space, *angle),
+        modules=("numpy",)
     )
 
 
-    bc_func_N = np.vectorize(
-        sp.lambdify(
-            angle,
-            bc_func(*angle),
-            modules=("numpy",)
-        )
+    bc_func_N = sp.lambdify(
+        angle,
+        bc_func(*angle),
+        modules=("numpy",)
     )
 
-    vsf_func_N = np.vectorize(
-        sp.lambdify(
-            (theta,),
-            vsf_func(theta),
-            modules=("numpy",)
-        )
-    )
-
+    vsf_func_N = vsf_func
+    #vsf_func_N = sp.lambdify(
+    #     (theta,),
+    #     vsf_func(theta),
+    #     modules=("numpy",)
+    # )
 
     zmin = 0
     dz = (zmax-zmin)/nz
