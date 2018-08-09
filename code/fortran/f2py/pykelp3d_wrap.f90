@@ -2,30 +2,7 @@ module pykelp3d_wrap
   use rte3d
   use kelp3d
   use asymptotics
-  use light_interface
   implicit none
-
-  interface
-     subroutine func1d(delta, output)
-       double precision, intent(in) :: delta
-       double precision, intent(out) :: output
-     end subroutine func1d
-
-     subroutine func2d(theta, phi, output)
-       double precision, intent(in) :: theta, phi
-       double precision, intent(out) :: output
-     end subroutine func2d
-
-     subroutine func3d(x, y, z, output)
-       double precision, intent(in) :: x, y, z
-       double precision, intent(out) :: output
-     end subroutine func3d
-
-     subroutine func5d(x, y, z, theta, phi, output)
-       double precision, intent(in) :: x, y, z, theta, phi
-       double precision, intent(out) :: output
-     end subroutine func5d
-  end interface
 
 contains
   subroutine gen_kelp(xmin, xmax, nx, ymin, ymax, ny, zmin, zmax, nz, &
@@ -80,7 +57,7 @@ contains
        xmin, xmax, nx, ymin, ymax, ny, zmin, zmax, nz, ntheta, nphi, &
        a_w, a_k, b, num_vsf, vsf_angles, vsf_vals, &
        theta_s, phi_s, I0, decay, &
-       p_kelp, radiance, irradiance, avg_irrad, perceived_irrad, &
+       p_kelp, radiance, irradiance, &
        num_scatters, fd_flag, lis_opts, &
        lis_iter, lis_time, lis_resid)
 
@@ -93,8 +70,6 @@ contains
     double precision, dimension(nx, ny, nz), intent(in) :: p_kelp
     double precision, dimension(nx, ny, nz, ntheta*(nphi-2)+2), intent(inout) :: radiance
     double precision, dimension(nx, ny, nz), intent(inout) :: irradiance
-    ! This is sloppy, but these functions need reals.
-    real, dimension(nz), intent(inout) :: avg_irrad, perceived_irrad
 
     integer, intent(in) :: num_scatters
     logical, intent(in) :: fd_flag
@@ -222,22 +197,20 @@ contains
        zmin, zmax, nz, &
        ntheta, nphi, &
        b, abs_func, source_func, bc_func, vsf_func, &
-       radiance, irradiance, avg_irrad, perceived_irrad, &
+       radiance, irradiance, &
        num_scatters, fd_flag, lis_opts, &
        lis_iter, lis_time, lis_resid)
     integer, intent(in) :: nx, ny, nz, ntheta, nphi
     double precision, intent(in) :: xmin, xmax, ymin, ymax, zmin, zmax
 
     double precision, intent(in) :: b
-    procedure(func3d) :: abs_func
-    procedure(func5d) :: source_func
-    procedure(func2d) :: bc_func
-    procedure(func1d) :: vsf_func
+    ! NOTE: For some reason, f2py requires that double precision
+    ! and external appear on different lines here!
+    double precision :: abs_func, source_func, bc_func, vsf_func
+    external :: abs_func, source_func, bc_func, vsf_func
 
     double precision, dimension(nx, ny, nz, ntheta*(nphi-2)+2), intent(inout) :: radiance
     double precision, dimension(nx, ny, nz), intent(inout) :: irradiance
-    ! This is sloppy, but these functions need reals.
-    real, dimension(nz), intent(inout) :: avg_irrad, perceived_irrad
 
     integer, intent(in) :: num_scatters
     logical, intent(in) :: fd_flag
@@ -285,8 +258,8 @@ contains
     do i=1, iops%num_vsf
        iops%vsf_angles(i) = dble(i-1)*dvsf
        delta = iops%vsf_angles(i)
-       ! call vsf_func(delta, tmp)
-       ! iops%vsf_vals(i) = tmp
+       tmp = vsf_func(delta)
+       iops%vsf_vals(i) = tmp
     end do
     call iops%calc_vsf_on_grid()
 
@@ -300,14 +273,14 @@ contains
           y = grid%x%vals(j)
           do k=1, grid%z%num
              z = grid%x%vals(k)
-             ! call abs_func(x, y, z, tmp)
-             ! iops%abs_grid(i,j,k) = tmp
+             tmp = abs_func(x, y, z)
+             iops%abs_grid(i,j,k) = tmp
 
              do p=1, grid%angles%nomega
                 theta = grid%angles%theta_p(p)
                 phi = grid%angles%phi_p(p)
-                ! call source_func(x, y, z, theta, phi, tmp)
-                ! source(i,j,k,p) = tmp
+                tmp = source_func(x, y, z, theta, phi)
+                source(i,j,k,p) = tmp
              end do
           end do
        end do
@@ -320,8 +293,8 @@ contains
     do p=1, grid%angles%nomega/2
        theta = grid%angles%theta_p(p)
        phi = grid%angles%phi_p(p)
-       ! call bc_func(theta, phi, tmp)
-       ! bc%bc_grid(p) = tmp
+       tmp = bc_func(theta, phi)
+       bc%bc_grid(p) = tmp
     end do
 
     write(*,*) 'Calculate asymptotic light field'

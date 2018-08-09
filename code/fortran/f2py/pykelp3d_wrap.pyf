@@ -1,0 +1,146 @@
+!    -*- f90 -*-
+! Note: the context of this file is case sensitive.
+
+python module solve_rte_with_callbacks__user__routines 
+    interface solve_rte_with_callbacks_user_interface 
+        subroutine vsf_func(delta,tmp) ! in :pykelp3d_wrap:pykelp3d_wrap.f90:pykelp3d_wrap:solve_rte_with_callbacks:unknown_interface
+            double precision :: delta
+            double precision intent(out) :: tmp
+        end subroutine vsf_func
+        subroutine abs_func(x,y,z,tmp) ! in :pykelp3d_wrap:pykelp3d_wrap.f90:pykelp3d_wrap:solve_rte_with_callbacks:unknown_interface
+            double precision :: x
+            double precision :: y
+            double precision :: z
+            double precision intent(out) :: tmp
+        end subroutine abs_func
+        subroutine source_func(x,y,z,theta,phi,tmp) ! in :pykelp3d_wrap:pykelp3d_wrap.f90:pykelp3d_wrap:solve_rte_with_callbacks:unknown_interface
+            double precision :: x
+            double precision :: y
+            double precision :: z
+            double precision :: theta
+            double precision :: phi
+            double precision intent(out) :: tmp
+        end subroutine source_func
+        subroutine bc_func(theta,phi,tmp) ! in :pykelp3d_wrap:pykelp3d_wrap.f90:pykelp3d_wrap:solve_rte_with_callbacks:unknown_interface
+            double precision :: theta
+            double precision :: phi
+            double precision intent(out) :: tmp
+        end subroutine bc_func
+    end interface solve_rte_with_callbacks_user_interface
+end python module solve_rte_with_callbacks__user__routines
+python module pykelp3d_wrap ! in 
+    interface  ! in :pykelp3d_wrap
+        module pykelp3d_wrap ! in :pykelp3d_wrap:pykelp3d_wrap.f90
+            use rte3d
+            use kelp3d
+            use asymptotics
+            interface  ! in :pykelp3d_wrap:pykelp3d_wrap.f90:pykelp3d_wrap
+                subroutine func1d(delta,output) ! in :pykelp3d_wrap:pykelp3d_wrap.f90:pykelp3d_wrap:unknown_interface
+                    double precision intent(in) :: delta
+                    double precision intent(out) :: output
+                end subroutine func1d
+                subroutine func2d(theta,phi,output) ! in :pykelp3d_wrap:pykelp3d_wrap.f90:pykelp3d_wrap:unknown_interface
+                    double precision intent(in) :: theta
+                    double precision intent(in) :: phi
+                    double precision intent(out) :: output
+                end subroutine func2d
+                subroutine func3d(x,y,z,output) ! in :pykelp3d_wrap:pykelp3d_wrap.f90:pykelp3d_wrap:unknown_interface
+                    double precision intent(in) :: x
+                    double precision intent(in) :: y
+                    double precision intent(in) :: z
+                    double precision intent(out) :: output
+                end subroutine func3d
+                subroutine func5d(x,y,z,theta,phi,output) ! in :pykelp3d_wrap:pykelp3d_wrap.f90:pykelp3d_wrap:unknown_interface
+                    double precision intent(in) :: x
+                    double precision intent(in) :: y
+                    double precision intent(in) :: z
+                    double precision intent(in) :: theta
+                    double precision intent(in) :: phi
+                    double precision intent(out) :: output
+                end subroutine func5d
+            end interface 
+            subroutine gen_kelp(xmin,xmax,nx,ymin,ymax,ny,zmin,zmax,nz,frond_lengths,frond_stds,num_fronds,water_speeds,water_angles,fs,fr,ft,p_kelp) ! in :pykelp3d_wrap:pykelp3d_wrap.f90:pykelp3d_wrap
+                double precision :: xmin
+                double precision :: xmax
+                integer, optional,check(shape(p_kelp,0)==nx),depend(p_kelp) :: nx=shape(p_kelp,0)
+                double precision :: ymin
+                double precision :: ymax
+                integer, optional,check(shape(p_kelp,1)==ny),depend(p_kelp) :: ny=shape(p_kelp,1)
+                double precision :: zmin
+                double precision :: zmax
+                integer, optional,check(len(frond_lengths)>=nz),depend(frond_lengths) :: nz=len(frond_lengths)
+                double precision dimension(nz) :: frond_lengths
+                double precision dimension(nz),depend(nz) :: frond_stds
+                double precision dimension(nz),depend(nz) :: num_fronds
+                double precision dimension(nz),depend(nz) :: water_speeds
+                double precision dimension(nz),depend(nz) :: water_angles
+                double precision :: fs
+                double precision :: fr
+                double precision :: ft
+                double precision dimension(nx,ny,nz),depend(nz) :: p_kelp
+            end subroutine gen_kelp
+            subroutine calculate_light_field(xmin,xmax,nx,ymin,ymax,ny,zmin,zmax,nz,ntheta,nphi,a_w,a_k,b,num_vsf,vsf_angles,vsf_vals,theta_s,phi_s,i0,decay,p_kelp,radiance,irradiance,num_scatters,fd_flag,lis_opts,lis_iter,lis_time,lis_resid) ! in :pykelp3d_wrap:pykelp3d_wrap.f90:pykelp3d_wrap
+                double precision intent(in) :: xmin
+                double precision intent(in) :: xmax
+                integer, optional,intent(in),check(shape(p_kelp,0)==nx),depend(p_kelp) :: nx=shape(p_kelp,0)
+                double precision intent(in) :: ymin
+                double precision intent(in) :: ymax
+                integer, optional,intent(in),check(shape(p_kelp,1)==ny),depend(p_kelp) :: ny=shape(p_kelp,1)
+                double precision intent(in) :: zmin
+                double precision intent(in) :: zmax
+                integer, optional,intent(in),check(shape(p_kelp,2)==nz),depend(p_kelp) :: nz=shape(p_kelp,2)
+                integer intent(in) :: ntheta
+                integer intent(in) :: nphi
+                double precision intent(in) :: a_w
+                double precision intent(in) :: a_k
+                double precision intent(in) :: b
+                integer, optional,intent(in),check(len(vsf_angles)>=num_vsf),depend(vsf_angles) :: num_vsf=len(vsf_angles)
+                double precision dimension(num_vsf),intent(in) :: vsf_angles
+                double precision dimension(num_vsf),intent(in),depend(num_vsf) :: vsf_vals
+                double precision intent(in) :: theta_s
+                double precision intent(in) :: phi_s
+                double precision intent(in) :: i0
+                double precision intent(in) :: decay
+                double precision dimension(nx,ny,nz),intent(in) :: p_kelp
+                double precision dimension(nx,ny,nz,ntheta*(nphi-2)+2),intent(inout),depend(nx,ny,nz,ntheta,nphi) :: radiance
+                double precision dimension(nx,ny,nz),intent(inout),depend(nx,ny,nz) :: irradiance
+                integer intent(in) :: num_scatters
+                logical intent(in) :: fd_flag
+                character*(*) intent(in) :: lis_opts
+                integer intent(inout) :: lis_iter
+                double precision intent(inout) :: lis_time
+                double precision intent(inout) :: lis_resid
+            end subroutine calculate_light_field
+            subroutine solve_rte_with_callbacks(xmin,xmax,nx,ymin,ymax,ny,zmin,zmax,nz,ntheta,nphi,b,abs_func,source_func,bc_func,vsf_func,radiance,irradiance,num_scatters,fd_flag,lis_opts,lis_iter,lis_time,lis_resid) ! in :pykelp3d_wrap:pykelp3d_wrap.f90:pykelp3d_wrap
+                use solve_rte_with_callbacks__user__routines
+                double precision intent(in) :: xmin
+                double precision intent(in) :: xmax
+                integer, optional,intent(in),check(shape(radiance,0)==nx),depend(radiance) :: nx=shape(radiance,0)
+                double precision intent(in) :: ymin
+                double precision intent(in) :: ymax
+                integer, optional,intent(in),check(shape(radiance,1)==ny),depend(radiance) :: ny=shape(radiance,1)
+                double precision intent(in) :: zmin
+                double precision intent(in) :: zmax
+                integer, optional,intent(in),check(shape(radiance,2)==nz),depend(radiance) :: nz=shape(radiance,2)
+                integer intent(in) :: ntheta
+                integer intent(in) :: nphi
+                double precision intent(in) :: b
+                external abs_func
+                external source_func
+                external bc_func
+                external vsf_func
+                double precision dimension(nx,ny,nz,ntheta*(nphi-2)+2),intent(inout),depend(ntheta,nphi) :: radiance
+                double precision dimension(nx,ny,nz),intent(inout),depend(nx,ny,nz) :: irradiance
+                integer intent(in) :: num_scatters
+                logical intent(in) :: fd_flag
+                character*(*) intent(in) :: lis_opts
+                integer intent(inout) :: lis_iter
+                double precision intent(inout) :: lis_time
+                double precision intent(inout) :: lis_resid
+            end subroutine solve_rte_with_callbacks
+        end module pykelp3d_wrap
+    end interface 
+end python module pykelp3d_wrap
+
+! This file was auto-generated with f2py (version:2).
+! See http://cens.ioc.ee/projects/f2py2e/

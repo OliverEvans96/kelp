@@ -758,6 +758,98 @@ def kelp_calculate(a_water, b, ns, nz, na, kelp_dist, num_scatters, fd_flag, lis
         fd_flag, lis_opts
     )
 
+## With Callbacks
+
+def solve_rte_with_callbacks_full(ns, nz, na, rope_spacing, zmax, b, abs_func, source_func, bc_func, vsf_func, num_scatters, fd_flag, lis_opts):
+    # TODO: num_cores doesn't do anything yet.
+
+    from kelp3d_objs import f90
+    import numpy as np
+    from datetime import datetime
+    import time
+
+    zmin = 0
+    dz = (zmax-zmin)/nz
+
+    ns = int(ns)
+    nz = int(nz)
+    na = int(na)
+
+    nx = ny = ns
+
+    ntheta = na
+    nphi = na
+
+    nomega = int(ntheta*(nphi-2)+2)
+    rad = np.asfortranarray(np.zeros([nx, ny, nz, nomega]))
+    irrad = np.asfortranarray(np.zeros([nx, ny, nz]))
+
+    # Start timer
+    tic = time.time()
+
+    # Rope spacing determines horizontal bounds
+    xmin = ymin = -rope_spacing/2
+    xmax = ymax = rope_spacing/2
+
+    # Create arrays to hand mutable values to fortran
+    lis_iter = np.array([0], dtype=int)
+    lis_time = np.array([0], dtype=float)
+    lis_resid = np.array([0], dtype=float)
+
+    # Calculate light field
+    f90.solve_rte_with_callbacks(
+        xmin, xmax,
+        ymin, ymax,
+        zmin, zmax,
+        ntheta, nphi,
+        b, abs_func, source_func, bc_func, vsf_func,
+        rad, irrad,
+        num_scatters, fd_flag, lis_opts,
+        lis_iter, lis_time, lis_resid
+    )
+
+    # End timer
+    toc = time.time()
+    date = datetime.now().ctime()
+    git_commit = get_git_commit_hash()
+    compute_time = toc - tic
+
+    # Extract values from arrays
+    lis_iter = int(lis_iter)
+    lis_time = float(lis_time)
+    lis_resid = float(lis_resid)
+
+    # TODO: Save callback expressions
+    scalar_params = {
+        'b': b,
+        'ns': ns,
+        'na': na,
+        'nx': nx,
+        'ny': ny,
+        'nz': nz,
+        'ntheta': ntheta,
+        'nphi': nphi,
+        'nomega': nomega,
+        'zmax': zmax,
+        'rope_spacing': rope_spacing,
+        'num_scatters': num_scatters,
+        'fd_flag': fd_flag,
+        'lis_opts': lis_opts,
+        'date': date,
+        'git_commit': git_commit,
+        'compute_time': compute_time,
+        'lis_iter': lis_iter,
+        'lis_time': lis_time,
+        'lis_resid': lis_resid,
+    }
+
+    results = {
+        'rad': rad,
+        'irrad': irrad,
+    }
+
+    return scalar_params, results
+
 ###############################
 # Grid study
 
