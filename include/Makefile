@@ -118,9 +118,14 @@ $(test_mod_inc): %.o: $(TEST_MOD)/%.f90
 	$(FC) -c $< $(FFLAGS) -o $@
 $(jtest_inc): %.so: $(JTEST)/%.f90
 	$(FC) $(TESTFLAGS) $< -o $@
+
+# No target for f2py signature (.pyf)
+# because it requires manual modification
+
 # For actually importing in python
-$(f2py_targets): %: $(F2PY)/%.f90
+$(f2py_targets): %: $(F2PY)/%.pyf $(F2PY)/%.f90
 # TODO: This is sloppy & adds patchelf (Nix) dependency
+#f2py -c $^ -m $@ --f90flags="$(F2PYFLAGS)" -llis -lm -L$(LIB)/../lib -I$(INC)
 	f2py -c $^ -m $@ --f90flags="$(F2PYFLAGS)" -llis -lm -L$(LIB)/../lib -I$(INC)
 	patchelf --set-rpath $(LIB) $(PWD)/$@.*.so
 	rm -f $(F2PY_INC)/$@.*.so
@@ -158,7 +163,7 @@ test_grid_mod.o: sag.o
 test_asymptotics.o: asymptotics.o light_context.o rte_sparse_matrices.o mgmres.o rte3d.o
 test_asymptotics_mod.o: asymptotics.o prob.o fastgl.o sag.o utils.o rte3d.o kelp_context.o light_context.o rte_sparse_matrices.o asymptotics.o
 # F2PY test w/o python
-pykelp3d_wrap.o: light_interface.o asymptotics.o rte_sparse_matrices.o mgmres.o rte3d.o prob.o fastgl.o sag.o utils.o kelp3d.o kelp_context.o light_context.o
+pykelp3d_wrap.o: asymptotics.o rte_sparse_matrices.o mgmres.o rte3d.o prob.o fastgl.o sag.o utils.o kelp3d.o kelp_context.o light_context.o
 
 # F2PY Test
 test_pykelp3d_wrap: pykelp3d_wrap.o asymptotics.o rte_sparse_matrices.o mgmres.o rte3d.o prob.o fastgl.o sag.o utils.o kelp3d.o kelp_context.o light_context.o
@@ -169,7 +174,7 @@ test_pyasymptotics_wrap: asymptotics.o rte_sparse_matrices.o mgmres.o rte3d.o pr
 # F2PY #
 ########
 
-pykelp3d_wrap: light_interface.o prob.o fastgl.o sag.o utils.o kelp3d.o kelp_context.o mgmres.o rte_sparse_matrices.o light_context.o rte3d.o asymptotics.o
+pykelp3d_wrap: prob.o fastgl.o sag.o utils.o kelp3d.o kelp_context.o mgmres.o rte_sparse_matrices.o light_context.o rte3d.o asymptotics.o
 
 #########
 # Tests #
