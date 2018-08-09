@@ -221,8 +221,7 @@ contains
        ymin, ymax, ny, &
        zmin, zmax, nz, &
        ntheta, nphi, &
-       b, &
-       !abs_func, source_func, bc_func, vsf_func, &
+       b, abs_func, source_func, bc_func, vsf_func, &
        radiance, irradiance, avg_irrad, perceived_irrad, &
        num_scatters, fd_flag, lis_opts, &
        lis_iter, lis_time, lis_resid)
@@ -230,10 +229,10 @@ contains
     double precision, intent(in) :: xmin, xmax, ymin, ymax, zmin, zmax
 
     double precision, intent(in) :: b
-    ! procedure(func3d) :: abs_func
-    ! procedure(func5d) :: source_func
-    ! procedure(func2d) :: bc_func
-    ! procedure(func1d) :: vsf_func
+    procedure(func3d) :: abs_func
+    procedure(func5d) :: source_func
+    procedure(func2d) :: bc_func
+    procedure(func1d) :: vsf_func
 
     double precision, dimension(nx, ny, nz, ntheta*(nphi-2)+2), intent(inout) :: radiance
     double precision, dimension(nx, ny, nz), intent(inout) :: irradiance
