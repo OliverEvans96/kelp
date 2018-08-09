@@ -1,7 +1,4 @@
 module pykelp3d_wrap
-  !use kelp_context
-  !use light_context
-  !use rte_sparse_matrices
   use rte3d
   use kelp3d
   use asymptotics
@@ -9,25 +6,25 @@ module pykelp3d_wrap
   implicit none
 
   interface
-     function func1d(delta)
+     subroutine func1d(delta, output)
        double precision, intent(in) :: delta
-       double precision :: func1d
-     end function func1d
+       double precision, intent(out) :: output
+     end subroutine func1d
 
-     function func2d(theta, phi)
+     subroutine func2d(theta, phi, output)
        double precision, intent(in) :: theta, phi
-       double precision :: func2d
-     end function func2d
+       double precision, intent(out) :: output
+     end subroutine func2d
 
-     function func3d(x, y, z)
+     subroutine func3d(x, y, z, output)
        double precision, intent(in) :: x, y, z
-       double precision :: func3d
-     end function func3d
+       double precision, intent(out) :: output
+     end subroutine func3d
 
-     function func5d(x, y, z, theta, phi)
+     subroutine func5d(x, y, z, theta, phi, output)
        double precision, intent(in) :: x, y, z, theta, phi
-       double precision :: func5d
-     end function func5d
+       double precision, intent(out) :: output
+     end subroutine func5d
   end interface
 
 contains
@@ -113,11 +110,22 @@ contains
     type(boundary_condition) bc
     integer k
 
+    double precision, dimension(:,:,:,:), allocatable :: source
+
     ! INIT GRID
     write(*,*) 'Grid'
     call grid%set_bounds(xmin, xmax, ymin, ymax, zmin, zmax)
     call grid%set_num(nx, ny, nz, ntheta, nphi)
     call grid%init()
+
+    allocate(source( &
+         grid%x%num, &
+         grid%y%num, &
+         grid%z%num, &
+         grid%angles%nomega))
+
+    ! Initialize source to zero
+    source(:,:,:,:) = 0.d0
 
     ! INIT IOPS
     write(*,*) 'IOPs'
@@ -147,8 +155,8 @@ contains
 
     !write(*,*) 'bc_grid = ', bc%bc_grid
 
-    write(*,*) 'Scatter'
-    call calculate_light_with_scattering(grid, bc, iops, radiance, num_scatters)
+    write(*,*) 'Calculate asymptotic light field'
+    call calculate_asymptotic_light_field(grid, bc, iops, source, radiance, num_scatters)
 
     if(fd_flag) then
 
@@ -189,6 +197,8 @@ contains
     call iops%deinit()
     call light%deinit()
     call grid%deinit()
+
+    deallocate(source)
 
     write(*,*) 'done'
   end subroutine calculate_light_field
@@ -211,19 +221,19 @@ contains
        ymin, ymax, ny, &
        zmin, zmax, nz, &
        ntheta, nphi, &
-       b, abs_func, source_func, bc_func, vsf_func &
+       b, &
+       !abs_func, source_func, bc_func, vsf_func, &
        radiance, irradiance, avg_irrad, perceived_irrad, &
        num_scatters, fd_flag, lis_opts, &
-       lis_iter, lis_time, lis_resid, &
-    )
+       lis_iter, lis_time, lis_resid)
     integer, intent(in) :: nx, ny, nz, ntheta, nphi
     double precision, intent(in) :: xmin, xmax, ymin, ymax, zmin, zmax
 
     double precision, intent(in) :: b
-    procedure(func3d), intent(in) :: abs_fun
-    procedure(func5d), intent(in) :: source_fun
-    procedure(func2d) intent(in) :: bc_fun
-    procedure(func1d) intent(in) :: vsf_fun
+    ! procedure(func3d) :: abs_func
+    ! procedure(func5d) :: source_func
+    ! procedure(func2d) :: bc_func
+    ! procedure(func1d) :: vsf_func
 
     double precision, dimension(nx, ny, nz, ntheta*(nphi-2)+2), intent(inout) :: radiance
     double precision, dimension(nx, ny, nz), intent(inout) :: irradiance
@@ -246,10 +256,11 @@ contains
     type(boundary_condition) bc
     integer i, j, k, p
     double precision x, y, z, theta, phi
+    double precision delta, tmp
 
     double precision dvsf
 
-    double precision, dimension(:,:,:,:,:), allocatable :: source_grid
+    double precision, dimension(:,:,:,:), allocatable :: source
 
 
     ! INIT GRID
@@ -258,7 +269,7 @@ contains
     call grid%set_num(nx, ny, nz, ntheta, nphi)
     call grid%init()
 
-    allocate(source_grid( &
+    allocate(source( &
          grid%x%num, &
          grid%y%num, &
          grid%z%num, &
@@ -274,14 +285,12 @@ contains
     dvsf = pi/(dble(iops%num_vsf-1))
     do i=1, iops%num_vsf
        iops%vsf_angles(i) = dble(i-1)*dvsf
-       iops%vsf_vals = vsf_func(iops_vsf_angles(i))
+       delta = iops%vsf_angles(i)
+       ! call vsf_func(delta, tmp)
+       ! iops%vsf_vals(i) = tmp
     end do
     call iops%calc_vsf_on_grid()
 
-    iops%abs_kelp = a_k
-    do k=1, grid%z%num
-       iops%abs_water(k) = a_w
-    end do
     iops%scat = b
 
     ! Calculate absorption coefficient
@@ -290,14 +299,17 @@ contains
        x = grid%x%vals(i)
        do j=1, grid%y%num
           y = grid%x%vals(j)
-          do k=1, grid%k%num
+          do k=1, grid%z%num
              z = grid%x%vals(k)
-             iops%abs_grid(i,j,k) = abs_func(x, y, z)
+             ! call abs_func(x, y, z, tmp)
+             ! iops%abs_grid(i,j,k) = tmp
 
              do p=1, grid%angles%nomega
                 theta = grid%angles%theta_p(p)
                 phi = grid%angles%phi_p(p)
-                source_grid(i,j,k,p) = source_func(x, y, z, theta, phi)
+                ! call source_func(x, y, z, theta, phi, tmp)
+                ! source(i,j,k,p) = tmp
+             end do
           end do
        end do
     end do
@@ -309,11 +321,12 @@ contains
     do p=1, grid%angles%nomega/2
        theta = grid%angles%theta_p(p)
        phi = grid%angles%phi_p(p)
-       bc%bc_grid(p) = bc_func(theta, phi)
+       ! call bc_func(theta, phi, tmp)
+       ! bc%bc_grid(p) = tmp
     end do
 
-    write(*,*) 'Scatter'
-    call calculate_light_with_scattering(grid, bc, iops, source_grid, radiance, num_scatters)
+    write(*,*) 'Calculate asymptotic light field'
+    call calculate_asymptotic_light_field(grid, bc, iops, source, radiance, num_scatters)
 
     if(fd_flag) then
 
@@ -355,7 +368,7 @@ contains
     call light%deinit()
     call grid%deinit()
 
-    deallocate(source_grid)
+    deallocate(source)
 
     write(*,*) 'done'
   end subroutine solve_rte_with_callbacks
