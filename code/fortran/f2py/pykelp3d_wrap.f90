@@ -202,9 +202,6 @@ contains
     double precision, intent(in) :: xmin, xmax, ymin, ymax, zmin, zmax
 
     double precision, intent(in) :: b
-    ! NOTE: For some reason, f2py requires that double precision
-    ! and external appear on different lines here!
-    double precision :: abs_func, source_func, bc_func, vsf_func
     external :: abs_func, source_func, bc_func, vsf_func
 
     double precision, dimension(nx, ny, nz, ntheta*(nphi-2)+2), intent(inout) :: radiance
@@ -225,13 +222,33 @@ contains
     type(light_state) light
     type(boundary_condition) bc
     integer i, j, k, p
-    double precision x, y, z, theta, phi
-    double precision delta, tmp
 
     double precision dvsf
 
     double precision, dimension(:,:,:,:), allocatable :: source
 
+    ! Arrays for evaluating callbacks
+    ! via vectorized numpy functions to improve speed
+    double precision, dimension(:,:,:,:), allocatable :: x
+    double precision, dimension(:,:,:,:), allocatable :: y
+    double precision, dimension(:,:,:,:), allocatable :: z
+    double precision, dimension(:,:,:,:), allocatable :: theta
+    double precision, dimension(:,:,:,:), allocatable :: phi
+    ! These temporary arrays are necessary because
+    ! f2py can't infer the datatypes of members of derived types.
+    ! and therefore expects the wrong kind of callbacks if they are used.
+    double precision, dimension(:,:,:), allocatable :: x1
+    double precision, dimension(:,:,:), allocatable :: y1
+    double precision, dimension(:,:,:), allocatable :: z1
+    double precision, dimension(:), allocatable :: theta1
+    double precision, dimension(:), allocatable :: phi1
+    double precision, dimension(:), allocatable :: tmp_vsf_angles, tmp_vsf_vals
+    double precision, dimension(:,:,:), allocatable :: tmp_spatial
+    double precision, dimension(:), allocatable :: tmp_angular
+    integer num_vsf, nomega
+    ! The following line is an important f2py directive,
+    ! not a comment.
+    !f2py intent(out) tmp_vsf_vals, tmp_spatial, tmp_angular, source
 
     ! INIT GRID
     write(*,*) 'Grid'
@@ -245,45 +262,97 @@ contains
          grid%z%num, &
          grid%angles%nomega))
 
+    allocate(x(grid%x%num, 1, 1, 1))
+    allocate(y(1, grid%y%num, 1, 1))
+    allocate(z(1, 1, grid%z%num, 1))
+    allocate(theta(1, 1, 1, grid%angles%nomega))
+    allocate(phi(1, 1, 1, grid%angles%nomega))
+
+    allocate(x1(grid%x%num, 1, 1))
+    allocate(y1(1, grid%y%num, 1))
+    allocate(z1(1, 1, grid%z%num))
+    allocate(theta1(grid%angles%nomega))
+    allocate(phi1(grid%angles%nomega))
+
+    allocate(tmp_spatial(grid%x%num, grid%y%num, grid%z%num))
+    allocate(tmp_angular(grid%angles%nomega))
+
+    write(*,*) 'BC'
+    ! Allocate bc_grid & initialize
+    call bc%init(grid, 0.d0, 0.d0, 0.d0, 1.d0)
+
     ! INIT IOPS
     write(*,*) 'IOPs'
 
     iops%num_vsf = 101
+    allocate(tmp_vsf_angles(iops%num_vsf))
+    allocate(tmp_vsf_vals(iops%num_vsf))
     call iops%init(grid)
     ! Evaluate VSF on discrete grid
     ! Angles evenly spaced, endpoints included
     dvsf = pi/(dble(iops%num_vsf-1))
     do i=1, iops%num_vsf
        iops%vsf_angles(i) = dble(i-1)*dvsf
-       delta = iops%vsf_angles(i)
-       tmp = vsf_func(delta)
-       iops%vsf_vals(i) = tmp
     end do
     call iops%calc_vsf_on_grid()
 
     iops%scat = b
 
     write(*,*) 'Evaluate callbacks'
+
+    ! Create spatial/angular grid variables
+    do i=1, grid%x%num
+       x(i,:,:,:) = grid%x%vals(i)
+       x1(i,:,:) = grid%x%vals(i)
+    end do
+    do j=1, grid%y%num
+       y(:,j,:,:) = grid%y%vals(j)
+       y1(:,j,:) = grid%y%vals(j)
+    end do
+    do k=1, grid%z%num
+       z(:,:,k,:) = grid%z%vals(k)
+       z1(:,:,k) = grid%z%vals(k)
+    end do
+    do p=1, grid%angles%nomega
+       theta(:,:,:,p) = grid%angles%theta_p(p)
+       phi(:,:,:,p) = grid%angles%phi_p(p)
+       theta1(p) = grid%angles%theta_p(p)
+       phi1(p) = grid%angles%phi_p(p)
+    end do
+
     ! Calculate absorption coefficient
     ! and source term on discrete grids
-    do i=1, grid%x%num
-       x = grid%x%vals(i)
-       do j=1, grid%y%num
-          y = grid%x%vals(j)
-          do k=1, grid%z%num
-             z = grid%x%vals(k)
-             tmp = abs_func(x, y, z)
-             iops%abs_grid(i,j,k) = tmp
+    write(*,*) 'calling abs_func on x1, y1, z1, tmp_spatial'
+    write(*,*) 'x1 = ', x1
+    write(*,*) 'y1 = ', y1
+    write(*,*) 'z1 = ', z1
+    write(*,*) 'shape(tmp_spatial) = ', shape(tmp_spatial)
+    call abs_func(x1, y1, z1, tmp_spatial, nx, ny, nz)
+    write(*,*) 'abs called'
+    iops%abs_grid = tmp_spatial
+    write(*,*) 'assigned'
 
-             do p=1, grid%angles%nomega
-                theta = grid%angles%theta_p(p)
-                phi = grid%angles%phi_p(p)
-                tmp = source_func(x, y, z, theta, phi)
-                source(i,j,k,p) = tmp
-             end do
-          end do
-       end do
-    end do
+    nomega = grid%angles%nomega
+    write(*,*) 'calling source'
+    call source_func(x, y, z, theta, phi, source, nx, ny, nz, nomega)
+    write(*,*) 'source called'
+
+    write(*,*) 'calling bc'
+    call bc_func(theta1, phi1, tmp_angular, nomega)
+    write(*,*) 'bc called'
+    bc%bc_grid(1:grid%angles%nomega/2) = tmp_angular(1:grid%angles%nomega/2)
+    write(*,*) 'bc assigned'
+
+    num_vsf = iops%num_vsf
+    tmp_vsf_angles = iops%vsf_angles
+    write(*,*) 'calling vsf'
+    write(*,*) 'num_vsf = ', num_vsf
+    write(*,*) 'shape(tmp_vsf_angles) = ', shape(tmp_vsf_angles)
+    write(*,*) 'shape(tmp_vsf_vals) = ', shape(tmp_vsf_vals)
+    call vsf_func(tmp_vsf_angles, tmp_vsf_vals, num_vsf)
+    write(*,*) 'vsf called'
+    iops%vsf_vals = tmp_vsf_vals
+    write(*,*) 'vsf assigned'
 
     write(*,*) 'min abs =', minval(iops%abs_grid)
     write(*,*) 'max abs =', maxval(iops%abs_grid)
@@ -293,17 +362,6 @@ contains
     write(*,*) 'min source =', minval(source)
     write(*,*) 'max source =', maxval(source)
     write(*,*) 'mean source =', sum(source)/size(source)
-
-    write(*,*) 'BC'
-    ! Allocate bc_grid & initialize
-    call bc%init(grid, 0.d0, 0.d0, 0.d0, 1.d0)
-    ! Apply correct BC
-    do p=1, grid%angles%nomega/2
-       theta = grid%angles%theta_p(p)
-       phi = grid%angles%phi_p(p)
-       tmp = bc_func(theta, phi)
-       bc%bc_grid(p) = tmp
-    end do
 
     write(*,*) 'Calculate asymptotic light field'
     call calculate_asymptotic_light_field(grid, bc, iops, source, radiance, num_scatters)
@@ -349,6 +407,15 @@ contains
     call grid%deinit()
 
     deallocate(source)
+    deallocate(x)
+    deallocate(y)
+    deallocate(z)
+    deallocate(theta)
+    deallocate(phi)
+    deallocate(tmp_vsf_angles)
+    deallocate(tmp_vsf_vals)
+    deallocate(tmp_spatial)
+    deallocate(tmp_angular)
 
     write(*,*) 'done'
   end subroutine solve_rte_with_callbacks

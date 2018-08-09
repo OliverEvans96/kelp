@@ -3,29 +3,38 @@
 
 python module solve_rte_with_callbacks__user__routines 
     interface solve_rte_with_callbacks_user_interface 
-        subroutine vsf_func(delta,tmp) ! in :pykelp3d_wrap:pykelp3d_wrap.f90:pykelp3d_wrap:solve_rte_with_callbacks:unknown_interface
-            double precision :: delta
-            double precision intent(out) :: tmp
-        end subroutine vsf_func
-        subroutine abs_func(x,y,z,tmp) ! in :pykelp3d_wrap:pykelp3d_wrap.f90:pykelp3d_wrap:solve_rte_with_callbacks:unknown_interface
-            double precision :: x
-            double precision :: y
-            double precision :: z
-            double precision intent(out) :: tmp
+        subroutine abs_func(x1,y1,z1,tmp_spatial,nx,ny,nz) ! in :pykelp3d_wrap:pykelp3d_wrap.f90:pykelp3d_wrap:solve_rte_with_callbacks:unknown_interface
+            double precision, allocatable,dimension(nx,1,1) :: x1
+            double precision, allocatable,dimension(1,ny,1) :: y1
+            double precision, allocatable,dimension(1,1,nz) :: z1
+            double precision, allocatable,dimension(nx,ny,nz),intent(out) :: tmp_spatial
+            integer intent(in) :: nx
+            integer intent(in) :: ny
+            integer intent(in) :: nz
         end subroutine abs_func
-        subroutine source_func(x,y,z,theta,phi,tmp) ! in :pykelp3d_wrap:pykelp3d_wrap.f90:pykelp3d_wrap:solve_rte_with_callbacks:unknown_interface
-            double precision :: x
-            double precision :: y
-            double precision :: z
-            double precision :: theta
-            double precision :: phi
-            double precision intent(out) :: tmp
+        subroutine source_func(x,y,z,theta,phi,source,nx,ny,nz,nomega) ! in :pykelp3d_wrap:pykelp3d_wrap.f90:pykelp3d_wrap:solve_rte_with_callbacks:unknown_interface
+            double precision, allocatable,dimension(nx,1,1,1) :: x
+            double precision, allocatable,dimension(1,ny,1,1) :: y
+            double precision, allocatable,dimension(1,1,nz,1) :: z
+            double precision, allocatable,dimension(1,1,1,nomega) :: theta
+            double precision, allocatable,dimension(1,1,1,nomega) :: phi
+            double precision, allocatable,dimension(nx,ny,nz,nomega),intent(out) :: source
+            integer intent(in) :: nx
+            integer intent(in) :: ny
+            integer intent(in) :: nz
+            integer :: nomega
         end subroutine source_func
-        subroutine bc_func(theta,phi,tmp) ! in :pykelp3d_wrap:pykelp3d_wrap.f90:pykelp3d_wrap:solve_rte_with_callbacks:unknown_interface
-            double precision :: theta
-            double precision :: phi
-            double precision intent(out) :: tmp
+        subroutine bc_func(theta1,phi1,tmp_angular,nomega) ! in :pykelp3d_wrap:pykelp3d_wrap.f90:pykelp3d_wrap:solve_rte_with_callbacks:unknown_interface
+            double precision, allocatable,dimension(nomega) :: theta1
+            double precision, allocatable,dimension(nomega) :: phi1
+            double precision, allocatable,dimension(nomega),intent(out) :: tmp_angular
+            integer :: nomega
         end subroutine bc_func
+        subroutine vsf_func(tmp_vsf_angles,tmp_vsf_vals,num_vsf) ! in :pykelp3d_wrap:pykelp3d_wrap.f90:pykelp3d_wrap:solve_rte_with_callbacks:unknown_interface
+            double precision, allocatable,dimension(num_vsf) :: tmp_vsf_angles
+            double precision, allocatable,dimension(num_vsf),intent(out) :: tmp_vsf_vals
+            integer :: num_vsf
+        end subroutine vsf_func
     end interface solve_rte_with_callbacks_user_interface
 end python module solve_rte_with_callbacks__user__routines
 python module pykelp3d_wrap ! in 
@@ -34,31 +43,6 @@ python module pykelp3d_wrap ! in
             use rte3d
             use kelp3d
             use asymptotics
-            interface  ! in :pykelp3d_wrap:pykelp3d_wrap.f90:pykelp3d_wrap
-                subroutine func1d(delta,output) ! in :pykelp3d_wrap:pykelp3d_wrap.f90:pykelp3d_wrap:unknown_interface
-                    double precision intent(in) :: delta
-                    double precision intent(out) :: output
-                end subroutine func1d
-                subroutine func2d(theta,phi,output) ! in :pykelp3d_wrap:pykelp3d_wrap.f90:pykelp3d_wrap:unknown_interface
-                    double precision intent(in) :: theta
-                    double precision intent(in) :: phi
-                    double precision intent(out) :: output
-                end subroutine func2d
-                subroutine func3d(x,y,z,output) ! in :pykelp3d_wrap:pykelp3d_wrap.f90:pykelp3d_wrap:unknown_interface
-                    double precision intent(in) :: x
-                    double precision intent(in) :: y
-                    double precision intent(in) :: z
-                    double precision intent(out) :: output
-                end subroutine func3d
-                subroutine func5d(x,y,z,theta,phi,output) ! in :pykelp3d_wrap:pykelp3d_wrap.f90:pykelp3d_wrap:unknown_interface
-                    double precision intent(in) :: x
-                    double precision intent(in) :: y
-                    double precision intent(in) :: z
-                    double precision intent(in) :: theta
-                    double precision intent(in) :: phi
-                    double precision intent(out) :: output
-                end subroutine func5d
-            end interface 
             subroutine gen_kelp(xmin,xmax,nx,ymin,ymax,ny,zmin,zmax,nz,frond_lengths,frond_stds,num_fronds,water_speeds,water_angles,fs,fr,ft,p_kelp) ! in :pykelp3d_wrap:pykelp3d_wrap.f90:pykelp3d_wrap
                 double precision :: xmin
                 double precision :: xmax
