@@ -37,12 +37,22 @@ module asymptotics
     rad_scatter = radiance
     bb = iops%scat
 
+    write(*,*) 'before'
+    write(*,*) 'min radiance =', minval(radiance)
+    write(*,*) 'max radiance =', maxval(radiance)
+    write(*,*) 'mean radiance =', sum(radiance)/size(radiance)
+
     write(*,*) 'advect source + bc'
     bc_flag = .true.
     call advect_light( &
-         grid, iops, source, rad_scatter, &
+         grid, iops, source, radiance, &
          path_length, path_spacing, &
          a_tilde, gn, bc_flag, bc)
+
+    write(*,*) 'after'
+    write(*,*) 'min radiance =', minval(radiance)
+    write(*,*) 'max radiance =', maxval(radiance)
+    write(*,*) 'mean radiance =', sum(radiance)/size(radiance)
 
     do n=1, num_scatters
        write(*,*) 'scatter #', n

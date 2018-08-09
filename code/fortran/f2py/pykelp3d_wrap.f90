@@ -122,8 +122,6 @@ contains
     write(*,*) 'max loc =', maxloc(iops%abs_grid)
     write(*,*) 'min abs =', maxval(iops%abs_grid)
     write(*,*) 'mean abs =', sum(iops%abs_grid)/size(iops%abs_grid)
-    !write(*,*) 'full abs:'
-    !write(*,*) iops%abs_grid
 
     write(*,*) 'BC'
     call bc%init(grid, theta_s, phi_s, decay, I0)
@@ -265,6 +263,7 @@ contains
 
     iops%scat = b
 
+    write(*,*) 'Evaluate callbacks'
     ! Calculate absorption coefficient
     ! and source term on discrete grids
     do i=1, grid%x%num
@@ -285,6 +284,15 @@ contains
           end do
        end do
     end do
+
+    write(*,*) 'min abs =', minval(iops%abs_grid)
+    write(*,*) 'max abs =', maxval(iops%abs_grid)
+    write(*,*) 'mean abs =', sum(iops%abs_grid)/size(iops%abs_grid)
+    write(*,*) ''
+
+    write(*,*) 'min source =', minval(source)
+    write(*,*) 'max source =', maxval(source)
+    write(*,*) 'mean source =', sum(source)/size(source)
 
     write(*,*) 'BC'
     ! Allocate bc_grid & initialize
