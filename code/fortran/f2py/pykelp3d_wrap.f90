@@ -363,6 +363,10 @@ contains
     write(*,*) 'max source =', maxval(source)
     write(*,*) 'mean source =', sum(source)/size(source)
 
+    write(*,*) 'min bc =', minval(bc%bc_grid)
+    write(*,*) 'max bc =', maxval(bc%bc_grid)
+    write(*,*) 'mean bc =', sum(bc%bc_grid)/size(bc%bc_grid)
+
     write(*,*) 'Calculate asymptotic light field'
     call calculate_asymptotic_light_field(grid, bc, iops, source, radiance, num_scatters)
 
