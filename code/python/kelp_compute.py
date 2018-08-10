@@ -1,7 +1,6 @@
 # stdlib
 from datetime import datetime
 import itertools as it
-import functools as ft
 import multiprocessing
 import subprocess
 import threading
@@ -16,6 +15,12 @@ import netCDF4 as nc
 import tempfile
 import ipyparallel as ipp
 import numpy as np
+import sympy as sp
+# NOTE: Using boltons.funcutils.wraps in place
+# of functools.wraps in order to correctly preserve
+# signature of wrapper for the sake of f2py
+# see https://hynek.me/articles/decorators/
+import boltons.funcutils as fu
 
 
 ###############
@@ -40,6 +45,35 @@ def print_call(run_func, run_args, run_kwargs):
     sig_str = ', '.join([args_str, kwargs_str])
     print("Calling {}({})".format(func_name, sig_str))
 
+def sym_to_num(fun, *args):
+    """
+    Convert sympy function to numpy function,
+    with the output shape broadcasted to the shape
+    of the sum of all arguments.
+
+    This is required in case one or more arguments
+    are not used explicity in the formula.
+    """
+
+    f = fu.wraps(fun)(sp.lambdify(
+        args,
+        fun(*args),
+        modules=("numpy",)
+    ))
+
+    @fu.wraps(fun)
+    def wrapper(*inner_args):
+        """
+        Reshape output to always match broadcasted
+        sum of inputs, even if they are not all
+        explicitly used in the function.
+        """
+        array_args = map(np.array, inner_args)
+        shape = np.shape(sum(array_args))
+        ans = f(*inner_args)
+        return np.broadcast_to(ans, shape)
+
+    return wrapper
 
 #######################
 # Kelp-specific funcs #
@@ -422,7 +456,7 @@ def study_decorator(study_func):
     Database file located at {base_dir}/{study_name}/{study_name.db}
     Other data files located at {base_dir}/{study_name}/data/*.nc
     """
-    @ft.wraps(study_func)
+    @fu.wraps(study_func)
     def wrapper(study_name, *study_args, base_dir=os.curdir, executor=None, **study_kwargs):
 
         study_dir = os.path.join(base_dir, study_name)
@@ -500,7 +534,7 @@ def run_decorator(run_func):
     where `filename` is randomly generated.
     All .db files should later be merged into one db per directory.
     """
-    @ft.wraps(run_func)
+    @fu.wraps(run_func)
     def wrapper(*args, study_dir=None, study_name=None, **kwargs):
         scalar_params, results = run_func(*args, **kwargs)
 
@@ -782,32 +816,12 @@ def solve_rte_with_callbacks_full(ns, nz, na, rope_spacing, zmax, b, abs_func, s
     vsf_func_str = str(vsf_func(delta))
 
     # Convert callbacks to numpy functions
-    abs_func_N = sp.lambdify(
-        space,
-        abs_func(*space),
-        modules=("numpy",)
-    )
+    abs_func_N = sym_to_num(abs_func, *space)
+    source_func_N = sym_to_num(source_func, *space, *angle)
+    bc_func_N = sym_to_num(bc_func, *angle)
+    vsf_func_N = sym_to_num(vsf_func, delta)
 
-    source_func_N = sp.lambdify(
-        (*space, *angle),
-        source_func(*space, *angle),
-        modules=("numpy",)
-    )
-
-
-    bc_func_N = sp.lambdify(
-        angle,
-        bc_func(*angle),
-        modules=("numpy",)
-    )
-
-    vsf_func_N = vsf_func
-    #vsf_func_N = sp.lambdify(
-    #     (theta,),
-    #     vsf_func(theta),
-    #     modules=("numpy",)
-    # )
-
+    # Assign grid variables
     zmin = 0
     dz = (zmax-zmin)/nz
 
@@ -819,8 +833,9 @@ def solve_rte_with_callbacks_full(ns, nz, na, rope_spacing, zmax, b, abs_func, s
 
     ntheta = na
     nphi = na
-
     nomega = int(ntheta*(nphi-2)+2)
+
+    # Initialize solution arrays
     rad = np.asfortranarray(np.zeros([nx, ny, nz, nomega]))
     irrad = np.asfortranarray(np.zeros([nx, ny, nz]))
 
