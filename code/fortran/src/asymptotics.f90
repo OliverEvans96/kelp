@@ -264,7 +264,7 @@ module asymptotics
     call traverse_ray(grid, iops, source, i, j, k, p, path_length, path_spacing, a_tilde, gn, num_cells)
     rad_scatter(i,j,k,p) = calculate_ray_integral(num_cells, path_length, path_spacing, a_tilde, gn)
 
-    if(bc_flag .and. p .le. grid%angles%nphi/2) then
+    if(bc_flag .and. p .le. grid%angles%nomega/2) then
        call advect_surface_bc(&
             grid, iops, source, &
             i, j, k, p, rad_scatter, &
