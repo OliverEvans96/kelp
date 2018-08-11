@@ -34,8 +34,6 @@ module asymptotics
     allocate(a_tilde(max_cells))
     allocate(gn(max_cells))
     allocate(rad_scatter(grid%x%num, grid%y%num, grid%z%num, grid%angles%nomega))
-    rad_scatter = radiance
-    bb = iops%scat
 
     write(*,*) 'before'
     write(*,*) 'min radiance =', minval(radiance)
@@ -53,6 +51,9 @@ module asymptotics
     write(*,*) 'min radiance =', minval(radiance)
     write(*,*) 'max radiance =', maxval(radiance)
     write(*,*) 'mean radiance =', sum(radiance)/size(radiance)
+
+    rad_scatter = radiance
+    bb = iops%scat
 
     do n=1, num_scatters
        write(*,*) 'scatter #', n
