@@ -336,6 +336,8 @@ contains
     write(*,*) 'calling source'
     call source_func(x, y, z, theta, phi, source, nx, ny, nz, nomega)
     write(*,*) 'source called'
+    call iops%set_source(source)
+    write(*,*) 'source assigned'
 
     write(*,*) 'calling bc'
     call bc_func(theta1, phi1, tmp_angular, nomega)

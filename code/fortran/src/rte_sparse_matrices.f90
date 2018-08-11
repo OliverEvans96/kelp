@@ -48,6 +48,7 @@ type rte_mat
    procedure :: assign => mat_assign
    procedure :: add => mat_add
    procedure :: assign_rhs => mat_assign_rhs
+   procedure :: add_rhs => mat_add_rhs
    !procedure :: store_index => mat_store_index
    !procedure :: find_index => mat_find_index
    procedure :: set_bc => mat_set_bc
@@ -55,8 +56,9 @@ type rte_mat
    procedure :: get_solver_stats
    procedure :: ind => mat_ind
    !procedure :: to_hdf => mat_to_hdf
-   procedure attenuate
-   procedure angular_integral
+   procedure :: attenuate
+   procedure :: angular_integral
+   procedure :: add_source
 
    ! Derivative subroutines
    procedure x_cd2
@@ -304,8 +306,19 @@ contains
        write(*,*) 'RHS ERR: ', mat%ierr
        call exit(1)
     end if
-
   end subroutine mat_assign_rhs
+
+  subroutine mat_add_rhs(mat, row_num, data)
+    class(rte_mat) mat
+    double precision data
+    integer row_num
+
+    call lis_vector_set_value(LIS_ADD_VALUE, row_num, data, mat%b, mat%ierr)
+    if(mat%ierr .ne. 0) then
+       write(*,*) 'RHS ERR: ', mat%ierr
+       call exit(1)
+    end if
+  end subroutine mat_add_rhs
 
   ! subroutine mat_store_index(mat, row_num, col_num)
   !   ! Remember where we stored information for this matrix element
@@ -348,6 +361,21 @@ contains
 
     call mat%add(repeat_ent, attenuation)
   end subroutine attenuate
+
+  subroutine add_source(mat, indices, row_num)
+    ! Has to be called after angular_integral
+    ! Because they both write to the same matrix entry
+    ! And adding here is more efficient than a conditional
+    ! in the angular loop.
+    class(rte_mat) mat
+    type(index_list) indices
+    integer row_num
+    double precision source_val
+
+    source_val = mat%iops%source_grid(indices%i, indices%j, indices%k, indices%p)
+
+    call mat%add_rhs(row_num, source_val)
+  end subroutine add_source
 
   subroutine x_cd2(mat, indices, ent)
     class(rte_mat) mat
@@ -589,7 +617,6 @@ contains
     call mat%assign(ent,val1,indices%i,indices%j,2,indices%p)
     call mat%add(repeat_ent, val2)
     call mat%assign_rhs(row_num, bc_val)
-
   end subroutine z_surface_bc
 
     subroutine z_bottom_bc(mat, indices, ent, repeat_ent)
@@ -607,51 +634,6 @@ contains
 
     call mat%assign(ent,val1,indices%i,indices%j,nz-1,indices%p)
     call mat%add(repeat_ent, val2)
-
   end subroutine z_bottom_bc
-
-  ! Finite difference wrappers
-
-  ! subroutine wrap_x_cd2(mat, indices)
-  !   type(rte_mat) mat
-  !   type(index_list) indices
-  !   call mat%x_cd2(indices)
-  ! end subroutine wrap_x_cd2
-
-  ! subroutine wrap_x_cd2_last(mat, indices)
-  !   type(rte_mat) mat
-  !   type(index_list) indices
-  !   call mat%x_cd2_last(indices)
-  ! end subroutine wrap_x_cd2_last
-
-  ! subroutine wrap_x_cd2_first(mat, indices)
-  !   type(rte_mat) mat
-  !   type(index_list) indices
-  !   call mat%x_cd2_first(indices)
-  ! end subroutine wrap_x_cd2_first
-
-  ! subroutine wrap_y_cd2(mat, indices)
-  !   type(rte_mat) mat
-  !   type(index_list) indices
-  !   call mat%y_cd2(indices)
-  ! end subroutine wrap_y_cd2
-
-  ! subroutine wrap_y_cd2_last(mat, indices)
-  !   type(rte_mat) mat
-  !   type(index_list) indices
-  !   call mat%y_cd2_last(indices)
-  ! end subroutine wrap_y_cd2_last
-
-  ! subroutine wrap_y_cd2_first(mat, indices)
-  !   type(rte_mat) mat
-  !   type(index_list) indices
-  !   call mat%y_cd2_first(indices)
-  ! end subroutine wrap_y_cd2_first
-
-  ! subroutine wrap_z_cd2(mat, indices)
-  !   type(rte_mat) mat
-  !   type(index_list) indices
-  !   call mat%z_cd2(indices)
-  ! end subroutine wrap_z_cd2
 
 end module rte_sparse_matrices

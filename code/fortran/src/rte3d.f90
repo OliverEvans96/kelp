@@ -171,6 +171,7 @@ subroutine interior_angle_loop(mat, indices, ddx, ddy)
      call ddy(mat, indices, ent)
      call mat%z_cd2(indices, ent)
      call mat%attenuate(indices, repeat_ent)
+     call mat%add_source(indices, row_num)
      row_num = row_num + 1
   end do
 end subroutine
@@ -198,6 +199,7 @@ subroutine surface_angle_loop(mat, indices, ddx, ddy)
      call ddy(mat, indices, ent)
      call mat%z_surface_bc(indices, row_num, ent, repeat_ent)
      call mat%attenuate(indices, repeat_ent)
+     call mat%add_source(indices, row_num)
      row_num = row_num + 1
   end do
   ! Upwelling
@@ -210,6 +212,7 @@ subroutine surface_angle_loop(mat, indices, ddx, ddy)
      call ddy(mat, indices, ent)
      call mat%z_fd2(indices, ent, repeat_ent)
      call mat%attenuate(indices, repeat_ent)
+     call mat%add_source(indices, row_num)
      row_num = row_num + 1
   end do
 end subroutine surface_angle_loop
@@ -236,6 +239,7 @@ subroutine bottom_angle_loop(mat, indices, ddx, ddy)
      call ddy(mat, indices, ent)
      call mat%z_bd2(indices, ent, repeat_ent)
      call mat%attenuate(indices, repeat_ent)
+     call mat%add_source(indices, row_num)
      row_num = row_num + 1
   end do
   ! Upwelling
@@ -248,6 +252,7 @@ subroutine bottom_angle_loop(mat, indices, ddx, ddy)
      call ddy(mat, indices, ent)
      call mat%z_bottom_bc(indices, ent, repeat_ent)
      call mat%attenuate(indices, repeat_ent)
+     call mat%add_source(indices, row_num)
      row_num = row_num + 1
   end do
 end subroutine bottom_angle_loop
