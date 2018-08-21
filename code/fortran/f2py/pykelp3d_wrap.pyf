@@ -12,12 +12,13 @@ python module solve_rte_with_callbacks__user__routines
             integer intent(in) :: ny
             integer intent(in) :: nz
         end subroutine abs_func
-        subroutine source_func(x,y,z,theta,phi,source,nx,ny,nz,nomega) ! in :pykelp3d_wrap:pykelp3d_wrap.f90:pykelp3d_wrap:solve_rte_with_callbacks:unknown_interface
+        subroutine source_func(x,y,z,theta,phi,n,source,nx,ny,nz,nomega) ! in :pykelp3d_wrap:pykelp3d_wrap.f90:pykelp3d_wrap:solve_rte_with_callbacks:unknown_interface
             double precision, allocatable,dimension(nx,1,1,1) :: x
             double precision, allocatable,dimension(1,ny,1,1) :: y
             double precision, allocatable,dimension(1,1,nz,1) :: z
             double precision, allocatable,dimension(1,1,1,nomega) :: theta
             double precision, allocatable,dimension(1,1,1,nomega) :: phi
+            integer :: n
             double precision, allocatable,dimension(nx,ny,nz,nomega),intent(out) :: source
             integer intent(in) :: nx
             integer intent(in) :: ny
@@ -35,6 +36,20 @@ python module solve_rte_with_callbacks__user__routines
             double precision, allocatable,dimension(num_vsf),intent(out) :: tmp_vsf_vals
             integer :: num_vsf
         end subroutine vsf_func
+        subroutine source_expansion_func(x,y,z,theta,phi,n,source,nx,ny,nz,nomega,num_scatters) ! in :pykelp3d_wrap:pykelp3d_wrap.f90:pykelp3d_wrap:solve_rte_with_callbacks:unknown_interface
+            double precision, allocatable,dimension(nx,1,1,1) :: x
+            double precision, allocatable,dimension(1,ny,1,1) :: y
+            double precision, allocatable,dimension(1,1,nz,1) :: z
+            double precision, allocatable,dimension(1,1,1,nomega) :: theta
+            double precision, allocatable,dimension(1,1,1,nomega) :: phi
+            integer :: n
+            double precision, allocatable,dimension(nx,ny,nz,nomega),intent(out) :: source
+            integer intent(in) :: nx
+            integer intent(in) :: ny
+            integer intent(in) :: nz
+            integer :: nomega
+            integer intent(in) :: num_scatters
+        end subroutine source_expansion_func
     end interface solve_rte_with_callbacks_user_interface
 end python module solve_rte_with_callbacks__user__routines
 python module pykelp3d_wrap ! in 
@@ -95,7 +110,7 @@ python module pykelp3d_wrap ! in
                 double precision intent(inout) :: lis_time
                 double precision intent(inout) :: lis_resid
             end subroutine calculate_light_field
-            subroutine solve_rte_with_callbacks(xmin,xmax,nx,ymin,ymax,ny,zmin,zmax,nz,ntheta,nphi,b,abs_func,source_func,bc_func,vsf_func,radiance,irradiance,num_scatters,fd_flag,lis_opts,lis_iter,lis_time,lis_resid) ! in :pykelp3d_wrap:pykelp3d_wrap.f90:pykelp3d_wrap
+            subroutine solve_rte_with_callbacks(xmin,xmax,nx,ymin,ymax,ny,zmin,zmax,nz,ntheta,nphi,b,abs_func,source_func,source_expansion_func,bc_func,vsf_func,radiance,irradiance,num_scatters,fd_flag,lis_opts,lis_iter,lis_time,lis_resid) ! in :pykelp3d_wrap:pykelp3d_wrap.f90:pykelp3d_wrap
                 use solve_rte_with_callbacks__user__routines
                 double precision intent(in) :: xmin
                 double precision intent(in) :: xmax
@@ -111,6 +126,7 @@ python module pykelp3d_wrap ! in
                 double precision intent(in) :: b
                 external abs_func
                 external source_func
+                external source_expansion_func
                 external bc_func
                 external vsf_func
                 double precision dimension(nx,ny,nz,ntheta*(nphi-2)+2),intent(inout),depend(ntheta,nphi) :: radiance

@@ -795,7 +795,7 @@ def kelp_calculate(a_water, b, ns, nz, na, kelp_dist, num_scatters, fd_flag, lis
 
 ## With Callbacks
 
-def solve_rte_with_callbacks_full(ns, nz, na, rope_spacing, zmax, b, abs_func, source_func, bc_func, vsf_func, num_scatters, fd_flag, lis_opts):
+def solve_rte_with_callbacks_full(ns, nz, na, rope_spacing, zmax, b, abs_func, source_func, source_expansion_N, bc_func, vsf_func, num_scatters, fd_flag, lis_opts):
     # TODO: num_cores doesn't do anything yet.
 
     from kelp3d_objs import f90
@@ -858,7 +858,7 @@ def solve_rte_with_callbacks_full(ns, nz, na, rope_spacing, zmax, b, abs_func, s
         ymin, ymax,
         zmin, zmax,
         ntheta, nphi,
-        b, abs_func_N, source_func_N, bc_func_N, vsf_func_N,
+        b, abs_func_N, source_func_N, source_expansion_N, bc_func_N, vsf_func_N,
         rad, irrad,
         num_scatters, fd_flag, lis_opts,
         lis_iter, lis_time, lis_resid

@@ -70,23 +70,82 @@ module asymptotics
     deallocate(rad_scatter)
   end subroutine calculate_asymptotic_light_field
 
-  ! Add attenuated surface light to existing radiance
-  subroutine advect_surface_bc(&
-       grid, iops, source, i, j, k, p, radiance, &
-       path_length, path_spacing, a_tilde, gn, bc)
+  subroutine calculate_asymptotic_light_field_expanded_source(grid, bc, iops, source, source_expansion, radiance, num_scatters)
     type(space_angle_grid) grid
     type(boundary_condition) bc
     type(optical_properties) iops
-    double precision, dimension(:,:,:,:) :: radiance, source
-    double precision, dimension(:) :: path_length, path_spacing, a_tilde, gn
+    double precision, dimension(:,:,:,:) :: radiance
+    double precision, dimension(:,:,:,:,:) :: source_expansion
+    integer num_scatters
+    integer nx, ny, nz, nomega
+    integer max_cells
+    integer n
+    logical bc_flag
+
+    double precision bb
+
+    double precision, dimension(:), allocatable :: path_length, path_spacing, a_tilde, gn
+    double precision, dimension(:,:,:,:), allocatable :: source
+    double precision, dimension(:,:,:,:), allocatable :: rad_scatter
+    double precision, dimension(:,:,:,:), allocatable :: scatter_integral
+
+    nx = grid%x%num
+    ny = grid%y%num
+    nz = grid%z%num
+    nomega = grid%angles%nomega
+
+    max_cells = calculate_max_cells(grid)
+
+    allocate(path_length(max_cells+1))
+    allocate(path_spacing(max_cells))
+    allocate(a_tilde(max_cells))
+    allocate(gn(max_cells))
+    allocate(rad_scatter(grid%x%num, grid%y%num, grid%z%num, grid%angles%nomega))
+    allocate(scatter_integral(nx, ny, nz, nomega))
+
+    write(*,*) 'advect source + bc'
+    bc_flag = .true.
+    call advect_light( &
+         grid, iops, source_expansion(:,:,:,:,1), radiance, &
+         path_length, path_spacing, &
+         a_tilde, gn, bc_flag, bc)
+    ! Disable BC for scattering advection
+    bc_flag = .false.
+
+    rad_scatter = radiance
+    bb = iops%scat
+
+    do n=1, num_scatters
+       write(*,*) 'scatter #', n
+       call calculate_scatter_source(grid, iops, rad_scatter, source, scatter_integral)
+       source = source + bb**n * source_expansion(:,:,:,:,n+1)
+       call advect_light(grid, iops, source, rad_scatter, path_length, path_spacing, a_tilde, gn, bc_flag)
+
+       radiance = radiance + bb**n * rad_scatter
+
+    end do
+
+    write(*,*) 'asymptotics complete'
+
+    deallocate(path_length)
+    deallocate(path_spacing)
+    deallocate(a_tilde)
+    deallocate(gn)
+    deallocate(rad_scatter)
+    deallocate(scatter_integral)
+  end subroutine calculate_asymptotic_light_field_expanded_source
+
+  ! Add attenuated surface light to existing radiance
+  subroutine advect_surface_bc(&
+       i, j, k, p, radiance, &
+       path_spacing, num_cells, a_tilde, bc)
+    type(boundary_condition) bc
+    double precision, dimension(:,:,:,:) :: radiance
+    double precision, dimension(:) :: path_spacing, a_tilde
     integer i, j, k, p
     integer num_cells
     double precision atten
 
-    ! Don't need gn here, so just ignore it
-    call traverse_ray(grid, iops, source, i, j, k, p, path_length, path_spacing, a_tilde, gn, num_cells)
-
-    ! Start with surface bc and attenuate along path
     atten = sum(path_spacing(1:num_cells) * a_tilde(1:num_cells))
     ! Avoid underflow
     if(atten .lt. 100.d0) then
@@ -112,14 +171,14 @@ module asymptotics
 
     allocate(scatter_integral(nx, ny, nz, nomega))
 
-    call calculate_source(grid, iops, rad_scatter, source, scatter_integral)
+    call calculate_scatter_source(grid, iops, rad_scatter, source, scatter_integral)
     call advect_light(grid, iops, source, rad_scatter, path_length, path_spacing, a_tilde, gn, bc_flag)
 
     deallocate(scatter_integral)
   end subroutine scatter
 
   ! Calculate source from no-scatter or previous scattering layer
-  subroutine calculate_source(grid, iops, rad_scatter, source, scatter_integral)
+  subroutine calculate_scatter_source(grid, iops, rad_scatter, source, scatter_integral)
     type(space_angle_grid) grid
     type(optical_properties) iops
     double precision, dimension(:,:,:,:) :: rad_scatter
@@ -183,7 +242,7 @@ module asymptotics
     write(*,*) 'source max: ', maxval(source)
     write(*,*) 'source mean: ', sum(source)/size(source)
 
-  end subroutine calculate_source
+  end subroutine calculate_scatter_source
 
   subroutine calculate_scatter_integral(iops, rad_scatter, scatter_integral, indices)
     type(optical_properties) iops
@@ -267,10 +326,9 @@ module asymptotics
 
     if(bc_flag .and. p .le. grid%angles%nomega/2) then
        call advect_surface_bc(&
-            grid, iops, source, &
             i, j, k, p, rad_scatter, &
-            path_length, path_spacing, &
-            a_tilde, gn, bc)
+            path_spacing, num_cells, &
+            a_tilde, bc)
     end if
   end subroutine integrate_ray
 
