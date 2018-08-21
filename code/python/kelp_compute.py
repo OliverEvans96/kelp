@@ -682,7 +682,7 @@ def kelp_calculate_full(absorptance_kelp, a_water, b, ns, nz, na, num_dens, kelp
         a_water, a_kelp, b,
         vsf_angles, vsf_vals,
         theta_s, phi_s, I0, decay,
-        p_kelp, rad, irrad, avg_irrad, perc_irrad,
+        p_kelp, rad, irrad,
         num_scatters, fd_flag, lis_opts,
         lis_iter, lis_time, lis_resid
     )
