@@ -123,13 +123,19 @@ $(jtest_inc): %.so: $(JTEST)/%.f90
 # because it requires manual modification
 
 # For actually importing in python
-$(f2py_targets): %: $(F2PY)/%.pyf $(F2PY)/%.f90
+$(f2py_targets):
 # TODO: This is sloppy & adds patchelf (Nix) dependency
-#f2py -c $^ -m $@ --f90flags="$(F2PYFLAGS)" -llis -lm -L$(LIB)/../lib -I$(INC)
 	f2py -c $^ -m $@ --f90flags="$(F2PYFLAGS)" -llis -lm -L$(LIB)/../lib -I$(INC)
 	patchelf --set-rpath $(LIB) $(PWD)/$@.*.so
 	rm -f $(F2PY_INC)/$@.*.so
 	ln -s $(PWD)/$@.*.so $(F2PY_INC)
+
+# Use .pyf signature file for pykelp3d_wrap
+# since it requires customization
+pykelp3d_wrap: %: $(F2PY)/%.pyf $(F2PY)/%.f90
+# Auto-generate signature otherwise
+light_utils_wrap: %: $(F2PY)/%.f90
+
 # To test outside of python directly in fortran
 $(f2py_inc): %.o: $(F2PY)/%.f90
 	$(FC) -c $< $(FFLAGS) -o $@
@@ -175,6 +181,7 @@ test_pyasymptotics_wrap: asymptotics.o rte_sparse_matrices.o mgmres.o rte3d.o pr
 ########
 
 pykelp3d_wrap: prob.o fastgl.o sag.o utils.o kelp3d.o kelp_context.o mgmres.o rte_sparse_matrices.o light_context.o rte3d.o asymptotics.o
+light_utils_wrap: prob.o fastgl.o sag.o utils.o kelp3d.o kelp_context.o mgmres.o rte_sparse_matrices.o light_context.o rte3d.o asymptotics.o
 
 #########
 # Tests #
