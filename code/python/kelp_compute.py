@@ -16,6 +16,7 @@ import tempfile
 import ipyparallel as ipp
 import numpy as np
 import sympy as sp
+import functools
 # NOTE: Using boltons.funcutils.wraps in place
 # of functools.wraps in order to correctly preserve
 # signature of wrapper for the sake of f2py
@@ -456,7 +457,7 @@ def study_decorator(study_func):
     Database file located at {base_dir}/{study_name}/{study_name.db}
     Other data files located at {base_dir}/{study_name}/data/*.nc
     """
-    @fu.wraps(study_func)
+    @functools.wraps(study_func)
     def wrapper(study_name, *study_args, base_dir=os.curdir, executor=None, **study_kwargs):
 
         study_dir = os.path.join(base_dir, study_name)
@@ -534,7 +535,7 @@ def run_decorator(run_func):
     where `filename` is randomly generated.
     All .db files should later be merged into one db per directory.
     """
-    @fu.wraps(run_func)
+    @functools.wraps(run_func)
     def wrapper(*args, study_dir=None, study_name=None, **kwargs):
         scalar_params, results = run_func(*args, **kwargs)
 
