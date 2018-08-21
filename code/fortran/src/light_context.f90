@@ -14,7 +14,7 @@ module light_context
      procedure :: init => light_init
      procedure :: init_grid => light_init_grid
      procedure :: calculate_radiance
-     procedure :: calculate_irradiance
+     procedure :: calculate_irradiance => light_calculate_irradiance
      procedure :: deinit => light_deinit
      !procedure :: to_hdf => light_to_hdf
   end type light_state
@@ -117,7 +117,7 @@ contains
     end do
   end subroutine calculate_radiance
 
-  subroutine calculate_irradiance(light)
+  subroutine light_calculate_irradiance(light)
     class(light_state) light
     integer i, j, k
     integer nx, ny, nz
@@ -139,7 +139,7 @@ contains
        end do
     end do
 
-  end subroutine calculate_irradiance
+  end subroutine light_calculate_irradiance
 
 !  subroutine light_to_hdf(light, radfile, irradfile)
 !    class(light_state) light
