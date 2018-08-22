@@ -350,7 +350,7 @@ contains
     write(*,*) 'shape(phi) =', shape(phi)
     write(*,*) 'shape(source) =', shape(source)
     do n=0, num_scatters
-       write(*,*) 'n =', n
+       write(*,*) 'n =', n, '/', num_scatters
        call source_expansion_func(x, y, z, theta, phi, n, source, nx, ny, nz, nomega, num_scatters)
        write(*,*) 'source expansion called.'
        source_expansion(:,:,:,:,n+1) = source
