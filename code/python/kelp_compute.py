@@ -83,7 +83,7 @@ def sym_to_num(fun, *args):
 def create_table(conn, table_name, prefix='.'):
     """
     Create sqlite db file, create table, and return connection.
-    Assume table_name is unique (e.g. includes date.)
+    Assume table_name is unique.
     """
 
     create_table_template = '''
