@@ -34,7 +34,7 @@ $(lisobj):
 lis: $(lisobj)
 
 # Fortran Compiler
-FC=ftn
+FC=gfortran
 # HDF5 Fortan Compiler
 H5FC=h5fc
 # MPI Fortran Compiler
@@ -61,7 +61,7 @@ F2PYFLAGS=-fPIC $(OPTFLAGS) # $(PFLAGS)
 TESTMODFLAGS=-shared -fPIC $(FFLAGS)
 # Export LD_LIBRARY_PATH for tests
 TESTEXP=export LD_LIBRARY_PATH=$(INC):$(LD_LIBRARY_PATH)
-TEST_FLAGS=-I/usr/include -L/usr/lib -lnetcdff
+TEST_FLAGS=-I$(HOME)/.nix-profile/include -L$(HOME)/.nix-profile/lib -lnetcdff
 
 # All source files in each directory
 f90_src = $(wildcard $(SRC)/*.f90)
