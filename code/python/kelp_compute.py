@@ -310,7 +310,7 @@ def kelp_calculate(a_water, b, ns, nz, na, kelp_dist, num_scatters, fd_flag, lis
         fd_flag, lis_opts
     )
 
-def solve_rte_with_callbacks_full(ns, nz, na, rope_spacing, zmax, b, sol_expr, abs_expr, source_expr, source_expansion_N, bc_expr, vsf_expr, param_dict, num_scatters, fd_flag, lis_opts):
+def solve_rte_with_callbacks_full(ns, nz, na, rope_spacing, zmax, b, sol_expr, abs_expr, source_expr, bc_expr, vsf_expr, param_dict, num_scatters, fd_flag, lis_opts):
     # TODO: num_cores doesn't do anything yet.
 
     from kelp3d_objs import f90
@@ -349,6 +349,9 @@ def solve_rte_with_callbacks_full(ns, nz, na, rope_spacing, zmax, b, sol_expr, a
     source_func_N = sym_to_num(source_func, *space, *angle)
     bc_func_N = sym_to_num(bc_func, *angle)
     vsf_func_N = sym_to_num(vsf_func, delta)
+
+    # Calculate source expansion
+    source_expansion_N = mms.gen_series_N(source_expr, max_num_scatters, **param_vals)
 
     # Assign grid variables
     zmin = 0
