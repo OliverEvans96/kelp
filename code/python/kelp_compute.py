@@ -6,6 +6,7 @@ import itertools as it
 import multiprocessing
 import subprocess
 import threading
+import json
 import inspect
 import sqlite3
 import time
@@ -94,7 +95,7 @@ def get_kelp_dist(kelp_dist, max_length, zmin, zmax, nz):
     return frond_lengths, frond_stds, water_speeds, water_angles
 
 
-## Calculation Functions ##
+## Run Functions ##
 
 def kelp_calculate_full(absorptance_kelp, a_water, b, ns, nz, na, num_dens, kelp_dist, fs, fr, ft, max_length, length_std, zmax, rope_spacing, I0, phi_s, theta_s, decay, num_cores, num_scatters, fd_flag, lis_opts):
     # TODO: num_cores doesn't do anything yet.
@@ -309,7 +310,7 @@ def kelp_calculate(a_water, b, ns, nz, na, kelp_dist, num_scatters, fd_flag, lis
         fd_flag, lis_opts
     )
 
-def solve_rte_with_callbacks_full(ns, nz, na, rope_spacing, zmax, b, abs_func, source_func, source_expansion_N, bc_func, vsf_func, num_scatters, fd_flag, lis_opts):
+def solve_rte_with_callbacks_full(ns, nz, na, rope_spacing, zmax, b, sol_expr, abs_expr, source_expr, source_expansion_N, bc_expr, vsf_expr, param_dict, num_scatters, fd_flag, lis_opts):
     # TODO: num_cores doesn't do anything yet.
 
     from kelp3d_objs import f90
@@ -325,12 +326,25 @@ def solve_rte_with_callbacks_full(ns, nz, na, rope_spacing, zmax, b, abs_func, s
     theta, phi = angle
     delta = sp.var('Delta')
 
-    abs_func_str = str(abs_func(*space))
-    source_func_str = str(source_func(*space, *angle))
-    bc_func_str = str(bc_func(*angle))
-    vsf_func_str = str(vsf_func(delta))
+    # NOTE: sol_expr is not actually used in solution procedure,
+    # it's just required so that it can be stored for future reference.
+    # If the true solution is not known, just pass an empty string.
+    sol_expr_str = str(sol_expr)
+    abs_expr_str = str(abs_expr)
+    source_expr_str = str(source_expr)
+    bc_expr_str = str(bc_expr)
+    vsf_expr_str = str(vsf_expr)
 
-    # Convert callbacks to numpy functions
+    # Convert parameter values dictionary to string
+    param_dict_str = json.dumps(param_dict)
+
+    # Convert expressions to sympy functions
+    source_sym = symify(source_expr, *space, *angle, **param_dict)
+    abs_sym = symify(abs_expr, *space, **param_dict)
+    bc_sym = symify(bc_expr, *angle, **param_dict)
+    vsf_sym = symify(vsf_expr, delta, **param_dict)
+
+    # Convert sympy functions to numpy functions
     abs_func_N = sym_to_num(abs_func, *space)
     source_func_N = sym_to_num(source_func, *space, *angle)
     bc_func_N = sym_to_num(bc_func, *angle)
@@ -414,10 +428,12 @@ def solve_rte_with_callbacks_full(ns, nz, na, rope_spacing, zmax, b, abs_func, s
     }
 
     results = {
-        'abs_func': abs_func_str,
-        'source_func': source_func_str,
-        'bc_func': bc_func_str,
-        'vsf_func': vsf_func_str,
+        'sol_expr': sol_expr_str,
+        'abs_expr': abs_expr_str,
+        'source_expr': source_expr_str,
+        'bc_expr': bc_expr_str,
+        'vsf_expr': vsf_expr_str,
+        'param_dict': param_dict_str,
         'rad': rad,
         'irrad': irrad,
     }
@@ -425,7 +441,7 @@ def solve_rte_with_callbacks_full(ns, nz, na, rope_spacing, zmax, b, abs_func, s
     return scalar_params, results
 
 
-## Decorators ##
+## Study Functions ##
 
 @ru.study_decorator
 def grid_study_compute(a_water, b, kelp_dist, ns_list, nz_list, na_list, lis_opts):
