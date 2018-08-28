@@ -28,6 +28,7 @@ import boltons.funcutils as fu
 
 # local
 import run_utils as ru
+import mms
 
 ## Kelp-specific funcs ##
 
@@ -340,19 +341,19 @@ def solve_rte_with_callbacks_full(ns, nz, ntheta, nphi, rope_spacing, zmax, b, s
     param_dict_str = json.dumps(param_dict)
 
     # Convert expressions to sympy functions
-    source_sym = symify(source_expr, *space, *angle, **param_dict)
-    abs_sym = symify(abs_expr, *space, **param_dict)
-    bc_sym = symify(bc_expr, *angle, **param_dict)
-    vsf_sym = symify(vsf_expr, delta, **param_dict)
+    source_sym = mms.symify(source_expr, *space, *angle, **param_dict)
+    abs_sym = mms.symify(abs_expr, *space, **param_dict)
+    bc_sym = mms.symify(bc_expr, *angle, **param_dict)
+    vsf_sym = mms.symify(vsf_expr, delta, **param_dict)
 
     # Convert sympy functions to numpy functions
-    abs_func_N = sym_to_num(abs_func, *space)
-    source_func_N = sym_to_num(source_func, *space, *angle)
-    bc_func_N = sym_to_num(bc_func, *angle)
-    vsf_func_N = sym_to_num(vsf_func, delta)
+    abs_func_N = sym_to_num(abs_sym, *space)
+    source_func_N = sym_to_num(source_sym, *space, *angle)
+    bc_func_N = sym_to_num(bc_sym, *angle)
+    vsf_func_N = sym_to_num(vsf_sym, delta)
 
     # Calculate source expansion
-    source_expansion_N = mms.gen_series_N(source_expr, max_num_scatters, **param_vals)
+    source_expansion_N = mms.gen_series_N(source_expr, num_scatters, **param_dict)
 
     # Assign grid variables
     zmin = 0
@@ -585,7 +586,7 @@ def asymptotics_study_compute(a_water_list, b_list, kelp_dist, fd_ns, fd_nz, fd_
     return func_list, args_list, kwargs_list
 
 @ru.study_decorator
-def fd_verify_compute(ns_list, nz_list, ntheta_list, nphi_list, rope_spacing, z_max, b, sol_expr, abs_expr, source_expr, bc_expr, vsf_expr, param_dict, lis_opts):
+def fd_verify_compute(ns_list, nz_list, ntheta_list, nphi_list, rope_spacing, zmax, b, sol_expr, abs_expr, source_expr, bc_expr, vsf_expr, param_dict):
     """
     Given a list of resolutions in each dimension,
     loop over each list while holding all others at
@@ -599,7 +600,15 @@ def fd_verify_compute(ns_list, nz_list, ntheta_list, nphi_list, rope_spacing, z_
         sorted,
         (ns_list, nz_list, ntheta_list, nphi_list)
     )
+    max_res_list = map(
+        max,
+        (ns_list, nz_list, ntheta_list, nphi_list)
+    )
     dim_dict = dict(zip(dim_names, dim_resolutions))
+
+    # One scatter before FD
+    num_scatters = 0
+    fd_flag = True
 
     # Arguments which do not change between runs
     const_args = (
@@ -608,9 +617,6 @@ def fd_verify_compute(ns_list, nz_list, ntheta_list, nphi_list, rope_spacing, z_
         param_dict, num_scatters, fd_flag
     )
 
-    # One scatter before FD
-    pre_fd_num_scatters = 0
-
     # Actual calling will be performed by decorator.
     # Functions to be called
     func_list = []
@@ -618,17 +624,25 @@ def fd_verify_compute(ns_list, nz_list, ntheta_list, nphi_list, rope_spacing, z_
     args_list = [] # iterables
     kwargs_list = [] # dictionaries
 
+    # Run the largest grid once
+    ns, nz, ntheta, nphi = max_res_list
+    func_list.append(solve_rte_with_callbacks)
+    args_list.append((ns, nz, ntheta, nphi, *const_args))
+    kwargs_list.append({})
+
     # Loop over dimensions
     for dim_num, dim_name in enumerate(dim_names):
+        # List of resolutions in the current dimension
         current_dim = dim_dict[dim_name]
         # Set all resolutions to their maximum values
-        current_res_list = [max(dim) for dim in dims]
-        # Loop over all resolutions in the current dimension
-        for res in dim:
+        current_res_list = max_res_list
+
+        # Loop over all smaller resolutions in the current dimension
+        for res in current_dim[:-1]:
             current_res_list[dim_num] = res
             ns, nz, ntheta, nphi = current_res_list
 
-            # FD Solution
+            # Run this grid size
             func_list.append(solve_rte_with_callbacks)
             args_list.append((ns, nz, ntheta, nphi, *const_args))
             kwargs_list.append({})
