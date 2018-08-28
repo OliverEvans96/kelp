@@ -17,7 +17,6 @@ import ipyparallel as ipp
 import netCDF4 as nc
 import numpy as np
 
-
 ## Misc. utils ##
 
 def get_random_unused_filename(dir='.', prefix='', suffix=''):
@@ -41,50 +40,38 @@ def dict_from_args(func, args, kwargs={}):
 
 ## SQLite utils (non-project-specific) ##
 
-def create_table(conn, table_name, prefix='.'):
+def create_db_table_from_dict(conn, table_name, data_dict, prefix='.'):
+    """
+    data_dict should be a `collections.OrderedDict`
+    since the order of the columns is very important!
+    """
+    sql_type_dict = {
+        float: 'REAL',
+        int: 'INTEGER',
+        str: 'CHAR(1024)'
+    }
+
+    columns = (
+        (name, sql_type_dict[type(value)])
+        for name, value in data_dict.items()
+    )
+
+def create_db_generic_table_from_tuple(conn, table_name, columns, prefix='.'):
     """
     Create sqlite db file, create table, and return connection.
     Assume table_name is unique.
     """
 
+    # TODO: Double check that this still works!
+
     create_table_template = '''
     CREATE TABLE {table_name} (
-
-        /* Inputs */
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        absorptance_kelp REAL,
-        a_water REAL,
-        b REAL,
-        ns REAL,
-        nz REAL,
-        na REAL,
-        num_dens REAL,
-        kelp_dist CHAR(32),
-        fs REAL,
-        fr REAL,
-        ft REAL,
-        max_length REAL,
-        length_std REAL,
-        zmax REAL,
-        rope_spacing REAL,
-        I0 REAL,
-        phi_s REAL,
-        theta_s REAL,
-        decay REAL,
-        num_cores INTEGER,
-        num_scatters INTEGER,
-        fd_flag INTEGER,
-        lis_opts CHAR(256),
-        date CHAR(64),
-        git_commit CHAR(40),
-        compute_time REAL,
-        lis_iter INTEGER,
-        lis_time REAL,
-        lis_resid REAL,
-        /* Array data (NETCDF) */
-        data_path CHAR(256)
-        )
     '''
+    + (',\n'+8*' ').join([
+        ' '.join(*col)
+        for col in columns
+    ]) + ');'
 
     conn.execute(create_table_template.format(table_name=table_name))
     conn.commit()
@@ -109,6 +96,7 @@ def get_table_names(conn):
     cursor = conn.execute("SELECT name FROM sqlite_master WHERE type='table'")
     return cursor.fetchall()
 
+
 ## NetCDF/SQLite (project-specific) ##
 
 def create_dirs(study_dir):
@@ -122,6 +110,43 @@ def create_dirs(study_dir):
         print("Creating new study directory.")
 
     os.makedirs(os.path.join(study_dir, 'data'), exist_ok=True)
+
+def create_db_run_table(conn, table_name, prefix='.'):
+    columns = (
+        ('absorptance_kelp', 'REAL'),
+        ('a_water', 'REAL'),
+        ('b', 'REAL'),
+        ('ns', 'REAL'),
+        ('nz', 'REAL'),
+        ('na', 'REAL'),
+        ('num_dens', 'REAL'),
+        ('kelp_dist', 'CHAR(32)'),
+        ('fs', 'REAL'),
+        ('fr', 'REAL'),
+        ('ft', 'REAL'),
+        ('max_length', 'REAL'),
+        ('length_std', 'REAL'),
+        ('zmax', 'REAL'),
+        ('rope_spacing', 'REAL'),
+        ('I0', 'REAL'),
+        ('phi_s', 'REAL'),
+        ('theta_s', 'REAL'),
+        ('decay', 'REAL'),
+        ('num_cores', 'INTEGER'),
+        ('num_scatters', 'INTEGER'),
+        ('fd_flag', 'INTEGER'),
+        ('lis_opts', 'CHAR(256)'),
+        ('date', 'CHAR(64)'),
+        ('git_commit', 'CHAR(40)'),
+        ('compute_time', 'REAL'),
+        ('lis_iter', 'INTEGER'),
+        ('lis_time', 'REAL'),
+        ('lis_resid', 'REAL'),
+        # Array data (NETCDF)
+        ('data_path', 'CHAR(256')
+    )
+
+    return create_generic_table(conn, table_name, columns, prefix='.')
 
 def run_not_present(completed_run_list, run_func, run_args, run_kwargs):
     """
