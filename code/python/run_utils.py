@@ -94,7 +94,40 @@ def update_col(conn, table_name, col_name, re_from, re_to):
 
 def get_table_names(conn):
     cursor = conn.execute("SELECT name FROM sqlite_master WHERE type='table'")
-    return cursor.fetchall()
+    # This is a list of 1-tuples which should be flattened.
+    tables_preflatten = cursor.fetchall()
+    tables = [table for tup in tables_preflatten for table in tup]
+
+    return tables
+
+def insert_generic_row(conn, data_dict, table_name):
+    """Insert row, and create table if not present.
+    NOTE: If the table does not yet exist, it's important
+    that `data_dict` be a `collections.OrderedDict` so that
+    the columns are created in the correct order.
+    """
+
+    # Create table if not present
+    if table_name not in get_table_names(conn):
+        create_db_table_from_dict(data_dict)
+
+    insert_template = (
+        'INSERT INTO {table_name} VALUES (NULL, ',
+        + ', '.join([
+            ':{}'.format(col_name)
+            for col_name in get_col_names(conn, table_name)
+        ])
+        + ');'
+    )
+
+    insert_command = insert_template.format(table_name=table_name)
+
+    try:
+        conn.execute(insert_command, params)
+    except sqlite3.OperationalError as e:
+        print('Failed to insert row using command:')
+        print("'{}'".format(insert_command))
+        raise e
 
 
 ## NetCDF/SQLite (project-specific) ##
@@ -202,7 +235,7 @@ def get_completed_run_list(study_dir):
         conn = sqlite3.connect(db_path)
         # If db was created but table was not, this will fail
         try:
-            table_name = get_table_names(conn)[0][0]
+            table_name = get_table_names(conn)[0]
         except IndexError:
             # (in which case we should skip to the next file)
             continue
@@ -220,54 +253,15 @@ def get_completed_run_list(study_dir):
 
     return completed_run_list
 
-def insert_run(conn, table_name=None, **params):
-    insert_template = '''
-    INSERT INTO {table_name} VALUES (
-        NULL, /* id (autoincrement) */
-        :absorptance_kelp,
-        :a_water,
-        :b,
-        :ns,
-        :nz,
-        :na,
-        :num_dens,
-        :kelp_dist,
-        :fs,
-        :fr,
-        :ft,
-        :max_length,
-        :length_std,
-        :zmax,
-        :rope_spacing,
-        :I0,
-        :phi_s,
-        :theta_s,
-        :decay,
-        :num_cores,
-        :num_scatters,
-        :fd_flag,
-        :lis_opts,
-        :date,
-        :git_commit,
-        :compute_time,
-        :lis_iter,
-        :lis_time,
-        :lis_resid,
-        :data_path
-        );'''
+def insert_run(conn, table_name=None, **data_dict):
+    # TODO: Make sure this works.
 
     # If table_name is not provided,
     # just use the first one we find
     if not table_name:
         table_name = get_table_names(conn)[0]
 
-    insert_command = insert_template.format(table_name=table_name)
-    try:
-        conn.execute(insert_command, params)
-    except sqlite3.OperationalError as e:
-        print('FAILURE WITH:')
-        print("'{}'".format(insert_command))
-        raise e
+    insert_generic_row(conn, data_dict, table_name)
 
 def combine_dbs(study_dir, table_name):
     data_dir = os.path.join(study_dir, 'data')
@@ -279,7 +273,6 @@ def combine_dbs(study_dir, table_name):
     combined_db = os.path.join(study_dir, '{}.db'.format(table_name))
     print("Opening combined db: {}".format(combined_db))
     combined_conn = sqlite3.connect(combined_db)
-    create_table(combined_conn, table_name)
 
     print("Connected.")
     for db in dbs:
