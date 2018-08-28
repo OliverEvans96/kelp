@@ -403,7 +403,7 @@ def solve_rte_with_callbacks_full(ns, nz, ntheta, nphi, rope_spacing, zmax, b, s
     # End timer
     toc = time.time()
     date = datetime.now().ctime()
-    git_commit = get_git_commit_hash()
+    git_commit = ru.get_git_commit_hash()
     compute_time = toc - tic
 
     # Extract values from arrays
@@ -411,11 +411,11 @@ def solve_rte_with_callbacks_full(ns, nz, ntheta, nphi, rope_spacing, zmax, b, s
     lis_time = float(lis_time)
     lis_resid = float(lis_resid)
 
-    # TODO: Save callback expressions
     scalar_params = {
         'b': b,
         'ns': ns,
-        'na': na,
+        'ntheta': nphi,
+        'nphi': nphi,
         'nx': nx,
         'ny': ny,
         'nz': nz,
@@ -433,15 +433,15 @@ def solve_rte_with_callbacks_full(ns, nz, ntheta, nphi, rope_spacing, zmax, b, s
         'lis_iter': lis_iter,
         'lis_time': lis_time,
         'lis_resid': lis_resid,
-    }
-
-    results = {
         'sol_expr': sol_expr_str,
         'abs_expr': abs_expr_str,
         'source_expr': source_expr_str,
         'bc_expr': bc_expr_str,
         'vsf_expr': vsf_expr_str,
         'param_dict': param_dict_str,
+    }
+
+    results = {
         'rad': rad,
         'irrad': irrad,
     }

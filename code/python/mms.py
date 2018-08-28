@@ -1,5 +1,7 @@
 # Functions for the Method of Manufactured Solutions
 
+qqq = 3
+
 import functools as ft
 from boltons import funcutils as fu
 

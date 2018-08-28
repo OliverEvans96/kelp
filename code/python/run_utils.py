@@ -487,7 +487,9 @@ def run_decorator(run_func):
             raise ValueError("kwarg `study_name` required for functions wrapped by `run_decorator`")
 
         # Generate random name in correct directory
-        data_path = get_random_unused_filename(
+        # TODO: I'm a bit confused about the scope here.
+        # Doesn't work without `ru.`
+        data_path = ru.get_random_unused_filename(
             dir=os.path.join(study_dir, 'data'),
             suffix='.nc'
         )
@@ -504,17 +506,18 @@ def run_decorator(run_func):
             **scalar_params,
             **results
         }
-        data_path = create_nc(data_path, **nc_dict)
+        # TODO: Scope again
+        nc_data_path = ru.create_nc(data_path, **nc_dict)
 
         # Save to DB
         db_dict = {
-            'data_path': data_path,
+            'data_path': nc_data_path,
             **scalar_params
         }
 
         conn = sqlite3.connect(db_path)
-        create_table(conn, study_name)
-        insert_run(conn, study_name, **db_dict)
+        # TODO: Scope again again
+        ru.insert_run(conn, study_name, **db_dict)
         conn.commit()
         conn.close()
 
