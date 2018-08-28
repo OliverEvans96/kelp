@@ -42,7 +42,7 @@ def p_hat(l, m, na):
         p = nomega
     else:
         p = (m-1)*na + l + 1
-        
+
     return p
 
 def vec_l(vec_x, vec_omega, s, zmax):
@@ -70,16 +70,16 @@ def vec_l0(vec_x0, vec_omega, s, zmax):
 def gen_grid(ns, nz, na, rope_spacing, zmax):
     ds = rope_spacing/ns
     dz = zmax/nz
-    
+
     x = y = -rope_spacing/2 + ds * (np.arange(ns) + 1/2)
     z = dz * (np.arange(nz) + 1/2)
-    
+
     ntheta = nphi = na
     nomega = ntheta*(nphi-2) + 2
-    
+
     dtheta = 2*np.pi/ntheta
     dphi = np.pi/(nphi-1)
-    
+
     theta = dtheta * np.arange(ntheta)
     phi = dphi * np.arange(nphi)
 
@@ -88,21 +88,21 @@ def gen_grid(ns, nz, na, rope_spacing, zmax):
     p = np.arange(nomega)
 
     L, M = np.meshgrid(l, m, indexing='ij')
-    
+
     phat = (M-1)*ntheta + L + 1
     phat[:,0] = 0
     phat[:,-1] = nomega-1
-    
+
     theta_p = np.zeros(nomega)
     phi_p = np.zeros(nomega)
     theta_p[phat] = theta[L]
     theta_p[0] = theta_p[-1] = 0
     phi_p[phat] = phi[M]
-    
+
     # A bit redundant, but seems to work
     X, Y, Z, Theta = np.meshgrid(x, y, z, theta_p, indexing='ij')
     _, _, _, Phi = np.meshgrid(x, y, z, phi_p, indexing='ij')
-    
+
     return X, Y, Z, Theta, Phi
 
 def display_eq(lhs_name, rhs_expr):
@@ -121,16 +121,16 @@ def subs_dict(expr, param_dict):
     new_expr = expr * placeholder
     for key, val in param_dict.items():
         new_expr = new_expr.subs(key, val)
-        
+
     # Set the placeholder symobol to one.
     new_expr = new_expr.subs(placeholder, 1)
-    
+
     return new_expr
 
 def symify(expr, *args, **subs):
     """
     Create symbolic sympy function from `expr`,
-    with `args` as free variables, 
+    with `args` as free variables,
     and `subs` values as fixed constants.
     """
     return sp.lambdify(
@@ -151,29 +151,29 @@ def calculate_bc(L, params=()):
 def calculate_source(L, b, a, beta, params=()):
     L_om = L(*space, *angle, *params)
     L_omp = L(*space, *angle_prime, *params)
-    
+
     deriv = dot(vec_om, grad(L_om))
     atten = (a(*space)+b)*L_om
-    
+
     scat_integrand = beta(dot(vec_om, vec_omp)) * L_omp
     scat = b * sphere_integral(scat_integrand, angle=angle_prime)
-    
+
     source = deriv + atten - scat
-    
+
     return source
 
 def check_sol(L, b, a, beta, sigma):
     L_om = L(*space, *angle)
     L_omp = L(*space, *angle_prime)
-    
+
     deriv = dot(vec_om, grad(L_om))
     atten = (a(*space)+b)*L_om
-    
+
     scat_integrand = beta(dot(vec_om, vec_omp)) * L_omp
     scat = b * sphere_integral(scat_integrand, angle=angle_prime)
-    
+
     source = sigma(*space, *angle)
-    
+
     return sp.simplify(deriv + atten - scat - source)
 
 # ---
@@ -189,7 +189,7 @@ def gen_series_N(expr, N, **param_vals):
         subs_dict(t, param_vals)
         for t in series_expr(expr, N)
     ]
-    
+
     def lambda_N(x, y, z, theta, phi, n):
         args = (x, y, z, theta, phi)
         array_args = map(np.array, args)
@@ -200,7 +200,7 @@ def gen_series_N(expr, N, **param_vals):
             modules=("numpy",)
         )(x, y, z, theta, phi)
         return np.broadcast_to(ans, shape)
-    
+
     return lambda_N
 
 def gen_series_sym(expr, N, **param_vals):
@@ -208,12 +208,12 @@ def gen_series_sym(expr, N, **param_vals):
         subs_dict(t, param_vals)
         for t in series_expr(expr, N)
     ]
-    
+
     def lambda_sym(x, y, z, theta, phi, n):
         return sp.lambdify(
             (*space, *angle),
             terms[n],
             modules=("sympy",)
         )(x, y, z, theta, phi)
-    
+
     return lambda_sym
