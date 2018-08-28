@@ -448,6 +448,7 @@ def study_decorator(study_func):
 
             print()
 
+        # TODO: I don't think this acually works
 
         # Once all functions have run, combine the results
         def wait_and_combine():
