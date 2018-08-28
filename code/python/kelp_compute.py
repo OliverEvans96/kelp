@@ -310,7 +310,8 @@ def kelp_calculate(a_water, b, ns, nz, na, kelp_dist, num_scatters, fd_flag, lis
         fd_flag, lis_opts
     )
 
-def solve_rte_with_callbacks_full(ns, nz, na, rope_spacing, zmax, b, sol_expr, abs_expr, source_expr, bc_expr, vsf_expr, param_dict, num_scatters, fd_flag, lis_opts):
+
+def solve_rte_with_callbacks_full(ns, nz, ntheta, nphi, rope_spacing, zmax, b, sol_expr, abs_expr, source_expr, bc_expr, vsf_expr, param_dict, num_scatters, fd_flag, lis_opts):
     # TODO: num_cores doesn't do anything yet.
 
     from kelp3d_objs import f90
@@ -359,12 +360,15 @@ def solve_rte_with_callbacks_full(ns, nz, na, rope_spacing, zmax, b, sol_expr, a
 
     ns = int(ns)
     nz = int(nz)
-    na = int(na)
+    ntheta = int(ntheta)
+    nphi = int(nphi)
+
+    #na = int(na)
+    #ntheta = na
+    #nphi = na
 
     nx = ny = ns
 
-    ntheta = na
-    nphi = na
     nomega = int(ntheta*(nphi-2)+2)
 
     # Initialize solution arrays
@@ -442,6 +446,12 @@ def solve_rte_with_callbacks_full(ns, nz, na, rope_spacing, zmax, b, sol_expr, a
     }
 
     return scalar_params, results
+
+@ru.run_decorator
+def solve_rte_with_callbacks(ns, nz, ntheta, nphi, rope_spacing, zmax, b, sol_expr, abs_expr, source_expr, bc_expr, vsf_expr, param_dict, num_scatters, fd_flag):
+    lis_opts = '-i gmres -restart 100'
+
+    return solve_rte_with_callbacks_full(ns, nz, ntheta, nphi, rope_spacing, zmax, b, sol_expr, abs_expr, source_expr, bc_expr, vsf_expr, param_dict, num_scatters, fd_flag, lis_opts)
 
 
 ## Study Functions ##
@@ -571,5 +581,56 @@ def asymptotics_study_compute(a_water_list, b_list, kelp_dist, fd_ns, fd_nz, fd_
                     'fd_flag': False,
                     'lis_opts': lis_opts
                 })
+
+    return func_list, args_list, kwargs_list
+
+@ru.study_decorator
+def fd_verify_compute(ns_list, nz_list, ntheta_list, nphi_list, rope_spacing, z_max, b, sol_expr, abs_expr, source_expr, bc_expr, vsf_expr, param_dict, lis_opts):
+    """
+    Given a list of resolutions in each dimension,
+    loop over each list while holding all others at
+    the highest resolution in order to test the convergence
+    order of the FD algorithm.
+    """
+
+    # Sort and collect all dimensions
+    dim_names = ('ns', 'nz', 'ntheta', 'nphi')
+    dim_resolutions = map(
+        sorted,
+        (ns_list, nz_list, ntheta_list, nphi_list)
+    )
+    dim_dict = dict(zip(dim_names, dim_resolutions))
+
+    # Arguments which do not change between runs
+    const_args = (
+        rope_spacing, zmax, b,
+        sol_expr, abs_expr, source_expr, bc_expr, vsf_expr,
+        param_dict, num_scatters, fd_flag
+    )
+
+    # One scatter before FD
+    pre_fd_num_scatters = 0
+
+    # Actual calling will be performed by decorator.
+    # Functions to be called
+    func_list = []
+    # Arguments to be passed
+    args_list = [] # iterables
+    kwargs_list = [] # dictionaries
+
+    # Loop over dimensions
+    for dim_num, dim_name in enumerate(dim_names):
+        current_dim = dim_dict[dim_name]
+        # Set all resolutions to their maximum values
+        current_res_list = [max(dim) for dim in dims]
+        # Loop over all resolutions in the current dimension
+        for res in dim:
+            current_res_list[dim_num] = res
+            ns, nz, ntheta, nphi = current_res_list
+
+            # FD Solution
+            func_list.append(solve_rte_with_callbacks)
+            args_list.append((ns, nz, ntheta, nphi, *const_args))
+            kwargs_list.append({})
 
     return func_list, args_list, kwargs_list
