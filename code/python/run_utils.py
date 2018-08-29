@@ -327,44 +327,54 @@ def create_nc(data_path, **results):
     # thetavals[:] = results.pop('theta')
     # phivals[:] = results.pop('phi')
 
-    # Create results variables
-    rad = rootgrp.createVariable('rad', 'f8', ('x', 'y', 'z', 'omega'))
-    irrad = rootgrp.createVariable('irrad', 'f8', ('x', 'y', 'z'))
-    avg_irrad = rootgrp.createVariable('avg_irrad', 'f8', ('z',))
-    perc_irrad = rootgrp.createVariable('perc_irrad', 'f8', ('z',))
-    p_kelp = rootgrp.createVariable('p_kelp', 'f8', ('x', 'y', 'z'))
+    # Decide which dimensions to used based on the
+    # number of dimensions in the array
+    ndim_to_dim_dict = {
+        1: ('z', ),
+        3: ('x', 'y', 'z'),
+        4: ('x', 'y', 'z', 'omega'),
+    }
 
-    # Assign results variables
-    rad[:] = results.pop('rad')
-    irrad[:] = results.pop('irrad')
-    avg_irrad[:] = results.pop('avg_irrad')
-    perc_irrad[:] = results.pop('perc_irrad')
-    p_kelp[:] = results.pop('p_kelp')
+    # Datatype to use for array variables
+    array_dtype = 'f8'
 
-    # Assume all others are scalar metadata
+    # Loop over results
     for var_name, val in results.items():
-        var_type = type(val)
-        print("{}: {} ({})".format(var_name, val, var_type))
-        # String handling for interoperability with fortran:
-        # https://stackoverflow.com/a/37091930
-        if var_type == str:
-            # Strings treated as character arrays
-            dim_name = '{}_dim'.format(var_name)
-            char_dim = rootgrp.createDimension(dim_name, len(val))
 
-            type_str = 'S{}'.format(len(val))
-            char_val = nc.stringtochar(np.array([val], type_str))
-            print("CREATE STR VAR: ('{}', '{}', '{}')".format(var_name, type_str, dim_name))
-            var = rootgrp.createVariable(var_name, 'S1', (dim_name,))
-            var[...] = char_val
+        # Store array data
+        ndim = len(np.shape(val))
+        if ndim > 0
+            nc_arr_var = rootgrp.createVariable(
+                var_name,
+                array_dtype,
+                ndim_to_dim_dict[ndim]
+
+            nc_arr_var[:] = results.pop(var_name)
+
+        # Scalar metadata
         else:
-            # Scalar int or float
-            if var_type == float:
-                type_str = 'f4'
-            elif var_type == int:
-                type_str = 'i4'
-            var = rootgrp.createVariable(var_name, type_str)
-            var[...] = val
+            var_type = type(val)
+            print("{}: {} ({})".format(var_name, val, var_type))
+            # String handling for interoperability with fortran:
+            # https://stackoverflow.com/a/37091930
+            if var_type == str:
+                # Strings treated as character arrays
+                dim_name = '{}_dim'.format(var_name)
+                char_dim = rootgrp.createDimension(dim_name, len(val))
+
+                type_str = 'S{}'.format(len(val))
+                char_val = nc.stringtochar(np.array([val], type_str))
+                print("CREATE STR VAR: ('{}', '{}', '{}')".format(var_name, type_str, dim_name))
+                var = rootgrp.createVariable(var_name, 'S1', (dim_name,))
+                var[...] = char_val
+            else:
+                # Scalar int or float
+                if var_type == float:
+                    type_str = 'f8'
+                elif var_type == int:
+                    type_str = 'i8'
+                var = rootgrp.createVariable(var_name, type_str)
+                var[...] = val
 
     # Close file
     rootgrp.close()

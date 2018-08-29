@@ -257,8 +257,6 @@ def kelp_calculate_full(absorptance_kelp, a_water, b, ns, nz, na, num_dens, kelp
         'p_kelp': p_kelp,
         'rad': rad,
         'irrad': irrad,
-        'avg_irrad': avg_irrad,
-        'perc_irrad': perc_irrad,
     }
 
     return scalar_params, results
