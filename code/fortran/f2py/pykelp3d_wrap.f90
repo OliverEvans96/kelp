@@ -303,11 +303,19 @@ contains
     do i=1, iops%num_vsf
        iops%vsf_angles(i) = dble(i-1)*dvsf
     end do
-    call iops%calc_vsf_on_grid()
 
     iops%scat = b
+    num_vsf = iops%num_vsf
+    tmp_vsf_angles = iops%vsf_angles
+    write(*,*) 'calling vsf'
+    write(*,*) 'num_vsf = ', num_vsf
+    write(*,*) 'shape(tmp_vsf_angles) = ', shape(tmp_vsf_angles)
+    write(*,*) 'shape(tmp_vsf_vals) = ', shape(tmp_vsf_vals)
+    call vsf_func(tmp_vsf_angles, tmp_vsf_vals, num_vsf)
+    write(*,*) 'vsf called'
+    iops%vsf_vals = tmp_vsf_vals
 
-    write(*,*) 'Evaluate callbacks'
+    call iops%calc_vsf_on_grid()
 
     ! Create spatial/angular grid variables
     do i=1, grid%x%num
@@ -368,17 +376,6 @@ contains
     write(*,*) 'bc called'
     bc%bc_grid(1:grid%angles%nomega/2) = tmp_angular(1:grid%angles%nomega/2)
     write(*,*) 'bc assigned'
-
-    num_vsf = iops%num_vsf
-    tmp_vsf_angles = iops%vsf_angles
-    write(*,*) 'calling vsf'
-    write(*,*) 'num_vsf = ', num_vsf
-    write(*,*) 'shape(tmp_vsf_angles) = ', shape(tmp_vsf_angles)
-    write(*,*) 'shape(tmp_vsf_vals) = ', shape(tmp_vsf_vals)
-    call vsf_func(tmp_vsf_angles, tmp_vsf_vals, num_vsf)
-    write(*,*) 'vsf called'
-    iops%vsf_vals = tmp_vsf_vals
-    write(*,*) 'vsf assigned'
 
     write(*,*) 'min abs =', minval(iops%abs_grid)
     write(*,*) 'max abs =', maxval(iops%abs_grid)
