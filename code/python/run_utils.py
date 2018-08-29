@@ -40,6 +40,29 @@ def dict_from_args(func, args, kwargs={}):
 
 ## SQLite utils (non-project-specific) ##
 
+def create_db_generic_table_from_tuple(conn, table_name, columns, prefix='.'):
+    """
+    Create sqlite db file, create table, and return connection.
+    Assume table_name is unique.
+    """
+
+    create_table_template = ('''
+    CREATE TABLE {table_name} (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        '''
+    + (',\n'+8*' ').join([
+        ' '.join(col)
+        for col in columns
+    ]) + '\n'+4*' '+');')
+
+    create_table_command = create_table_template.format(table_name=table_name)
+
+    print("CREATING TABLE")
+    print(create_table_command)
+
+    conn.execute(create_table_command)
+    conn.commit()
+
 def create_db_table_from_dict(conn, table_name, data_dict, prefix='.'):
     """
     data_dict should be a `collections.OrderedDict`
@@ -56,25 +79,7 @@ def create_db_table_from_dict(conn, table_name, data_dict, prefix='.'):
         for name, value in data_dict.items()
     )
 
-def create_db_generic_table_from_tuple(conn, table_name, columns, prefix='.'):
-    """
-    Create sqlite db file, create table, and return connection.
-    Assume table_name is unique.
-    """
-
-    # TODO: Double check that this still works!
-
-    create_table_template = '''
-    CREATE TABLE {table_name} (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-    '''
-    + (',\n'+8*' ').join([
-        ' '.join(*col)
-        for col in columns
-    ]) + ');'
-
-    conn.execute(create_table_template.format(table_name=table_name))
-    conn.commit()
+    return create_db_generic_table_from_tuple(conn, table_name, columns)
 
 def update_col(conn, table_name, col_name, re_from, re_to):
     cur = conn.execute('select * from {}'.format(table_name))
@@ -100,6 +105,14 @@ def get_table_names(conn):
 
     return tables
 
+def get_col_names(conn, table_name):
+    cur = conn.execute('PRAGMA table_info({});'.format(table_name))
+    # Each result from this query contains:
+    # ('cid', 'name', 'type', 'notnull', 'dflt_value', 'pk')
+    # We just want the names.
+    names = [r[1] for r in cur.fetchall()]
+    return names
+
 def insert_generic_row(conn, data_dict, table_name):
     """Insert row, and create table if not present.
     NOTE: If the table does not yet exist, it's important
@@ -109,10 +122,15 @@ def insert_generic_row(conn, data_dict, table_name):
 
     # Create table if not present
     if table_name not in get_table_names(conn):
-        create_db_table_from_dict(data_dict)
+        print("Creating table {}".format(table_name))
+        create_db_table_from_dict(conn, table_name, data_dict)
+    else:
+        print("Not creating table {}".format(table_name))
+
+    print("col_names: {}".format(get_col_names(conn, table_name)))
 
     insert_template = (
-        'INSERT INTO {table_name} VALUES (NULL, ',
+        'INSERT INTO {table_name} VALUES ('
         + ', '.join([
             ':{}'.format(col_name)
             for col_name in get_col_names(conn, table_name)
@@ -122,8 +140,13 @@ def insert_generic_row(conn, data_dict, table_name):
 
     insert_command = insert_template.format(table_name=table_name)
 
+    print("Before try.")
+    print(insert_command)
+
     try:
-        conn.execute(insert_command, params)
+        print("Executing command:")
+        print(insert_command)
+        conn.execute(insert_command, {**data_dict, 'id': None})
     except sqlite3.OperationalError as e:
         print('Failed to insert row using command:')
         print("'{}'".format(insert_command))
@@ -179,7 +202,7 @@ def create_db_run_table(conn, table_name, prefix='.'):
         ('data_path', 'CHAR(256')
     )
 
-    return create_generic_table(conn, table_name, columns, prefix='.')
+    return create_db_generic_table_from_tuple(conn, table_name, columns, prefix='.')
 
 def run_not_present(completed_run_list, run_func, run_args, run_kwargs):
     """
@@ -254,8 +277,6 @@ def get_completed_run_list(study_dir):
     return completed_run_list
 
 def insert_run(conn, table_name=None, **data_dict):
-    # TODO: Make sure this works.
-
     # If table_name is not provided,
     # just use the first one we find
     if not table_name:
@@ -343,13 +364,14 @@ def create_nc(data_path, **results):
 
         # Store array data
         ndim = len(np.shape(val))
-        if ndim > 0
+        if ndim > 0:
             nc_arr_var = rootgrp.createVariable(
                 var_name,
                 array_dtype,
                 ndim_to_dim_dict[ndim]
+            )
 
-            nc_arr_var[:] = results.pop(var_name)
+            nc_arr_var[:] = results[var_name]
 
         # Scalar metadata
         else:
@@ -370,9 +392,9 @@ def create_nc(data_path, **results):
             else:
                 # Scalar int or float
                 if var_type == float:
-                    type_str = 'f8'
+                    type_str = 'f4'
                 elif var_type == int:
-                    type_str = 'i8'
+                    type_str = 'i4'
                 var = rootgrp.createVariable(var_name, type_str)
                 var[...] = val
 
