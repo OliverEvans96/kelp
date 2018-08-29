@@ -1,7 +1,5 @@
 # Functions for the Method of Manufactured Solutions
 
-qqq = 3
-
 import functools as ft
 from boltons import funcutils as fu
 
@@ -69,14 +67,14 @@ def vec_l0(vec_x0, vec_omega, s, zmax):
     vec_l = (s*vec_x1 + (s_tilde-s)*vec_x0) / s_tilde
     return vec_l
 
-def gen_grid(ns, nz, na, rope_spacing, zmax):
+def gen_grid(ns, nz, ntheta, nphi, rope_spacing, zmax):
     ds = rope_spacing/ns
     dz = zmax/nz
 
     x = y = -rope_spacing/2 + ds * (np.arange(ns) + 1/2)
     z = dz * (np.arange(nz) + 1/2)
 
-    ntheta = nphi = na
+    #ntheta = nphi = na
     nomega = ntheta*(nphi-2) + 2
 
     dtheta = 2*np.pi/ntheta

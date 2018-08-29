@@ -328,7 +328,7 @@ def solve_rte_with_callbacks_full(ns, nz, ntheta, nphi, rope_spacing, zmax, b, s
 
     # NOTE: sol_expr is not actually used in solution procedure,
     # it's just required so that it can be stored for future reference.
-    # If the true solution is not known, just pass an empty string.
+    # If the true solution is not known, just pass 0.
     sol_expr_str = str(sol_expr)
     abs_expr_str = str(abs_expr)
     source_expr_str = str(source_expr)
@@ -339,14 +339,16 @@ def solve_rte_with_callbacks_full(ns, nz, ntheta, nphi, rope_spacing, zmax, b, s
     param_dict_str = json.dumps(param_dict)
 
     # Convert expressions to sympy functions
+    sol_sym = mms.symify(sol_expr, *space, *angle, **param_dict)
     source_sym = mms.symify(source_expr, *space, *angle, **param_dict)
     abs_sym = mms.symify(abs_expr, *space, **param_dict)
     bc_sym = mms.symify(bc_expr, *angle, **param_dict)
     vsf_sym = mms.symify(vsf_expr, delta, **param_dict)
 
     # Convert sympy functions to numpy functions
-    abs_func_N = sym_to_num(abs_sym, *space)
+    sol_func_N = sym_to_num(sol_sym, *space, *angle)
     source_func_N = sym_to_num(source_sym, *space, *angle)
+    abs_func_N = sym_to_num(abs_sym, *space)
     bc_func_N = sym_to_num(bc_sym, *angle)
     vsf_func_N = sym_to_num(vsf_sym, delta)
 
@@ -371,6 +373,7 @@ def solve_rte_with_callbacks_full(ns, nz, ntheta, nphi, rope_spacing, zmax, b, s
     nomega = int(ntheta*(nphi-2)+2)
 
     # Initialize solution arrays
+    true_rad = np.asfortranarray(np.zeros([nx, ny, nz, nomega]))
     rad = np.asfortranarray(np.zeros([nx, ny, nz, nomega]))
     irrad = np.asfortranarray(np.zeros([nx, ny, nz]))
 
@@ -386,7 +389,11 @@ def solve_rte_with_callbacks_full(ns, nz, ntheta, nphi, rope_spacing, zmax, b, s
     lis_time = np.array([0], dtype=float)
     lis_resid = np.array([0], dtype=float)
 
-    # Calculate light field
+    # Calculate true light field
+    grid = mms.gen_grid(ns, nz, ntheta, nphi, rope_spacing, zmax)
+    true_rad = sol_func_N(*grid)
+
+    # Calculate approximate light field
     f90.solve_rte_with_callbacks(
         xmin, xmax,
         ymin, ymax,
@@ -442,6 +449,7 @@ def solve_rte_with_callbacks_full(ns, nz, ntheta, nphi, rope_spacing, zmax, b, s
     results = {
         'rad': rad,
         'irrad': irrad,
+        'true_rad': true_rad,
     }
 
     return scalar_params, results
@@ -594,14 +602,14 @@ def fd_verify_compute(ns_list, nz_list, ntheta_list, nphi_list, rope_spacing, zm
 
     # Sort and collect all dimensions
     dim_names = ('ns', 'nz', 'ntheta', 'nphi')
-    dim_resolutions = map(
+    dim_resolutions = list(map(
         sorted,
         (ns_list, nz_list, ntheta_list, nphi_list)
-    )
-    max_res_list = map(
+    ))
+    max_res_list = list(map(
         max,
         (ns_list, nz_list, ntheta_list, nphi_list)
-    )
+    ))
     dim_dict = dict(zip(dim_names, dim_resolutions))
 
     # One scatter before FD
@@ -624,6 +632,7 @@ def fd_verify_compute(ns_list, nz_list, ntheta_list, nphi_list, rope_spacing, zm
 
     # Run the largest grid once
     ns, nz, ntheta, nphi = max_res_list
+    print("Running grid ({:2d},{:2d},{:2d},{:2d})".format(ns, nz, ntheta, nphi))
     func_list.append(solve_rte_with_callbacks)
     args_list.append((ns, nz, ntheta, nphi, *const_args))
     kwargs_list.append({})
@@ -633,14 +642,22 @@ def fd_verify_compute(ns_list, nz_list, ntheta_list, nphi_list, rope_spacing, zm
         # List of resolutions in the current dimension
         current_dim = dim_dict[dim_name]
         # Set all resolutions to their maximum values
-        current_res_list = max_res_list
+        # Use [:] to just copy values and not modify list.
+        current_res_list = max_res_list[:]
+
+        # Resolutions for current dimension except largest
+        smaller_res_current = [
+            res for res in current_dim
+            if res != max_res_list[dim_num]
+        ]
 
         # Loop over all smaller resolutions in the current dimension
-        for res in current_dim[:-1]:
+        for res in smaller_res_current:
             current_res_list[dim_num] = res
             ns, nz, ntheta, nphi = current_res_list
 
             # Run this grid size
+            print("Running grid ({:2d},{:2d},{:2d},{:2d})".format(ns, nz, ntheta, nphi))
             func_list.append(solve_rte_with_callbacks)
             args_list.append((ns, nz, ntheta, nphi, *const_args))
             kwargs_list.append({})

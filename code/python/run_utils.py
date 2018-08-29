@@ -303,9 +303,22 @@ def combine_dbs(study_dir, table_name):
         cursor = conn.execute('SELECT * FROM {}'.format(table_name))
         print("read.")
         columns = [tup[0] for tup in cursor.description]
+        # Don't want to duplicate id column, so exclude it here.
+        id_col = columns.index('id')
+        columns_without_id = [
+            col
+            for i, col in enumerate(columns)
+            if i != id_col
+        ]
+
         # Write to combined table
         for row_tuple in cursor:
-            row_dict = dict(zip(columns, row_tuple))
+            row_without_id = [
+                entry
+                for i, entry in enumerate(row_tuple)
+                if i != id_col
+            ]
+            row_dict = dict(zip(columns_without_id, row_without_id))
             insert_run(combined_conn, table_name, **row_dict)
         conn.close()
 
@@ -484,10 +497,10 @@ def study_decorator(study_func):
 
         # Once all functions have run, combine the results
         def wait_and_combine():
-            return
             for future in run_futures:
                 future.wait()
                 #print("{} futures done.".format(sum([f.done() for f in run_futures])))
+            time.sleep(2)
             combine_dbs(study_dir, study_name)
 
         combine_thread = threading.Thread(target=wait_and_combine)
