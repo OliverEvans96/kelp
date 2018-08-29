@@ -17,6 +17,7 @@ import re
 import netCDF4 as nc
 import tempfile
 import ipyparallel as ipp
+import matplotlib
 import numpy as np
 import sympy as sp
 import functools
@@ -25,6 +26,8 @@ import functools
 # signature of wrapper for the sake of f2py
 # see https://hynek.me/articles/decorators/
 import boltons.funcutils as fu
+
+matplotlib.use('Agg')
 
 # local
 import run_utils as ru

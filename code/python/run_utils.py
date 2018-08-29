@@ -12,6 +12,7 @@ import sqlite3
 import subprocess
 import tempfile
 import threading
+import time
 
 import ipyparallel as ipp
 import netCDF4 as nc
