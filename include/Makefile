@@ -43,7 +43,7 @@ MPIFC=mpif90
 # Profiling (timing) flags
 # Compile & run normally,
 # Then call gprof `executable`
-PFLAGS= -g -ffpe-trap=zero,invalid,overflow,underflow -ffpe-summary=all -fcheck=all -O0
+PFLAGS= -g -fpe-all=0 #-ffpe-trap=zero,invalid,overflow,underflow -ffpe-summary=all -fcheck=all -O0
 
 # Optimize performance
 #https://stackoverflow.com/questions/42386065/inlining-functions-in-fortran
@@ -54,14 +54,14 @@ OPTFLAGS= -flto -fopenmp #-Ofast
 
 # Doesn't work as shared? Executable gives SEGFAULT immediately.
 # But that's okay, because this works.
-FFLAGS=-fPIC $(LISFLAGS) -I$(INC) -L$(LIB) $(OPTFLAGS) $(PFLAGS) -Wall 
+FFLAGS=-fPIC $(LISFLAGS) -I$(INC) -L$(LIB) $(OPTFLAGS) $(PFLAGS) #-Wall
 # Flags for F2PY
-F2PYFLAGS=-fPIC $(OPTFLAGS) # $(PFLAGS) 
+F2PYFLAGS=-fPIC $(OPTFLAGS) # $(PFLAGS)
 # Test flags
 TESTMODFLAGS=-shared -fPIC $(FFLAGS)
 # Export LD_LIBRARY_PATH for tests
 TESTEXP=export LD_LIBRARY_PATH=$(INC):$(LD_LIBRARY_PATH)
-TEST_FLAGS=-I/usr/include -L/usr/lib -lnetcdff
+TEST_FLAGS=#-I/usr/include -L/usr/lib -lnetcdff
 
 # All source files in each directory
 f90_src = $(wildcard $(SRC)/*.f90)
@@ -125,8 +125,9 @@ $(jtest_inc): %.so: $(JTEST)/%.f90
 # For actually importing in python
 $(f2py_targets):
 # TODO: This is sloppy & adds patchelf (Nix) dependency
-	f2py -c $^ -m $@ --f90flags="$(F2PYFLAGS)" -llis -lm -L$(LIB)/../lib -I$(INC)
-	patchelf --set-rpath $(LIB) $(PWD)/$@.*.so
+	LDFLAGS="$(LISFLAGS)" f2py --f90flags="-fpe-all=0" --opt="-qopenmp" -llis -L$(LIB)/../lib -I$(INC) -c $^ -m $@
+	#f2py -c $^ -m $@ --f90flags="$(F2PYFLAGS)" -llis -lm -L$(LIB)/../lib -I$(INC)
+	#patchelf --set-rpath $(LIB) $(PWD)/$@.*.so
 	rm -f $(F2PY_INC)/$@.*.so
 	ln -s $(PWD)/$@.*.so $(F2PY_INC)
 
