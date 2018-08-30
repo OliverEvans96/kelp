@@ -139,21 +139,49 @@ def symify(expr, *args, **subs):
         modules=("sympy",)
     )
 
-# ---
+def sym_to_num(fun, *args):
+    """
+    Convert sympy function to numpy function,
+    with the output shape broadcasted to the shape
+    of the sum of all arguments.
+
+    This is required in case one or more arguments
+    are not used explicity in the formula.
+    """
+
+    f = fu.wraps(fun)(sp.lambdify(
+        args,
+        fun(*args),
+        modules=("numpy",)
+    ))
+
+    @fu.wraps(fun)
+    def wrapper(*inner_args):
+        """
+        Reshape output to always match broadcasted
+        sum of inputs, even if they are not all
+        explicitly used in the function.
+        """
+        array_args = map(np.array, inner_args)
+        shape = np.shape(sum(array_args))
+        ans = f(*inner_args)
+        return np.broadcast_to(ans, shape)
+
+    return wrapper
 
 ## Calculation functions
 
-def calculate_bc(L, params=()):
+def calculate_bc(L, b, params=()):
     z = space[-1]
     zmin = 0
-    return L(*space, *angle, *params).subs(z, zmin)
+    return L(*space, *angle, b, *params).subs(z, zmin)
 
 def calculate_source(L, b, a, beta, params=()):
-    L_om = L(*space, *angle, *params)
-    L_omp = L(*space, *angle_prime, *params)
+    L_om = L(*space, *angle, b,*params)
+    L_omp = L(*space, *angle_prime, b, *params)
 
     deriv = dot(vec_om, grad(L_om))
-    atten = (a(*space)+b)*L_om
+    atten = (a(*space, *params)+b)*L_om
 
     scat_integrand = beta(dot(vec_om, vec_omp)) * L_omp
     scat = b * sphere_integral(scat_integrand, angle=angle_prime)

@@ -35,36 +35,6 @@ import mms
 
 ## Kelp-specific funcs ##
 
-def sym_to_num(fun, *args):
-    """
-    Convert sympy function to numpy function,
-    with the output shape broadcasted to the shape
-    of the sum of all arguments.
-
-    This is required in case one or more arguments
-    are not used explicity in the formula.
-    """
-
-    f = fu.wraps(fun)(sp.lambdify(
-        args,
-        fun(*args),
-        modules=("numpy",)
-    ))
-
-    @fu.wraps(fun)
-    def wrapper(*inner_args):
-        """
-        Reshape output to always match broadcasted
-        sum of inputs, even if they are not all
-        explicitly used in the function.
-        """
-        array_args = map(np.array, inner_args)
-        shape = np.shape(sum(array_args))
-        ans = f(*inner_args)
-        return np.broadcast_to(ans, shape)
-
-    return wrapper
-
 def grid_centers(xmin, xmax, nx):
     """Evenly spaced grid centers."""
     import numpy as np
@@ -332,6 +302,8 @@ def solve_rte_with_callbacks_full(ns, nz, ntheta, nphi, rope_spacing, zmax, b, s
     # NOTE: sol_expr is not actually used in solution procedure,
     # it's just required so that it can be stored for future reference.
     # If the true solution is not known, just pass 0.
+    # However, the expression is evaluated and its results are stored
+    # in the .nc file along with the numerical results.
     sol_expr_str = str(sol_expr)
     abs_expr_str = str(abs_expr)
     source_expr_str = str(source_expr)
@@ -349,11 +321,11 @@ def solve_rte_with_callbacks_full(ns, nz, ntheta, nphi, rope_spacing, zmax, b, s
     vsf_sym = mms.symify(vsf_expr, delta, **param_dict)
 
     # Convert sympy functions to numpy functions
-    sol_func_N = sym_to_num(sol_sym, *space, *angle)
-    source_func_N = sym_to_num(source_sym, *space, *angle)
-    abs_func_N = sym_to_num(abs_sym, *space)
-    bc_func_N = sym_to_num(bc_sym, *angle)
-    vsf_func_N = sym_to_num(vsf_sym, delta)
+    sol_func_N = mms.sym_to_num(sol_sym, *space, *angle)
+    source_func_N = mms.sym_to_num(source_sym, *space, *angle)
+    abs_func_N = mms.sym_to_num(abs_sym, *space)
+    bc_func_N = mms.sym_to_num(bc_sym, *angle)
+    vsf_func_N = mms.sym_to_num(vsf_sym, delta)
 
     # Calculate source expansion
     source_expansion_N = mms.gen_series_N(source_expr, num_scatters, **param_dict)
