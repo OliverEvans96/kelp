@@ -431,7 +431,7 @@ def solve_rte_with_callbacks_full(ns, nz, ntheta, nphi, rope_spacing, zmax, b, s
 
 @ru.run_decorator
 def solve_rte_with_callbacks(ns, nz, ntheta, nphi, rope_spacing, zmax, b, sol_expr, abs_expr, source_expr, bc_expr, vsf_expr, param_dict, num_scatters, fd_flag):
-    lis_opts = '-i gmres -restart 100'
+    lis_opts = '-i gmres -restart 100 -maxiter 5000'
 
     return solve_rte_with_callbacks_full(ns, nz, ntheta, nphi, rope_spacing, zmax, b, sol_expr, abs_expr, source_expr, bc_expr, vsf_expr, param_dict, num_scatters, fd_flag, lis_opts)
 
