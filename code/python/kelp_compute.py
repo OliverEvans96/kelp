@@ -567,7 +567,7 @@ def asymptotics_study_compute(a_water_list, b_list, kelp_dist, fd_ns, fd_nz, fd_
     return func_list, args_list, kwargs_list
 
 @ru.study_decorator
-def fd_verify_compute(ns_list, nz_list, ntheta_list, nphi_list, rope_spacing, zmax, b, sol_expr, abs_expr, source_expr, bc_expr, vsf_expr, param_dict):
+def fd_verify_compute(ns_list, nz_list, ntheta_list, nphi_list, rope_spacing, zmax, b, sol_expr, abs_expr, source_expr, bc_expr, vsf_expr, num_scatters, fd_flag, param_dict):
     """
     Given a list of resolutions in each dimension,
     loop over each list while holding all others at
@@ -586,10 +586,6 @@ def fd_verify_compute(ns_list, nz_list, ntheta_list, nphi_list, rope_spacing, zm
         (ns_list, nz_list, ntheta_list, nphi_list)
     ))
     dim_dict = dict(zip(dim_names, dim_resolutions))
-
-    # One scatter before FD
-    num_scatters = 0
-    fd_flag = True
 
     # Arguments which do not change between runs
     const_args = (
