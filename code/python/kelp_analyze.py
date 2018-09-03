@@ -479,6 +479,28 @@ def plot_slice_1d(n_list, best_ind, irrad_dict, pos, label, zmin, zmax):
     plt.tight_layout()
     plt.show()
 
+def get_res_lists(conn, table_name):
+    """
+    Get sorted list of unique grid sizes in each dimension
+    by querying results database.
+    """
+
+    cursor = conn.execute('''
+    SELECT ns, nz, ntheta, nphi
+    FROM {table_name}
+    '''.format(table_name=table_name))
+
+    # Get all unique values of ns, nz, na
+    return [
+        sorted(
+            map(
+                int,
+                set(z)
+            )
+        )
+        for z in zip(*cursor.fetchall())
+    ]
+
 def grid_study_analyze_full(db_path, table_name):
     """
     Analyze results from grid_study_compute.
@@ -486,15 +508,7 @@ def grid_study_analyze_full(db_path, table_name):
     """
     conn = sqlite3.connect(db_path)
 
-    cursor = conn.execute('''
-    SELECT ns, nz, na
-    FROM {table_name}
-    '''.format(table_name=table_name))
-
-    # Get all unique values of ns, nz, na
-    ns_list, nz_list, na_list = (
-        sorted(map(int, set(z))) for z in zip(*cursor.fetchall())
-    )
+    ns_list, nz_list, na_list, _ = get_res_lists(conn, table_name)
 
     ns_max = max(ns_list)
     nz_max = max(nz_list)
