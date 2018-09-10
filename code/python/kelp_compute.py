@@ -567,7 +567,42 @@ def asymptotics_study_compute(a_water_list, b_list, kelp_dist, fd_ns, fd_nz, fd_
     return func_list, args_list, kwargs_list
 
 @ru.study_decorator
-def fd_verify_compute(ns_list, nz_list, ntheta_list, nphi_list, rope_spacing, zmax, b, sol_expr, abs_expr, source_expr, bc_expr, vsf_expr, num_scatters, fd_flag, param_dict):
+def verify_single_space_compute(ns_list, ntheta, nphi, rope_spacing, zmax, b, sol_expr, abs_expr, source_expr, bc_expr, vsf_expr, num_scatters, fd_flag, param_dict):
+    """
+    Maintain constant ntheta, nphi while looping
+    over spatial resolutions together
+    (body diagonal in resolution-space)
+    """
+
+    # Arguments which do not change between runs
+    const_args = (
+        rope_spacing, zmax, b,
+        sol_expr, abs_expr, source_expr, bc_expr, vsf_expr,
+        param_dict, num_scatters, fd_flag
+    )
+
+    # Actual calling will be performed by decorator.
+    # Functions to be called
+    func_list = []
+    # Arguments to be passed
+    args_list = [] # iterables
+    kwargs_list = [] # dictionaries
+
+    # Loop over all smaller resolutions in the current dimension
+    for ns in ns_list:
+        nz = ns
+        ns, nz, ntheta, nphi = current_res_list
+
+        # Run this grid size
+        print("Running grid ({:2d},{:2d},{:2d},{:2d})".format(ns, nz, ntheta, nphi))
+        func_list.append(solve_rte_with_callbacks)
+        args_list.append((ns, nz, ntheta, nphi, *const_args))
+        kwargs_list.append({})
+
+    return func_list, args_list, kwargs_list
+
+@ru.study_decorator
+def verify_compute(ns_list, nz_list, ntheta_list, nphi_list, rope_spacing, zmax, b, sol_expr, abs_expr, source_expr, bc_expr, vsf_expr, num_scatters, fd_flag, param_dict):
     """
     Given a list of resolutions in each dimension,
     loop over each list while holding all others at
