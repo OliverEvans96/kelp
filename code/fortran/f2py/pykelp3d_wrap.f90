@@ -244,7 +244,7 @@ contains
     double precision, dimension(:,:,:), allocatable :: z1
     double precision, dimension(:), allocatable :: theta1
     double precision, dimension(:), allocatable :: phi1
-    double precision, dimension(:), allocatable :: tmp_vsf_angles, tmp_vsf_vals
+    double precision, dimension(:), allocatable :: tmp_vsf_cos, tmp_vsf_vals
     double precision, dimension(:,:,:), allocatable :: tmp_spatial
     double precision, dimension(:), allocatable :: tmp_angular
     integer num_vsf, nomega
@@ -295,24 +295,28 @@ contains
     write(*,*) 'IOPs'
 
     iops%num_vsf = 101
-    allocate(tmp_vsf_angles(iops%num_vsf))
+    allocate(tmp_vsf_cos(iops%num_vsf))
     allocate(tmp_vsf_vals(iops%num_vsf))
     call iops%init(grid)
     ! Evaluate VSF on discrete grid
     ! Angles evenly spaced, endpoints included
+
     dvsf = pi/(dble(iops%num_vsf-1))
     do i=1, iops%num_vsf
+       ! Defined on [0, pi]
        iops%vsf_angles(i) = dble(i-1)*dvsf
     end do
+    ! Defined on [-1, 1]
+    tmp_vsf_cos = cos(iops%vsf_angles)
 
     iops%scat = b
     num_vsf = iops%num_vsf
-    tmp_vsf_angles = iops%vsf_angles
+
     write(*,*) 'calling vsf'
     write(*,*) 'num_vsf = ', num_vsf
-    write(*,*) 'shape(tmp_vsf_angles) = ', shape(tmp_vsf_angles)
+    write(*,*) 'shape(tmp_vsf_cos) = ', shape(tmp_vsf_cos)
     write(*,*) 'shape(tmp_vsf_vals) = ', shape(tmp_vsf_vals)
-    call vsf_func(tmp_vsf_angles, tmp_vsf_vals, num_vsf)
+    call vsf_func(tmp_vsf_cos, tmp_vsf_vals, num_vsf)
     write(*,*) 'vsf called'
     iops%vsf_vals = tmp_vsf_vals
 
@@ -441,7 +445,7 @@ contains
     deallocate(z)
     deallocate(theta)
     deallocate(phi)
-    deallocate(tmp_vsf_angles)
+    deallocate(tmp_vsf_cos)
     deallocate(tmp_vsf_vals)
     deallocate(tmp_spatial)
     deallocate(tmp_angular)
