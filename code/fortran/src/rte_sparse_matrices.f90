@@ -593,9 +593,7 @@ contains
     type(index_list) indices
     integer ent
 
-    ! Interior
     do pp=1, mat%grid%angles%nomega
-       ! TODO: Make sure I don't have p and pp backwards
        val = -mat%iops%scat * mat%iops%vsf_integral(indices%p, pp)
        call mat%assign(ent, val, indices%i, indices%j, indices%k, pp)
     end do

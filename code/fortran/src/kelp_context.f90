@@ -40,9 +40,9 @@ end type depth_state
 type optical_properties
    integer num_vsf
    type(space_angle_grid) grid
-   double precision, dimension(:), allocatable :: vsf_angles, vsf_vals, vsf_cos
+   double precision, dimension(:), allocatable :: vsf_angles, vsf_vals
    double precision, dimension(:), allocatable :: abs_water
-   double precision abs_kelp, vsf_scat_coef, scat
+   double precision abs_kelp, scat
    ! On x, y, z grid - including water & kelp.
    double precision, dimension(:,:,:), allocatable :: abs_grid
    double precision, dimension(:,:,:,:), allocatable :: source_grid
@@ -168,9 +168,10 @@ contains
     allocate(iops%abs_water(grid%z%num))
 
     ! Assume that these must be allocated here
+    ! NOTE: vsf_angles are defined on [0, pi].
+    ! (not on [-1, 1])
     allocate(iops%vsf_angles(iops%num_vsf))
     allocate(iops%vsf_vals(iops%num_vsf))
-    allocate(iops%vsf_cos(iops%num_vsf))
     allocate(iops%vsf(grid%angles%nomega,grid%angles%nomega))
     allocate(iops%vsf_integral(grid%angles%nomega,grid%angles%nomega))
     allocate(iops%abs_grid(grid%x%num, grid%y%num, grid%z%num))
@@ -382,26 +383,12 @@ contains
 
     nomega = iops%grid%angles%nomega
 
-    ! Calculate cos VSF
-    iops%vsf_cos = cos(iops%vsf_angles)
-
-    ! Normalize cos VSF to 1/(2pi) on [-1, 1]
-    iops%vsf_scat_coef = abs(trap_rule_uneven(iops%vsf_cos, iops%vsf_vals, iops%num_vsf))
-    iops%vsf_vals(:) = iops%vsf_vals(:) / (2*pi * iops%vsf_scat_coef)
-
-    ! write(*,*) 'norm = ', iops%vsf_scat_coef
-    ! write(*,*) 'now: ', trap_rule_uneven(iops%vsf_cos, iops%vsf_vals, iops%num_vsf)
-    ! write(*,*) 'cos: ', iops%vsf_cos
-    ! write(*,*) 'vals: ', iops%vsf_vals
-
     do p=1, nomega
        th = iops%grid%angles%theta_p(p)
        ph = iops%grid%angles%phi_p(p)
        do  pp=1, nomega
           thp = iops%grid%angles%theta_p(pp)
           php = iops%grid%angles%phi_p(pp)
-          ! TODO: Might be better to calculate average scattering
-          ! from angular cell rather than only using center
           iops%vsf(p, pp) = iops%eval_vsf(angle_diff_3d(th,ph,thp,php))
        end do
 
@@ -409,24 +396,18 @@ contains
        norm = sum(iops%vsf(p,:) * iops%grid%angles%area_p(:))
        iops%vsf(p,:) = iops%vsf(p,:) / norm
 
-       ! % / meter light scattered from cell pp into direction p.
-       ! TODO: Could integrate VSF instead of just using value at center
+       ! % / meter light scattered
+       ! from cell pp (2nd ind.) into direction p (1st ind.).
        iops%vsf_integral(p, :) = iops%vsf(p, :) &
             * iops%grid%angles%area_p(:)
        !write(*,*) 'vsf_integral (beta_pp)', p, ' = ', iops%vsf_integral(p, :)
     end do
-
-    ! Normalize VSF on unit sphere w.r.t. north pole
-    !iops%vsf_scat_coef = sum(iops%vsf(1,:) * iops%grid%angles%area_p)
-    !iops%vsf = iops%vsf / iops%vsf_scat_coef
-    !iops%vsf_integral = iops%vsf_integral / iops%vsf_scat_coef
   end subroutine calc_vsf_on_grid
 
   subroutine iop_deinit(iops)
     class(optical_properties) iops
     deallocate(iops%vsf_angles)
     deallocate(iops%vsf_vals)
-    deallocate(iops%vsf_cos)
     deallocate(iops%vsf)
     deallocate(iops%vsf_integral)
     deallocate(iops%abs_water)
