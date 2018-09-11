@@ -591,7 +591,6 @@ def verify_single_space_compute(ns_list, ntheta, nphi, rope_spacing, zmax, b, so
     # Loop over all smaller resolutions in the current dimension
     for ns in ns_list:
         nz = ns
-        ns, nz, ntheta, nphi = current_res_list
 
         # Run this grid size
         print("Running grid ({:2d},{:2d},{:2d},{:2d})".format(ns, nz, ntheta, nphi))
