@@ -62,8 +62,6 @@ def create_db_generic_table_from_tuple(conn, table_name, columns, prefix='.'):
     print("CREATING TABLE")
     print(create_table_command)
 
-    sys.stderr.write("Failed @ create_table with command: '{}'\n".format(create_table_command))
-
     conn.execute(create_table_command)
     conn.commit()
 
