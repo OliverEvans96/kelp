@@ -29,7 +29,7 @@ def lin_fit(x, y, x0, x1):
 
     return m, b
 
-def plot_lin_fit(x, y, x0, x1, xlabel='x', ylabel='y'):
+def plot_lin_fit(x, y, x0, x1, xlabel='x', ylabel='y', vlines=False, **kwargs):
     xmin = np.min(x)
     ymin = np.min(y)
     xmax = np.max(x)
@@ -38,13 +38,17 @@ def plot_lin_fit(x, y, x0, x1, xlabel='x', ylabel='y'):
     plt.plot(x, y, 'o-')
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
-    plt.vlines((x0, x1), ymin, ymax, colors='k', linestyles='dashed')
+
+    if vlines:
+        plt.vlines((x0, x1), ymin, ymax, colors='k', linestyles='dashed')
 
     m, b = lin_fit(x, y, x0, x1)
     label = 'm={:.2f}, b={:.2f}'.format(m, b)
-    plt.plot([xmin, xmax], [m*xmin + b, m*xmax + b], '--')
     plt.title(label)
-    plt.show()
+    for k, v in kwargs.items():
+        if isinstance(v, str):
+            kwargs[k] = v.format(**locals())
+    plt.plot([xmin, xmax], [m*xmin + b, m*xmax + b], '--', **kwargs)
 
 def max_derivs(expr, rope_spacing, zmax, do_space=True, do_angle=True, **param_vals):
     dims = []
