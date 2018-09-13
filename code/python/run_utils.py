@@ -10,6 +10,7 @@ import os
 import re
 import sqlite3
 import subprocess
+import sys
 import tempfile
 import threading
 import time
@@ -61,6 +62,8 @@ def create_db_generic_table_from_tuple(conn, table_name, columns, prefix='.'):
     print("CREATING TABLE")
     print(create_table_command)
 
+    sys.stderr.write("Failed @ create_table with command: '{}'\n".format(create_table_command))
+
     conn.execute(create_table_command)
     conn.commit()
 
@@ -74,6 +77,11 @@ def create_db_table_from_dict(conn, table_name, data_dict, prefix='.'):
         int: 'INTEGER',
         str: 'CHAR(1024)'
     }
+
+    # Convert numpy types to Python types
+    for name, value in data_dict.items():
+        if isinstance(value, np.number):
+            data_dict[name] = np.asscalar(value)
 
     columns = (
         (name, sql_type_dict[type(value)])
@@ -389,6 +397,10 @@ def create_nc(data_path, **results):
 
         # Scalar metadata
         else:
+            # Convert numpy types to Python types
+            if isinstance(val, np.number):
+                val = np.asscalar(val)
+
             var_type = type(val)
             print("{}: {} ({})".format(var_name, val, var_type))
             # String handling for interoperability with fortran:
@@ -409,6 +421,7 @@ def create_nc(data_path, **results):
                     type_str = 'f4'
                 elif var_type == int:
                     type_str = 'i4'
+
                 var = rootgrp.createVariable(var_name, type_str)
                 var[...] = val
 
