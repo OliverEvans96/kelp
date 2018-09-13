@@ -668,3 +668,55 @@ def verify_compute(ns_list, nz_list, ntheta_list, nphi_list, rope_spacing, zmax,
             kwargs_list.append({})
 
     return func_list, args_list, kwargs_list
+
+@ru.study_decorator
+def verify_asym_compute(b_list, num_scatters_list, ns, nz, ntheta, nphi, rope_spacing, zmax, sol_expr, abs_expr, source_expr, bc_expr, vsf_expr, param_dict):
+    """
+    Maintain constant grid,
+    loop over:
+    - b
+    - num_scatters
+
+    without fd
+    """
+
+    fd_flag = False
+
+    const_kwargs = {
+        'ns': ns,
+        'nz': nz,
+        'ntheta': ntheta,
+        'nphi': nphi,
+        'rope_spacing': rope_spacing,
+        'zmax': zmax,
+        'sol_expr': sol_expr,
+        'abs_expr': abs_expr,
+        'source_expr': source_expr,
+        'bc_expr': bc_expr,
+        'vsf_expr': vsf_expr,
+        'fd_flag': fd_flag
+    }
+
+    # Actual calling will be performed by decorator.
+    # Functions to be called
+    func_list = []
+    # Arguments to be passed
+    args_list = [] # iterables
+    kwargs_list = [] # dictionaries
+
+    for b in b_list:
+        param_dict['b'] = b
+        for num_scatters in num_scatters_list:
+            print("Running asym.: ({:.2f}, {:2d})".format(b, num_scatters))
+            run_kwargs = {
+                'b': b,
+                'num_scatters': num_scatters,
+                'param_dict': param_dict,
+                **const_kwargs
+            }
+
+            func_list.append(solve_rte_with_callbacks)
+            args_list.append([])
+            kwargs_list.append(run_kwargs)
+
+    return func_list, args_list, kwargs_list
