@@ -711,7 +711,7 @@ def verify_asym_compute(b_list, num_scatters_list, ns, nz, ntheta, nphi, rope_sp
             run_kwargs = {
                 'b': b,
                 'num_scatters': num_scatters,
-                'param_dict': param_dict,
+                'param_dict': param_dict.copy(),
                 **const_kwargs
             }
 
