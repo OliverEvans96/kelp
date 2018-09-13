@@ -501,6 +501,24 @@ def get_res_lists(conn, table_name):
         for z in zip(*cursor.fetchall())
     ]
 
+def get_unique_vals(conn, table_name, field_names):
+    """
+    Get sorted list of unique values for a field
+    by querying SQL results database.
+    """
+
+    cursor = conn.execute('''
+    SELECT {field_names}
+    FROM {table_name}
+    '''.format(field_names=','.join(field_names), table_name=table_name))
+
+    # Get all unique values of field
+    return list(sorted(
+        set(z)
+        )
+        for z in zip(*cursor.fetchall())
+    )
+
 def grid_study_analyze_full(db_path, table_name):
     """
     Analyze results from grid_study_compute.
