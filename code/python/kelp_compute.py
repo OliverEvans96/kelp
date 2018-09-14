@@ -356,8 +356,6 @@ def solve_rte_with_callbacks_full(ns, nz, ntheta, nphi, rope_spacing, zmax, b, s
     rad = np.asfortranarray(np.zeros([nx, ny, nz, nomega]))
     irrad = np.asfortranarray(np.zeros([nx, ny, nz]))
 
-    # Start timer
-    tic = time.time()
 
     # Rope spacing determines horizontal bounds
     xmin = ymin = -rope_spacing/2
@@ -371,6 +369,9 @@ def solve_rte_with_callbacks_full(ns, nz, ntheta, nphi, rope_spacing, zmax, b, s
     # Calculate true light field
     grid = mms.gen_grid(ns, nz, ntheta, nphi, rope_spacing, zmax)
     true_rad = sol_func_N(*grid)
+
+    # Start timer
+    tic = time.time()
 
     # Calculate approximate light field
     f90.solve_rte_with_callbacks(
