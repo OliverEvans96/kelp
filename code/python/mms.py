@@ -62,7 +62,11 @@ def vec_l0(vec_x0, vec_omega, s, zmax):
         (0, dot(vec_omega, z_hat) > 0),
         (zmax, True)
     )
-    s_tilde = (zmax - z0) / dot(vec_omega, z_hat)
+    z1 = sp.Piecewise(
+        (zmax, dot(vec_omega, z_hat) > 0),
+        (0, True)
+    )
+    s_tilde = (z1 - z0) / dot(vec_omega, z_hat)
     vec_x1 = vec_x0 + s_tilde * vec_omega
     vec_l = (s*vec_x1 + (s_tilde-s)*vec_x0) / s_tilde
     return vec_l
@@ -139,6 +143,36 @@ def symify(expr, *args, **subs):
         modules=("sympy",)
     )
 
+def expr_to_num(expr, *args):
+    """
+    Convert sympy function to numpy function,
+    with the output shape broadcasted to the shape
+    of the sum of all arguments.
+
+    This is required in case one or more arguments
+    are not used explicity in the formula.
+    """
+
+    f = sp.lambdify(
+        args,
+        expr,
+        modules=("numpy",)
+    )
+
+    @fu.wraps(f)
+    def wrapper(*inner_args):
+        """
+        Reshape output to always match broadcasted
+        sum of inputs, even if they are not all
+        explicitly used in the function.
+        """
+        array_args = map(np.array, inner_args)
+        shape = np.shape(sum(array_args))
+        ans = f(*inner_args)
+        return np.broadcast_to(ans, shape)
+
+    return wrapper
+
 def sym_to_num(fun, *args):
     """
     Convert sympy function to numpy function,
@@ -204,13 +238,25 @@ def check_sol(L, b, a, beta, sigma):
 
     return sp.simplify(deriv + atten - scat - source)
 
+def split_piecewise(expr):
+    if isinstance(expr, sp.Piecewise):
+        return (expr.args[0][0], expr.args[1][0])
+    else:
+        return (expr, expr)
+
 # ---
 
 ## Series functions
 
 def series_expr(expr, n):
     b = sp.Symbol('b')
-    return sp.Poly(expr.series(b, n=n+1).removeO(), b).all_coeffs()[::-1]
+    # Only expand expressions
+    if isinstance(expr, sp.Expr):
+        series = sp.series(expr, b, n=n+1).removeO()
+    # Leave other types alone (e.g. floats for constant expressions)
+    else:
+        series = expr
+    return sp.Poly(series, b).all_coeffs()[::-1]
 
 def gen_series_N(expr, N, **param_vals):
     terms = [
