@@ -456,6 +456,7 @@ module asymptotics
 
     ! Path spacings between edge intersections in each dimension
     ! Set to 2*s_tilde if infinite in this dimension so that it's unreachable
+    ! (e.g., if ray is parallel to x axis, then no x intersection will occur.)
     ! Assume x & y spacings are uniform,
     ! so it's okay to just use the first value.
     if(x_factor .eq. 0) then
@@ -471,6 +472,7 @@ module asymptotics
 
     ! This one is an array because z spacing can vary
     ! z_factor should never be 0, because the ray will never
+    ! This is ensured when nphi is even.
     ! reach the surface or bottom.
     ds_z(1:grid%z%num) = dir_z * grid%z%spacing(1:grid%z%num)/z_factor
 
@@ -568,7 +570,7 @@ module asymptotics
 
     ! Start with t=0 so that we can increment before storing,
     ! so that t will be the number of grid cells at the end of the loop.
-    t=0
+    t = 0
 
     ! s is the beginning of the current cell,
     ! s_next is the end of the current cell.
