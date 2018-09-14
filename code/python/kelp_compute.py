@@ -321,12 +321,15 @@ def solve_rte_with_callbacks_full(ns, nz, ntheta, nphi, rope_spacing, zmax, b, s
     bc_sym = mms.symify(bc_expr, *angle, **param_dict)
     vsf_sym = mms.symify(vsf_expr, delta, **param_dict)
 
+    print("sol_expr: {}".format(sol_expr))
+    print("param_dict: {}".format(param_dict))
+
     # Convert sympy functions to numpy functions
-    sol_func_N = mms.expr_to_num(sol_expr, *space, *angle)
-    source_func_N = mms.expr_to_num(source_expr, *space, *angle)
-    abs_func_N = mms.expr_to_num(abs_expr, *space)
-    bc_func_N = mms.expr_to_num(bc_expr, *angle)
-    vsf_func_N = mms.expr_to_num(vsf_expr, delta)
+    sol_func_N = mms.expr_to_num(sol_expr, *space, *angle, **param_dict)
+    source_func_N = mms.expr_to_num(source_expr, *space, *angle, **param_dict)
+    abs_func_N = mms.expr_to_num(abs_expr, *space, **param_dict)
+    bc_func_N = mms.expr_to_num(bc_expr, *angle, **param_dict)
+    vsf_func_N = mms.expr_to_num(vsf_expr, delta, **param_dict)
 
     # Calculate source expansion
     source_expansion_N = mms.gen_series_N(source_expr, num_scatters, **param_dict)

@@ -143,7 +143,7 @@ def symify(expr, *args, **subs):
         modules=("sympy",)
     )
 
-def expr_to_num(expr, *args):
+def expr_to_num(expr, *args, **subs):
     """
     Convert sympy function to numpy function,
     with the output shape broadcasted to the shape
@@ -155,7 +155,7 @@ def expr_to_num(expr, *args):
 
     f = sp.lambdify(
         args,
-        expr,
+        subs_dict(expr, subs),
         modules=("numpy",)
     )
 
