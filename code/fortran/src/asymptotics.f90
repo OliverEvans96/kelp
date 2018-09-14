@@ -330,6 +330,27 @@ module asymptotics
             path_spacing, num_cells, &
             a_tilde, bc)
     end if
+
+    ! if((i .eq. 1) &
+    !      .and. (j .eq. 1) &
+    !      !.and. (k .eq. grid%z%num/2) &
+    !      .and. ( &
+    !      (p .eq. 1) .or. (p .eq. grid%angles%nomega) &
+    !      )) then
+
+    !    write(*,*) 'ray (', i, ', ', j, ', ', k, ', ', p, ')'
+    !    write(*,*) 'num_cells = ', num_cells
+    !    write(*,*) 'path_spacing:'
+    !    write(*,*) path_spacing(1:num_cells)
+    !    write(*,*) 'path_length:'
+    !    write(*,*) path_length(1:num_cells+1)
+    !    write(*,*) 'a_tilde:'
+    !    write(*,*) a_tilde(1:num_cells)
+    !    write(*,*) 'gn:'
+    !    write(*,*) gn(1:num_cells)
+    !    write(*,*)
+    ! end if
+
   end subroutine integrate_ray
 
   function calculate_ray_integral(num_cells, s, ds, a_tilde, gn) result(integral)
@@ -415,9 +436,9 @@ module asymptotics
     double precision z0
     double precision s_tilde, s
     integer dir_x, dir_y, dir_z
-    integer shift_x, shift_y, shift_z
+    integer shift_x, shift_y
     integer cell_x, cell_y, cell_z
-    integer edge_x, edge_y, edge_z
+    integer edge_x, edge_y
     integer first_x, last_x, first_y, last_y, last_z
     double precision s_next_x, s_next_y, s_next_z, s_next
     double precision x_factor, y_factor, z_factor
@@ -471,9 +492,10 @@ module asymptotics
     end if
 
     ! This one is an array because z spacing can vary
-    ! z_factor should never be 0, because the ray will never
-    ! This is ensured when nphi is even.
-    ! reach the surface or bottom.
+    ! z_factor should never be 0,
+    ! because the ray is then horizontal
+    ! and infinite in length.
+    ! z_factor != 0 is ensured when nphi is even.
     ds_z(1:grid%z%num) = dir_z * grid%z%spacing(1:grid%z%num)/z_factor
 
     ! Origin point
@@ -490,7 +512,6 @@ module asymptotics
     ! merge is fortran's ternary operator
     shift_x = merge(1,0,dir_x>0)
     shift_y = merge(1,0,dir_y>0)
-    shift_z = merge(1,0,dir_z>0)
 
     ! Indices for cell containing origin point
     cell_x = floor((p0x-grid%x%minval)/grid%x%spacing(1)) + 1
@@ -509,9 +530,8 @@ module asymptotics
     ! Edge indices preceeding starting cells
     edge_x = mod1(cell_x + shift_x, grid%x%num)
     edge_y = mod1(cell_y + shift_y, grid%y%num)
-    edge_z = mod1(cell_z + shift_z, grid%z%num)
 
-    ! First and last cells given direction
+    ! First and last cells in each
     if(dir_x .gt. 0) then
        first_x = 1
        last_x = grid%x%num
@@ -622,12 +642,11 @@ module asymptotics
 
           ! Increment indices
           cell_z = cell_z + dir_z
-          edge_z = edge_z + dir_z
 
           !write(*,*) 'z edge, s_next =', s_next
 
           ! z intersection after the one at s=s_next
-          if(cell_z .lt. last_z) then
+          if(dir_z * (last_z - cell_z) .gt. 0) then
              ! Only look ahead if we aren't at the end
              s_next_z = s_next + ds_z(cell_z)
           else
