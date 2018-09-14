@@ -17,6 +17,7 @@ import re
 import netCDF4 as nc
 import tempfile
 import ipyparallel as ipp
+from IPython.display import display
 import matplotlib
 import numpy as np
 import sympy as sp
@@ -321,11 +322,11 @@ def solve_rte_with_callbacks_full(ns, nz, ntheta, nphi, rope_spacing, zmax, b, s
     vsf_sym = mms.symify(vsf_expr, delta, **param_dict)
 
     # Convert sympy functions to numpy functions
-    sol_func_N = mms.sym_to_num(sol_sym, *space, *angle)
-    source_func_N = mms.sym_to_num(source_sym, *space, *angle)
-    abs_func_N = mms.sym_to_num(abs_sym, *space)
-    bc_func_N = mms.sym_to_num(bc_sym, *angle)
-    vsf_func_N = mms.sym_to_num(vsf_sym, delta)
+    sol_func_N = mms.expr_to_num(sol_expr, *space, *angle)
+    source_func_N = mms.expr_to_num(source_expr, *space, *angle)
+    abs_func_N = mms.expr_to_num(abs_expr, *space)
+    bc_func_N = mms.expr_to_num(bc_expr, *angle)
+    vsf_func_N = mms.expr_to_num(vsf_expr, delta)
 
     # Calculate source expansion
     source_expansion_N = mms.gen_series_N(source_expr, num_scatters, **param_dict)
@@ -718,5 +719,331 @@ def verify_asym_compute(b_list, num_scatters_list, ns, nz, ntheta, nphi, rope_sp
             func_list.append(solve_rte_with_callbacks)
             args_list.append([])
             kwargs_list.append(run_kwargs)
+
+    return func_list, args_list, kwargs_list
+
+@ru.study_decorator
+def verify_asym_noscat_1d_compute(nz_list, rope_spacing, zmax, abs_expr, bc_expr, param_dict):
+    ns = 1
+    ntheta = 1
+    nphi = 2
+    num_scatters = 0
+
+    b = 0
+    param_dict_copy = param_dict.copy()
+    param_dict_copy['b'] = b
+
+    # Having trouble with normal integration
+    # for some reason, so computing antiderivative
+    # and evaluating manually
+    abs_antideriv = sp.integrate(abs_expr, sp.Symbol('z'))
+    sol_expr = bc_expr * sp.exp(
+        abs_antideriv.subs('z', 0) - abs_antideriv
+    )
+
+    source_expr = 0
+    vsf_expr = 0
+
+    fd_flag = False
+
+    const_kwargs = {
+        'ns': ns,
+        'ntheta': ntheta,
+        'nphi': nphi,
+        'rope_spacing': rope_spacing,
+        'zmax': zmax,
+        'sol_expr': sol_expr,
+        'abs_expr': abs_expr,
+        'source_expr': source_expr,
+        'bc_expr': bc_expr,
+        'vsf_expr': vsf_expr,
+        'fd_flag': fd_flag,
+        'b': b,
+        'num_scatters': num_scatters,
+        'param_dict': param_dict_copy
+    }
+
+    func_list = []
+    args_list = []
+    kwargs_list = []
+
+    for nz in nz_list:
+        run_kwargs = {'nz': nz, **const_kwargs}
+
+        func_list.append(solve_rte_with_callbacks)
+        args_list.append([])
+        kwargs_list.append(run_kwargs)
+
+    return func_list, args_list, kwargs_list
+
+@ru.study_decorator
+def verify_asym_noscat_const_abs_and_source_compute(ns, nz, ntheta, nphi, a, sigma, rope_spacing, zmax, param_dict):
+
+    num_scatters = 0
+    b = 0
+    param_dict_copy = param_dict.copy()
+    param_dict_copy['b'] = b
+
+    abs_expr = a
+    source_expr = sigma
+    bc_expr = 0
+
+    # Path length from origin
+    s = sp.Piecewise(
+        (
+            sp.Symbol('z') / sp.cos(sp.Symbol('phi')),
+            sp.Symbol('phi') < sp.pi/2
+        ),
+        (
+            (sp.Symbol('z') - zmax) / sp.cos(sp.Symbol('phi')),
+            True
+        )
+    )
+
+    # Analytical solution
+    sol_expr = sigma/a * (1 - sp.exp(-a*s))
+    vsf_expr = 0
+
+    fd_flag = False
+
+    const_kwargs = {
+        'ntheta': ntheta,
+        'nphi': nphi,
+        'rope_spacing': rope_spacing,
+        'zmax': zmax,
+        'sol_expr': sol_expr,
+        'abs_expr': abs_expr,
+        'source_expr': source_expr,
+        'bc_expr': bc_expr,
+        'vsf_expr': vsf_expr,
+        'fd_flag': fd_flag,
+        'b': b,
+        'num_scatters': num_scatters,
+        'param_dict': param_dict_copy
+    }
+
+    func_list = []
+    args_list = []
+    kwargs_list = []
+
+    run_kwargs = {
+        'ns': ns,
+        'nz': nz,
+        'ntheta': ntheta,
+        'nphi': nphi,
+        **const_kwargs
+    }
+
+    func_list.append(solve_rte_with_callbacks)
+    args_list.append([])
+    kwargs_list.append(run_kwargs)
+
+    return func_list, args_list, kwargs_list
+
+@ru.study_decorator
+def verify_ss_asym_noscat_compute(ns_list, ntheta, nphi, abs_expr, source_expr, bc_expr, rope_spacing, zmax, param_dict):
+
+    num_scatters = 0
+    b = 0
+    param_dict_copy = param_dict.copy()
+    param_dict_copy['b'] = b
+
+    vsf_expr = 0
+    fd_flag = False
+
+    abs_sym = mms.symify(abs_expr, *mms.space)
+    source_sym = mms.symify(source_expr, *mms.space, *mms.angle)
+    bc_sym = mms.symify(bc_expr, *mms.angle)
+    vsf_sym = mms.symify(0, sp.Symbol('Delta'))
+
+    s = sp.Symbol('s')
+    s_p = sp.Symbol('s_p')
+    s_pp = sp.Symbol('s_{pp}')
+
+    x0, y0 = sp.var('x_0, y_0')
+    z_hat = sp.Matrix([0,0,1])
+    vec_x0 = sp.Matrix([
+        x0,
+        y0,
+        sp.Piecewise(
+            (0, mms.dot(mms.vec_om, z_hat) > 0),
+            (zmax, True)
+        )
+    ])
+
+    vec_l0_p = sp.simplify(mms.vec_l0(vec_x0, mms.vec_om, s_p, zmax))
+    vec_l0_pp = sp.simplify(mms.vec_l0(vec_x0, mms.vec_om, s_pp, zmax))
+
+    print("Evaluating abs & source")
+    a_tilde = abs_sym(
+        *vec_l0_pp
+    )
+    sigma_tilde = source_sym(
+        *vec_l0_p,
+        *mms.angle
+    )
+
+    print("a_tilde:")
+    display(a_tilde)
+
+    print("sigma_tilde:")
+    display(sigma_tilde)
+
+    print("inner")
+
+    inner = sp.integrate(
+        a_tilde,
+        (s_pp, s_p, s)
+    )
+    display(inner)
+
+    print("inner_prod")
+    inner_prod = sp.simplify(
+        sigma_tilde * sp.exp(-inner),
+    )
+    display(inner_prod)
+
+    print("outer")
+    outer = sp.integrate(
+        inner_prod,
+        (s_p, 0, s)
+    )
+    display(outer)
+
+    u0_source_expr = outer
+
+    print("Double integral")
+    # Integrate light from distributed source
+
+    print("BC")
+    # Integrate light from boundary condition
+    u0_bc_expr = (
+        bc_sym(*mms.angle) * sp.exp(
+            -sp.integrate(
+                a_tilde,
+                (s_pp, 0, s)
+            )
+        )
+    )
+
+    print("Combine")
+    # Superpose source and bc solutions
+    u0_s_expr = u0_source_expr + u0_bc_expr
+
+    print("Lambdify u0")
+    display(u0_s_expr)
+    # Convert to funcion of x, y, z
+
+    # Manually extract upwelling and downwelling
+    # pieces because sympy can't do piecewise lambdify
+    u0_s_down, u0_s_up = mms.split_piecewise(u0_s_expr)
+    u0_down_func = sp.lambdify(
+        ('s', 'x_0', 'y_0'),
+        u0_s_down,
+        modules=("sympy",)
+    )
+    u0_up_func = sp.lambdify(
+        ('s', 'x_0', 'y_0'),
+        u0_s_up,
+        modules=("sympy",)
+    )
+    print("Evaluate L(x,y,z)")
+    ph = sp.Symbol('phi')
+    th = sp.Symbol('theta')
+    s_tilde_sym = sp.Piecewise(
+        (sp.Symbol('z')/sp.cos(ph), sp.cos(ph) > 0),
+        ((sp.Symbol('z')-zmax)/sp.cos(ph), True)
+    )
+    s_down, s_up = mms.split_piecewise(s_tilde_sym)
+    x0_sym = sp.simplify(sp.Symbol('x') - s_tilde_sym * sp.sin(ph)*sp.cos(th))
+    y0_sym = sp.simplify(sp.Symbol('y') - s_tilde_sym * sp.sin(ph)*sp.sin(th))
+
+    print("x0:")
+    display(x0_sym)
+    print("y0:")
+    display(y0_sym)
+
+    x0_down, x0_up = mms.split_piecewise(x0_sym)
+    y0_down, y0_up = mms.split_piecewise(y0_sym)
+
+    print("evaluate sol.")
+    sol_down_expr = u0_down_func(s_down, x0_down, y0_down)
+    sol_up_expr = u0_up_func(s_up, x0_up, y0_up)
+    print("sol_down_expr:")
+    display(sol_down_expr)
+    print("sol_up_expr:")
+    display(sol_up_expr)
+
+    print("combined")
+    sol_expr = sp.Piecewise(
+        (sol_down_expr, sp.cos(sp.Symbol('phi')) > 0),
+        (sol_up_expr, True)
+    )
+
+    display(sol_expr)
+
+    print("symify")
+    sol_down_sym = mms.symify(sol_down_expr, *mms.space, *mms.angle)
+    sol_up_sym = mms.symify(sol_up_expr, *mms.space, *mms.angle)
+
+    print("Checking down")
+    down_diff = mms.check_sol(sol_down_sym, b, abs_sym, vsf_sym, source_sym)
+    print("diff:")
+    display(down_diff)
+    num_down_diff = sp.lambdify(
+        (*mms.space, *mms.angle),
+        down_diff,
+        modules=("numpy",)
+    )
+    max_down_diff = np.max(num_down_diff(*mms.gen_grid(10, 10, 10, 10, 1, 1)))
+    print("max_down_diff = {:.2e}".format(max_down_diff))
+
+    print("Checking up")
+    up_diff = mms.check_sol(sol_up_sym, b, abs_sym, vsf_sym, source_sym)
+    print("diff:")
+    display(up_diff)
+    num_up_diff = sp.lambdify(
+        (*mms.space, *mms.angle),
+        up_diff,
+        modules=("numpy",)
+    )
+    max_up_diff = np.max(num_up_diff(*mms.gen_grid(10, 10, 10, 10, 1, 1)))
+    print("max_up_diff = {:.2e}".format(max_up_diff))
+
+    print("Done with sym. calc.")
+
+    const_kwargs = {
+        'ntheta': ntheta,
+        'nphi': nphi,
+        'rope_spacing': rope_spacing,
+        'zmax': zmax,
+        'sol_expr': sol_expr,
+        'abs_expr': abs_expr,
+        'source_expr': source_expr,
+        'bc_expr': bc_expr,
+        'vsf_expr': vsf_expr,
+        'fd_flag': fd_flag,
+        'b': b,
+        'num_scatters': num_scatters,
+        'param_dict': param_dict_copy
+    }
+
+    func_list = []
+    args_list = []
+    kwargs_list = []
+
+    for ns in ns_list:
+        nz = ns
+        run_kwargs = {
+            'ns': ns,
+            'nz': nz,
+            'ntheta': ntheta,
+            'nphi': nphi,
+            **const_kwargs
+        }
+
+        func_list.append(solve_rte_with_callbacks)
+        args_list.append([])
+        kwargs_list.append(run_kwargs)
 
     return func_list, args_list, kwargs_list
