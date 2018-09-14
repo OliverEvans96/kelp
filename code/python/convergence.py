@@ -38,6 +38,7 @@ def plot_lin_fit(x, y, x0, x1, xlabel='x', ylabel='y', vlines=False, **kwargs):
     plt.plot(x, y, 'o-')
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
+    lc = plt.gca().lines[-1].get_color()
 
     if vlines:
         plt.vlines((x0, x1), ymin, ymax, colors='k', linestyles='dashed')
@@ -48,7 +49,7 @@ def plot_lin_fit(x, y, x0, x1, xlabel='x', ylabel='y', vlines=False, **kwargs):
     for k, v in kwargs.items():
         if isinstance(v, str):
             kwargs[k] = v.format(**locals())
-    plt.plot([xmin, xmax], [m*xmin + b, m*xmax + b], '--', **kwargs)
+    plt.plot([xmin, xmax], [m*xmin + b, m*xmax + b], '--', c=lc, **kwargs)
 
 def max_derivs(expr, rope_spacing, zmax, do_space=True, do_angle=True, **param_vals):
     dims = []
