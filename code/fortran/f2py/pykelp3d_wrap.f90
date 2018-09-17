@@ -60,7 +60,7 @@ contains
        theta_s, phi_s, I0, decay, &
        p_kelp, radiance, irradiance, &
        num_scatters, fd_flag, lis_opts, &
-       lis_iter, lis_time, lis_resid)
+       lis_iter, lis_time, lis_resid, num_threads)
 
     integer, intent(in) :: nx, ny, nz, ntheta, nphi
     double precision, intent(in) :: xmin, xmax, ymin, ymax, zmin, zmax
@@ -85,6 +85,7 @@ contains
     type(light_state) light
     type(boundary_condition) bc
     integer k
+    integer num_threads
 
     double precision, dimension(:,:,:,:), allocatable :: source
 
@@ -130,7 +131,9 @@ contains
     !write(*,*) 'bc_grid = ', bc%bc_grid
 
     write(*,*) 'Calculate asymptotic light field'
-    call calculate_asymptotic_light_field(grid, bc, iops, source, radiance, num_scatters)
+    call calculate_asymptotic_light_field(&
+         grid, bc, iops, source, &
+         radiance, num_scatters, num_threads)
 
     if(fd_flag) then
 
@@ -198,7 +201,7 @@ contains
        b, abs_func, source_func, source_expansion_func, bc_func, vsf_func, &
        radiance, irradiance, &
        num_scatters, fd_flag, lis_opts, &
-       lis_iter, lis_time, lis_resid)
+       lis_iter, lis_time, lis_resid, num_threads)
     integer, intent(in) :: nx, ny, nz, ntheta, nphi
     double precision, intent(in) :: xmin, xmax, ymin, ymax, zmin, zmax
 
@@ -249,6 +252,8 @@ contains
     double precision, dimension(:), allocatable :: tmp_angular
     integer num_vsf, nomega
     integer n
+    integer num_threads
+
     ! The following line is an important f2py directive,
     ! not a comment.
     !f2py intent(out) tmp_vsf_vals, tmp_spatial, tmp_angular, source
@@ -396,7 +401,9 @@ contains
     write(*,*) 'mean bc =', sum(bc%bc_grid)/size(bc%bc_grid)
 
     write(*,*) 'Calculate asymptotic light field'
-    call calculate_asymptotic_light_field_expanded_source(grid, bc, iops, source, source_expansion, radiance, num_scatters)
+    call calculate_asymptotic_light_field_expanded_source(&
+         grid, bc, iops, source, source_expansion, &
+         radiance, num_scatters, num_threads)
 
     if(fd_flag) then
 
