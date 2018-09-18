@@ -153,13 +153,27 @@ def expr_to_num(expr, *args, **subs):
     are not used explicity in the formula.
     """
 
-    f = sp.lambdify(
+    # For some reason, sympy lambdify has correct
+    # argcount in function signature, but numpy
+    # lambdify does not. Since this must be correct
+    # for the sake of f2py callbacks, we'll take
+    # the sympy signature even though we're using
+    # the numpy function.
+
+    f_sym = sp.lambdify(
+        args,
+        subs_dict(expr, subs),
+        modules=("sympy",)
+    )
+
+
+    f_N = sp.lambdify(
         args,
         subs_dict(expr, subs),
         modules=("numpy",)
     )
 
-    @fu.wraps(f)
+    @fu.wraps(f_sym)
     def wrapper(*inner_args):
         """
         Reshape output to always match broadcasted
@@ -168,7 +182,7 @@ def expr_to_num(expr, *args, **subs):
         """
         array_args = map(np.array, inner_args)
         shape = np.shape(sum(array_args))
-        ans = f(*inner_args)
+        ans = f_N(*inner_args)
         return np.broadcast_to(ans, shape)
 
     return wrapper
