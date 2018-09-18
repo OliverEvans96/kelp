@@ -1048,3 +1048,22 @@ def verify_ss_asym_noscat_compute(ns_list, ntheta, nphi, abs_expr, source_expr, 
         kwargs_list.append(run_kwargs)
 
     return func_list, args_list, kwargs_list
+
+@ru.study_decorator
+def verify_kelp_single_space_compute(a_water, b, ns_list, na, kelp_dist, num_scatters, fd_flag, lis_opts=None, num_cores=None):
+
+    if not lis_opts:
+        lis_opts = '-i gmres -restart 100'
+
+    func_list = []
+    args_list = []
+    kwargs_list = []
+    for ns in ns_list:
+        nz = ns
+        run_args = [a_water, b, ns, nz, na, kelp_dist, num_scatters, fd_flag]
+        run_kwargs = {'lis_opts': '', 'num_cores': num_cores}
+        func_list.append(kelp_calculate)
+        args_list.append(run_args)
+        kwargs_list.append(run_kwargs)
+
+    return func_list, args_list, kwargs_list
