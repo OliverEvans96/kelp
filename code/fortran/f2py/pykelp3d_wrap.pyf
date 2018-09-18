@@ -31,8 +31,8 @@ python module solve_rte_with_callbacks__user__routines
             double precision, allocatable,dimension(nomega),intent(out) :: tmp_angular
             integer :: nomega
         end subroutine bc_func
-        subroutine vsf_func(tmp_vsf_angles,tmp_vsf_vals,num_vsf) ! in :pykelp3d_wrap:pykelp3d_wrap.f90:pykelp3d_wrap:solve_rte_with_callbacks:unknown_interface
-            double precision, allocatable,dimension(num_vsf) :: tmp_vsf_angles
+        subroutine vsf_func(tmp_vsf_cos,tmp_vsf_vals,num_vsf) ! in :pykelp3d_wrap:pykelp3d_wrap.f90:pykelp3d_wrap:solve_rte_with_callbacks:unknown_interface
+            double precision, allocatable,dimension(num_vsf) :: tmp_vsf_cos
             double precision, allocatable,dimension(num_vsf),intent(out) :: tmp_vsf_vals
             integer :: num_vsf
         end subroutine vsf_func
@@ -78,7 +78,7 @@ python module pykelp3d_wrap ! in
                 double precision :: ft
                 double precision dimension(nx,ny,nz),depend(nz) :: p_kelp
             end subroutine gen_kelp
-            subroutine calculate_light_field(xmin,xmax,nx,ymin,ymax,ny,zmin,zmax,nz,ntheta,nphi,a_w,a_k,b,num_vsf,vsf_angles,vsf_vals,theta_s,phi_s,i0,decay,p_kelp,radiance,irradiance,num_scatters,fd_flag,lis_opts,lis_iter,lis_time,lis_resid) ! in :pykelp3d_wrap:pykelp3d_wrap.f90:pykelp3d_wrap
+            subroutine calculate_light_field(xmin,xmax,nx,ymin,ymax,ny,zmin,zmax,nz,ntheta,nphi,a_w,a_k,b,num_vsf,vsf_angles,vsf_vals,theta_s,phi_s,i0,decay,p_kelp,radiance,irradiance,num_scatters,num_threads,fd_flag,lis_opts,lis_iter,lis_time,lis_resid) ! in :pykelp3d_wrap:pykelp3d_wrap.f90:pykelp3d_wrap
                 double precision intent(in) :: xmin
                 double precision intent(in) :: xmax
                 integer, optional,intent(in),check(shape(p_kelp,0)==nx),depend(p_kelp) :: nx=shape(p_kelp,0)
@@ -104,13 +104,14 @@ python module pykelp3d_wrap ! in
                 double precision dimension(nx,ny,nz,ntheta*(nphi-2)+2),intent(inout),depend(nx,ny,nz,ntheta,nphi) :: radiance
                 double precision dimension(nx,ny,nz),intent(inout),depend(nx,ny,nz) :: irradiance
                 integer intent(in) :: num_scatters
+                integer intent(in) :: num_threads
                 logical intent(in) :: fd_flag
                 character*(*) intent(in) :: lis_opts
                 integer intent(inout) :: lis_iter
                 double precision intent(inout) :: lis_time
                 double precision intent(inout) :: lis_resid
             end subroutine calculate_light_field
-            subroutine solve_rte_with_callbacks(xmin,xmax,nx,ymin,ymax,ny,zmin,zmax,nz,ntheta,nphi,b,abs_func,source_func,source_expansion_func,bc_func,vsf_func,radiance,irradiance,num_scatters,fd_flag,lis_opts,lis_iter,lis_time,lis_resid) ! in :pykelp3d_wrap:pykelp3d_wrap.f90:pykelp3d_wrap
+            subroutine solve_rte_with_callbacks(xmin,xmax,nx,ymin,ymax,ny,zmin,zmax,nz,ntheta,nphi,b,abs_func,source_func,source_expansion_func,bc_func,vsf_func,radiance,irradiance,num_scatters,num_threads,fd_flag,lis_opts,lis_iter,lis_time,lis_resid) ! in :pykelp3d_wrap:pykelp3d_wrap.f90:pykelp3d_wrap
                 use solve_rte_with_callbacks__user__routines
                 double precision intent(in) :: xmin
                 double precision intent(in) :: xmax
@@ -132,6 +133,7 @@ python module pykelp3d_wrap ! in
                 double precision dimension(nx,ny,nz,ntheta*(nphi-2)+2),intent(inout),depend(ntheta,nphi) :: radiance
                 double precision dimension(nx,ny,nz),intent(inout),depend(nx,ny,nz) :: irradiance
                 integer intent(in) :: num_scatters
+                integer intent(in) :: num_threads
                 logical intent(in) :: fd_flag
                 character*(*) intent(in) :: lis_opts
                 integer intent(inout) :: lis_iter
