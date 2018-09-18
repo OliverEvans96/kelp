@@ -87,28 +87,19 @@ def kelp_calculate_full(absorptance_kelp, a_water, b, ns, nz, na, num_dens, kelp
     nz = int(nz)
     na = int(na)
 
-    nx = ny = ns
+    nx = ns
+    ny = ns
+    ntheta = na
+    nphi = na
+    nomega = int(ntheta*(nphi-2)+2)
 
     num_vsf = na
     vsf_angles = np.linspace(0, np.pi, na)
     vsf_vals = 0*vsf_angles + 1/(4*np.pi)
 
-    ntheta = na
-    nphi = na
-
-    # nphi = int(na/2)
-    # if nphi % 2 != 0:
-    #     nphi += 1
-
-    nomega = int(ntheta*(nphi-2)+2)
     p_kelp = np.asfortranarray(np.zeros([nx, ny, nz]))
     rad = np.asfortranarray(np.zeros([nx, ny, nz, nomega]))
     irrad = np.asfortranarray(np.zeros([nx, ny, nz]))
-    avg_irrad = np.asfortranarray(np.zeros([nz], dtype=np.float32))
-    perc_irrad = np.asfortranarray(np.zeros([nz], dtype=np.float32))
-
-    # Start timer
-    tic = time.time()
 
     # Rope spacing determines horizontal bounds
     xmin = ymin = -rope_spacing/2
@@ -146,6 +137,14 @@ def kelp_calculate_full(absorptance_kelp, a_water, b, ns, nz, na, num_dens, kelp
     print("ft = {}".format(ft))
     print("p_kelp.shape = {}".format(p_kelp.shape))
 
+    # Create arrays to hand mutable values to fortran
+    lis_iter = np.array([0], dtype=int)
+    lis_time = np.array([0], dtype=float)
+    lis_resid = np.array([0], dtype=float)
+
+    # Start timer
+    tic = time.time()
+
     # Generate kelp
     f90.gen_kelp(
         xmin, xmax,
@@ -159,11 +158,6 @@ def kelp_calculate_full(absorptance_kelp, a_water, b, ns, nz, na, num_dens, kelp
         fs, fr, ft,
         p_kelp
     )
-
-    # Create arrays to hand mutable values to fortran
-    lis_iter = np.array([0], dtype=int)
-    lis_time = np.array([0], dtype=float)
-    lis_resid = np.array([0], dtype=float)
 
     # Calculate light field
     f90.calculate_light_field(
