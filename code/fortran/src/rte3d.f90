@@ -23,70 +23,40 @@ end interface
 
 contains
 
-subroutine whole_space_loop(mat, indices)
+subroutine whole_space_loop(mat, indices, num_threads)
   type(rte_mat) mat
   type(index_list) indices
   integer i, j, k
+  integer num_threads
 
   procedure(deriv_interface), pointer :: ddx, ddy
   procedure(angle_loop_interface), pointer :: angle_loop
 
-  !$ integer omp_get_num_procs
-  !$ integer num_threads_z, num_threads_x, num_threads_y
-
-  ! Enable nested parallelism
-  !$ call omp_set_nested(.true.)
-
-  ! Use nz procs for outer loop,
-  ! or num_procs if num_procs < nz
-  ! Divide the rest of the tasks as appropriate
-
-  !$ num_threads_z = min(omp_get_num_procs(), mat%grid%z%num)
-  !$ num_threads_x = min( &
-  !$    omp_get_num_procs()/num_threads_z, &
-  !$    mat%grid%x%num)
-  !$ num_threads_y = min( &
-  !$    omp_get_num_procs()/(num_threads_z*num_threads_x), &
-  !$    mat%grid%y%num)
-
-  !$ write(*,*) 'num_procs =', omp_get_num_procs()
-  !$ write(*,*) 'ntz =', num_threads_z
-  !$ write(*,*) 'ntx =', num_threads_x
-  !$ write(*,*) 'nty =', num_threads_y
-
   !$omp parallel do default(none) shared(mat) &
   !$omp private(ddx,ddy,angle_loop, k, i, j) private(indices) &
-  !$omp shared(num_threads_x,num_threads_y,num_threads_z) &
-  !$omp num_threads(num_threads_z) if(num_threads_z .gt. 1)
+  !$omp num_threads(num_threads) collapse(3)
   do k=1, mat%grid%z%num
-     write(*,*) 'k =', k
-     indices%k = k
-     if(k .eq. 1) then
-        angle_loop => surface_angle_loop
-     else if(k .eq. mat%grid%z%num) then
-        angle_loop => bottom_angle_loop
-     else
-        angle_loop => interior_angle_loop
-     end if
-
-     !$omp parallel do default(none) shared(mat) private(i,j) &
-     !$omp firstprivate(indices,angle_loop, k) private(ddx,ddy) &
-     !$omp shared(num_threads_x,num_threads_y,num_threads_z) &
-     !$omp num_threads(num_threads_x) if(num_threads_x .gt. 1)
      do i=1, mat%grid%x%num
-        indices%i = i
-        if(indices%i .eq. 1) then
-           ddx => x_cd2_first
-        else if(indices%i .eq. mat%grid%x%num) then
-           ddx => x_cd2_last
-        else
-           ddx => x_cd2
-        end if
-        !$omp parallel do default(none) shared(mat) private(j) &
-        !$omp firstprivate(indices,ddx,ddy,angle_loop, i, k) &
-        !$omp shared(num_threads_x,num_threads_y,num_threads_z) &
-        !$omp num_threads(num_threads_y) if(num_threads_y .gt. 1)
         do j=1, mat%grid%y%num
+           write(*,*) 'k =', k
+           indices%k = k
+           if(k .eq. 1) then
+              angle_loop => surface_angle_loop
+           else if(k .eq. mat%grid%z%num) then
+              angle_loop => bottom_angle_loop
+           else
+              angle_loop => interior_angle_loop
+           end if
+
+           indices%i = i
+           if(indices%i .eq. 1) then
+              ddx => x_cd2_first
+           else if(indices%i .eq. mat%grid%x%num) then
+              ddx => x_cd2_last
+           else
+              ddx => x_cd2
+           end if
+
            indices%j = j
            if(indices%j .eq. 1) then
               ddy => y_cd2_first
@@ -98,9 +68,7 @@ subroutine whole_space_loop(mat, indices)
 
            call angle_loop(mat, indices, ddx, ddy)
         end do
-        !$omp end parallel do
      end do
-     !$omp end parallel do
   end do
   !$omp end parallel do
 end subroutine whole_space_loop
@@ -257,13 +225,14 @@ subroutine bottom_angle_loop(mat, indices, ddx, ddy)
   end do
 end subroutine bottom_angle_loop
 
-subroutine gen_matrix(mat)
+subroutine gen_matrix(mat, num_threads)
   type(rte_mat) mat
   type(index_list) indices
+  integer num_threads
 
   call indices%init()
 
-  call whole_space_loop(mat, indices)
+  call whole_space_loop(mat, indices, num_threads)
   ! call surface_space_loop(mat, indices)
   ! call interior_space_loop(mat, indices)
   ! call bottom_space_loop(mat, indices)

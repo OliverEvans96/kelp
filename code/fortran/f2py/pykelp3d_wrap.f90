@@ -142,7 +142,7 @@ contains
       ! Set boundary condition
       call mat%init(grid, iops)
       call mat%set_bc(bc)
-      call gen_matrix(mat)
+      call gen_matrix(mat, num_threads)
 
       ! Set solver options
       call mat%set_solver_opts(lis_opts)
@@ -416,7 +416,7 @@ contains
       ! Set boundary condition
       call mat%init(grid, iops)
       call mat%set_bc(bc)
-      call gen_matrix(mat)
+      call gen_matrix(mat, num_threads)
 
       ! Set solver options
       call mat%set_solver_opts(lis_opts)
