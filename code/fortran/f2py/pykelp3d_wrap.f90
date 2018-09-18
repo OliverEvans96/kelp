@@ -59,8 +59,8 @@ contains
        a_w, a_k, b, num_vsf, vsf_angles, vsf_vals, &
        theta_s, phi_s, I0, decay, &
        p_kelp, radiance, irradiance, &
-       num_scatters, fd_flag, lis_opts, &
-       lis_iter, lis_time, lis_resid, num_threads)
+       num_scatters, num_threads, fd_flag, &
+       lis_opts, lis_iter, lis_time, lis_resid)
 
     integer, intent(in) :: nx, ny, nz, ntheta, nphi
     double precision, intent(in) :: xmin, xmax, ymin, ymax, zmin, zmax
@@ -73,6 +73,7 @@ contains
     double precision, dimension(nx, ny, nz), intent(inout) :: irradiance
 
     integer, intent(in) :: num_scatters
+    integer, intent(in) :: num_threads
     logical, intent(in) :: fd_flag
     character*(*), intent(in) :: lis_opts
 
@@ -85,7 +86,6 @@ contains
     type(light_state) light
     type(boundary_condition) bc
     integer k
-    integer num_threads
 
     double precision, dimension(:,:,:,:), allocatable :: source
 
@@ -200,8 +200,8 @@ contains
        ntheta, nphi, &
        b, abs_func, source_func, source_expansion_func, bc_func, vsf_func, &
        radiance, irradiance, &
-       num_scatters, fd_flag, lis_opts, &
-       lis_iter, lis_time, lis_resid, num_threads)
+       num_scatters, num_threads, fd_flag, &
+       lis_opts, lis_iter, lis_time, lis_resid)
     integer, intent(in) :: nx, ny, nz, ntheta, nphi
     double precision, intent(in) :: xmin, xmax, ymin, ymax, zmin, zmax
 
@@ -212,6 +212,7 @@ contains
     double precision, dimension(nx, ny, nz), intent(inout) :: irradiance
 
     integer, intent(in) :: num_scatters
+    integer, intent(in) :: num_threads
     logical, intent(in) :: fd_flag
     character*(*), intent(in) :: lis_opts
 
@@ -252,7 +253,6 @@ contains
     double precision, dimension(:), allocatable :: tmp_angular
     integer num_vsf, nomega
     integer n
-    integer num_threads
 
     ! The following line is an important f2py directive,
     ! not a comment.
@@ -260,6 +260,11 @@ contains
 
     ! INIT GRID
     write(*,*) 'Grid'
+    write(*,*) 'nx =', nx
+    write(*,*) 'ny =', ny
+    write(*,*) 'nz =', nz
+    write(*,*) 'ntheta =', ntheta
+    write(*,*) 'nphi =', nphi
     call grid%set_bounds(xmin, xmax, ymin, ymax, zmin, zmax)
     call grid%set_num(nx, ny, nz, ntheta, nphi)
     call grid%init()
@@ -291,6 +296,26 @@ contains
 
     allocate(tmp_spatial(grid%x%num, grid%y%num, grid%z%num))
     allocate(tmp_angular(grid%angles%nomega))
+
+    ! Create spatial/angular grid variables
+    do i=1, grid%x%num
+       x(i,:,:,:) = grid%x%vals(i)
+       x1(i,:,:) = grid%x%vals(i)
+    end do
+    do j=1, grid%y%num
+       y(:,j,:,:) = grid%y%vals(j)
+       y1(:,j,:) = grid%y%vals(j)
+    end do
+    do k=1, grid%z%num
+       z(:,:,k,:) = grid%z%vals(k)
+       z1(:,:,k) = grid%z%vals(k)
+    end do
+    do p=1, grid%angles%nomega
+       theta(:,:,:,p) = grid%angles%theta_p(p)
+       phi(:,:,:,p) = grid%angles%phi_p(p)
+       theta1(p) = grid%angles%theta_p(p)
+       phi1(p) = grid%angles%phi_p(p)
+    end do
 
     write(*,*) 'BC'
     ! Allocate bc_grid & initialize
@@ -324,28 +349,7 @@ contains
     call vsf_func(tmp_vsf_cos, tmp_vsf_vals, num_vsf)
     write(*,*) 'vsf called'
     iops%vsf_vals = tmp_vsf_vals
-
     call iops%calc_vsf_on_grid()
-
-    ! Create spatial/angular grid variables
-    do i=1, grid%x%num
-       x(i,:,:,:) = grid%x%vals(i)
-       x1(i,:,:) = grid%x%vals(i)
-    end do
-    do j=1, grid%y%num
-       y(:,j,:,:) = grid%y%vals(j)
-       y1(:,j,:) = grid%y%vals(j)
-    end do
-    do k=1, grid%z%num
-       z(:,:,k,:) = grid%z%vals(k)
-       z1(:,:,k) = grid%z%vals(k)
-    end do
-    do p=1, grid%angles%nomega
-       theta(:,:,:,p) = grid%angles%theta_p(p)
-       phi(:,:,:,p) = grid%angles%phi_p(p)
-       theta1(p) = grid%angles%theta_p(p)
-       phi1(p) = grid%angles%phi_p(p)
-    end do
 
     ! Calculate absorption coefficient
     ! and source term on discrete grids

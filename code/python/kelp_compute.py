@@ -283,15 +283,13 @@ def kelp_calculate(a_water, b, ns, nz, na, kelp_dist, num_scatters, fd_flag, lis
         fd_flag, lis_opts
     )
 
-
-def solve_rte_with_callbacks_full(ns, nz, ntheta, nphi, rope_spacing, zmax, b, sol_expr, abs_expr, source_expr, bc_expr, vsf_expr, param_dict, num_scatters, fd_flag, lis_opts):
-    # TODO: num_cores doesn't do anything yet.
-
+def solve_rte_with_callbacks_full(ns, nz, ntheta, nphi, rope_spacing, zmax, b, sol_expr, abs_expr, source_expr, bc_expr, vsf_expr, param_dict, num_scatters, num_threads, fd_flag, lis_opts):
     from kelp3d_objs import f90
     import numpy as np
     from datetime import datetime
     import time
     import sympy as sp
+    import multiprocessing
 
     # Get symbolic expressions for callbacks as strings
     space = sp.var('x, y, z')
@@ -322,6 +320,10 @@ def solve_rte_with_callbacks_full(ns, nz, ntheta, nphi, rope_spacing, zmax, b, s
     vsf_sym = mms.symify(vsf_expr, delta, **param_dict)
 
     print("sol_expr: {}".format(sol_expr))
+    print("source_expr: {}".format(source_expr))
+    print("abs_expr: {}".format(abs_expr))
+    print("bc_expr: {}".format(bc_expr))
+    print("vsf_expr: {}".format(vsf_expr))
     print("param_dict: {}".format(param_dict))
 
     # Convert sympy functions to numpy functions
@@ -381,7 +383,7 @@ def solve_rte_with_callbacks_full(ns, nz, ntheta, nphi, rope_spacing, zmax, b, s
         ntheta, nphi,
         b, abs_func_N, source_func_N, source_expansion_N, bc_func_N, vsf_func_N,
         rad, irrad,
-        num_scatters, fd_flag, lis_opts,
+        num_scatters, num_threads, fd_flag, lis_opts,
         lis_iter, lis_time, lis_resid
     )
 
@@ -437,8 +439,9 @@ def solve_rte_with_callbacks_full(ns, nz, ntheta, nphi, rope_spacing, zmax, b, s
 @ru.run_decorator
 def solve_rte_with_callbacks(ns, nz, ntheta, nphi, rope_spacing, zmax, b, sol_expr, abs_expr, source_expr, bc_expr, vsf_expr, param_dict, num_scatters, fd_flag):
     lis_opts = '-i gmres -restart 100 -maxiter 5000'
+    num_threads = multiprocessing.cpu_count()
 
-    return solve_rte_with_callbacks_full(ns, nz, ntheta, nphi, rope_spacing, zmax, b, sol_expr, abs_expr, source_expr, bc_expr, vsf_expr, param_dict, num_scatters, fd_flag, lis_opts)
+    return solve_rte_with_callbacks_full(ns, nz, ntheta, nphi, rope_spacing, zmax, b, sol_expr, abs_expr, source_expr, bc_expr, vsf_expr, param_dict, num_scatters, num_threads, fd_flag, lis_opts)
 
 
 ## Study Functions ##
