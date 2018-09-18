@@ -6,6 +6,7 @@ Functions related to SQLite and NetCDF.
 import functools
 import inspect
 import itertools as it
+import json
 import os
 import re
 import sqlite3
@@ -18,6 +19,8 @@ import time
 import ipyparallel as ipp
 import netCDF4 as nc
 import numpy as np
+import sympy as sp
+from sympy.parsing.sympy_parser import parse_expr
 
 ## Misc. utils ##
 
@@ -211,6 +214,34 @@ def create_db_run_table(conn, table_name, prefix='.'):
 
     return create_db_generic_table_from_tuple(conn, table_name, columns, prefix='.')
 
+def run_equal_to_db_row(run_dict, db_row_dict):
+    # Check each function parameter
+    # (assume they have the same names as db columns),
+    # only need to check params in signature since
+    # therer are probably more db columns than parameters.
+    for param, run_val in run_dict.items():
+        db_val = db_row_dict[param]
+
+        parsed_db_val = db_val
+        if isinstance(db_val, str):
+            if isinstance(run_val, dict):
+                parsed_db_val = json.loads(db_val)
+                is_equal = (parsed_db_val == run_val)
+            elif isinstance(run_val, sp.Expr):
+                parsed_db_val = parse_expr(
+                    db_val,
+                    local_dict={'gamma': sp.Symbol('gamma')}
+                )
+                is_equal = (0 == sp.expand(run_val - parsed_db_val))
+        else:
+            is_equal = (parsed_db_val == run_val)
+
+        # Not a match if db value doesn't equal run value
+        if not is_equal:
+            return False
+
+    return True
+
 def run_not_present(completed_run_list, run_func, run_args, run_kwargs):
     """
     Check whether run has been completed already by checking
@@ -222,31 +253,15 @@ def run_not_present(completed_run_list, run_func, run_args, run_kwargs):
 
     # Assume this is the first time
     # until proven otherwise
-    run_present = False
 
     # Check each run already recorded
     # Should only be one per file, but just in case
     for row_dict in completed_run_list:
-        # Assume row matches until
-        # a difference is found
-        row_found = True
+        if run_equal_to_db_row(run_dict, row_dict):
+            return True
 
-        # Check each function parameter
-        # (assume they have the same names as db columns),
-        # only need to check params in signature since
-        # therer are probably more db columns than parameters.
-        for param, run_val in run_dict.items():
-            # Not a match if db value doesn't equal run value
-            if row_dict[param] != run_val:
-                row_found = False
-                break
-
-        # Stop looking through rows if we found a match
-        if row_found:
-            run_present = True
-            break
-
-    return not run_present
+    print("Not present.")
+    return False
 
 def get_completed_run_list(study_dir):
     """
@@ -504,8 +519,6 @@ def study_decorator(study_func):
                 print_call(run_func, run_args, appended_run_kwargs)
 
             print()
-
-        # TODO: I don't think this acually works
 
         # Once all functions have run, combine the results
         def wait_and_combine():
