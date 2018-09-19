@@ -34,7 +34,7 @@ $(lisobj):
 lis: $(lisobj)
 
 # Fortran Compiler
-FC=ftn
+FC=gfortran
 # HDF5 Fortan Compiler
 H5FC=h5fc
 # MPI Fortran Compiler
