@@ -125,7 +125,7 @@ $(jtest_inc): %.so: $(JTEST)/%.f90
 # For actually importing in python
 $(f2py_targets):
 # TODO: This is sloppy & adds patchelf (Nix) dependency
-	f2py -c $^ -m $@ --f90flags="$(F2PYFLAGS)" -llis -lm -L$(LIB)/../lib -I$(INC)
+	f2py -c $^ -m $@ --f90flags="$(F2PYFLAGS)" -lgomp -llis -lm -L$(LIB)/../lib -I$(INC)
 	patchelf --set-rpath $(LIB) $(PWD)/$@.*.so
 	rm -f $(F2PY_INC)/$@.*.so
 	ln -s $(PWD)/$@.*.so $(F2PY_INC)
