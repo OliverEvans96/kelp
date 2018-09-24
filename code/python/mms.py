@@ -9,7 +9,7 @@ from IPython.display import display
 
 import discrete_plot
 
-from fortran_wrappers.light_utils_wrap import light_utils_wrap as light_utils
+#from fortran_wrappers.light_utils_wrap import light_utils_wrap as light_utils
 
 space = sp.var('x, y, z')
 x, y, z = space
