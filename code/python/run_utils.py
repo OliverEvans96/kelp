@@ -256,12 +256,12 @@ def run_not_present(completed_run_list, run_func, run_args, run_kwargs):
 
     # Check each run already recorded
     # Should only be one per file, but just in case
+    present = False
     for row_dict in completed_run_list:
         if run_equal_to_db_row(run_dict, row_dict):
-            return True
+            present = True
 
-    print("Not present.")
-    return False
+    return not present
 
 def get_completed_run_list(study_dir):
     """
