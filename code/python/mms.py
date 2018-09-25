@@ -270,7 +270,12 @@ def series_expr(expr, n):
     # Leave other types alone (e.g. floats for constant expressions)
     else:
         series = expr
-    return sp.Poly(series, b).all_coeffs()[::-1]
+    coefs = sp.Poly(series, b).all_coeffs()[::-1]
+    # If expr doesn't depend on b, this will just be a list
+    # with one item, but we need a list with n + 1 items.
+    # So we'll add some zeros if need be.
+    coefs_list = [coefs[i] if i < len(coefs) else 0 for i in range(n+1)]
+    return coefs_list
 
 def gen_series_N(expr, N, **param_vals):
     terms = [

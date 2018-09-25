@@ -306,13 +306,6 @@ def solve_rte_with_callbacks_full(ns, nz, ntheta, nphi, rope_spacing, zmax, b, s
     # Convert parameter values dictionary to string
     param_dict_str = json.dumps(param_dict)
 
-    # Convert expressions to sympy functions
-    sol_sym = mms.symify(sol_expr, *space, *angle, **param_dict)
-    source_sym = mms.symify(source_expr, *space, *angle, **param_dict)
-    abs_sym = mms.symify(abs_expr, *space, **param_dict)
-    bc_sym = mms.symify(bc_expr, *angle, **param_dict)
-    vsf_sym = mms.symify(vsf_expr, delta, **param_dict)
-
     print("sol_expr: {}".format(sol_expr))
     print("source_expr: {}".format(source_expr))
     print("abs_expr: {}".format(abs_expr))
