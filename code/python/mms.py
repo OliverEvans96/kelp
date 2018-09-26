@@ -187,6 +187,75 @@ def expr_to_num(expr, *args, **subs):
 
     return wrapper
 
+def is_const(expr):
+    """
+    Determine whether expr is either
+    a python scalar or a constant
+    sympy expression.
+
+    Ideally would check expr.is_constant(),
+    but that takes way too long sometimes.
+    """
+    if isinstance(expr, sp.Expr):
+        if not expr.is_constant():
+        #if len(expr.free_symbols) > 0:
+            return False
+    return True
+
+def expr_to_theano(expr, ndims, *args, **subs):
+    from sympy.printing.theanocode import theano_function
+
+    f_sym = sp.lambdify(
+        args,
+        subs_dict(expr, subs),
+        modules=("sympy",)
+    )
+
+    subbed_expr = subs_dict(expr, subs)
+    dims = {
+        arg: ndims
+        for i, arg in enumerate(args)
+    }
+
+    dtypes = {
+        arg: 'float64'
+        for arg in args
+    }
+
+    ph = sp.Symbol('PLACEHOLDER')
+    # Compile the function with the dummpy var.
+    f_th = theano_function(
+        [ph, *args],
+        [ph+subbed_expr],
+        # If args is longer than grid, repeat last dim in grid
+        # e.g. theta, phi share a dimension (p)
+        # Five args, but only four dimensions
+        dims={ph: ndims, **dims},
+        dtypes={ph: 'float64', **dtypes},
+        on_unused_input='ignore'
+    )
+
+    # Set placeholder to zero and
+    # broadcast before giving to theano
+    @fu.wraps(f_sym)
+    def f_wrap(*inner_args):
+        # Broadcast in case inner_args
+        # are not already broadcasted.
+        # If they are, that's fine too.
+        bcast_shape = np.shape(sum(inner_args))
+        bcast_args = [
+            np.broadcast_to(arg, bcast_shape)
+            for arg in inner_args
+        ]
+        print("f_th_wrap got args:")
+        for i, inner_arg in enumerate(inner_args):
+            print("var {}: type={}, shape={}".format(i, type(inner_arg), np.shape(inner_arg)))
+            print("bcast var {}: type={}, shape={}".format(i, type(bcast_args[i]), np.shape(bcast_args[i])))
+        phn = np.zeros_like(bcast_args[0])
+        return f_th(phn, *bcast_args)
+
+    return f_wrap
+
 def sym_to_num(fun, *args):
     """
     Convert sympy function to numpy function,

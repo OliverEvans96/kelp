@@ -306,6 +306,7 @@ def solve_rte_with_callbacks_full(ns, nz, ntheta, nphi, rope_spacing, zmax, b, s
     # Convert parameter values dictionary to string
     param_dict_str = json.dumps(param_dict)
 
+    print("tttest")
     print("sol_expr: {}".format(sol_expr))
     print("source_expr: {}".format(source_expr))
     print("abs_expr: {}".format(abs_expr))
@@ -313,12 +314,20 @@ def solve_rte_with_callbacks_full(ns, nz, ntheta, nphi, rope_spacing, zmax, b, s
     print("vsf_expr: {}".format(vsf_expr))
     print("param_dict: {}".format(param_dict))
 
+    grid = mms.gen_grid(ns, nz, ntheta, nphi, rope_spacing, zmax)
+
     # Convert sympy functions to numpy functions
-    sol_func_N = mms.expr_to_num(sol_expr, *space, *angle, **param_dict)
-    source_func_N = mms.expr_to_num(source_expr, *space, *angle, **param_dict)
-    abs_func_N = mms.expr_to_num(abs_expr, *space, **param_dict)
-    bc_func_N = mms.expr_to_num(bc_expr, *angle, **param_dict)
-    vsf_func_N = mms.expr_to_num(vsf_expr, delta, **param_dict)
+    sol_func_N = mms.expr_to_theano(sol_expr, 4, *space, *angle, **param_dict)
+    source_func_N = mms.expr_to_theano(source_expr, 4, *space, *angle, **param_dict)
+    abs_func_N = mms.expr_to_theano(abs_expr, 3, *space, **param_dict)
+    bc_func_N = mms.expr_to_theano(bc_expr, 1, *angle, **param_dict)
+    vsf_func_N = mms.expr_to_theano(vsf_expr, 1, delta, **param_dict)
+
+    print('abs_expr args: {}'.format(abs_func_N.__code__.co_argcount))
+    print('sol_expr args: {}'.format(sol_func_N.__code__.co_argcount))
+    print('source_expr args: {}'.format(source_func_N.__code__.co_argcount))
+    print('bc_expr args: {}'.format(bc_func_N.__code__.co_argcount))
+    print('vsf_expr args: {}'.format(vsf_func_N.__code__.co_argcount))
 
     # Calculate source expansion
     source_expansion_N = mms.gen_series_N(source_expr, num_scatters, **param_dict)
@@ -356,7 +365,6 @@ def solve_rte_with_callbacks_full(ns, nz, ntheta, nphi, rope_spacing, zmax, b, s
     lis_resid = np.array([0], dtype=float)
 
     # Calculate true light field
-    grid = mms.gen_grid(ns, nz, ntheta, nphi, rope_spacing, zmax)
     true_rad = sol_func_N(*grid)
 
     # Start timer
@@ -424,9 +432,8 @@ def solve_rte_with_callbacks_full(ns, nz, ntheta, nphi, rope_spacing, zmax, b, s
     return scalar_params, results
 
 @ru.run_decorator
-def solve_rte_with_callbacks(ns, nz, ntheta, nphi, rope_spacing, zmax, b, sol_expr, abs_expr, source_expr, bc_expr, vsf_expr, param_dict, num_scatters, fd_flag):
+def solve_rte_with_callbacks(ns, nz, ntheta, nphi, rope_spacing, zmax, b, sol_expr, abs_expr, source_expr, bc_expr, vsf_expr, param_dict, num_scatters, num_threads, fd_flag):
     lis_opts = '-i gmres -restart 100 -maxiter 5000'
-    num_threads = multiprocessing.cpu_count()
 
     return solve_rte_with_callbacks_full(ns, nz, ntheta, nphi, rope_spacing, zmax, b, sol_expr, abs_expr, source_expr, bc_expr, vsf_expr, param_dict, num_scatters, num_threads, fd_flag, lis_opts)
 
@@ -665,7 +672,7 @@ def verify_compute(ns_list, nz_list, ntheta_list, nphi_list, rope_spacing, zmax,
     return func_list, args_list, kwargs_list
 
 @ru.study_decorator
-def verify_asym_compute(b_list, num_scatters_list, ns, nz, ntheta, nphi, rope_spacing, zmax, sol_expr, abs_expr, source_expr, bc_expr, vsf_expr, param_dict):
+def verify_asym_compute(b_list, num_scatters_list, num_threads, ns, nz, ntheta, nphi, rope_spacing, zmax, sol_expr, abs_expr, source_expr, bc_expr, vsf_expr, param_dict):
     """
     Maintain constant grid,
     loop over:
@@ -689,7 +696,8 @@ def verify_asym_compute(b_list, num_scatters_list, ns, nz, ntheta, nphi, rope_sp
         'source_expr': source_expr,
         'bc_expr': bc_expr,
         'vsf_expr': vsf_expr,
-        'fd_flag': fd_flag
+        'fd_flag': fd_flag,
+        'num_threads': num_threads
     }
 
     # Actual calling will be performed by decorator.
