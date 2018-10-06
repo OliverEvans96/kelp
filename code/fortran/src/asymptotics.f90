@@ -123,7 +123,7 @@ module asymptotics
     do n=1, num_scatters
        write(*,*) 'scatter #', n
        call calculate_scatter_source(grid, iops, rad_scatter, source, scatter_integral, num_threads)
-       source = source + bb**n * source_expansion(:,:,:,:,n+1)
+       source = source + source_expansion(:,:,:,:,n+1)
        call advect_light(grid, iops, source, rad_scatter, path_length, path_spacing, a_tilde, gn, bc_flag, num_threads)
 
        radiance = radiance + bb**n * rad_scatter
