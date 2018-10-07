@@ -90,7 +90,7 @@ contains
     double precision, dimension(:,:,:,:), allocatable :: source
 
     ! INIT GRID
-    write(*,*) 'Grid'
+    write(*,*) 'Grid', nx, ny, nz, ntheta, nphi
     call grid%set_bounds(xmin, xmax, ymin, ymax, zmin, zmax)
     call grid%set_num(nx, ny, nz, ntheta, nphi)
     call grid%init()
@@ -127,8 +127,14 @@ contains
 
     write(*,*) 'BC'
     call bc%init(grid, theta_s, phi_s, decay, I0)
+    write(*,*) 'theta_s =', theta_s
+    write(*,*) 'phi_s =', phi_s
+    write(*,*) 'decay =', decay
+    write(*,*) 'I0 =', I0
 
-    !write(*,*) 'bc_grid = ', bc%bc_grid
+    write(*,*) 'min bc =', minval(bc%bc_grid)
+    write(*,*) 'max bc =', maxval(bc%bc_grid)
+    write(*,*) 'mean bc =', sum(bc%bc_grid)/size(bc%bc_grid)
 
     write(*,*) 'Calculate asymptotic light field'
     call calculate_asymptotic_light_field(&

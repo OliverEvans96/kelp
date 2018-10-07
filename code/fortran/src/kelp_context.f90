@@ -86,8 +86,14 @@ contains
     double precision theta_s, phi_s, decay, I0
     integer p
     double precision theta, phi
+    double precision bc_norm
+    double precision, allocatable, dimension(:) :: whole_bc_grid
+    integer nomega
 
-    allocate(bc%bc_grid(grid%angles%nomega/2))
+    nomega = grid%angles%nomega
+
+    allocate(bc%bc_grid(nomega/2))
+    allocate(whole_bc_grid(nomega))
 
     bc%theta_s = theta_s
     bc%phi_s = phi_s
@@ -95,16 +101,21 @@ contains
     bc%I0 = I0
 
     ! Only set BC for downwelling light
-    do p=1, grid%angles%nomega/2
+    do p=1, nomega/2
        theta = grid%angles%theta_p(p)
        phi = grid%angles%phi_p(p)
        bc%bc_grid(p) = bc%bc_gaussian(theta, phi)
     end do
 
     ! Normalize
-    bc%bc_grid = bc%I0 * bc%bc_grid &
-         / grid%angles%integrate_points(bc%bc_grid)
-
+    ! Use `whole_bc_grid` because angular integration
+    ! subroutine requires all angles to have values,
+    ! but `bc%bc_grid` only has downwelling values.
+    ! Use zeros for upwelling.
+    whole_bc_grid(1:nomega/2) = bc%bc_grid
+    whole_bc_grid(nomega/2+1:nomega) = 0
+    bc_norm = grid%angles%integrate_points(whole_bc_grid)
+    bc%bc_grid = bc%I0 * bc%bc_grid / bc_norm
   end subroutine bc_init
 
   subroutine bc_deinit(bc)
