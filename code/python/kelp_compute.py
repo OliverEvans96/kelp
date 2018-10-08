@@ -278,6 +278,65 @@ def kelp_calculate_raw(a_water, b, ns, nz, na, kelp_dist, num_scatters, fd_flag,
         fd_flag, lis_opts
     )
 
+kelp_calculate = ru.run_decorator(kelp_calculate_raw)
+
+@ru.run_decorator
+def kelp_calculate_scalar_metrics(a_water, b, ns, nz, na, kelp_dist, num_scatters, fd_flag, lis_opts='', num_threads=None):
+    """
+    kelp_calculate, but also compute scalar convergence metrics:
+    - total flux
+    - perc_irrad at several depths (interpolated)
+      - 1m
+      - 3m
+      - 8m
+    """
+
+    scalar_params, results = kelp_calculate_raw(a_water, b, ns, nz, na, kelp_dist, num_scatters, fd_flag, lis_opts, num_threads)
+
+    zmin = 0
+    zmax = scalar_params['zmax']
+    dz = (zmax - zmin) / nz
+    z_centers = zmin + dz * (np.arange(nz) + 0.5)
+
+    ft = scalar_params['ft']
+    rope_spacing = scalar_params['rope_spacing']
+    p_kelp = results['p_kelp']
+    irrad = results['irrad']
+
+    perceived_irrad = ka.calculate_perceived_irrad(p_kelp, irrad)
+    _, _, _, flux = ka.calculate_flux(perceived_irrad, p_kelp, ft, rope_spacing, zmin, zmax)
+
+    pi_interp = interp1d(
+        z_centers,
+        perceived_irrad,
+        fill_value='extrapolate'
+    )
+
+    pi_1 = float(pi_interp(1))
+    pi_3 = float(pi_interp(3))
+    pi_8 = float(pi_interp(8))
+
+    scalar_params = {
+        **scalar_params,
+        'flux': flux,
+        'pi_1': pi_1,
+        'pi_3': pi_3,
+        'pi_8': pi_8
+    }
+
+
+    # sl = []
+    # sl.append("kcsm: scalar_params")
+    # for k, v in scalar_params.items():
+    #     sl.append("{} ({}) = {}".format(k, type(v), v))
+    # raise ValueError('\n'.join(sl))
+    # print("kcsm: results")
+    # for k, v in results.items():
+    #     print("{} ({})".format(k, type(v)))
+
+
+    return scalar_params, results
+
 def solve_rte_with_callbacks_full(ns, nz, ntheta, nphi, rope_spacing, zmax, b, sol_expr, abs_expr, source_expr, bc_expr, vsf_expr, param_dict, num_scatters, num_threads, fd_flag, lis_opts):
     from kelp3d_objs import f90
     import numpy as np
@@ -1071,6 +1130,25 @@ def verify_kelp_single_space_compute(a_water, b, ns_list, na, kelp_dist, num_sca
         run_args = [a_water, b, ns, nz, na, kelp_dist, num_scatters, fd_flag]
         run_kwargs = {'lis_opts': '', 'num_threads': num_threads}
         func_list.append(kelp_calculate)
+        args_list.append(run_args)
+        kwargs_list.append(run_kwargs)
+
+    return func_list, args_list, kwargs_list
+
+@ru.study_decorator
+def verify_kelp_single_space_compute_scalar_metrics(a_water, b, ns_list, na, kelp_dist, num_scatters, fd_flag, lis_opts=None, num_threads=None):
+
+    if not lis_opts:
+        lis_opts = '-i gmres -restart 100'
+
+    func_list = []
+    args_list = []
+    kwargs_list = []
+    for ns in ns_list:
+        nz = ns
+        run_args = [a_water, b, ns, nz, na, kelp_dist, num_scatters, fd_flag]
+        run_kwargs = {'lis_opts': '', 'num_threads': num_threads}
+        func_list.append(kelp_calculate_scalar_metrics)
         args_list.append(run_args)
         kwargs_list.append(run_kwargs)
 
