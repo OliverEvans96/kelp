@@ -324,6 +324,14 @@ def kelp_calculate_scalar_metrics(a_water, b, ns, nz, na, kelp_dist, num_scatter
         'pi_8': pi_8
     }
 
+    results = {
+        **results,
+        'flux': flux,
+        'pi_1': pi_1,
+        'pi_3': pi_3,
+        'pi_8': pi_8
+    }
+
 
     # sl = []
     # sl.append("kcsm: scalar_params")
