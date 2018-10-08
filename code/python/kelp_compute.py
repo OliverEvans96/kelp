@@ -27,12 +27,14 @@ import functools
 # signature of wrapper for the sake of f2py
 # see https://hynek.me/articles/decorators/
 import boltons.funcutils as fu
+from scipy.interpolate import interp1d
 
 matplotlib.use('Agg')
 
 # local
-import run_utils as ru
+import kelp_analyze as ka
 import mms
+import run_utils as ru
 
 ## Kelp-specific funcs ##
 
@@ -72,8 +74,7 @@ def get_kelp_dist(kelp_dist, max_length, zmin, zmax, nz):
 
 ## Run Functions ##
 
-def kelp_calculate_full(absorptance_kelp, a_water, b, ns, nz, na, num_dens, kelp_dist, fs, fr, ft, max_length, length_std, zmax, rope_spacing, I0, phi_s, theta_s, decay, num_cores, num_scatters, fd_flag, lis_opts):
-    # TODO: num_cores doesn't do anything yet.
+def kelp_calculate_full(absorptance_kelp, a_water, b, ns, nz, na, num_dens, kelp_dist, fs, fr, ft, max_length, length_std, zmax, rope_spacing, I0, phi_s, theta_s, decay, num_threads, num_scatters, fd_flag, lis_opts):
 
     from kelp3d_objs import f90
     import numpy as np
@@ -169,14 +170,14 @@ def kelp_calculate_full(absorptance_kelp, a_water, b, ns, nz, na, num_dens, kelp
         vsf_angles, vsf_vals,
         theta_s, phi_s, I0, decay,
         p_kelp, rad, irrad,
-        num_scatters, fd_flag, lis_opts,
+        num_scatters, num_threads, fd_flag, lis_opts,
         lis_iter, lis_time, lis_resid
     )
 
     # End timer
     toc = time.time()
     date = datetime.now().ctime()
-    git_commit = get_git_commit_hash()
+    git_commit = ru.get_git_commit_hash()
     compute_time = toc - tic
 
     # Extract values from arrays
@@ -209,7 +210,7 @@ def kelp_calculate_full(absorptance_kelp, a_water, b, ns, nz, na, num_dens, kelp
         'phi_s': phi_s,
         'theta_s': theta_s,
         'decay': decay,
-        'num_cores': num_cores,
+        'num_threads': num_threads,
         'num_scatters': num_scatters,
         'fd_flag': fd_flag,
         'lis_opts': lis_opts,
@@ -229,8 +230,7 @@ def kelp_calculate_full(absorptance_kelp, a_water, b, ns, nz, na, num_dens, kelp
 
     return scalar_params, results
 
-@ru.run_decorator
-def kelp_calculate(a_water, b, ns, nz, na, kelp_dist, num_scatters, fd_flag, lis_opts='', num_cores=None):
+def kelp_calculate_raw(a_water, b, ns, nz, na, kelp_dist, num_scatters, fd_flag, lis_opts='', num_threads=None):
     """kelp_calculate_full, but with some sensible defaults, saving results to .db/.nc due to wrapper"""
 
     from kelp3d_objs import f90
@@ -244,6 +244,7 @@ def kelp_calculate(a_water, b, ns, nz, na, kelp_dist, num_scatters, fd_flag, lis
     # 150 individuals/meter
     num_dens = 120
 
+    # No data - just estimate
     fs = 0.5
     # Handa figure 5
     fr = 5.0
@@ -264,8 +265,8 @@ def kelp_calculate(a_water, b, ns, nz, na, kelp_dist, num_scatters, fd_flag, lis
     theta_s = 0.0
     decay = 1.0
 
-    if not num_cores:
-        num_cores = multiprocessing.cpu_count()
+    if not num_threads:
+        num_threads = multiprocessing.cpu_count()
 
     return kelp_calculate_full(
         absorptance_kelp, a_water, b,
@@ -273,7 +274,7 @@ def kelp_calculate(a_water, b, ns, nz, na, kelp_dist, num_scatters, fd_flag, lis
         fs, fr, ft, max_length, length_std,
         zmax, rope_spacing,
         I0, phi_s, theta_s, decay,
-        num_cores, num_scatters,
+        num_threads, num_scatters,
         fd_flag, lis_opts
     )
 
@@ -415,6 +416,7 @@ def solve_rte_with_callbacks_full(ns, nz, ntheta, nphi, rope_spacing, zmax, b, s
         'lis_iter': lis_iter,
         'lis_time': lis_time,
         'lis_resid': lis_resid,
+        'num_threads': num_threads,
         'sol_expr': sol_expr_str,
         'abs_expr': abs_expr_str,
         'source_expr': source_expr_str,
@@ -569,7 +571,7 @@ def asymptotics_study_compute(a_water_list, b_list, kelp_dist, fd_ns, fd_nz, fd_
     return func_list, args_list, kwargs_list
 
 @ru.study_decorator
-def verify_single_space_compute(ns_list, ntheta, nphi, rope_spacing, zmax, b, sol_expr, abs_expr, source_expr, bc_expr, vsf_expr, num_scatters, fd_flag, param_dict):
+def verify_single_space_compute(ns_list, ntheta, nphi, rope_spacing, zmax, b, sol_expr, abs_expr, source_expr, bc_expr, vsf_expr, num_scatters, num_threads, fd_flag, param_dict):
     """
     Maintain constant ntheta, nphi while looping
     over spatial resolutions together
@@ -580,7 +582,7 @@ def verify_single_space_compute(ns_list, ntheta, nphi, rope_spacing, zmax, b, so
     const_args = (
         rope_spacing, zmax, b,
         sol_expr, abs_expr, source_expr, bc_expr, vsf_expr,
-        param_dict, num_scatters, fd_flag
+        param_dict, num_scatters, num_threads, fd_flag
     )
 
     # Actual calling will be performed by decorator.
@@ -726,6 +728,11 @@ def verify_asym_compute(b_list, num_scatters_list, num_threads, ns, nz, ntheta, 
 
 @ru.study_decorator
 def verify_asym_noscat_1d_compute(nz_list, rope_spacing, zmax, abs_expr, bc_expr, param_dict):
+    """
+    Given symbolic expressions, calculate exact symbolic solution
+    and compare to asymptotic approximation for a list of nz values.
+    1D, b=0.
+    """
     ns = 1
     ntheta = 1
     nphi = 2
@@ -735,7 +742,7 @@ def verify_asym_noscat_1d_compute(nz_list, rope_spacing, zmax, abs_expr, bc_expr
     param_dict_copy = param_dict.copy()
     param_dict_copy['b'] = b
 
-    # Having trouble with normal integration
+    # Having trouble with normal symbolic integration
     # for some reason, so computing antiderivative
     # and evaluating manually
     abs_antideriv = sp.integrate(abs_expr, sp.Symbol('z'))
@@ -1051,7 +1058,7 @@ def verify_ss_asym_noscat_compute(ns_list, ntheta, nphi, abs_expr, source_expr, 
     return func_list, args_list, kwargs_list
 
 @ru.study_decorator
-def verify_kelp_single_space_compute(a_water, b, ns_list, na, kelp_dist, num_scatters, fd_flag, lis_opts=None, num_cores=None):
+def verify_kelp_single_space_compute(a_water, b, ns_list, na, kelp_dist, num_scatters, fd_flag, lis_opts=None, num_threads=None):
 
     if not lis_opts:
         lis_opts = '-i gmres -restart 100'
@@ -1062,7 +1069,7 @@ def verify_kelp_single_space_compute(a_water, b, ns_list, na, kelp_dist, num_sca
     for ns in ns_list:
         nz = ns
         run_args = [a_water, b, ns, nz, na, kelp_dist, num_scatters, fd_flag]
-        run_kwargs = {'lis_opts': '', 'num_cores': num_cores}
+        run_kwargs = {'lis_opts': '', 'num_threads': num_threads}
         func_list.append(kelp_calculate)
         args_list.append(run_args)
         kwargs_list.append(run_kwargs)
