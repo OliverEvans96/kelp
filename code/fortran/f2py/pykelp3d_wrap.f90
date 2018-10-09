@@ -359,11 +359,6 @@ contains
 
     ! Calculate absorption coefficient
     ! and source term on discrete grids
-    write(*,*) 'calling abs_func on x1, y1, z1, tmp_spatial'
-    write(*,*) 'x1 = ', x1
-    write(*,*) 'y1 = ', y1
-    write(*,*) 'z1 = ', z1
-    write(*,*) 'shape(tmp_spatial) = ', shape(tmp_spatial)
     call abs_func(x1, y1, z1, tmp_spatial, nx, ny, nz)
     write(*,*) 'abs called'
     iops%abs_grid = tmp_spatial
