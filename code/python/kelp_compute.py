@@ -238,7 +238,8 @@ def kelp_calculate_raw(a_water, b, ns, nz, na, kelp_dist, num_scatters, fd_flag,
     from datetime import datetime
     import time
 
-    absorptance_kelp = 0.7
+    # TODO: THIS IS PROBABLY WRONG
+    absorptance_kelp = 0.07
 
     # Broch 2013
     # 150 individuals/meter
