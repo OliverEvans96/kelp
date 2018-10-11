@@ -794,7 +794,7 @@ def verify_asym_compute(b_list, num_scatters_list, num_threads, ns, nz, ntheta, 
     return func_list, args_list, kwargs_list
 
 @ru.study_decorator
-def verify_asym_noscat_1d_compute(nz_list, rope_spacing, zmax, abs_expr, bc_expr, param_dict):
+def verify_asym_noscat_1d_compute(nz_list, num_threads, rope_spacing, zmax, abs_expr, bc_expr, param_dict):
     """
     Given symbolic expressions, calculate exact symbolic solution
     and compare to asymptotic approximation for a list of nz values.
@@ -836,6 +836,7 @@ def verify_asym_noscat_1d_compute(nz_list, rope_spacing, zmax, abs_expr, bc_expr
         'fd_flag': fd_flag,
         'b': b,
         'num_scatters': num_scatters,
+        'num_threads': num_threads,
         'param_dict': param_dict_copy
     }
 
@@ -1144,6 +1145,27 @@ def verify_kelp_single_space_compute(a_water, b, ns_list, na, kelp_dist, num_sca
     return func_list, args_list, kwargs_list
 
 @ru.study_decorator
+def verify_kelp_1d_compute(a_water, b, nz_list, kelp_dist, num_scatters, fd_flag, lis_opts=None, num_threads=None):
+
+    if not lis_opts:
+        lis_opts = '-i gmres -restart 100'
+
+    ns = 1
+    na = 2
+
+    func_list = []
+    args_list = []
+    kwargs_list = []
+    for nz in nz_list:
+        run_args = [a_water, b, ns, nz, na, kelp_dist, num_scatters, fd_flag]
+        run_kwargs = {'lis_opts': '', 'num_threads': num_threads}
+        func_list.append(kelp_calculate)
+        args_list.append(run_args)
+        kwargs_list.append(run_kwargs)
+
+    return func_list, args_list, kwargs_list
+
+@ru.study_decorator
 def verify_kelp_single_space_compute_scalar_metrics(a_water, b, ns_list, na, kelp_dist, num_scatters, fd_flag, lis_opts=None, num_threads=None):
 
     if not lis_opts:
@@ -1154,6 +1176,27 @@ def verify_kelp_single_space_compute_scalar_metrics(a_water, b, ns_list, na, kel
     kwargs_list = []
     for ns in ns_list:
         nz = ns
+        run_args = [a_water, b, ns, nz, na, kelp_dist, num_scatters, fd_flag]
+        run_kwargs = {'lis_opts': '', 'num_threads': num_threads}
+        func_list.append(kelp_calculate_scalar_metrics)
+        args_list.append(run_args)
+        kwargs_list.append(run_kwargs)
+
+    return func_list, args_list, kwargs_list
+
+@ru.study_decorator
+def verify_kelp_1d_compute_scalar_metrics(a_water, b, nz_list, kelp_dist, num_scatters, fd_flag, lis_opts=None, num_threads=None):
+
+    if not lis_opts:
+        lis_opts = '-i gmres -restart 100'
+
+    ns = 1
+    na = 2
+
+    func_list = []
+    args_list = []
+    kwargs_list = []
+    for nz in nz_list:
         run_args = [a_water, b, ns, nz, na, kelp_dist, num_scatters, fd_flag]
         run_kwargs = {'lis_opts': '', 'num_threads': num_threads}
         func_list.append(kelp_calculate_scalar_metrics)
