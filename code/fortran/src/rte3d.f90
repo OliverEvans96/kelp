@@ -38,7 +38,6 @@ subroutine whole_space_loop(mat, indices, num_threads)
   do k=1, mat%grid%z%num
      do i=1, mat%grid%x%num
         do j=1, mat%grid%y%num
-           write(*,*) 'k =', k
            indices%k = k
            if(k .eq. 1) then
               angle_loop => surface_angle_loop
