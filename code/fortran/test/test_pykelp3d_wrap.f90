@@ -18,6 +18,7 @@ logical fd_flag
 character(len=256) :: lis_opts
 integer lis_iter
 double precision :: lis_time, lis_resid
+integer num_threads
 
 integer i, j, k, p
 
@@ -64,8 +65,9 @@ maxiter_inner = 100
 maxiter_outer = 100
 
 lis_opts = "-i gmres -restart 100 -tol 1e-4"
+num_threads = 32
 
-num_scatters = 1
+num_scatters = -1
 fd_flag = .true.
 
 do i=1, nx
@@ -85,7 +87,7 @@ call calculate_light_field( &
      a_w, a_k, b, num_vsf, vsf_angles, vsf_vals, &
      theta_s, phi_s, max_rad, decay, &
      p_kelp, radiance, irradiance, &
-     num_scatters, fd_flag, lis_opts, &
+     num_scatters, num_threads, fd_flag, lis_opts, &
      lis_iter, lis_time, lis_resid)
 
 !write(*,*) 'radiance =', radiance

@@ -61,7 +61,7 @@ F2PYFLAGS=-fPIC $(OPTFLAGS) # $(PFLAGS)
 TESTMODFLAGS=-shared -fPIC $(FFLAGS)
 # Export LD_LIBRARY_PATH for tests
 TESTEXP=export LD_LIBRARY_PATH=$(INC):$(LD_LIBRARY_PATH)
-TEST_FLAGS=-I/usr/include -L/usr/lib -lnetcdff
+TEST_FLAGS=-I/usr/include -L/usr/lib #-lnetcdff
 
 # All source files in each directory
 f90_src = $(wildcard $(SRC)/*.f90)
@@ -150,9 +150,9 @@ rte_core.o: utils.o
 sag.o: utils.o fastgl.o
 kelp_context.o: sag.o prob.o
 kelp3d.o: kelp_context.o
-rte_sparse_matrices.o: sag.o kelp_context.o mgmres.o $(lisobj)
+rte_sparse_matrices.o: sag.o kelp_context.o mgmres.o type_consts.o $(lisobj)
 light_context.o: sag.o rte_sparse_matrices.o
-rte3d.o: kelp_context.o rte_sparse_matrices.o light_context.o
+rte3d.o: kelp_context.o rte_sparse_matrices.o light_context.o type_consts.o
 asymptotics.o: kelp_context.o rte_sparse_matrices.o light_context.o
 #pykelp3d_wrap.o: kelp3d.o
 #pyrte3d_wrap.o: rte3d.o

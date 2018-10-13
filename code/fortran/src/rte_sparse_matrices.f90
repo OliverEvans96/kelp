@@ -2,6 +2,7 @@ module rte_sparse_matrices
 use sag
 use kelp_context
 use mgmres
+use type_consts
 !use hdf5_utils
 #include "lisf.h"
 implicit none
@@ -17,7 +18,7 @@ type rte_mat
    type(solver_opts) params
    integer nx, ny, nz, nomega
    integer i, j, k, p
-   integer nonzero, n_total
+   integer(index_kind) nonzero, n_total
    integer x_block_size, y_block_size, z_block_size, omega_block_size
 
    double precision, dimension(:), allocatable :: surface_vals
@@ -25,7 +26,7 @@ type rte_mat
    ! CSR format
    ! http://www.scipy-lectures.org/advanced/scipy_sparse/csr_matrix.html
    ! with LIS method 2 (LIS manual, p.19)
-   integer, dimension(:), allocatable :: ptr, col
+   integer(index_kind), dimension(:), allocatable :: ptr, col
    double precision, dimension(:), allocatable :: data
 
    ! Lis Matrix and vectors
@@ -82,7 +83,8 @@ interface
    subroutine solver_interface(n_total, nonzero, row, col, data, &
         sol, rhs, maxiter_outer, maxiter_inner, &
         tol_abs, tol_rel)
-     integer ::  n_total, nonzero
+     use type_consts
+     integer(index_kind) ::  n_total, nonzero
      integer, dimension(nonzero) :: row, col
      double precision, dimension(nonzero) :: data
      double precision, dimension(nonzero) :: sol
@@ -98,7 +100,7 @@ contains
     class(rte_mat) mat
     type(space_angle_grid) grid
     type(optical_properties) iops
-    integer nnz, n_total
+    integer(index_kind) nnz, n_total
 
     LIS_INTEGER comm_world
 
@@ -167,7 +169,7 @@ contains
 
   subroutine calculate_size(mat)
     class(rte_mat) mat
-    integer nx, ny, nz, nomega
+    integer(index_kind) nx, ny, nz, nomega
 
     nx = mat%grid%x%num
     ny = mat%grid%y%num
@@ -177,13 +179,15 @@ contains
     !mat%nonzero = nx * ny * ntheta * nphi * ( (nz-1) * (6 + ntheta * nphi) + 1)
     mat%nonzero = nx * ny * nomega * (nz * (nomega + 6) - 1)
     mat%n_total = nx * ny * nz * nomega
+    write(*,*) 'nnz = ', mat%nonzero
+    write(*,*) 'n_total = ', mat%n_total
 
     !mat%theta_block_size = 1
     !mat%phi_block_size = mat%theta_block_size * ntheta
     mat%omega_block_size = 1
-    mat%y_block_size = mat%omega_block_size * nomega
-    mat%x_block_size = mat%y_block_size * ny
-    mat%z_block_size = mat%x_block_size * nx
+    mat%y_block_size = int(mat%omega_block_size * nomega)
+    mat%x_block_size = int(mat%y_block_size * ny)
+    mat%z_block_size = int(mat%x_block_size * nx)
 
   end subroutine calculate_size
 
@@ -262,7 +266,7 @@ contains
     ! Assuming var ordering: z, x, y, omega
     class(rte_mat) mat
     integer i, j, k, p
-    integer ind
+    integer(index_kind) ind
 
     ind = (i-1) * mat%x_block_size + (j-1) * mat%y_block_size + &
          (k-1) * mat%z_block_size + p * mat%omega_block_size
@@ -271,7 +275,7 @@ contains
   subroutine mat_set_row(mat, ent, row_num)
     ! Start new row for CSR format
     class(rte_mat) mat
-    integer ent, row_num
+    integer(index_kind) ent, row_num
     ! 0-indexing for LIS
     mat%ptr(row_num) = ent - 1
   end subroutine mat_set_row
@@ -281,7 +285,7 @@ contains
     class(rte_mat) mat
     double precision val
     integer i, j, k, p
-    integer ent
+    integer(index_kind) ent
 
     ! LIS method 2 (LIS manual, p. 19) requires 0-indexing
     mat%col(ent) = mat%ind(i, j, k, p) - 1
@@ -296,7 +300,7 @@ contains
 
     class(rte_mat) mat
     double precision val
-    integer repeat_ent
+    integer(index_kind) repeat_ent
 
     ! Entry number where value is already stored
     mat%data(repeat_ent) = mat%data(repeat_ent) + val
@@ -305,7 +309,7 @@ contains
   subroutine mat_assign_rhs(mat, row_num, data)
     class(rte_mat) mat
     double precision data
-    integer row_num
+    integer(index_kind) row_num
 
     call lis_vector_set_value(LIS_INS_VALUE, row_num, data, mat%b, mat%ierr)
     if(mat%ierr .ne. 0) then
@@ -317,7 +321,7 @@ contains
   subroutine mat_add_rhs(mat, row_num, data)
     class(rte_mat) mat
     double precision data
-    integer row_num
+    integer(index_kind) row_num
 
     call lis_vector_set_value(LIS_ADD_VALUE, row_num, data, mat%b, mat%ierr)
     if(mat%ierr .ne. 0) then
@@ -359,7 +363,7 @@ contains
     double precision attenuation
     type(index_list) indices
     double precision aa, bb
-    integer repeat_ent
+    integer(index_kind) repeat_ent
 
     aa = mat%iops%abs_grid(indices%i, indices%j, indices%k)
     bb = mat%iops%scat
@@ -375,7 +379,7 @@ contains
     ! in the angular loop.
     class(rte_mat) mat
     type(index_list) indices
-    integer row_num
+    integer(index_kind) row_num
     double precision source_val
 
     source_val = mat%iops%source_grid(indices%i, indices%j, indices%k, indices%p)
@@ -388,7 +392,7 @@ contains
     double precision val, dx
     type(index_list) indices
     integer i, j, k, p
-    integer ent
+    integer(index_kind) ent
 
     i = indices%i
     j = indices%j
@@ -410,7 +414,7 @@ contains
     integer nx
     type(index_list) indices
     integer i, j, k, p
-    integer ent
+    integer(index_kind) ent
 
     i = indices%i
     j = indices%j
@@ -432,7 +436,7 @@ contains
     double precision val, dx
     type(index_list) indices
     integer i, j, k, p
-    integer ent
+    integer(index_kind) ent
 
     i = indices%i
     j = indices%j
@@ -453,7 +457,7 @@ contains
     double precision val, dy
     type(index_list) indices
     integer i, j, k, p
-    integer ent
+    integer(index_kind) ent
 
     i = indices%i
     j = indices%j
@@ -475,7 +479,7 @@ contains
     integer ny
     type(index_list) indices
     integer i, j, k, p
-    integer ent
+    integer(index_kind) ent
 
     i = indices%i
     j = indices%j
@@ -497,7 +501,7 @@ contains
     double precision val, dy
     type(index_list) indices
     integer i, j, k, p
-    integer ent
+    integer(index_kind) ent
 
     i = indices%i
     j = indices%j
@@ -518,7 +522,7 @@ contains
     double precision val, dz
     type(index_list) indices
     integer i, j, k, p
-    integer ent
+    integer(index_kind) ent
 
     i = indices%i
     j = indices%j
@@ -542,7 +546,7 @@ contains
     double precision val, val1, val2, val3, dz
     type(index_list) indices
     integer i, j, k, p
-    integer ent, repeat_ent
+    integer(index_kind) ent, repeat_ent
 
     i = indices%i
     j = indices%j
@@ -571,7 +575,7 @@ contains
     double precision val, val1, val2, val3, dz
     type(index_list) indices
     integer i, j, k, p
-    integer ent, repeat_ent
+    integer(index_kind) ent, repeat_ent
 
     i = indices%i
     j = indices%j
@@ -597,7 +601,7 @@ contains
     integer pp
     double precision val
     type(index_list) indices
-    integer ent
+    integer(index_kind) ent
 
     do pp=1, mat%grid%angles%nomega
        val = -mat%iops%scat * mat%iops%vsf_integral(indices%p, pp)
@@ -610,7 +614,7 @@ contains
     double precision bc_val
     type(index_list) indices
     double precision val1, val2, dz
-    integer row_num, ent, repeat_ent
+    integer(index_kind) row_num, ent, repeat_ent
 
     dz = mat%grid%z%spacing(1)
 
@@ -628,7 +632,7 @@ contains
     type(index_list) indices
     double precision val1, val2, dz
     integer nz
-    integer ent, repeat_ent
+    integer(index_kind) ent, repeat_ent
 
     dz = mat%grid%z%spacing(1)
     nz = mat%grid%z%num
