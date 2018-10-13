@@ -1205,3 +1205,38 @@ def verify_kelp_1d_compute_scalar_metrics(a_water, b, nz_list, kelp_dist, num_sc
         kwargs_list.append(run_kwargs)
 
     return func_list, args_list, kwargs_list
+
+@ru.study_decorator
+def verify_kelp_asym_b_scat_ss_compute_scalar_metrics(ns_list, b_list, num_scatters_list, na, a_water, kelp_dist, do_fd, lis_opts=None, num_threads=None):
+    """
+    Loop over b, ns, num_scatters and calculate asym. soln.
+    If do_fd, FD solution will be calculated for all (b, ns)
+    """
+
+    if not lis_opts:
+        lis_opts = '-i gmres -restart 100'
+
+    func_list = []
+    args_list = []
+    kwargs_list = []
+    for ns in ns_list:
+        nz = ns
+        for b in b_list:
+            if do_fd:
+                fd_flag = True
+                num_scatters = 0
+                run_args = [a_water, b, ns, nz, na, kelp_dist, num_scatters, fd_flag]
+                run_kwargs = {'lis_opts': '', 'num_threads': num_threads}
+                func_list.append(kelp_calculate_scalar_metrics)
+                args_list.append(run_args)
+                kwargs_list.append(run_kwargs)
+
+            for num_scatters in num_scatters_list:
+                fd_flag = False
+                run_args = [a_water, b, ns, nz, na, kelp_dist, num_scatters, fd_flag]
+                run_kwargs = {'lis_opts': '', 'num_threads': num_threads}
+                func_list.append(kelp_calculate_scalar_metrics)
+                args_list.append(run_args)
+                kwargs_list.append(run_kwargs)
+
+    return func_list, args_list, kwargs_list
