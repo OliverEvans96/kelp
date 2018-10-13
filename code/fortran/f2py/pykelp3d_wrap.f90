@@ -136,10 +136,15 @@ contains
     write(*,*) 'max bc =', maxval(bc%bc_grid)
     write(*,*) 'mean bc =', sum(bc%bc_grid)/size(bc%bc_grid)
 
-    write(*,*) 'Calculate asymptotic light field'
-    call calculate_asymptotic_light_field(&
-         grid, bc, iops, source, &
-         radiance, num_scatters, num_threads)
+    if(num_scatters .ge. 0) then
+        write(*,*) 'Calculate asymptotic light field'
+        call calculate_asymptotic_light_field(&
+             grid, bc, iops, source, &
+             radiance, num_scatters, num_threads)
+    else
+        radiance = 0
+    end if
+
 
     if(fd_flag) then
 
@@ -151,6 +156,11 @@ contains
       call gen_matrix(mat, num_threads)
 
       ! Set solver options
+      if(num_scatters .ge. 0) then
+          mat%initx_zeros = .false.
+      else
+          mat%initx_zeros = .true.
+      end if
       call mat%set_solver_opts(lis_opts)
 
       ! Initialize & set initial guess
@@ -406,9 +416,14 @@ contains
     write(*,*) 'mean bc =', sum(bc%bc_grid)/size(bc%bc_grid)
 
     write(*,*) 'Calculate asymptotic light field'
-    call calculate_asymptotic_light_field_expanded_source(&
-         grid, bc, iops, source, source_expansion, &
-         radiance, num_scatters, num_threads)
+    if(num_scatters .ge. 0) then
+        call calculate_asymptotic_light_field_expanded_source(&
+             grid, bc, iops, source, source_expansion, &
+             radiance, num_scatters, num_threads)
+    else
+        radiance = 0
+    end if
+
 
     if(fd_flag) then
 
@@ -420,6 +435,11 @@ contains
       call gen_matrix(mat, num_threads)
 
       ! Set solver options
+      if(num_scatters .ge. 0) then
+          mat%initx_zeros = .false.
+      else
+          mat%initx_zeros = .true.
+      end if
       call mat%set_solver_opts(lis_opts)
 
       ! Initialize & set initial guess

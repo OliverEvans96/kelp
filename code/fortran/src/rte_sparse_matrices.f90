@@ -34,6 +34,7 @@ type rte_mat
    LIS_SOLVER solver
    LIS_INTEGER ierr
    character(len=256) solver_opts
+   logical initx_zeros
 
    ! Pointer to solver subroutine
    ! Set to mgmres by default
@@ -223,7 +224,12 @@ contains
     call lis_matrix_assemble(mat%A, mat%ierr)
 
     ! Set solver options
-    init_opt = "-initx_zeros false -print out"
+    if(mat%initx_zeros) then
+        init_opt = "-initx_zeros true -print out"
+    else
+        init_opt = "-initx_zeros false -print out"
+    end if
+
     call lis_solver_set_option(init_opt, mat%solver, mat%ierr)
     if(len(trim(mat%solver_opts)) .gt. 0) then
        call lis_solver_set_option(mat%solver_opts, mat%solver, mat%ierr)
