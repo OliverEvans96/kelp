@@ -9,7 +9,7 @@ interface
      use rte_sparse_matrices
      class(rte_mat) mat
      type(index_list) indices
-     integer ent
+     integer(8) ent
    end subroutine deriv_interface
    subroutine angle_loop_interface(mat, indices, ddx, ddy)
      use rte_sparse_matrices
@@ -75,10 +75,10 @@ end subroutine whole_space_loop
 function calculate_start_ent(grid, indices) result(ent)
   type(space_angle_grid) grid
   type(index_list) indices
-  integer ent
-  integer boundary_nnz, interior_nnz
-  integer num_boundary, num_interior
-  integer num_this_x, num_this_z
+  integer(8) ent
+  integer(8) boundary_nnz, interior_nnz
+  integer(8) num_boundary, num_interior
+  integer(8) num_this_x, num_this_z
 
   ! Nonzero matrix entries for an surface or bottom spatial grid cell
   ! Definitely an integer since nomega is even
@@ -110,7 +110,8 @@ function calculate_start_ent(grid, indices) result(ent)
 end function calculate_start_ent
 
 function calculate_repeat_ent(ent, p) result(repeat_ent)
-  integer ent, p, repeat_ent
+  integer p
+  integer(8) ent, repeat_ent
   ! Entry number for row=mat%ind(i,j,k,p), col=mat%ind(i,j,k,p),
   ! which will be modified multiple times in this matrix row
   repeat_ent = ent + p - 1
@@ -121,8 +122,8 @@ subroutine interior_angle_loop(mat, indices, ddx, ddy)
   type(index_list) indices
   procedure(deriv_interface) :: ddx, ddy
   integer p
-  integer ent, repeat_ent
-  integer row_num
+  integer(8) ent, repeat_ent
+  integer(8) row_num
 
   ! Determine which matrix row to start at
   ent = calculate_start_ent(mat%grid, indices)
@@ -148,8 +149,8 @@ subroutine surface_angle_loop(mat, indices, ddx, ddy)
   type(index_list) indices
   integer p
   procedure(deriv_interface) :: ddx, ddy
-  integer ent, repeat_ent
-  integer row_num
+  integer(8) ent, repeat_ent
+  integer(8) row_num
 
   ! Determine which matrix row to start at
   ent = calculate_start_ent(mat%grid, indices)
@@ -188,7 +189,7 @@ subroutine bottom_angle_loop(mat, indices, ddx, ddy)
   type(rte_mat) mat
   type(index_list) indices
   integer p
-  integer row_num, ent, repeat_ent
+  integer(8) row_num, ent, repeat_ent
   procedure(deriv_interface) :: ddx, ddy
 
   ! Determine which matrix row to start at
