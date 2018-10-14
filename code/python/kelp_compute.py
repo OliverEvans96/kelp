@@ -172,7 +172,7 @@ def kelp_calculate_full(absorptance_kelp, a_water, b, ns, nz, na, num_dens, kelp
 
     # Absorptance = % of light absorbed for whole frond (units 1).
     # a_kelp = absorption coefficient = %/m (units 1/m).
-    a_kelp = absorptance_kelp / ft
+    a_kelp = -np.log(1-absorptance_kelp) / ft
 
     # TODO: Remove?
     print("a_kelp = {}".format(a_kelp))
