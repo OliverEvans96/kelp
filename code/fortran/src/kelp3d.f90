@@ -45,22 +45,45 @@ subroutine calculate_kelp_on_grid(grid, p_kelp, frond, rope, quadrature_degree)
 
   integer i, j, k, nx, ny, nz
   double precision x, y, z
+  ! Number of periodic images
+  ! to consider in each horizontal direction
+  ! for kelp distribution
+  ! n_images=1 => 3x3 meta-grid
+  ! n_images=2 => 5x5 meta-grid (probably not necessary)
+  integer n_images
+  integer im_i, im_j
+  double precision x_width, y_width
+
+  x_width = grid%x%maxval - grid%x%minval
+  y_width = grid%y%maxval - grid%y%minval
+
+  n_images = 1
 
   nx = grid%x%num
   ny = grid%y%num
   nz = grid%z%num
 
+  p_kelp(:,:,:) = 0
+
+  ! !$omp parallel do default(none) private(point,depth) &
+  ! !$omp private(i,j,k,im_i,im_j) shared(nx,ny,nz,n_images) &
+  ! !$omp shared(frond,rope,grid,quadrature_degree) &
+  ! !$omp num_threads(num_threads) !collapse(2)
   do k=1, nz
     z = grid%z%vals(k)
     call depth%set_depth(rope, grid, k)
-    do i=1, nx
-      x = grid%x%vals(i)
-      do j=1, ny
-        y = grid%y%vals(j)
-        call point%set_cart(x, y, z)
-        p_kelp(i, j, k) = kelp_proportion(point, frond, grid, depth, quadrature_degree)
-        !p_kelp(i, j, k) = prob_kelp(point, frond, depth, quadrature_degree)
-     end do
+    do im_i=-n_images, n_images
+      do im_j=-n_images, n_images
+        do i=1, nx
+          x = im_i*x_width + grid%x%vals(i)
+          do j=1, ny
+            y = im_j*y_width + grid%y%vals(j)
+            call point%set_cart(x, y, z)
+            p_kelp(i, j, k) = p_kelp(i,j,k) &
+                  + kelp_proportion(point, frond, grid, depth, quadrature_degree)
+         end do
+        end do
+      end do
     end do
   end do
 end subroutine calculate_kelp_on_grid

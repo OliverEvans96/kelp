@@ -207,6 +207,7 @@ module asymptotics
     !$omp private(i,j,k,p) shared(nx,ny,nz,nomega) &
     !$omp shared(iops, rad_scatter, scatter_integral) &
     !$omp num_threads(num_threads) collapse(2)
+
     do k=1, nz
        do i=1, nx
           indices%k = k
