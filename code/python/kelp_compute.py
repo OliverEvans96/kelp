@@ -45,7 +45,8 @@ def grid_centers(xmin, xmax, nx):
     x = np.linspace(xmin+0.5*dx, xmax-0.5*dx, nx)
     return x
 
-def get_kelp_dist(kelp_dist, max_length, zmin, zmax, nz):
+def get_kelp_dist(kelp_dist, max_length, length_std, zmin, zmax, nz, water_speed=None):
+    print("water_speed (in) =", water_speed)
     import numpy as np
     # TODO: Scale by zmax
     # Kelp distribution profiles
@@ -62,10 +63,12 @@ def get_kelp_dist(kelp_dist, max_length, zmin, zmax, nz):
         'none': 0*z
     }
     frond_lengths = max_length * frond_length_funcs[kelp_dist]
-    frond_stds = 0.0 * np.ones_like(z)
+    frond_stds = length_std + 0.0 * np.ones_like(z)
     water_speeds = 0.5 * np.ones_like(z)
     if kelp_dist == 'huge':
         water_speeds *= 20
+    if water_speed is not None:
+        water_speeds = 0*water_speeds + water_speed
 
     water_angles = 2*np.pi / zmax * (z-zmin)
 
@@ -73,6 +76,60 @@ def get_kelp_dist(kelp_dist, max_length, zmin, zmax, nz):
 
 
 ## Run Functions ##
+
+def kelp_abs_grid_f90_calculate(absorptance_kelp, a_water, ns, nz, num_dens, kelp_dist, fs, fr, ft, max_length, length_std, zmax, rope_spacing, water_speed=None):
+    import numpy as np
+    from kelp3d_objs import f90
+
+    nx = ny = ns
+
+    zmin = 0
+    # Rope spacing determines horizontal bounds
+    xmin = ymin = -rope_spacing/2
+    xmax = ymax = rope_spacing/2
+    dz = (zmax - zmin) / nz
+    print("water_speed (out) =", water_speed)
+
+    frond_lengths, frond_stds, water_speeds, water_angles = get_kelp_dist(
+        kelp_dist,
+        max_length,
+        length_std,
+        zmin,
+        zmax,
+        nz,
+        water_speed=water_speed
+    )
+    print("water_speeds = {}".format(water_speeds))
+
+    p_kelp = np.asfortranarray(np.zeros([nx, ny, nz]))
+
+    # Number of fronds in each depth layer from density
+    # Keep constant over depth for now
+    num_fronds = num_dens * dz * np.ones(nz)
+
+    # Generate kelp
+    f90.gen_kelp(
+        xmin, xmax,
+        ymin, ymax,
+        zmin, zmax,
+        frond_lengths,
+        frond_stds,
+        num_fronds,
+        water_speeds,
+        water_angles,
+        fs, fr, ft,
+        p_kelp
+    )
+
+    # Absorptance = % of light absorbed for whole frond (units 1).
+    # a_kelp = absorption coefficient = %/m (units 1/m).
+    a_kelp = -np.log(1-absorptance_kelp) / ft
+
+    # Calculate effective abs coef via volume fraction argument
+    abs_grid = a_water + (a_kelp - a_water) * p_kelp
+
+    return abs_grid
+
 
 def kelp_calculate_full(absorptance_kelp, a_water, b, ns, nz, na, num_dens, kelp_dist, fs, fr, ft, max_length, length_std, zmax, rope_spacing, I0, phi_s, theta_s, decay, num_threads, num_scatters, fd_flag, lis_opts):
 
