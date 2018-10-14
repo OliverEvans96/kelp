@@ -311,7 +311,11 @@ def kelp_calculate_raw(a_water, b, ns, nz, na, kelp_dist, num_scatters, fd_flag,
 
     # From Solveig's Master's Thesis
     max_length = 6.0
-    length_std = 0.2 * max_length
+    # Not sure about this
+    # But higher std => smoother abs. coef.
+    # => better convergence (less discretization err.),
+    # so I'm cranking it up.
+    length_std = 3.0
 
     zmax = 10 # Max. vertical
     rope_spacing = 10 # Horizontal
