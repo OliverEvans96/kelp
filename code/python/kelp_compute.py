@@ -164,7 +164,7 @@ def kelp_calculate_full(absorptance_kelp, a_water, b, ns, nz, na, num_dens, kelp
     xmax = ymax = rope_spacing/2
 
     # Kelp shape
-    frond_lengths, frond_stds, water_speeds, water_angles = get_kelp_dist(kelp_dist, max_length, zmin, zmax, nz)
+    frond_lengths, frond_stds, water_speeds, water_angles = get_kelp_dist(kelp_dist, max_length, length_std, zmin, zmax, nz)
 
     # Number of fronds in each depth layer from density
     # Keep constant over depth for now
