@@ -1301,7 +1301,7 @@ def verify_kelp_asym_b_scat_ss_compute_scalar_metrics(ns_list, b_list, num_scatt
         for b in b_list:
             if do_fd:
                 fd_flag = True
-                num_scatters = -1
+                num_scatters = 0
                 run_args = [a_water, b, ns, nz, na, kelp_dist, num_scatters, fd_flag]
                 run_kwargs = {'num_threads': num_threads, **kwargs}
                 func_list.append(kelp_calculate_scalar_metrics)
