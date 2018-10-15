@@ -1,5 +1,6 @@
 # stdlib
 import os
+from collections import Iterable
 
 # 3rd party
 import sqlite3
@@ -21,21 +22,50 @@ def table_to_df(conn, table_name):
     df = pd.DataFrame(data, columns=columns)
     return df
 
-def query_results(conn, table_name, **kwargs):
-    for key, val in kwargs.items():
-        # Sanitize string values
-        if isinstance(val, str):
-            kwargs[key] = '"{}"'.format(val)
+def is_iterable(obj):
+    """
+    Check whether an object is iterable and not a string.
+    """
+    return not isinstance(obj, str) and isinstance(obj, Iterable)
 
-        # Sanitize bool values (convert to int)
-        if isinstance(val, bool):
-            kwargs[key] = '{}'.format(int(val))
+def sanitize_sql_val(val):
+    """
+    Prepare value to be stored in SQL db
+    """
+    # Sanitize string values
+    if isinstance(val, str):
+        return '"{}"'.format(val)
+
+    # Sanitize bool values (convert to int)
+    elif isinstance(val, bool):
+        return '{}'.format(int(val))
+
+    else:
+        return val
+
+def query_results(conn, table_name, verbose=False, **kwargs):
+    where_subclause_list = []
+
+    for key, val in kwargs.items():
+        if is_iterable(val):
+            val = [
+                sanitize_sql_val(subval)
+                for subval in val
+            ]
+            subclause = ' OR '.join([
+                '{} = {}'.format(key, subval)
+                for subval in val
+            ])
+            where_subclause_list.append(subclause)
+        else:
+            val = sanitize_sql_val(val)
+            subclause = '{} = {}'.format(key, val)
+            where_subclause_list.append(subclause)
 
     # Form SQL WHERE clause
-    where_condition = ' AND '.join([
-        '{}={}'.format(key, value)
-        for key, value in kwargs.items()
-    ])
+    where_condition = ' AND '.join(
+        where_subclause_list
+    )
     if where_condition:
         where_clause = 'WHERE ' + where_condition
     else:
@@ -50,7 +80,8 @@ def query_results(conn, table_name, **kwargs):
         where_clause=where_clause
     )
 
-    #print("query: '{}'".format(query))
+    if verbose:
+        print("query: '{}'".format(query))
 
     # Execute query
     cursor = conn.execute(query)
