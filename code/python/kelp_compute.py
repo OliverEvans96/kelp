@@ -297,7 +297,7 @@ def kelp_calculate_full(absorptance_kelp, a_water, b, ns, nz, na, num_dens, kelp
 
     return scalar_params, results
 
-def kelp_calculate_raw(a_water, b, ns, nz, na, kelp_dist, num_scatters, fd_flag, lis_opts='', num_threads=None):
+def kelp_calculate_raw(a_water, b, ns, nz, na, kelp_dist, num_scatters, fd_flag, num_threads=None, **kwargs):
     """kelp_calculate_full, but with some sensible defaults, saving results to .db/.nc due to wrapper"""
 
     from kelp3d_objs import f90
@@ -305,55 +305,61 @@ def kelp_calculate_raw(a_water, b, ns, nz, na, kelp_dist, num_scatters, fd_flag,
     from datetime import datetime
     import time
 
-    # TODO: THIS IS PROBABLY WRONG
-    absorptance_kelp = 0.07
+    default_vals = dict(
+        # TODO: THIS IS PROBABLY WRONG
+        absorptance_kelp = 0.07,
+        # Broch 2013
+        # 150 individuals/meter
+        num_dens = 120,
+        # No data - just estimate
+        fs = 0.5,
+        # Handa figure 5
+        fr = 5.0,
+        # From Solveig Foldal's Master's Thesis
+        ft = 4e-4,
+        # From Solveig's Master's Thesis
+        max_length = 6.0,
+        # Not sure about this
+        # But higher std => smoother abs. coef.
+        # => better convergence (less discretization err.),
+        # so I'm cranking it up.
+        length_std = 1.0,
+        zmax = 10, # Max. vertical
+        rope_spacing = 10, # Horizontal
+        # Fairly sunny day
+        I0 = 50.0,
+        # Light from directly above
+        phi_s = 0.0,
+        theta_s = 0.0,
+        decay = 1.0,
+        lis_opts = '-i gmres -restart 100 -maxiter 5000'
+    )
 
-    # Broch 2013
-    # 150 individuals/meter
-    num_dens = 120
-
-    # No data - just estimate
-    fs = 0.5
-    # Handa figure 5
-    fr = 5.0
-    # From Solveig Foldal's Master's Thesis
-    ft = 4e-4
-
-    # From Solveig's Master's Thesis
-    max_length = 6.0
-    # Not sure about this
-    # But higher std => smoother abs. coef.
-    # => better convergence (less discretization err.),
-    # so I'm cranking it up.
-    length_std = 3.0
-
-    zmax = 10 # Max. vertical
-    rope_spacing = 10 # Horizontal
-
-    # Fairly sunny day
-    I0 = 50.0
-    # Light from directly above
-    phi_s = 0.0
-    theta_s = 0.0
-    decay = 1.0
+    # Override defaults with given kwargs
+    # Remove any None overrides
+    new_kwargs = {k: v for k, v in kwargs.items() if v is not None}
+    run_kwargs = {**default_vals, **new_kwargs}
 
     if not num_threads:
         num_threads = multiprocessing.cpu_count()
 
     return kelp_calculate_full(
-        absorptance_kelp, a_water, b,
-        ns, nz, na, num_dens, kelp_dist,
-        fs, fr, ft, max_length, length_std,
-        zmax, rope_spacing,
-        I0, phi_s, theta_s, decay,
-        num_threads, num_scatters,
-        fd_flag, lis_opts
+        a_water=a_water,
+        b=b,
+        ns=ns,
+        nz=nz,
+        na=na,
+        kelp_dist=kelp_dist,
+        num_threads=num_threads,
+        num_scatters=num_scatters,
+        fd_flag=fd_flag,
+        **run_kwargs
     )
 
 kelp_calculate = ru.run_decorator(kelp_calculate_raw)
 
 @ru.run_decorator
-def kelp_calculate_scalar_metrics(a_water, b, ns, nz, na, kelp_dist, num_scatters, fd_flag, lis_opts='', num_threads=None):
+def kelp_calculate_scalar_metrics(a_water, b, ns, nz, na, kelp_dist, num_scatters, fd_flag, **kwargs):
     """
     kelp_calculate, but also compute scalar convergence metrics:
     - total flux
@@ -363,7 +369,7 @@ def kelp_calculate_scalar_metrics(a_water, b, ns, nz, na, kelp_dist, num_scatter
       - 8m
     """
 
-    scalar_params, results = kelp_calculate_raw(a_water, b, ns, nz, na, kelp_dist, num_scatters, fd_flag, lis_opts, num_threads)
+    scalar_params, results = kelp_calculate_raw(a_water, b, ns, nz, na, kelp_dist, num_scatters, fd_flag, **kwargs)
 
     zmin = 0
     zmax = scalar_params['zmax']
@@ -1278,7 +1284,7 @@ def verify_kelp_1d_compute_scalar_metrics(a_water, b, nz_list, kelp_dist, num_sc
     return func_list, args_list, kwargs_list
 
 @ru.study_decorator
-def verify_kelp_asym_b_scat_ss_compute_scalar_metrics(ns_list, b_list, num_scatters_list, na, a_water, kelp_dist, do_fd, lis_opts=None, num_threads=None):
+def verify_kelp_asym_b_scat_ss_compute_scalar_metrics(ns_list, b_list, num_scatters_list, na, a_water, kelp_dist, do_fd, lis_opts=None, num_threads=None, **kwargs):
     """
     Loop over b, ns, num_scatters and calculate asym. soln.
     If do_fd, FD solution will be calculated for all (b, ns)
@@ -1297,7 +1303,7 @@ def verify_kelp_asym_b_scat_ss_compute_scalar_metrics(ns_list, b_list, num_scatt
                 fd_flag = True
                 num_scatters = -1
                 run_args = [a_water, b, ns, nz, na, kelp_dist, num_scatters, fd_flag]
-                run_kwargs = {'lis_opts': '', 'num_threads': num_threads}
+                run_kwargs = {'num_threads': num_threads, **kwargs}
                 func_list.append(kelp_calculate_scalar_metrics)
                 args_list.append(run_args)
                 kwargs_list.append(run_kwargs)
@@ -1305,7 +1311,7 @@ def verify_kelp_asym_b_scat_ss_compute_scalar_metrics(ns_list, b_list, num_scatt
             for num_scatters in num_scatters_list:
                 fd_flag = False
                 run_args = [a_water, b, ns, nz, na, kelp_dist, num_scatters, fd_flag]
-                run_kwargs = {'lis_opts': '', 'num_threads': num_threads}
+                run_kwargs = {'num_threads': num_threads, **kwargs}
                 func_list.append(kelp_calculate_scalar_metrics)
                 args_list.append(run_args)
                 kwargs_list.append(run_kwargs)
