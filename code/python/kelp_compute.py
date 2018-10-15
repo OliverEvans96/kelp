@@ -45,8 +45,7 @@ def grid_centers(xmin, xmax, nx):
     x = np.linspace(xmin+0.5*dx, xmax-0.5*dx, nx)
     return x
 
-def get_kelp_dist(kelp_dist, max_length, length_std, zmin, zmax, nz, water_speed=None):
-    print("water_speed (in) =", water_speed)
+def get_kelp_dist(kelp_dist, max_length, length_std, zmin, zmax, nz, water_speed=None, water_angles=None):
     import numpy as np
     # TODO: Scale by zmax
     # Kelp distribution profiles
@@ -70,7 +69,15 @@ def get_kelp_dist(kelp_dist, max_length, length_std, zmin, zmax, nz, water_speed
     if water_speed is not None:
         water_speeds = 0*water_speeds + water_speed
 
-    water_angles = 2*np.pi / zmax * (z-zmin)
+    if water_angles is None:
+        water_angles = 'linear'
+
+    if water_angles == 'constant':
+        water_angles = 0*z
+    elif water_angles == 'linear':
+        water_angles = 2*np.pi / zmax * (z-zmin)
+    else:
+        raise ValueError('Bad value for water_angles: {}'.format(water_angles))
 
     return frond_lengths, frond_stds, water_speeds, water_angles
 
