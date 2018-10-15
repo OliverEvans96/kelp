@@ -84,7 +84,7 @@ def get_kelp_dist(kelp_dist, max_length, length_std, zmin, zmax, nz, water_speed
 
 ## Run Functions ##
 
-def kelp_abs_grid_f90_calculate(absorptance_kelp, a_water, ns, nz, num_dens, kelp_dist, fs, fr, ft, max_length, length_std, zmax, rope_spacing, water_speed=None):
+def kelp_abs_grid_f90_calculate(absorptance_kelp, a_water, ns, nz, num_dens, kelp_dist, fs, fr, ft, max_length, length_std, zmax, rope_spacing, num_threads, water_speed=None, water_angles=None):
     import numpy as np
     from kelp3d_objs import f90
 
@@ -104,7 +104,8 @@ def kelp_abs_grid_f90_calculate(absorptance_kelp, a_water, ns, nz, num_dens, kel
         zmin,
         zmax,
         nz,
-        water_speed=water_speed
+        water_speed=water_speed,
+        water_angles=water_angles
     )
     print("water_speeds = {}".format(water_speeds))
 
@@ -125,7 +126,8 @@ def kelp_abs_grid_f90_calculate(absorptance_kelp, a_water, ns, nz, num_dens, kel
         water_speeds,
         water_angles,
         fs, fr, ft,
-        p_kelp
+        p_kelp,
+        num_threads
     )
 
     # Absorptance = % of light absorbed for whole frond (units 1).
@@ -221,7 +223,8 @@ def kelp_calculate_full(absorptance_kelp, a_water, b, ns, nz, na, num_dens, kelp
         water_speeds,
         water_angles,
         fs, fr, ft,
-        p_kelp
+        p_kelp,
+        num_threads
     )
 
     # Calculate light field
