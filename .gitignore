@@ -21,3 +21,4 @@ callgrind*
 *.so
 *.pyc
 share
+.nfs*
