@@ -7,7 +7,7 @@ module pykelp3d_wrap
 contains
   subroutine gen_kelp(xmin, xmax, nx, ymin, ymax, ny, zmin, zmax, nz, &
       frond_lengths, frond_stds, num_fronds, water_speeds, water_angles, &
-      fs, fr, ft, p_kelp)
+      fs, fr, ft, p_kelp, num_threads)
 
     integer nx, ny, nz
     double precision xmin, xmax, ymin, ymax, zmin, zmax
@@ -16,12 +16,17 @@ contains
     double precision fs, fr, ft
     double precision, dimension(nx, ny, nz) :: p_kelp
     integer quadrature_degree
+    integer num_threads
+    integer n_images
 
     type(space_angle_grid) grid
     type(rope_state) rope
     type(frond_shape) frond
 
-    quadrature_degree = 5
+    n_images = 1
+    ! This affects the accuracy of the kelp distribution
+    ! higher qd => more accurate & longer computation
+    quadrature_degree = 101
 
     ! if(.not. present(quadrature_degree)) then
     !    quadrature_degree = 5
@@ -46,7 +51,7 @@ contains
     call frond%set_shape(fs, fr, ft)
 
     ! CALCULATE KELP
-    call calculate_kelp_on_grid(grid, p_kelp, frond, rope, quadrature_degree)
+    call calculate_kelp_on_grid(grid, p_kelp, frond, rope, quadrature_degree, n_images, num_threads)
 
     call rope%deinit()
     call grid%deinit()

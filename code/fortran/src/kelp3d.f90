@@ -34,14 +34,16 @@ subroutine kelp3d_deinit(grid, rope, p_kelp)
   deallocate(p_kelp)
 end subroutine kelp3d_deinit
 
-subroutine calculate_kelp_on_grid(grid, p_kelp, frond, rope, quadrature_degree)
+subroutine calculate_kelp_on_grid(grid, p_kelp, frond, rope, quadrature_degree, n_images, num_threads)
   type(space_angle_grid), intent(in) :: grid
   type(frond_shape), intent(in) :: frond
   type(rope_state), intent(in) :: rope
   type(point3d) point
   integer, intent(in) :: quadrature_degree
+  integer, optional :: n_images
   double precision, dimension(grid%x%num, grid%y%num, grid%z%num) :: p_kelp
   type(depth_state) depth
+  integer num_threads
 
   integer i, j, k, nx, ny, nz
   double precision x, y, z
@@ -49,15 +51,16 @@ subroutine calculate_kelp_on_grid(grid, p_kelp, frond, rope, quadrature_degree)
   ! to consider in each horizontal direction
   ! for kelp distribution
   ! n_images=1 => 3x3 meta-grid
-  ! n_images=2 => 5x5 meta-grid (probably not necessary)
-  integer n_images
+  ! n_images=2 => 5x5 meta-grid (only necessary for very dense kelp ropes)
   integer im_i, im_j
   double precision x_width, y_width
 
   x_width = grid%x%maxval - grid%x%minval
   y_width = grid%y%maxval - grid%y%minval
 
-  n_images = 1
+  if(.not. present(n_images)) then
+    n_images = 1
+  end if
 
   nx = grid%x%num
   ny = grid%y%num
@@ -65,18 +68,21 @@ subroutine calculate_kelp_on_grid(grid, p_kelp, frond, rope, quadrature_degree)
 
   p_kelp(:,:,:) = 0
 
-  ! !$omp parallel do default(none) private(point,depth) &
-  ! !$omp private(i,j,k,im_i,im_j) shared(nx,ny,nz,n_images) &
-  ! !$omp shared(frond,rope,grid,quadrature_degree) &
-  ! !$omp num_threads(num_threads) !collapse(2)
+  !$omp parallel do default(shared) private(x,y,z) &
+  !$omp firstprivate(point,depth) &
+  !$omp private(i,j,k,im_i,im_j) shared(nx,ny,nz,n_images) &
+  !$omp shared(frond,rope,grid,quadrature_degree) &
+  !$omp shared(p_kelp,x_width,y_width) &
+  !$omp num_threads(num_threads) collapse(3) &
+  !$omp schedule(dynamic, 10) ! 10 grid points per thread
   do k=1, nz
-    z = grid%z%vals(k)
-    call depth%set_depth(rope, grid, k)
-    do im_i=-n_images, n_images
-      do im_j=-n_images, n_images
-        do i=1, nx
+    do i=1, nx
+      do j=1, ny
+        z = grid%z%vals(k)
+        call depth%set_depth(rope, grid, k)
+        do im_i=-n_images, n_images
           x = im_i*x_width + grid%x%vals(i)
-          do j=1, ny
+          do im_j=-n_images, n_images
             y = im_j*y_width + grid%y%vals(j)
             call point%set_cart(x, y, z)
             p_kelp(i, j, k) = p_kelp(i,j,k) &
@@ -86,6 +92,7 @@ subroutine calculate_kelp_on_grid(grid, p_kelp, frond, rope, quadrature_degree)
       end do
     end do
   end do
+  !omp end do
 end subroutine calculate_kelp_on_grid
 
 subroutine shading_region_limits(theta_low_lim, theta_high_lim, point, frond)
@@ -175,7 +182,6 @@ function ps_integrand(theta_f, point, frond, depth)
 
   ps_integrand = angular_part * length_part
 end function ps_integrand
-
 
 function min_shading_length(theta_f, point, frond) result(l_min)
 ! L_min(\theta)

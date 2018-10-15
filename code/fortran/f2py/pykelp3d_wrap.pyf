@@ -58,7 +58,7 @@ python module pykelp3d_wrap ! in
             use rte3d
             use kelp3d
             use asymptotics
-            subroutine gen_kelp(xmin,xmax,nx,ymin,ymax,ny,zmin,zmax,nz,frond_lengths,frond_stds,num_fronds,water_speeds,water_angles,fs,fr,ft,p_kelp) ! in :pykelp3d_wrap:pykelp3d_wrap.f90:pykelp3d_wrap
+            subroutine gen_kelp(xmin,xmax,nx,ymin,ymax,ny,zmin,zmax,nz,frond_lengths,frond_stds,num_fronds,water_speeds,water_angles,fs,fr,ft,p_kelp,num_threads) ! in :pykelp3d_wrap:pykelp3d_wrap.f90:pykelp3d_wrap
                 double precision :: xmin
                 double precision :: xmax
                 integer, optional,check(shape(p_kelp,0)==nx),depend(p_kelp) :: nx=shape(p_kelp,0)
@@ -77,6 +77,7 @@ python module pykelp3d_wrap ! in
                 double precision :: fr
                 double precision :: ft
                 double precision dimension(nx,ny,nz),depend(nz) :: p_kelp
+                integer intent(in) :: num_threads
             end subroutine gen_kelp
             subroutine calculate_light_field(xmin,xmax,nx,ymin,ymax,ny,zmin,zmax,nz,ntheta,nphi,a_w,a_k,b,num_vsf,vsf_angles,vsf_vals,theta_s,phi_s,i0,decay,p_kelp,radiance,irradiance,num_scatters,num_threads,fd_flag,lis_opts,lis_iter,lis_time,lis_resid) ! in :pykelp3d_wrap:pykelp3d_wrap.f90:pykelp3d_wrap
                 double precision intent(in) :: xmin
