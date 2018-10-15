@@ -45,7 +45,7 @@ def dict_from_args(func, args, kwargs={}):
 
 ## SQLite utils (non-project-specific) ##
 
-def create_db_generic_table_from_tuple(conn, table_name, columns, prefix='.'):
+def create_db_generic_table_from_tuple(conn, table_name, columns, prefix='.', verbose=False):
     """
     Create sqlite db file, create table, and return connection.
     Assume table_name is unique.
@@ -62,8 +62,9 @@ def create_db_generic_table_from_tuple(conn, table_name, columns, prefix='.'):
 
     create_table_command = create_table_template.format(table_name=table_name)
 
-    print("CREATING TABLE")
-    print(create_table_command)
+    if verbose:
+        print("CREATING TABLE")
+        print(create_table_command)
 
     conn.execute(create_table_command)
     conn.commit()
@@ -123,7 +124,7 @@ def get_col_names(conn, table_name):
     names = [r[1] for r in cur.fetchall()]
     return names
 
-def insert_generic_row(conn, data_dict, table_name):
+def insert_generic_row(conn, data_dict, table_name, verbose=False):
     """Insert row, and create table if not present.
     NOTE: If the table does not yet exist, it's important
     that `data_dict` be a `collections.OrderedDict` so that
@@ -132,12 +133,15 @@ def insert_generic_row(conn, data_dict, table_name):
 
     # Create table if not present
     if table_name not in get_table_names(conn):
-        print("Creating table {}".format(table_name))
+        if verbose:
+            print("Creating table {}".format(table_name))
         create_db_table_from_dict(conn, table_name, data_dict)
     else:
-        print("Not creating table {}".format(table_name))
+        if verbose:
+            print("Not creating table {}".format(table_name))
 
-    print("col_names: {}".format(get_col_names(conn, table_name)))
+    if verbose:
+        print("col_names: {}".format(get_col_names(conn, table_name)))
 
     insert_template = (
         'INSERT INTO {table_name} VALUES ('
@@ -150,16 +154,19 @@ def insert_generic_row(conn, data_dict, table_name):
 
     insert_command = insert_template.format(table_name=table_name)
 
-    print("Before try.")
-    print(insert_command)
+    if verbose:
+        print("Before try.")
+        print(insert_command)
 
     try:
-        print("Executing command:")
-        print(insert_command)
+        if verbose:
+            print("Executing command:")
+            print(insert_command)
         conn.execute(insert_command, {**data_dict, 'id': None})
     except sqlite3.OperationalError as e:
-        print('Failed to insert row using command:')
-        print("'{}'".format(insert_command))
+        if verbose:
+            print('Failed to insert row using command:')
+            print("'{}'".format(insert_command))
         raise e
 
 
@@ -324,7 +331,7 @@ def insert_run(conn, table_name=None, **data_dict):
 
     insert_generic_row(conn, data_dict, table_name)
 
-def combine_dbs(study_dir, table_name):
+def combine_dbs(study_dir, table_name, verbose=False):
     data_dir = os.path.join(study_dir, 'data')
     dbs = [
         os.path.join(data_dir, f)
@@ -339,9 +346,11 @@ def combine_dbs(study_dir, table_name):
     for db in dbs:
         # Read from individual tables
         conn = sqlite3.connect(db)
-        print("Combining {} (tables: {})".format(db, get_table_names(conn)))
+        if verbose:
+            print("Combining {} (tables: {})".format(db, get_table_names(conn)))
         cursor = conn.execute('SELECT * FROM {}'.format(table_name))
-        print("read.")
+        if verbose:
+            print("read.")
         columns = [tup[0] for tup in cursor.description]
         # Don't want to duplicate id column, so exclude it here.
         id_col = columns.index('id')
@@ -364,6 +373,7 @@ def combine_dbs(study_dir, table_name):
 
     combined_conn.commit()
     combined_conn.close()
+    print("Finished combining DBs.")
 
 def create_nc(data_path, **results):
     """Create netCDF file to store results"""
@@ -489,7 +499,9 @@ def study_decorator(study_func):
     Other data files located at {base_dir}/{study_name}/data/*.nc
     """
     @functools.wraps(study_func)
-    def wrapper(study_name, *study_args, base_dir=os.curdir, executor=None, **study_kwargs):
+    def wrapper(study_name, *study_args, base_dir=os.curdir, dry_run=False, verbose=False, executor=None, **study_kwargs):
+        if dry_run:
+            print("-- Dry run - no computations will be performed. --")
 
         study_dir = os.path.join(base_dir, study_name)
         if not executor:
@@ -507,6 +519,8 @@ def study_decorator(study_func):
         completed_run_list = get_completed_run_list(study_dir)
         print("Finished reading existing runs.")
 
+        num_called = 0
+        num_requested = 0
         # Execute function calls from study function
         for run_func, run_args, run_kwargs in it.zip_longest(*study_calls):
             # Make args, kwargs optional
@@ -526,17 +540,25 @@ def study_decorator(study_func):
             }
 
             # called with these args
+            num_requested += 1
             if run_not_present(completed_run_list, run_func, run_args, run_kwargs):
+                num_called += 1
                 # Print function call before executing
-                print_call(run_func, run_args, appended_run_kwargs)
+                if verbose:
+                    print_call(run_func, run_args, appended_run_kwargs)
 
                 # Execute the function (pass to executor)
-                run_futures.append(executor.apply(run_func, *run_args, **appended_run_kwargs))
+                if not dry_run:
+                    run_futures.append(executor.apply(run_func, *run_args, **appended_run_kwargs))
             else:
-                print("NOT ", end='')
-                print_call(run_func, run_args, appended_run_kwargs)
+                if verbose:
+                    print("NOT ", end='')
+                    print_call(run_func, run_args, appended_run_kwargs)
 
-            print()
+            if verbose:
+                print()
+
+        print("Running {} new / {} total requested tasks.".format(num_called, num_requested))
 
         # Once all functions have run, combine the results
         def wait_and_combine():
@@ -546,12 +568,15 @@ def study_decorator(study_func):
             time.sleep(2)
             combine_dbs(study_dir, study_name)
 
-        combine_thread = threading.Thread(target=wait_and_combine)
-        combine_thread.start()
+        if not dry_run:
+            combine_thread = threading.Thread(target=wait_and_combine)
+            combine_thread.start()
 
-        # This will be returned immediately.
-        # It can be probed with combined_thread.isAlive()
-        return combine_thread, run_futures
+            # This will be returned immediately.
+            # It can be probed with combined_thread.isAlive()
+            return combine_thread, run_futures
+        else:
+            return None, None
 
     return wrapper
 
