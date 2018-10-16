@@ -339,6 +339,9 @@ def combine_dbs(study_dir, table_name, verbose=False):
     ]
 
     combined_db = os.path.join(study_dir, '{}.db'.format(table_name))
+    if os.path.exists(combined_db):
+        print("Combined DB exists - deleting.")
+        os.remove(combined_db)
     print("Opening combined db: {}".format(combined_db))
     combined_conn = sqlite3.connect(combined_db)
 
