@@ -226,5 +226,84 @@ function angular_sign(theta_prime)
   angular_sign = sgn(pi/2.d0 - theta_prime)
 end function angular_sign
 
+subroutine gaussian_blur_2d(A, sigma, dx, dy, nk, num_threads)
+  ! 2D Gaussian blur (periodic BC) with std sigma
+  ! with kernel radius of nk (full size (2*nk+1)x(2*nk+1))
+  ! applied to matrix A with element spacings dx and dy.
+  double precision, intent(inout), dimension(:, :) :: A
+  double precision, intent(in) :: sigma, dx, dy
+  ! kernel half width
+  integer, intent(in) :: nk
+  ! kernel full width
+  integer kw
+  integer num_threads
+
+  ! A matrix size
+  integer nx, ny
+
+  ! indices
+  integer i1, j1
+  integer i2, j2
+  integer i, j
+  ! kernel
+  double precision, dimension(:,:), allocatable :: k
+  ! output matrix
+  double precision, dimension(:,:), allocatable :: B
+  ! kernel independent variables
+  double precision x, y
+
+  if(sigma > 0) then
+    nx = size(A, 1)
+    ny = size(A, 2)
+
+    kw = 2*nk + 1
+
+    allocate(B(nx, ny))
+    allocate(k(kw, kw))
+    write(*,*) 'creating kernel', sigma, nk
+    ! Create kernel
+    do i1=-nk, nk
+      x = i1*dx
+      i = i1+nk+1
+      do j1=-nk, nk
+          y = j1*dy
+          j = j1+nk+1
+          k(i,j) = exp(-(x**2+y**2)/(2*sigma**2))
+      end do
+
+    end do
+    ! normalize kernel
+    k = k / sum(k)
+
+    write(*,*) 'convolving'
+    ! convolve
+    !$omp parallel do default(private) private(x,y) &
+    !$omp private(i,j,i1,j1,i2,j2) shared(nx,ny,nk,kw) &
+    !$omp shared(A,B,k) &
+    !$omp num_threads(num_threads) collapse(2) &
+    !$omp schedule(dynamic, 10) ! 10 grid points per thread
+    do i1=1, nx
+      do j1=1, ny
+          B(i1, j1) = 0
+          do i2=1, kw
+            do j2=1, kw
+                i = mod1(i1 - nk + i2 - 1, nx)
+                j = mod1(j1 - nk + j2 - 1, ny)
+                B(i1, j1) = B(i1, j1) + k(i2, j2) * A(i, j)
+            end do
+          end do
+      end do
+    end do
+    !omp end parallel do
+    write(*,*) 'done convolving'
+
+    ! Update original matrix
+    A(:,:) = B(:,:)
+    deallocate(k)
+    deallocate(B)
+    write(*,*) 'gb2d done.'
+ end if
+end subroutine gaussian_blur_2d
+
 end module kelp3d
 

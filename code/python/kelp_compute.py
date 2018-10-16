@@ -84,7 +84,7 @@ def get_kelp_dist(kelp_dist, max_length, length_std, zmin, zmax, nz, water_speed
 
 ## Run Functions ##
 
-def kelp_abs_grid_f90_calculate(absorptance_kelp, a_water, ns, nz, num_dens, kelp_dist, fs, fr, ft, max_length, length_std, zmax, rope_spacing, num_threads, water_speed=None, water_angles=None):
+def kelp_abs_grid_f90_calculate(absorptance_kelp, a_water, ns, nz, num_dens, kelp_dist, fs, fr, ft, max_length, length_std, zmax, rope_spacing, num_threads, blur_radius, blur_nk, water_speed=None, water_angles=None):
     import numpy as np
     from kelp3d_objs import f90
 
@@ -127,7 +127,9 @@ def kelp_abs_grid_f90_calculate(absorptance_kelp, a_water, ns, nz, num_dens, kel
         water_angles,
         fs, fr, ft,
         p_kelp,
-        num_threads
+        num_threads,
+        blur_radius,
+        blur_nk
     )
 
     # Absorptance = % of light absorbed for whole frond (units 1).
@@ -179,6 +181,9 @@ def kelp_calculate_full(absorptance_kelp, a_water, b, ns, nz, na, num_dens, kelp
     # Keep constant over depth for now
     num_fronds = num_dens * dz * np.ones(nz)
 
+    # Kernel half-radius in gaussian filter applied to kelp dist.
+    blur_nk = int(np.ceil(2*ns*blur_radius/rope_spacing))
+
     # Absorptance = % of light absorbed for whole frond (units 1).
     # a_kelp = absorption coefficient = %/m (units 1/m).
     a_kelp = -np.log(1-absorptance_kelp) / ft
@@ -202,6 +207,8 @@ def kelp_calculate_full(absorptance_kelp, a_water, b, ns, nz, na, num_dens, kelp
     print("fs = {}".format(fs))
     print("fr = {}".format(fr))
     print("ft = {}".format(ft))
+    print("blur_radius.shape = {}".format(blur_radius.shape))
+    print("blur_nk.shape = {}".format(blur_nk.shape))
     print("p_kelp.shape = {}".format(p_kelp.shape))
 
     # Create arrays to hand mutable values to fortran
@@ -224,7 +231,9 @@ def kelp_calculate_full(absorptance_kelp, a_water, b, ns, nz, na, num_dens, kelp
         water_angles,
         fs, fr, ft,
         p_kelp,
-        num_threads
+        num_threads,
+        blur_radius,
+        blur_nk
     )
 
     # Calculate light field
@@ -319,11 +328,13 @@ def kelp_calculate_raw(a_water, b, ns, nz, na, kelp_dist, num_scatters, fd_flag,
         ft = 4e-4,
         # From Solveig's Master's Thesis
         max_length = 6.0,
-        # Not sure about this
-        # But higher std => smoother abs. coef.
-        # => better convergence (less discretization err.),
         # so I'm cranking it up.
         length_std = 1.0,
+        # Simulate moving rope via gaussian blur
+        # to kelp distribution. This is the gaussian sigma.
+        # Very important to smooth discontinuity at origin
+        # and limit discretization error
+        blur_radius = 0.2,
         zmax = 10, # Max. vertical
         rope_spacing = 10, # Horizontal
         # Fairly sunny day

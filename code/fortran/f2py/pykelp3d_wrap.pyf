@@ -1,8 +1,8 @@
 !    -*- f90 -*-
 ! Note: the context of this file is case sensitive.
 
-python module solve_rte_with_callbacks__user__routines 
-    interface solve_rte_with_callbacks_user_interface 
+python module solve_rte_with_callbacks__user__routines
+    interface solve_rte_with_callbacks_user_interface
         subroutine abs_func(x1,y1,z1,tmp_spatial,nx,ny,nz) ! in :pykelp3d_wrap:pykelp3d_wrap.f90:pykelp3d_wrap:solve_rte_with_callbacks:unknown_interface
             double precision, allocatable,dimension(nx,1,1) :: x1
             double precision, allocatable,dimension(1,ny,1) :: y1
@@ -52,13 +52,13 @@ python module solve_rte_with_callbacks__user__routines
         end subroutine source_expansion_func
     end interface solve_rte_with_callbacks_user_interface
 end python module solve_rte_with_callbacks__user__routines
-python module pykelp3d_wrap ! in 
+python module pykelp3d_wrap ! in
     interface  ! in :pykelp3d_wrap
         module pykelp3d_wrap ! in :pykelp3d_wrap:pykelp3d_wrap.f90
             use rte3d
             use kelp3d
             use asymptotics
-            subroutine gen_kelp(xmin,xmax,nx,ymin,ymax,ny,zmin,zmax,nz,frond_lengths,frond_stds,num_fronds,water_speeds,water_angles,fs,fr,ft,p_kelp,num_threads) ! in :pykelp3d_wrap:pykelp3d_wrap.f90:pykelp3d_wrap
+            subroutine gen_kelp(xmin,xmax,nx,ymin,ymax,ny,zmin,zmax,nz,frond_lengths,frond_stds,num_fronds,water_speeds,water_angles,fs,fr,ft,p_kelp,num_threads,blur_radius,blur_nk) ! in :pykelp3d_wrap:pykelp3d_wrap.f90:pykelp3d_wrap
                 double precision :: xmin
                 double precision :: xmax
                 integer, optional,check(shape(p_kelp,0)==nx),depend(p_kelp) :: nx=shape(p_kelp,0)
@@ -78,6 +78,8 @@ python module pykelp3d_wrap ! in
                 double precision :: ft
                 double precision dimension(nx,ny,nz),depend(nz) :: p_kelp
                 integer intent(in) :: num_threads
+                double precision :: blur_radius
+                integer :: blur_nk
             end subroutine gen_kelp
             subroutine calculate_light_field(xmin,xmax,nx,ymin,ymax,ny,zmin,zmax,nz,ntheta,nphi,a_w,a_k,b,num_vsf,vsf_angles,vsf_vals,theta_s,phi_s,i0,decay,p_kelp,radiance,irradiance,num_scatters,num_threads,fd_flag,lis_opts,lis_iter,lis_time,lis_resid) ! in :pykelp3d_wrap:pykelp3d_wrap.f90:pykelp3d_wrap
                 double precision intent(in) :: xmin
@@ -142,7 +144,7 @@ python module pykelp3d_wrap ! in
                 double precision intent(inout) :: lis_resid
             end subroutine solve_rte_with_callbacks
         end module pykelp3d_wrap
-    end interface 
+    end interface
 end python module pykelp3d_wrap
 
 ! This file was auto-generated with f2py (version:2).

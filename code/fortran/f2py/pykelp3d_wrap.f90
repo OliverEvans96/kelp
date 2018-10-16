@@ -7,7 +7,7 @@ module pykelp3d_wrap
 contains
   subroutine gen_kelp(xmin, xmax, nx, ymin, ymax, ny, zmin, zmax, nz, &
       frond_lengths, frond_stds, num_fronds, water_speeds, water_angles, &
-      fs, fr, ft, p_kelp, num_threads)
+      fs, fr, ft, p_kelp, num_threads, blur_radius, blur_nk)
 
     integer nx, ny, nz
     double precision xmin, xmax, ymin, ymax, zmin, zmax
@@ -18,6 +18,12 @@ contains
     integer quadrature_degree
     integer num_threads
     integer n_images
+    double precision blur_radius
+    ! Pixel raius of gaussian blur
+    ! larger => more accurate blur & longer computation
+    ! 2 or 3 is probably sufficient
+    integer blur_nk
+    integer k
 
     type(space_angle_grid) grid
     type(rope_state) rope
@@ -51,10 +57,21 @@ contains
     call frond%set_shape(fs, fr, ft)
 
     ! CALCULATE KELP
+    write(*, *) 'calculate kelp'
     call calculate_kelp_on_grid(grid, p_kelp, frond, rope, quadrature_degree, n_images, num_threads)
+
+    ! Blur kelp
+    write(*,*) 'Blur kelp'
+    write(*,*) 'blur_nk ', blur_nk
+    do k=1, nz
+       ! TODO: Create kernel once
+      call gaussian_blur_2d(p_kelp(:,:,k), blur_radius, grid%x%spacing(1), grid%y%spacing(1), blur_nk, num_threads)
+    end do
 
     call rope%deinit()
     call grid%deinit()
+
+    write(*,*) 'gen_kelp done'
 
   end subroutine gen_kelp
 
