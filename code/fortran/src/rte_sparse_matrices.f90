@@ -4,6 +4,9 @@ use kelp_context
 use mgmres
 use type_consts
 !use hdf5_utils
+! Use 64-bit integers for LIS
+! Necessary for FD solution w/ large matrices
+#define LONG__LONG
 #include "lisf.h"
 implicit none
 
@@ -34,7 +37,7 @@ type rte_mat
    LIS_VECTOR b, x
    LIS_SOLVER solver
    LIS_INTEGER ierr
-   character(len=256) solver_opts
+   character(len=1024) solver_opts
    logical initx_zeros
 
    ! Pointer to solver subroutine
@@ -117,6 +120,7 @@ contains
     n_total = mat%n_total
     nnz = mat%nonzero
 
+    write(*,*) 'lis_init'
     call lis_initialize(mat%ierr)
 
     call lis_solver_create(mat%solver, mat%ierr)
@@ -125,9 +129,9 @@ contains
     call lis_vector_create(comm_world, mat%b, mat%ierr)
     call lis_vector_create(comm_world, mat%x, mat%ierr)
 
-    call lis_matrix_set_size(mat%A, 0, n_total, mat%ierr)
-    call lis_vector_set_size(mat%b, 0, n_total, mat%ierr)
-    call lis_vector_set_size(mat%x, 0, n_total, mat%ierr)
+    call lis_matrix_set_size(mat%A, n_total, n_total, mat%ierr)
+    call lis_vector_set_size(mat%b, n_total, n_total, mat%ierr)
+    call lis_vector_set_size(mat%x, n_total, n_total, mat%ierr)
 
     call lis_vector_set_all(0.0d0, mat%x, mat%ierr)
     call lis_vector_set_all(0.0d0, mat%b, mat%ierr)
@@ -139,6 +143,7 @@ contains
 
     ! CSR Format
     ! http://www.scipy-lectures.org/advanced/scipy_sparse/csr_matrix.html
+    write(*,*) 'Allocate CSR arrays'
     allocate(mat%ptr(n_total+1))
     allocate(mat%col(nnz))
     allocate(mat%data(nnz))
@@ -224,7 +229,9 @@ contains
     ! close(3)
 
     ! Create matrix
+    write(*,*) 'LIS Set CSR'
     call lis_matrix_set_csr(mat%nonzero, mat%ptr, mat%col, mat%data, mat%A, mat%ierr)
+    write(*,*) 'LIS Assemble'
     call lis_matrix_assemble(mat%A, mat%ierr)
 
     ! Set solver options
@@ -234,13 +241,18 @@ contains
         init_opt = "-initx_zeros false -print out"
     end if
 
+    write(*,*) 'LIS set solver options'
+    write(*,*) 'opt: ', trim(init_opt)
     call lis_solver_set_option(init_opt, mat%solver, mat%ierr)
     if(len(trim(mat%solver_opts)) .gt. 0) then
+        write(*,*) 'opt: ', trim(mat%solver_opts)
        call lis_solver_set_option(mat%solver_opts, mat%solver, mat%ierr)
     end if
 
     ! Solve
+    write(*,*) 'LIS Solve'
     call lis_solve(mat%A, mat%b, mat%x, mat%solver, mat%ierr)
+    write(*,*) 'LIS Solve done'
 
   end subroutine mat_solve
 
@@ -258,7 +270,6 @@ contains
   subroutine mat_set_solver_opts(mat, solver_opts)
     class(rte_mat) mat
     character(len=*) solver_opts
-    write(*,*) "Setting solver opts: '", solver_opts, "'"
     mat%solver_opts = solver_opts
   end subroutine mat_set_solver_opts
 

@@ -186,7 +186,7 @@ contains
       call mat%set_solver_opts(lis_opts)
 
       ! Initialize & set initial guess
-      write(*,*) 'Light'
+      write(*,*) 'Light init'
       call light%init(mat)
       light%radiance = radiance
 
@@ -454,7 +454,9 @@ contains
       ! Set boundary condition
       call mat%init(grid, iops)
       call mat%set_bc(bc)
+      write(*,*) 'Gen matrix'
       call gen_matrix(mat, num_threads)
+      write(*,*) 'Matrix values determined'
 
       ! Set solver options
       if(num_scatters .ge. 0) then
@@ -472,6 +474,7 @@ contains
       ! Solve system
       write(*,*) 'Calculate Radiance'
       call light%calculate_radiance()
+      write(*,*) 'Radiance calculated'
 
       call mat%get_solver_stats(lis_iter, lis_time, lis_resid)
       call mat%deinit()

@@ -1,4 +1,7 @@
 module light_context
+! Use 64-bit integers for LIS
+! Necessary for FD solution w/ large matrices
+#define LONG__LONG
 #include "lisf.h"
   use sag
   use rte_sparse_matrices
@@ -61,6 +64,7 @@ contains
     integer i, j, k, p
     integer nx, ny, nz, nomega
     integer(index_kind) index
+    LIS_INTEGER lis_test_int
 
     nx = light%grid%x%num
     ny = light%grid%y%num
@@ -75,6 +79,8 @@ contains
     index = 1
 
     write(*,*) 'Set matrix values'
+    write(*,*) 'index_kind = ', storage_size(index)
+    write(*,*) 'lis_kind = ', storage_size(lis_test_int)
     ! Set initial guess from provided radiance
     ! Traverse solution vector in order
     ! so as to avoid calculating index

@@ -27,7 +27,7 @@ lisobj=$(LIB)/liblis.a
 
 $(lisobj):
 	git submodule update --init --progress # Get submodule if not present
-	cd $(LIS) && ./configure --prefix=$(PWD)/.. --enable-shared --enable-omp --enable-fortran --enable-saamg --with-pic
+	cd $(LIS) && ./configure --prefix=$(PWD)/.. --enable-shared --enable-omp --enable-fortran --enable-saamg --with-pic --enable-longlong
 	cd $(LIS) && make -j5
 	cd $(LIS) && make install
 
