@@ -6,6 +6,7 @@ olemodel/*
 *.o
 *.mod
 .*.swp
+.*.swo
 gmon.out
 vgcore.*
 data.txt
