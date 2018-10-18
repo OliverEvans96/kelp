@@ -60,7 +60,7 @@ contains
     class(light_state) light
     integer i, j, k, p
     integer nx, ny, nz, nomega
-    integer index
+    integer(index_kind) index
 
     nx = light%grid%x%num
     ny = light%grid%y%num
@@ -74,6 +74,7 @@ contains
 
     index = 1
 
+    write(*,*) 'Set matrix values'
     ! Set initial guess from provided radiance
     ! Traverse solution vector in order
     ! so as to avoid calculating index
@@ -96,10 +97,12 @@ contains
     !call light%mat%initial_guess()
 
     ! Solve (LIS)
+    write(*,*) 'Solve matrix'
     call light%mat%solve()
 
     index = 1
 
+    write(*,*) 'Extract solution'
     ! Extract solution
     do k=1, nz
        do i=1, nx
