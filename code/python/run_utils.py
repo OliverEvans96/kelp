@@ -236,25 +236,29 @@ def run_equal_to_db_row(run_dict, db_row_dict, exclude_list=[]):
     for param, run_val in run_dict.items():
         if param in exclude_list:
             continue
-        db_val = db_row_dict[param]
+        try:
+            db_val = db_row_dict[param]
 
-        parsed_db_val = db_val
-        if isinstance(db_val, str):
-            if isinstance(run_val, dict):
-                parsed_db_val = json.loads(db_val)
+            parsed_db_val = db_val
+            if isinstance(db_val, str):
+                if isinstance(run_val, dict):
+                    parsed_db_val = json.loads(db_val)
+                    is_equal = (parsed_db_val == run_val)
+                elif isinstance(run_val, sp.Expr):
+                    parsed_db_val = parse_expr(
+                        db_val,
+                        local_dict={'gamma': sp.Symbol('gamma')}
+                    )
+                    is_equal = (0 == sp.expand(run_val - parsed_db_val))
+            else:
                 is_equal = (parsed_db_val == run_val)
-            elif isinstance(run_val, sp.Expr):
-                parsed_db_val = parse_expr(
-                    db_val,
-                    local_dict={'gamma': sp.Symbol('gamma')}
-                )
-                is_equal = (0 == sp.expand(run_val - parsed_db_val))
-        else:
-            is_equal = (parsed_db_val == run_val)
 
-        # Not a match if db value doesn't equal run value
-        if not is_equal:
-            return False
+            # Not a match if db value doesn't equal run value
+            if not is_equal:
+                return False
+        # TODO: Remove this?
+        except KeyError:
+            pass
 
     return True
 
