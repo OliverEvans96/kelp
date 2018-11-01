@@ -81,6 +81,22 @@ def get_kelp_dist(kelp_dist, max_length, length_std, zmin, zmax, nz, water_speed
 
     return frond_lengths, frond_stds, water_speeds, water_angles
 
+def get_vsf(num_vsf, vsf_type):
+    # theta \in [0, pi]
+    vsf_angles = np.linspace(0, np.pi, num_vsf)
+    # delta \in [-1, 1]
+    delta = np.cos(vsf_angles)
+
+    # vsf = beta \in [0, \infty)
+
+    if vsf_type == 'constant':
+        beta = 0*delta + 1/(4*np.pi)
+    elif vsf_type == 'linear':
+        beta = (delta+1) / (4*np.pi)
+    else:
+        raise ValueError("unknown vsf type '{}'".format(vsf_type))
+    return beta
+
 
 ## Run Functions ##
 
@@ -142,7 +158,7 @@ def kelp_abs_grid_f90_calculate(absorptance_kelp, a_water, ns, nz, num_dens, kel
     return abs_grid
 
 
-def kelp_calculate_full(absorptance_kelp, a_water, b, ns, nz, na, num_dens, kelp_dist, fs, fr, ft, max_length, length_std, zmax, rope_spacing, I0, phi_s, theta_s, decay, num_threads, num_scatters, fd_flag, lis_opts):
+def kelp_calculate_full(absorptance_kelp, a_water, b, ns, nz, na, num_dens, kelp_dist, vsf_type, fs, fr, ft, max_length, length_std, blur_radius, zmax, rope_spacing, I0, phi_s, theta_s, decay, num_threads, num_scatters, fd_flag, lis_opts):
 
     from kelp3d_objs import f90
     import numpy as np
@@ -163,8 +179,7 @@ def kelp_calculate_full(absorptance_kelp, a_water, b, ns, nz, na, num_dens, kelp
     nomega = int(ntheta*(nphi-2)+2)
 
     num_vsf = na
-    vsf_angles = np.linspace(0, np.pi, na)
-    vsf_vals = 0*vsf_angles + 1/(4*np.pi)
+    vsf_angles, vsf_vals = get_vsf(num_vsf, vsf_type)
 
     p_kelp = np.asfortranarray(np.zeros([nx, ny, nz]))
     rad = np.asfortranarray(np.zeros([nx, ny, nz, nomega]))
@@ -207,8 +222,8 @@ def kelp_calculate_full(absorptance_kelp, a_water, b, ns, nz, na, num_dens, kelp
     print("fs = {}".format(fs))
     print("fr = {}".format(fr))
     print("ft = {}".format(ft))
-    print("blur_radius.shape = {}".format(blur_radius.shape))
-    print("blur_nk.shape = {}".format(blur_nk.shape))
+    print("blur_radius = {}".format(blur_radius))
+    print("blur_nk = {}".format(blur_nk))
     print("p_kelp.shape = {}".format(p_kelp.shape))
 
     # Create arrays to hand mutable values to fortran
@@ -315,6 +330,7 @@ def kelp_calculate_raw(a_water, b, ns, nz, na, kelp_dist, num_scatters, fd_flag,
     import time
 
     default_vals = dict(
+        vsf_type='constant',
         # TODO: THIS IS PROBABLY WRONG
         absorptance_kelp = 0.07,
         # Broch 2013
@@ -354,6 +370,7 @@ def kelp_calculate_raw(a_water, b, ns, nz, na, kelp_dist, num_scatters, fd_flag,
     if not num_threads:
         num_threads = multiprocessing.cpu_count()
 
+    # TODO: Add vsf kwarg
     return kelp_calculate_full(
         a_water=a_water,
         b=b,
