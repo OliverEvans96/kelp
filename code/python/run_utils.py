@@ -216,7 +216,7 @@ def create_db_run_table(conn, table_name, prefix='.'):
         ('lis_time', 'REAL'),
         ('lis_resid', 'REAL'),
         # Array data (NETCDF)
-        ('data_path', 'CHAR(256')
+        ('data_filename', 'CHAR(256)')
     )
 
     return create_db_generic_table_from_tuple(conn, table_name, columns, prefix='.')
