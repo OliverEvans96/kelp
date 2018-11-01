@@ -476,8 +476,6 @@ def create_nc(data_path, **results):
     # Close file
     rootgrp.close()
 
-    return data_path
-
 def print_call(run_func, run_args, run_kwargs):
     func_name = run_func.__name__
     args_str = ', '.join([arg.__repr__() for arg in run_args])
@@ -599,12 +597,16 @@ def run_decorator(run_func):
     """
     @functools.wraps(run_func)
     def wrapper(*args, study_dir=None, study_name=None, **kwargs):
-        scalar_params, results = run_func(*args, **kwargs)
-
         if not study_dir:
             raise ValueError("kwarg `study_dir` required for functions wrapped by `run_decorator`")
         if not study_name:
             raise ValueError("kwarg `study_name` required for functions wrapped by `run_decorator`")
+
+        scalar_params, results = run_func(*args, **kwargs)
+
+        # Get dict of args, kwargs
+        # TODO: Scope?
+        args_dict = ru.dict_from_args(run_func, args, kwargs)
 
         # Generate random name in correct directory
         # TODO: I'm a bit confused about the scope here.
@@ -623,15 +625,17 @@ def run_decorator(run_func):
 
         # Create data file containing results
         nc_dict = {
+            **args_dict,
             **scalar_params,
             **results
         }
         # TODO: Scope again
-        nc_data_path = ru.create_nc(data_path, **nc_dict)
+        ru.create_nc(data_path, **nc_dict)
 
         # Save to DB
         db_dict = {
-            'data_path': nc_data_path,
+            'data_path': os.path.basename(data_path),
+            **args_dict,
             **scalar_params
         }
 
