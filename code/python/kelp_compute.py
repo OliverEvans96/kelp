@@ -290,6 +290,7 @@ def kelp_calculate_full(absorptance_kelp, a_water, b, ns, nz, na, num_dens, kelp
         'nomega': nomega,
         'num_dens': num_dens,
         'kelp_dist': kelp_dist,
+        'vsf_type': vsf_type,
         'fs': fs,
         'fr': fr,
         'ft': ft,
