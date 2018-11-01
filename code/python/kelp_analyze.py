@@ -75,10 +75,10 @@ def query_results(conn, study_name, base_dir, verbose=False, **kwargs):
 
     # Form entire query
     query = ' '.join([
-        'SELECT data_path FROM {table_name}',
+        'SELECT data_filename FROM {study_name}',
         '{where_clause}'
     ]).format(
-        table_name=table_name,
+        study_name=study_name,
         where_clause=where_clause
     )
 
@@ -87,10 +87,19 @@ def query_results(conn, study_name, base_dir, verbose=False, **kwargs):
 
     # Execute query
     cursor = conn.execute(query)
-    results_list = cursor.fetchall()
+    data_filename_list = cursor.fetchall()
 
     # Extract matching datasets
-    datasets = [nc.Dataset(results[-1]) for results in results_list]
+    data_path_list = [
+        os.path.join(
+            study_dir,
+            'data',
+            data_filename
+        )
+        for data_filename in data_filename_list
+    ]
+
+    datasets = [nc.Dataset(results[-1]) for data_path in data_path_list]
     return datasets
 
 def nokelp_visualize(compute_time, date, radiance, irradiance):
