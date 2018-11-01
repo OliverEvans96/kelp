@@ -625,6 +625,7 @@ def run_decorator(run_func):
 
         # Create data file containing results
         nc_dict = {
+            'run_func': run_func.__name__,
             **args_dict,
             **scalar_params,
             **results
@@ -634,6 +635,7 @@ def run_decorator(run_func):
 
         # Save to DB
         db_dict = {
+            'run_func': run_func.__name__,
             'data_path': os.path.basename(data_path),
             **args_dict,
             **scalar_params
