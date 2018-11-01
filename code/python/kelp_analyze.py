@@ -43,9 +43,11 @@ def sanitize_sql_val(val):
     else:
         return val
 
-def query_results(conn, table_name, verbose=False, **kwargs):
-    where_subclause_list = []
+def query_results(conn, study_name, base_dir, verbose=False, **kwargs):
+    study_dir = os.path.join(base_dir, study_name)
 
+    # Construct SQL query subclauses
+    where_subclause_list = []
     for key, val in kwargs.items():
         if is_iterable(val):
             val = [
@@ -278,12 +280,13 @@ def calculate_flux(perceived_irrad, p_kelp, ft, rope_spacing, zmin, zmax):
     )
     return z_with_endpoints, fa_with_endpoints, pi_with_endpoints, flux
 
-def compute_err(conn, table_name, best_perceived_irrad, **run_dict):
+def compute_err(conn, table_name, base_dir, best_perceived_irrad, **run_dict):
     #print("ns={}, nz={}, na={}".format(ns,nz,na))
 
     compute_results = query_results(
         conn,
         table_name,
+        base_dir,
         **run_dict
     )[0]
 
@@ -320,7 +323,7 @@ def compute_err(conn, table_name, best_perceived_irrad, **run_dict):
 
     return perceived_irrad, flux, abs_err, rel_err, compute_results['compute_time']
 
-def cori_plot_two_avg_irrads(study_name, grid1, grid2, log_data=True, log_err=True):
+def cori_plot_two_avg_irrads(study_name, base_dir, grid1, grid2, log_data=True, log_err=True):
     """
     Plot both perceived_irrads. rel_err is w.r.t. grid1.
     Also plot pointwise errors.
@@ -334,11 +337,13 @@ def cori_plot_two_avg_irrads(study_name, grid1, grid2, log_data=True, log_err=Tr
     results1 = query_results(
         conn,
         study_name,
+        base_dir,
         **grid1
     )[0]
     results2 = query_results(
         conn,
         study_name,
+        base_dir,
         **grid2
     )[0]
 
@@ -550,7 +555,7 @@ def get_unique_vals(conn, table_name, field_names):
         for z in zip(*cursor.fetchall())
     )
 
-def grid_study_analyze_full(db_path, table_name):
+def grid_study_analyze_full(db_path, table_name, base_dir):
     """
     Analyze results from grid_study_compute.
     Compare all to best, calculate errors.
@@ -568,6 +573,7 @@ def grid_study_analyze_full(db_path, table_name):
     best_results = query_results(
         conn,
         table_name,
+        base_dir,
         ns=ns_max,
         nz=nz_max,
         na=na_max,
@@ -601,7 +607,7 @@ def grid_study_analyze_full(db_path, table_name):
                 rel_err_arr[i, j, k] = rel_err
     return perceived_irrad_dict, abs_err_arr, rel_err_arr, compute_time_dict
 
-def grid_study_analyze_fd_vs_noscat_onespace(db_path, table_name):
+def grid_study_analyze_fd_vs_noscat_onespace(db_path, table_name, base_dir):
     """
     Analyze results from grid_study_compute.
     Compare all to noscat, calculate errors.
@@ -626,6 +632,7 @@ def grid_study_analyze_fd_vs_noscat_onespace(db_path, table_name):
     noscat_results = query_results(
         conn,
         table_name,
+        base_dir,
         ns=ns_max,
         na=na_max,
         fd_flag=False
@@ -673,7 +680,7 @@ def grid_study_analyze_fd_vs_noscat_onespace(db_path, table_name):
     return perceived_irrad_dict, abs_err_arr, rel_err_arr, compute_time_dict
 
 
-def grid_study_analyze_fd_vs_best_onespace(db_path, table_name):
+def grid_study_analyze_fd_vs_best_onespace(db_path, table_name, base_dir):
     """
     Analyze results from grid_study_compute.
     Compare all to best, calculate errors.
@@ -698,6 +705,7 @@ def grid_study_analyze_fd_vs_best_onespace(db_path, table_name):
     best_results = query_results(
         conn,
         table_name,
+        base_dir,
         ns=ns_max,
         na=na_max,
         fd_flag=True
@@ -735,7 +743,7 @@ def grid_study_analyze_fd_vs_best_onespace(db_path, table_name):
 
     return perceived_irrad_dict, abs_err_arr, rel_err_arr, compute_time_dict
 
-def grid_study_analyze_edges(db_path, table_name):
+def grid_study_analyze_edges(db_path, table_name, base_dir):
     """
     Analyze results from grid_study_compute.
     Compare all to best, calculate errors.
@@ -761,6 +769,7 @@ def grid_study_analyze_edges(db_path, table_name):
     best_results = query_results(
         conn,
         table_name,
+        base_dir,
         ns=ns_max,
         nz=nz_max,
         na=na_max
