@@ -355,7 +355,10 @@ def combine_dbs(study_dir, table_name, verbose=False):
         conn = sqlite3.connect(db)
         if verbose:
             print("Combining {} (tables: {})".format(db, get_table_names(conn)))
-        cursor = conn.execute('SELECT * FROM {}'.format(table_name))
+        try:
+            cursor = conn.execute('SELECT * FROM {}'.format(table_name))
+        except sqlite3.OperationalError as err:
+            raise sqlite3.OperationalError("Error on '{}': {}".format(db, ''.join(map(str,err.args))))
         if verbose:
             print("read.")
         columns = [tup[0] for tup in cursor.description]
@@ -636,7 +639,7 @@ def run_decorator(run_func):
         # Save to DB
         db_dict = {
             'run_func': run_func.__name__,
-            'data_path': os.path.basename(data_path),
+            'data_filename': os.path.basename(data_path),
             **args_dict,
             **scalar_params
         }

@@ -89,13 +89,13 @@ def get_vsf(num_vsf, vsf_type):
 
     # vsf = beta \in [0, \infty)
 
-    if vsf_type == 'constant':
+    if vsf_type == 'uniform':
         beta = 0*delta + 1/(4*np.pi)
     elif vsf_type == 'linear':
         beta = (delta+1) / (4*np.pi)
     else:
         raise ValueError("unknown vsf type '{}'".format(vsf_type))
-    return beta
+    return vsf_angles, beta
 
 
 ## Run Functions ##
@@ -331,7 +331,7 @@ def kelp_calculate_raw(a_water, b, ns, nz, na, kelp_dist, num_scatters, fd_flag,
     import time
 
     default_vals = dict(
-        vsf_type='constant',
+        vsf_type='uniform',
         # TODO: THIS IS PROBABLY WRONG
         absorptance_kelp = 0.07,
         # Broch 2013
@@ -409,6 +409,7 @@ def kelp_calculate_scalar_metrics(a_water, b, ns, nz, na, kelp_dist, num_scatter
     rope_spacing = scalar_params['rope_spacing']
     p_kelp = results['p_kelp']
     irrad = results['irrad']
+    avg_irrad = np.mean(irrad, axis=(0,1))
 
     perceived_irrad = ka.calculate_perceived_irrad(p_kelp, irrad)
     _, _, _, flux = ka.calculate_flux(perceived_irrad, p_kelp, ft, rope_spacing, zmin, zmax)
@@ -433,6 +434,8 @@ def kelp_calculate_scalar_metrics(a_water, b, ns, nz, na, kelp_dist, num_scatter
 
     results = {
         **results,
+        'perceived_irrad': perceived_irrad,
+        'avg_irrad': avg_irrad,
         'flux': flux,
         'pi_1': pi_1,
         'pi_3': pi_3,
@@ -848,7 +851,7 @@ def verify_compute(ns_list, nz_list, ntheta_list, nphi_list, rope_spacing, zmax,
     return func_list, args_list, kwargs_list
 
 @ru.study_decorator
-def verify_asym_compute(b_list, num_scatters_list, num_threads, ns, nz, ntheta, nphi, rope_spacing, zmax, sol_expr, abs_expr, source_expr, bc_expr, vsf_expr, param_dict):
+def mms_verify_asym_compute(b_list, num_scatters_list, num_threads, ns, nz, ntheta, nphi, rope_spacing, zmax, sol_expr, abs_expr, source_expr, bc_expr, vsf_expr, param_dict, do_fd=False):
     """
     Maintain constant grid,
     loop over:
@@ -872,7 +875,6 @@ def verify_asym_compute(b_list, num_scatters_list, num_threads, ns, nz, ntheta, 
         'source_expr': source_expr,
         'bc_expr': bc_expr,
         'vsf_expr': vsf_expr,
-        'fd_flag': fd_flag,
         'num_threads': num_threads
     }
 
@@ -891,12 +893,21 @@ def verify_asym_compute(b_list, num_scatters_list, num_threads, ns, nz, ntheta, 
                 'b': b,
                 'num_scatters': num_scatters,
                 'param_dict': param_dict.copy(),
+                'fd_flag': False,
                 **const_kwargs
             }
 
             func_list.append(solve_rte_with_callbacks)
             args_list.append([])
             kwargs_list.append(run_kwargs)
+
+            if do_fd:
+                func_list.append(solve_rte_with_callbacks)
+                args_list.append([])
+                kwargs_list.append({
+                    **run_kwargs,
+                    'fd_flag': True
+                })
 
     return func_list, args_list, kwargs_list
 
@@ -1292,7 +1303,7 @@ def verify_kelp_single_space_compute_scalar_metrics(a_water, b, ns_list, na, kel
     return func_list, args_list, kwargs_list
 
 @ru.study_decorator
-def verify_kelp_1d_compute_scalar_metrics(a_water, b, nz_list, kelp_dist, num_scatters, fd_flag, lis_opts=None, num_threads=None):
+def verify_kelp_1d_compute_scalar_metrics(a_water, b, nz_list, kelp_dist, num_scatters, fd_flag, lis_opts=None, num_threads=None, **kwargs):
 
     if not lis_opts:
         lis_opts = '-i gmres -restart 100'
@@ -1305,7 +1316,7 @@ def verify_kelp_1d_compute_scalar_metrics(a_water, b, nz_list, kelp_dist, num_sc
     kwargs_list = []
     for nz in nz_list:
         run_args = [a_water, b, ns, nz, na, kelp_dist, num_scatters, fd_flag]
-        run_kwargs = {'lis_opts': '', 'num_threads': num_threads}
+        run_kwargs = {'lis_opts': '', 'num_threads': num_threads, **kwargs}
         func_list.append(kelp_calculate_scalar_metrics)
         args_list.append(run_args)
         kwargs_list.append(run_kwargs)

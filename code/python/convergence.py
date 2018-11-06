@@ -25,7 +25,7 @@ def lin_fit(x, y, x0, x1):
     m0 = 1
     b0 = 0
     res = minimize(resid, (m0, b0))
-    m, b = res.x
+    m, b, = res.x
 
     return m, b
 

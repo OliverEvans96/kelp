@@ -74,19 +74,36 @@ def query_results(conn, study_name, base_dir, verbose=False, **kwargs):
         where_clause = ''
 
     # Form entire query
-    query = ' '.join([
-        'SELECT data_filename FROM {study_name}',
-        '{where_clause}'
-    ]).format(
-        study_name=study_name,
-        where_clause=where_clause
-    )
+    try:
+        query = ' '.join([
+            'SELECT data_filename FROM {study_name}',
+            '{where_clause}'
+        ]).format(
+            study_name=study_name,
+            where_clause=where_clause
+        )
 
-    if verbose:
-        print("query: '{}'".format(query))
+        if verbose:
+            print("query: '{}'".format(query))
 
-    # Execute query
-    cursor = conn.execute(query)
+        # Execute query
+        cursor = conn.execute(query)
+    except sqlite3.OperationalError:
+        # Old simulations have `data_path` column instead of `data_filename`
+        # (entries are the same in each)
+        query = ' '.join([
+            'SELECT data_path FROM {study_name}',
+            '{where_clause}'
+        ]).format(
+            study_name=study_name,
+            where_clause=where_clause
+        )
+
+        if verbose:
+            print("query: '{}'".format(query))
+
+        # Execute query
+        cursor = conn.execute(query)
     data_filename_list = cursor.fetchall()
 
     # Extract matching datasets
@@ -96,10 +113,10 @@ def query_results(conn, study_name, base_dir, verbose=False, **kwargs):
             'data',
             data_filename
         )
-        for data_filename in data_filename_list
+        for (data_filename,) in data_filename_list
     ]
 
-    datasets = [nc.Dataset(results[-1]) for data_path in data_path_list]
+    datasets = [nc.Dataset(data_path) for data_path in data_path_list]
     return datasets
 
 def nokelp_visualize(compute_time, date, radiance, irradiance):
