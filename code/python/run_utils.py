@@ -507,18 +507,17 @@ def study_decorator(study_func):
     Other data files located at {base_dir}/{study_name}/data/*.nc
     """
     @functools.wraps(study_func)
-    def wrapper(study_name, *study_args, base_dir=os.curdir, dry_run=False, verbose=False, executor=None, **study_kwargs):
+    def wrapper(study_name, *study_args, base_dir=os.curdir, dry_run=False, verbose=False, **study_kwargs):
         if dry_run:
             print("-- Dry run - no computations will be performed. --")
 
         study_dir = os.path.join(base_dir, study_name)
-        if not executor:
-            executor = ipp.Client().load_balanced_view()
-
         create_dirs(study_dir)
         study_calls = study_func(*study_args, **study_kwargs)
 
         run_futures = []
+
+        print([l[:30] for l in study_calls])
 
         # Read all .dbs first, then check each run against the list
         # (keeping all in memory is way better than reading every .db
@@ -529,9 +528,10 @@ def study_decorator(study_func):
 
         num_called = 0
         num_requested = 0
+        final_call_list = []
         # Execute function calls from study function
-        for run_func, run_args, run_kwargs in it.zip_longest(*study_calls):
-            # Make args, kwargs optional
+        for run_func, run_args, run_kwargs, task_label in it.zip_longest(*study_calls):
+            # Make args, kwargs, task_label optional
             if not run_args:
                 run_args = ()
             if not run_kwargs:
@@ -557,7 +557,12 @@ def study_decorator(study_func):
 
                 # Execute the function (pass to executor)
                 if not dry_run:
-                    run_futures.append(executor.apply(run_func, *run_args, **appended_run_kwargs))
+                    final_call_list.append({
+                        'func': run_func,
+                        'args': run_args,
+                        'kwargs': appended_run_kwargs,
+                        'task_label': task_label
+                    })
             else:
                 if verbose:
                     print("NOT ", end='')
@@ -565,6 +570,56 @@ def study_decorator(study_func):
 
             if verbose:
                 print()
+
+        # Create executors
+        client = ipp.Client()
+        dv = client.direct_view()
+        def sh(cmd):
+            import subprocess
+            return subprocess.check_output(cmd, shell=True)
+        # Get mapping from engine id to label
+        engine_label_dict = {
+            client.ids[i]: l.decode().strip()
+            for i, l in enumerate(dv.apply(sh, 'echo $IPE_LABEL').result())
+        }
+        print("engine_label_dict = {}".format(engine_label_dict))
+        # Get unique task labels
+        task_label_set = set(
+            call['task_label']
+            for call in final_call_list
+        )
+        print("task_label_set = {}".format(task_label_set))
+
+        # Create the executor for each label
+        # to match the appropriate engines
+        lv_dict = {
+            label: client.load_balanced_view([
+                i
+                for i, l in engine_label_dict.items()
+                if l == label
+            ])
+            for label in task_label_set
+        }
+        # executor for tasks without
+        # an engine requirement
+        lv_dict[None] = client.load_balanced_view()
+        print("lv_dict: {}".format(lv_dict))
+
+        # Submit jobs to engines
+        for call in final_call_list:
+            task_label = call['task_label']
+            future = lv_dict[task_label].apply(
+                call['func'],
+                *call['args'],
+                **call['kwargs']
+            )
+            # Save task info to future
+            future.func = call['func'].__name__
+            future.args = call['args']
+            future.kwargs = call['kwargs']
+            future.task_label = task_label
+            # Save future
+            run_futures.append(future)
 
         print("Running {} new / {} total requested tasks.".format(num_called, num_requested))
 
