@@ -24,6 +24,13 @@ from sympy.parsing.sympy_parser import parse_expr
 
 ## Misc. utils ##
 
+def check_label(label):
+    """Check IPyParallel engine label"""
+    def sh(cmd):
+        import subprocess
+        return subprocess.check_output(cmd, shell=True).decode().strip()
+    return sh('echo $IPE_LABEL') == label
+
 def get_random_unused_filename(dir='.', prefix='', suffix=''):
     with tempfile.NamedTemporaryFile(dir=dir, prefix=prefix, suffix=suffix, delete=False) as fh:
         filename = fh.name
@@ -517,6 +524,7 @@ def study_decorator(study_func):
 
         run_futures = []
 
+        print("newnew")
         print([l[:30] for l in study_calls])
 
         # Read all .dbs first, then check each run against the list
@@ -571,45 +579,17 @@ def study_decorator(study_func):
             if verbose:
                 print()
 
-        # Create executors
+        # Create executor
         client = ipp.Client()
-        dv = client.direct_view()
-        def sh(cmd):
-            import subprocess
-            return subprocess.check_output(cmd, shell=True)
-        # Get mapping from engine id to label
-        engine_label_dict = {
-            client.ids[i]: l.decode().strip()
-            for i, l in enumerate(dv.apply(sh, 'echo $IPE_LABEL').result())
-        }
-        print("engine_label_dict = {}".format(engine_label_dict))
-        # Get unique task labels
-        task_label_set = set(
-            call['task_label']
-            for call in final_call_list
-        )
-        print("task_label_set = {}".format(task_label_set))
+        lv = client.load_balanced_view()
 
-        # Create the executor for each label
-        # to match the appropriate engines
-        lv_dict = {
-            label: client.load_balanced_view([
-                i
-                for i, l in engine_label_dict.items()
-                if l == label
-            ])
-            for label in task_label_set
-        }
-        # executor for tasks without
-        # an engine requirement
-        lv_dict[None] = client.load_balanced_view()
-        print("lv_dict: {}".format(lv_dict))
-
-        # Submit jobs to engines
+        # Submit jobs to engines, requiring engine label as an IPP functional dependency
+        # https://ipyparallel.readthedocs.io/en/latest/task.html#functional-dependencies
         for call in final_call_list:
             task_label = call['task_label']
-            future = lv_dict[task_label].apply(
-                call['func'],
+            task = ipp.depend(check_label, task_label)(call['func'])
+            future = lv.apply(
+                task,
                 *call['args'],
                 **call['kwargs']
             )
