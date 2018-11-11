@@ -260,7 +260,7 @@ subroutine gaussian_blur_2d(A, sigma, dx, dy, nk, num_threads)
 
     allocate(B(nx, ny))
     allocate(k(kw, kw))
-    write(*,*) 'creating kernel', sigma, nk
+    !write(*,*) 'creating kernel', sigma, nk
     ! Create kernel
     do i1=-nk, nk
       x = i1*dx
@@ -275,7 +275,7 @@ subroutine gaussian_blur_2d(A, sigma, dx, dy, nk, num_threads)
     ! normalize kernel
     k = k / sum(k)
 
-    write(*,*) 'convolving'
+    !write(*,*) 'convolving'
     ! convolve
     !$omp parallel do default(private) private(x,y) &
     !$omp private(i,j,i1,j1,i2,j2) shared(nx,ny,nk,kw) &
@@ -295,13 +295,13 @@ subroutine gaussian_blur_2d(A, sigma, dx, dy, nk, num_threads)
       end do
     end do
     !omp end parallel do
-    write(*,*) 'done convolving'
+    !write(*,*) 'done convolving'
 
     ! Update original matrix
     A(:,:) = B(:,:)
     deallocate(k)
     deallocate(B)
-    write(*,*) 'gb2d done.'
+    !write(*,*) 'gb2d done.'
  end if
 end subroutine gaussian_blur_2d
 

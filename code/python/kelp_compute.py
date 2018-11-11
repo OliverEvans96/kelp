@@ -369,7 +369,10 @@ def kelp_calculate_raw(a_water, b, ns, nz, na, kelp_dist, num_scatters, fd_flag,
     run_kwargs = {**default_vals, **new_kwargs}
 
     if not num_threads:
-        num_threads = multiprocessing.cpu_count()
+        if 'OMP_NUM_THREADS' in os.environ:
+            num_threads = os.environ['OMP_NUM_THREADS']
+        else:
+            num_threads = multiprocessing.cpu_count()
 
     # TODO: Add vsf kwarg
     return kelp_calculate_full(

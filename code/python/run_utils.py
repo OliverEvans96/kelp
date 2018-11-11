@@ -524,7 +524,6 @@ def study_decorator(study_func):
 
         run_futures = []
 
-        print("newnew")
         print([l[:30] for l in study_calls])
 
         # Read all .dbs first, then check each run against the list
