@@ -1458,3 +1458,42 @@ def iop_study_compute_scalar_metrics(ns_list, na_list, a_water_list, b_list, num
                         task_label_list.append(asym_label)
 
     return func_list, args_list, kwargs_list, task_label_list
+
+@ru.study_decorator
+def full_grid_study_compute_scalar_metrics(ns_list, na_list, a_water, b, num_scatters, kelp_dist, do_fd, do_asym=True, fd_label='fd', asym_label='asym', lis_opts=None, num_threads=None, **kwargs):
+    """
+    Loop over ns, na and calculate asym. soln.
+    If do_fd, FD solution will be calculated for all (b, ns)
+    """
+
+    if not lis_opts:
+        lis_opts = '-i gmres -restart 100'
+
+    fd_num_scatters = 0
+
+    func_list = []
+    args_list = []
+    kwargs_list = []
+    task_label_list = []
+    for ns in ns_list:
+        nz = ns
+        for na in na_list:
+            if do_fd:
+                fd_flag = True
+                run_args = [a_water, b, ns, nz, na, kelp_dist, fd_num_scatters, fd_flag]
+                run_kwargs = {'num_threads': num_threads, **kwargs}
+                func_list.append(kelp_calculate_scalar_metrics)
+                args_list.append(run_args)
+                kwargs_list.append(run_kwargs)
+                task_label_list.append(fd_label)
+
+            if do_asym:
+                fd_flag = False
+                run_args = [a_water, b, ns, nz, na, kelp_dist, num_scatters, fd_flag]
+                run_kwargs = {'num_threads': num_threads, **kwargs}
+                func_list.append(kelp_calculate_scalar_metrics)
+                args_list.append(run_args)
+                kwargs_list.append(run_kwargs)
+                task_label_list.append(asym_label)
+
+    return func_list, args_list, kwargs_list, task_label_list
