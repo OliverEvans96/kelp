@@ -629,9 +629,9 @@ contains
 
     dz = mat%grid%z%spacing(1)
 
-    val1 = mat%grid%angles%cos_phi_p(indices%p) / (5.d0 * dz)
-    val2 = 7.d0 * val1
-    bc_val = 8.d0 * val1 * mat%surface_vals(indices%p)
+    val1 = mat%grid%angles%cos_phi_p(indices%p) / (3.d0 * dz)
+    val2 = 3.d0 * val1
+    bc_val = 4.d0 * val1 * mat%surface_vals(indices%p)
 
     call mat%assign(ent,val1,indices%i,indices%j,2,indices%p)
     call mat%add(repeat_ent, val2)
@@ -648,8 +648,8 @@ contains
     dz = mat%grid%z%spacing(1)
     nz = mat%grid%z%num
 
-    val1 = -mat%grid%angles%cos_phi_p(indices%p) / (5.d0 * dz)
-    val2 = 7.d0 * val1
+    val1 = -mat%grid%angles%cos_phi_p(indices%p) / (3.d0 * dz)
+    val2 = 3.d0 * val1
 
     call mat%assign(ent,val1,indices%i,indices%j,nz-1,indices%p)
     call mat%add(repeat_ent, val2)
