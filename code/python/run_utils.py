@@ -359,10 +359,11 @@ def combine_dbs(study_dir, table_name, verbose=False):
     print("Connected.")
     for db in dbs:
         # Read from individual tables
-        conn = sqlite3.connect(db)
-        if verbose:
-            print("Combining {} (tables: {})".format(db, get_table_names(conn)))
         try:
+            conn = sqlite3.connect(db)
+            table_name = get_table_names(conn)[0]
+            if verbose:
+                print("Combining {} (tables: {})".format(db, get_table_names(conn)))
             cursor = conn.execute('SELECT * FROM {}'.format(table_name))
         except sqlite3.OperationalError as err:
             raise sqlite3.OperationalError("Error on '{}': {}".format(db, ''.join(map(str,err.args))))

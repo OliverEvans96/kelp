@@ -97,9 +97,13 @@ def rename_study(base_dir, old_study_name, new_study_name):
     for db_path in db_path_list:
         print(db_path)
         conn = sqlite3.connect(db_path)
-        rewrite_data_path(conn, old_study_name, new_study_name)
-        rename_table(conn, old_study_name, new_study_name)
-        conn.close()
+        try:
+            #rewrite_data_path(conn, old_study_name, new_study_name)
+            rename_table(conn, old_study_name, new_study_name)
+        except sqlite3.OperationalError as e:
+            print("op-err", e.args)
+        finally:
+            conn.close()
 
     # Modify combined .db
     old_combined_db_path = os.path.join(
@@ -126,7 +130,8 @@ if __name__ == '__main__':
     base_dir = os.path.join(
         os.environ['SCRATCH'],
         'kelp-results',
+        'DB_MOD',
     )
-    old_study_name = 'gs64_a01_b0_small'
-    new_study_name = 'gs23_a01_b0'
+    old_study_name = 'iop_study_72x10'
+    new_study_name = 'iop_study_72x10_fix_bc'
     rename_study(base_dir, old_study_name, new_study_name)

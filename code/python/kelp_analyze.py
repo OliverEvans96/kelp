@@ -12,6 +12,7 @@ from scipy.interpolate import interp1d
 
 # local
 import uneven_diff
+import run_utils as ru
 
 def table_to_df(conn, table_name):
     select_cmd = 'SELECT * FROM {table_name}'.format(table_name=table_name)
@@ -569,6 +570,7 @@ def get_unique_vals(conn, table_name, field_names):
     by querying SQL results database.
     """
 
+    table_name = ru.get_table_names(conn)[0]
     cursor = conn.execute('''
     SELECT {field_names}
     FROM {table_name}
