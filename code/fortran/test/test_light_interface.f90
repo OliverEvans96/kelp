@@ -1,5 +1,5 @@
 program test_light_interface
-  use light_interface_module
+  use light_interface
 
   implicit none
     double precision abs_kelp, scat
@@ -24,12 +24,15 @@ program test_light_interface
     integer nz
     integer ntheta
     integer nphi
+    logical fd_flag
     integer num_scatters
+    integer num_threads
+    integer n_images
     real, dimension(:), allocatable ::  avg_irrad, perceived_irrad
 
     integer i, k
 
-    abs_kelp = 1.d0
+    abs_kelp = 0.7d0
     scat = 0.1d0
 
     num_vsf = 55
@@ -40,14 +43,17 @@ program test_light_interface
     surface_irrad = 50.d0
 
     rope_spacing = 10.d0
+    n_images = 1
 
     num_si = 10
-    nx = 6
-    ny = 6
-    nz = 5
-    ntheta = 4
-    nphi = 4
-    num_scatters = 1
+    nx = 20
+    ny = 20
+    nz = 20
+    ntheta = 10
+    nphi = 10
+    fd_flag = .false.
+    num_scatters = 0
+    num_threads = 4
 
     allocate(abs_water(nz))
     allocate(si_area(nz, num_si))
@@ -59,11 +65,7 @@ program test_light_interface
     allocate(depth_spacing(nz))
 
     do k=1, nz
-       abs_water(k) = 0.0
-       do i=1, num_si
-          si_area(k, i) = 1000.d0
-          si_ind(k, i) = 1000
-       end do
+       abs_water(k) = 0.5
 
        current_speeds(k) = 0.d0
        current_angles(k) = 0.d0
@@ -71,7 +73,12 @@ program test_light_interface
        avg_irrad(k) = 0.d0
        perceived_irrad(k) = 0.d0
 
-       depth_spacing(k) = 1.d0
+       depth_spacing(k) = 10.d0/dble(nz)
+
+       do i=1, num_si
+          si_area(k, i) = 1.d0
+          si_ind(k, i) = 120 * depth_spacing(k) / num_si
+       end do
     end do
 
     ! Frond properties
@@ -109,7 +116,9 @@ program test_light_interface
          nz, &
          ntheta, &
          nphi, &
+         fd_flag, &
          num_scatters, &
+         num_threads, &
          ! FINAL RESULTS
          perceived_irrad, &
          avg_irrad)

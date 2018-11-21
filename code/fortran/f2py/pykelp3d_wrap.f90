@@ -98,7 +98,6 @@ contains
     integer, intent(in) :: num_threads
     logical, intent(in) :: fd_flag
     character*(*), intent(in) :: lis_opts
-
     integer, intent(inout) :: lis_iter
     double precision, intent(inout) :: lis_time, lis_resid
 

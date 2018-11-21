@@ -35,7 +35,9 @@ contains
     nz, &
     ntheta, &
     nphi, &
+    fd_flag, &
     num_scatters, &
+    num_threads, &
     ! FINAL RESULTS
     perceived_irrad, &
     avg_irrad)
@@ -77,10 +79,20 @@ contains
     double precision, dimension(nz), intent(in) :: current_angles
 
     ! SPACING
+    ! Horizontal distance between vertical kelp ropes = domain width
     double precision, intent(in) :: rope_spacing
+    ! dz, varies over depth
     double precision, dimension(nz), intent(in) :: depth_spacing
     ! SOLVER PARAMETERS
+    ! Whether to use the finite difference algorithm (otherwise, just asymptotics.)
+    logical, intent(in) :: fd_flag
+    ! Number of scattering events for asymptotics. Use 0 if fd_flag = true.
     integer, intent(in) :: num_scatters
+    ! Number of OMP threads to use for parallel subroutines
+    integer, intent(in) :: num_threads
+    character*(256) :: lis_opts
+    integer :: lis_iter
+    double precision :: lis_time, lis_resid
 
     ! FINAL RESULT
     real, dimension(nz), intent(out) :: avg_irrad, perceived_irrad
@@ -90,10 +102,13 @@ contains
     double precision xmin, xmax, ymin, ymax, zmin, zmax
     character(len=5), parameter :: fmtstr = 'E13.4'
     !double precision, dimension(num_vsf) :: vsf_angles, vsf_vals
-    double precision max_rad, decay
+    double precision decay
     integer quadrature_degree
+    ! Number of periodic images of the domain to consider for kelp distribution
+    integer :: n_images
 
     type(space_angle_grid) grid
+    type(rte_mat) mat
     type(optical_properties) iops
     type(light_state) light
     type(rope_state) rope
@@ -104,6 +119,8 @@ contains
     ! Number of fronds in each depth layer
     double precision, dimension(:), allocatable :: num_fronds
     double precision, dimension(:,:,:), allocatable :: p_kelp
+    double precision, dimension(nx, ny, nz, ntheta*(nphi-2)+2) :: radiance
+    double precision, dimension(:,:,:,:), allocatable :: source
 
     write(*,*) 'Light calculation'
 
@@ -127,6 +144,15 @@ contains
     call grid%init()
     !call grid%set_uniform_spacing_from_num()
     call grid%z%set_spacing_array(depth_spacing)
+
+    allocate(source( &
+         grid%x%num, &
+         grid%y%num, &
+         grid%z%num, &
+         grid%angles%nomega))
+
+    ! Initialize source to zero
+    source(:,:,:,:) = 0.d0
 
     call rope%init(grid)
 
@@ -153,13 +179,15 @@ contains
     write(*,*) 'num_fronds  =', rope%num_fronds
     write(*,*) 'water_speeds  =', rope%water_speeds
     write(*,*) 'water_angles  =', rope%water_angles
-
     write(*,*) 'Frond'
+
     ! INIT FROND
     call frond%set_shape(frond_shape_ratio, frond_aspect_ratio, frond_thickness)
+    write(*,*) 'ft =', frond%ft
     ! CALCULATE KELP
-    quadrature_degree = 5
-    call calculate_kelp_on_grid(grid, p_kelp, frond, rope, quadrature_degree)
+    quadrature_degree = 100
+    n_images = 2
+    call calculate_kelp_on_grid(grid, p_kelp, frond, rope, quadrature_degree, n_images, num_threads)
     ! INIT IOPS
     iops%num_vsf = num_vsf
     call iops%init(grid)
@@ -171,35 +199,77 @@ contains
     !write(*,*) 'iop init'
     !iops%vsf_angles = vsf_angles
     !iops%vsf_vals = vsf_vals
+    write(*,*) 'Load VSF'
     call iops%load_vsf(vsf_file, fmtstr)
 
     ! load_vsf already calls calc_vsf_on_grid
     !call iops%calc_vsf_on_grid()
+    write(*,*) 'Calculate kelp coef. grid.'
     call iops%calculate_coef_grids(p_kelp)
 
     !write(*,*) 'BC'
-    max_rad = 1.d0 ! Doesn't matter because we'll rescale
-    decay = 1.d0 ! Does matter, but maybe not much. Determines drop-off from angle
-    call bc%init(grid, solar_zenith, solar_azimuthal, decay, max_rad)
-    ! Rescale surface radiance to match surface irradiance
-    bc%bc_grid = bc%bc_grid * surface_irrad / grid%angles%integrate_points(bc%bc_grid)
+    decay = 1.d0 ! Determines drop-off in surface BC as a func of angle diff from (theta_s, phi_s)
+    write(*,*) 'Init BC'
+    write(*,*) 'I0 = ', surface_irrad
+    write(*,*) 'phi_s = ', solar_zenith
+    write(*,*) 'theta_s = ', solar_azimuthal
+    write(*,*) 'decay = ', decay
+    call bc%init(grid, solar_azimuthal, solar_zenith, decay, surface_irrad)
+    write(*,*) 'bc%I0 = ', bc%I0
+    write(*,*) 'bc%phi_s = ', bc%phi_s
+    write(*,*) 'bc%theta_s = ', bc%theta_s
+    write(*,*) 'bc%decay = ', bc%decay
+    !write(*,*) 'bc'
+    !write(*,*) bc%bc_grid
+    call write_vec(bc%bc_grid, grid%angles%nomega/2, "bc.txt")
+    call write_array(iops%abs_grid(:,ny/2,:), nx, nz, "abs.txt")
 
-    write(*,*) 'bc'
-    write(*,*) bc%bc_grid
+    if(num_scatters .ge. 0) then
+        write(*,*) 'Calculate asymptotic light field'
+        call calculate_asymptotic_light_field(&
+             grid, bc, iops, source, &
+             radiance, num_scatters, num_threads)
+    else
+        radiance = 0
+    end if
 
-    ! write(*,*) 'bc'
-    ! do i=1, grid%y%num
-    !     write(*,'(10F15.3)') bc%bc_grid(i,:)
-    ! end do
 
-    call light%init_grid(grid)
+    if(fd_flag) then
 
-    write(*,*) 'Scatter'
-    call calculate_light_with_scattering(grid, bc, iops, light%radiance, num_scatters)
+      ! INIT MAT
+      write(*,*) 'FD Sparse Matrix'
+      ! Set boundary condition
+      call mat%init(grid, iops)
+      call mat%set_bc(bc)
+      call gen_matrix(mat, num_threads)
+
+      ! Set solver options
+      if(num_scatters .ge. 0) then
+          mat%initx_zeros = .false.
+      else
+          mat%initx_zeros = .true.
+      end if
+      lis_opts = '-i gmres -restart 100'
+      call mat%set_solver_opts(trim(lis_opts))
+
+      ! Initialize & set initial guess
+      write(*,*) 'Light init'
+      call light%init(mat)
+      light%radiance = radiance
+
+      ! Solve system
+      write(*,*) 'Calculate Radiance'
+      call light%calculate_radiance()
+
+      call mat%get_solver_stats(lis_iter, lis_time, lis_resid)
+      call mat%deinit()
+    else
+       call light%init_grid(grid)
+       light%radiance = radiance
+    endif
 
     write(*,*) 'Irrad'
     call light%calculate_irradiance()
-
     ! Calculate output variables
     call calculate_average_irradiance(grid, light, avg_irrad)
     call calculate_perceived_irradiance(grid, p_kelp, &
@@ -209,14 +279,16 @@ contains
     !write(*,*) 'vsf_vals = ', iops%vsf_vals
     !write(*,*) 'vsf norm  = ', grid%integrate_angle_2d(iops%vsf(1,1,:,:))
 
-    ! write(*,*) 'abs_water = ', abs_water
+    !0w7rite(*,*) 'abs_water = ', abs_water
     ! write(*,*) 'scat_water = ', scat_water
-    write(*,*) 'kelp '
-    write(*,*) p_kelp(:,:,:)
-    write(*,*) 'ft =', frond%ft
+    !write(*,*) 'kelp '
+    !write(*,*) p_kelp(:,:,:)
 
-    write(*,*) 'irrad'
-    write(*,*) light%irradiance
+    !write(*,*) 'irrad'
+    !write(*,*) light%irradiance
+
+    call write_array(p_kelp(:,ny/2,:), nx, nz, "kelp.txt")
+    call write_array(light%irradiance(:,ny/2,:), nx, nz, "irrad.txt")
 
     write(*,*) 'avg_irrad = ', avg_irrad
     write(*,*) 'perceived_irrad = ', perceived_irrad
