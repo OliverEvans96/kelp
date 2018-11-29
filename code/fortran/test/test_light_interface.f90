@@ -36,7 +36,7 @@ program test_light_interface
     scat = 0.1d0
 
     num_vsf = 55
-    vsf_file = '/home/oliver/academic/research/kelp/data/vsf/nuc_vsf.txt'
+    vsf_file = '/global/homes/o/oevans/kelp/data/vsf/nuc_vsf.txt'
 
     solar_zenith = 0.d0
     solar_azimuthal = 0.d0
@@ -53,7 +53,7 @@ program test_light_interface
     nphi = 10
     fd_flag = .false.
     num_scatters = 0
-    num_threads = 4
+    num_threads = 32
 
     allocate(abs_water(nz))
     allocate(si_area(nz, num_si))
